@@ -12,6 +12,7 @@ using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Input;
+using System.Windows.Interactivity;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -31,7 +32,7 @@ namespace Image_sort.UI
         /// </summary>
         private FolderSelector folderSelector = new FolderSelector();
 
-        IEnumerable<string> folders;
+        List<string> folders;
 
         /// <summary>
         /// Initialization method (default right now)
@@ -87,7 +88,7 @@ namespace Image_sort.UI
                 FoldersStack.Items.Clear();
 
                 // Get every directory in the folder
-                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath());
+                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath()).ToList();
 
                 // get every folder out of the collection of folders
                 foreach (string folder in folders)
@@ -105,6 +106,9 @@ namespace Image_sort.UI
                         FoldersStack.Items.Add(listViewItem);
                     }
                 }
+
+                // Making sure something is selected no matter what
+                FoldersStack.SelectedIndex = 0;
             }
         }
 
@@ -124,6 +128,7 @@ namespace Image_sort.UI
         {
             SkipFileButton.IsEnabled = true;
             MoveFolderButton.IsEnabled = true;
+            NewFolderButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -133,6 +138,7 @@ namespace Image_sort.UI
         {
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
+            NewFolderButton.IsEnabled = false;
         }
 
         /// <summary>
@@ -151,21 +157,30 @@ namespace Image_sort.UI
         /// </summary>
         public void DoSkip()
         {
-            if (SkipFileButton.IsEnabled == true)
+            if (FoldersStack.Items.Count > 0)
             {
-                // set the preview image to nothing
-                PreviewImage.Source = null;
-                // get the next image
-                Image buffer = folderSelector.GetNextImage();
-                // get the next path of the next image
-                string path = folderSelector.GetImagePath();
+                if (SkipFileButton.IsEnabled == true)
+                {
+                    // set the preview image to nothing
+                    PreviewImage.Source = null;
+                    // get the next image
+                    Image buffer = folderSelector.GetNextImage();
+                    // get the next path of the next image
+                    string path = folderSelector.GetImagePath();
 
-                // if the buffer is not null, load the image
-                if (buffer != null)
-                    LoadImage(buffer.Source);
-                // else disable the controls
-                else
-                    DisableControls();
+                    // if the buffer is not null, load the image
+                    if (buffer != null)
+                        LoadImage(buffer.Source);
+                    // else disable the controls
+                    else
+                        DisableControls();
+                }
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("No folder to choose from", "No folder");
+
+                DisableControls();
             }
         }
 
@@ -184,31 +199,40 @@ namespace Image_sort.UI
         /// </summary>
         private void DoMove()
         {
-            if(MoveFolderButton.IsEnabled == true)
+            if(FoldersStack.Items.Count > 0)
             {
-
-                // set the preview image to nothing
-                PreviewImage.Source = null;
-                // get the next image
-                Image buffer = folderSelector.GetNextImage();
-                // get the next path of the next image
-                string path = folderSelector.GetImagePath();
-
-                // if the buffer is not null, load the image
-                if (buffer != null)
-                    LoadImage(buffer.Source);
-                // else disable the controls
-                else
+                if (MoveFolderButton.IsEnabled == true)
                 {
-                    DisableControls();
+
+                    // set the preview image to nothing
+                    PreviewImage.Source = null;
+                    // get the next image
+                    Image buffer = folderSelector.GetNextImage();
+                    // get the next path of the next image
+                    string path = folderSelector.GetImagePath();
+
+                    // if the buffer is not null, load the image
+                    if (buffer != null)
+                        LoadImage(buffer.Source);
+                    // else disable the controls
+                    else
+                    {
+                        DisableControls();
+                    }
+
+                    //File.Move(path, folders.ElementAt(FoldersStack.SelectedIndex) + "\\" + System.IO.Path.GetFileName(path));
+
+                    // Move the file
+                    folderSelector.MoveFileTo(path,
+                        folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
+                        System.IO.Path.GetFileName(path));
                 }
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("No folder to choose from", "No folder");
 
-                //File.Move(path, folders.ElementAt(FoldersStack.SelectedIndex) + "\\" + System.IO.Path.GetFileName(path));
-
-                // Move the file
-                folderSelector.MoveFileTo(path,
-                    folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
-                    System.IO.Path.GetFileName(path));
+                DisableControls();
             }
         }
 
@@ -285,12 +309,18 @@ namespace Image_sort.UI
                         SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
                     break;
 
+                // Adds space
                 case Key.Space:
                     SearchBarBox.Text += " ";
                     break;
 
+                // The same as pressing the select folder button
                 case Key.F2:
                     SelectFolderButton_Click(sender, new RoutedEventArgs());
+                    break;
+
+                case Key.F3:
+                    NewFolderButton_Click(sender, new RoutedEventArgs());
                     break;
 
                 // Insert Characters and numbers only
@@ -320,6 +350,29 @@ namespace Image_sort.UI
                 }
                 else
                     foldersStackItem.Visibility = Visibility.Visible;
+            }
+        }
+
+        /// <summary>
+        /// Used when a new folder is supposed to be created by the user
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void NewFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Get the name of the new folder from the user
+            string userResponse = Microsoft.VisualBasic.Interaction.InputBox
+                ("What name should the new folder have?","New Folder", "New Folder");
+
+            // If the user has inputed a name, create the folder and add 
+            // it to the folders List<string> and FoldersStack items
+            if(userResponse != "")
+            {
+                Directory.CreateDirectory(folderSelector.GetCurrentFolderPath() +
+                    "\\" + userResponse);
+                folders.Add(folderSelector.GetCurrentFolderPath() +
+                    "\\" + userResponse);
+                FoldersStack.Items.Add(userResponse);
             }
         }
     }

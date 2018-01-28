@@ -23,3 +23,28 @@ C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Release\en\Microsoft.Wi
 C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Release\de\Microsoft.Windows.Design.Extensibility.resources.dll
 C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Release\en\Microsoft.Windows.Design.Extensibility.resources.dll
 C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Release\GeneratedInternalTypeHelper.g.cs
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Image sort.UI.exe.config
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Image sort.UI.exe
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Image sort.UI.pdb
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Image sort.Logic.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Microsoft.Windows.Design.Interaction.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\System.Windows.Interactivity.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Microsoft.Windows.Design.Extensibility.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\Image sort.Logic.pdb
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\de\Microsoft.Windows.Design.Interaction.resources.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\en\Microsoft.Windows.Design.Interaction.resources.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\de\Microsoft.Windows.Design.Extensibility.resources.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\bin\Release\en\Microsoft.Windows.Design.Extensibility.resources.dll
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.csprojResolveAssemblyReference.cache
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\MainWindow.g.cs
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\App.g.cs
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\GeneratedInternalTypeHelper.g.cs
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI_MarkupCompile.cache
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI_MarkupCompile.lref
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\MainWindow.baml
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.g.resources
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image_sort.UI.Properties.Resources.resources
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.csproj.GenerateResource.Cache
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.csproj.CoreCompileInputs.cache
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.exe
+C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.UI\obj\Release\Image sort.UI.pdb

@@ -39,6 +39,9 @@
                 <Button Content="Move" IsEnabled="False" Focusable="False"
                         x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
                         ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+                <Button Content="New Folder" IsEnabled="False" Focusable="False"
+                        x:Name="NewFolderButton" Click="NewFolderButton_Click"
+                        ToolTip="Creates a new Folder to sort in"/>
             </ToolBar>
         </ToolBarTray>
 
