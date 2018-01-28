@@ -1,0 +1,26 @@
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.UI.exe.config
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.UI.exe
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.UI.pdb
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.csprojResolveAssemblyReference.cache
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\MainWindow.g.cs
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\App.g.cs
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI_MarkupCompile.cache
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI_MarkupCompile.lref
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\MainWindow.baml
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.g.resources
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image_sort.UI.Properties.Resources.resources
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.csproj.GenerateResource.Cache
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.csproj.CoreCompileInputs.cache
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.exe
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\Image sort.UI.pdb
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.Logic.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.Logic.pdb
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Image sort.Logic.xml
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Microsoft.Windows.Design.Interaction.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\System.Windows.Interactivity.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\Microsoft.Windows.Design.Extensibility.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\de\Microsoft.Windows.Design.Interaction.resources.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\en\Microsoft.Windows.Design.Interaction.resources.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\de\Microsoft.Windows.Design.Extensibility.resources.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\bin\Debug\en\Microsoft.Windows.Design.Extensibility.resources.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.UI\obj\Debug\GeneratedInternalTypeHelper.g.cs

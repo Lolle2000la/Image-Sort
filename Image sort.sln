@@ -1,0 +1,35 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2026
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.Logic", "Image sort.Logic\Image sort.Logic.csproj", "{09D2909F-A180-453E-B278-85D0A0BD02DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.UI", "Image sort.UI\Image sort.UI.csproj", "{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Image Sort Installer", "Image Sort Installer\Image Sort Installer.vdproj", "{7AA4FE7C-3802-44D6-BA06-951437215C99}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{09D2909F-A180-453E-B278-85D0A0BD02DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09D2909F-A180-453E-B278-85D0A0BD02DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09D2909F-A180-453E-B278-85D0A0BD02DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09D2909F-A180-453E-B278-85D0A0BD02DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7AA4FE7C-3802-44D6-BA06-951437215C99}.Debug|Any CPU.ActiveCfg = Debug
+		{7AA4FE7C-3802-44D6-BA06-951437215C99}.Release|Any CPU.ActiveCfg = Release
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0F2D8172-85BA-4EA6-B6B9-AA9E38458094}
+	EndGlobalSection
+EndGlobal

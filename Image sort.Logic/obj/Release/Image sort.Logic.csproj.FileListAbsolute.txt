@@ -1,0 +1,5 @@
+C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\bin\Release\Image sort.Logic.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\bin\Release\Image sort.Logic.pdb
+C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Release\Image sort.Logic.csproj.CoreCompileInputs.cache
+C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Release\Image sort.Logic.dll
+C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Release\Image sort.Logic.pdb
