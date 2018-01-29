@@ -3,9 +3,9 @@ C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\bin\Debu
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\bin\Debug\Image sort.Update.pdb
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\bin\Debug\Newtonsoft.Json.dll
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\bin\Debug\Newtonsoft.Json.xml
-C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.csprojResolveAssemblyReference.cache
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image_sort.Update.Properties.Resources.resources
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.csproj.GenerateResource.Cache
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.csproj.CoreCompileInputs.cache
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.exe
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.pdb
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Update\obj\Debug\Image sort.Update.csprojResolveAssemblyReference.cache
