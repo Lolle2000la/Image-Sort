@@ -1,1 +1,6 @@
-/.vs
+################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/Image sort/v15
+/update-reg.json
