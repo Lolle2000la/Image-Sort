@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.UI", "Image sort
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Image Sort Installer", "Image Sort Installer\Image Sort Installer.vdproj", "{7AA4FE7C-3802-44D6-BA06-951437215C99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.Update", "Image sort.Update\Image sort.Update.csproj", "{63D944ED-ED17-49C5-A78D-DC7D76E567D1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{8A0D2E27-B4E1-48C4-BF8F-6FC6117E42BB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7AA4FE7C-3802-44D6-BA06-951437215C99}.Debug|Any CPU.ActiveCfg = Debug
 		{7AA4FE7C-3802-44D6-BA06-951437215C99}.Release|Any CPU.ActiveCfg = Release
+		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
