@@ -50,6 +50,8 @@ C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\obj\Debug\Im
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\obj\Debug\Image sort.UI.csproj.CoreCompileInputs.cache
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\obj\Debug\Image sort.UI.exe
 C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\obj\Debug\Image sort.UI.pdb
-C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image Sort.Update.exe
-C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image Sort.Update.pdb
-C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image Sort.Update.exe.config
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image sort.Update.exe
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Newtonsoft.Json.dll
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image sort.Update.pdb
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Image sort.Update.exe.config
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.UI\bin\Debug\Newtonsoft.Json.xml

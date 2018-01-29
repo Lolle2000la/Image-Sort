@@ -4,3 +4,9 @@ C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Debug\Image sort.Log
 C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Debug\Image sort.Logic.dll
 C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\obj\Debug\Image sort.Logic.pdb
 C:\Users\Lolle\source\repos\Image sort\Image sort.Logic\bin\Debug\Image sort.Logic.xml
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\bin\Debug\Image sort.Logic.xml
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\bin\Debug\Image sort.Logic.dll
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\bin\Debug\Image sort.Logic.pdb
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\obj\Debug\Image sort.Logic.csproj.CoreCompileInputs.cache
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\obj\Debug\Image sort.Logic.dll
+C:\Users\Lolle\source\repos\image-sort-dev\Image-Sort\Image sort.Logic\obj\Debug\Image sort.Logic.pdb

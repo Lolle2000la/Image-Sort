@@ -111,6 +111,10 @@
       <Project>{09d2909f-a180-453e-b278-85d0a0bd02dd}</Project>
       <Name>Image sort.Logic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Image sort.Update\Image sort.Update.csproj">
+      <Project>{63d944ed-ed17-49c5-a78d-dc7d76e567d1}</Project>
+      <Name>Image sort.Update</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Image_Sort.ico" />

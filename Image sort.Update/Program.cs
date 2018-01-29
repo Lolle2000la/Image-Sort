@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -37,12 +38,15 @@ namespace Image_sort.Update
         }
 
         /// <summary>
-        /// 
+        /// Downloads the registry from the GitHub server
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Returns it a as a string in JSON form</returns>
         public static string GetUpdateRegistry()
         {
+            // Used to keep the string
             string json;
+
+            // Downloads the file or notifies the server if it wasn't possible 
             using (WebClient wc = new WebClient())
             {
                 try
@@ -50,7 +54,7 @@ namespace Image_sort.Update
                     json = wc.DownloadString("https://raw.githubusercontent.com" +
                         "/Lolle2000la/Image-Sort/master/update-reg.json");
                 }
-                catch (WebException ex)
+                catch (WebException)
                 {
                     MessageBox.Show("Server does not answer", "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
                     json = "";
@@ -59,17 +63,29 @@ namespace Image_sort.Update
             return json;
         }
 
+        /// <summary>
+        /// Downloads and runs the installer from the newest version specified in the given registry
+        /// </summary>
+        /// <param name="updateReg"></param>
         public static void DownloadAndRunInstaller(UpdateRegModel updateReg)
         {
+            // Downloads the installer
             using (WebClient wc = new WebClient())
             {
+                // Downloads the installer from the given URL as setup
                 try
                 {
+                    // Download the installer
                     wc.DownloadFile(updateReg.url, "setup.msi");
-                    System.Diagnostics.Process.Start(AppDomain.CurrentDomain.BaseDirectory
-                        + @"\setup.msi");
+                    // Set the target path for it
+                    string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
+                    // Run it and wait for it to exit
+                    System.Diagnostics.Process.Start(target).WaitForExit();
+                    // Delete the installer
+                    File.Delete(target);
                 }
-                catch (WebException ex)
+                // If something goes wrong, show the user that it didn't
+                catch (WebException)
                 {
                     MessageBox.Show("Server does not answer", "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
                 }

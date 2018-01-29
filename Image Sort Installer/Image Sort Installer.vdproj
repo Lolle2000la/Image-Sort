@@ -57,13 +57,31 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_B7FBB8E808FB94D7752BF884A3F49021"
+        "OwnerKey" = "8:_BA37002FA523BF842A6B2894B6AF4E62"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_B7FBB8E808FB94D7752BF884A3F49021"
+        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BA37002FA523BF842A6B2894B6AF4E62"
+        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FB664E1D351F44729F07B6F3663A844A"
+        "MsmKey" = "8:_DD597A5B044A44159DA4F546E99A8ABB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -71,6 +89,18 @@
         {
         "MsmKey" = "8:_UNDEFINED"
         "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_BA37002FA523BF842A6B2894B6AF4E62"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_B7FBB8E808FB94D7752BF884A3F49021"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -373,9 +403,71 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FB664E1D351F44729F07B6F3663A844A"
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_B7FBB8E808FB94D7752BF884A3F49021"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\Downloads\\Image_Sort.ico"
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_B7FBB8E808FB94D7752BF884A3F49021"
+                    {
+                    "Name" = "8:Newtonsoft.Json.dll"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:Newtonsoft.Json.dll"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_4FE78034DF8844EF8FA37D4422726931"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{9F6F8455-1EF1-4B85-886A-4223BCC8E7F7}:_BA37002FA523BF842A6B2894B6AF4E62"
+            {
+            "AssemblyRegister" = "3:1"
+            "AssemblyIsInGAC" = "11:FALSE"
+            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL"
+                "ScatterAssemblies"
+                {
+                    "_BA37002FA523BF842A6B2894B6AF4E62"
+                    {
+                    "Name" = "8:Image sort.Update.exe"
+                    "Attributes" = "3:512"
+                    }
+                }
+            "SourcePath" = "8:Image sort.Update.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_4FE78034DF8844EF8FA37D4422726931"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_DD597A5B044A44159DA4F546E99A8ABB"
+            {
+            "SourcePath" = "8:..\\Image sort.UI\\Image_Sort.ico"
             "TargetName" = "8:Image_Sort.ico"
             "Tag" = "8:"
             "Folder" = "8:_4FE78034DF8844EF8FA37D4422726931"
@@ -449,15 +541,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Image Sort Installer"
-        "ProductCode" = "8:{51B89DB8-8A47-48C9-A2A8-04E7B027BF1D}"
-        "PackageCode" = "8:{271B9721-E669-4C74-BD00-AF68601A35AA}"
+        "ProductCode" = "8:{79157CE9-64ED-46DF-852C-325B271FF3C8}"
+        "PackageCode" = "8:{8D95996F-E789-4F18-9671-8EDC0173DF42}"
         "UpgradeCode" = "8:{1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
-        "RemovePreviousVersions" = "11:TRUE"
+        "RemovePreviousVersions" = "11:FALSE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.1.0"
+        "ProductVersion" = "8:1.2.0"
         "Manufacturer" = "8:Lolle2000la"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -467,7 +559,7 @@
         "Keywords" = "8:"
         "ARPCOMMENTS" = "8:An software used for sorting images inside a folder"
         "ARPURLINFOABOUT" = "8:"
-        "ARPPRODUCTICON" = "8:_FB664E1D351F44729F07B6F3663A844A"
+        "ARPPRODUCTICON" = "8:_DD597A5B044A44159DA4F546E99A8ABB"
         "ARPIconIndex" = "3:0"
         "SearchPath" = "8:"
         "UseSystemSearchPath" = "11:TRUE"
@@ -581,7 +673,7 @@
             "Target" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
             "Folder" = "8:_C0A1BE7218D940DDAD2B5E96931F6115"
             "WorkingFolder" = "8:_4FE78034DF8844EF8FA37D4422726931"
-            "Icon" = "8:_FB664E1D351F44729F07B6F3663A844A"
+            "Icon" = "8:_DD597A5B044A44159DA4F546E99A8ABB"
             "Feature" = "8:"
             }
             "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_ED4A6C743A3A496AA030E6FD4EA9FE32"
@@ -595,7 +687,7 @@
             "Target" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
             "Folder" = "8:_150E609FFD984B3B984D54FE76257DC9"
             "WorkingFolder" = "8:_4FE78034DF8844EF8FA37D4422726931"
-            "Icon" = "8:_FB664E1D351F44729F07B6F3663A844A"
+            "Icon" = "8:_DD597A5B044A44159DA4F546E99A8ABB"
             "Feature" = "8:"
             }
         }
