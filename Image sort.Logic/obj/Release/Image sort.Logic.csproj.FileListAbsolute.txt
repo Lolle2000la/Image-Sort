@@ -8,4 +8,3 @@ C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.Logic\bin\Release\Image sort.L
 C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.Logic\obj\Release\Image sort.Logic.csproj.CoreCompileInputs.cache
 C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.Logic\obj\Release\Image sort.Logic.dll
 C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.Logic\obj\Release\Image sort.Logic.pdb
-C:\Users\Lolle\Source\Repos\Image-Sort\Image sort.Logic\obj\Release\Image sort.Logic.csprojResolveAssemblyReference.cache
