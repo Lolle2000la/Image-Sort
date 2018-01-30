@@ -10,6 +10,4 @@ Sorts your image at high speed
 * (optional) For building the installer, you need the [Microsoft Visual Studio 2017 Installer Projects](https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.MicrosoftVisualStudio2017InstallerProjects)
 
 ## Screenshot
-![Screenshot of the UI of the im
-
-age](https://github.com/Lolle2000la/Image-Sort/blob/master/ImageSort.png)
+![Screenshot of the UI of the image](https://github.com/Lolle2000la/Image-Sort/blob/master/ImageSort.png)
