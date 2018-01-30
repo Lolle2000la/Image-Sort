@@ -74,10 +74,10 @@ namespace Image_sort.Update
                 // Downloads the installer from the given URL as setup
                 try
                 {
-                    if(updateReg.source != null)
+                    if(updateReg.url != null)
                     {
                         // Download the installer
-                        wc.DownloadFile(updateReg.source, "setup.msi");
+                        wc.DownloadFile(updateReg.url, "setup.msi");
                         // Set the target path for it
                         string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
                         // Run it and wait for it to exit
