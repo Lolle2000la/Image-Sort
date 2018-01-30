@@ -28,7 +28,7 @@ namespace Image_sort.Update
                 // Serializes the UpdateRegistry from json
                 UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
                 if (updateReg != null)
-                    // if the version given is different, download and run the newest update
+                    // if the version given is different, download and run the newest! update
                     if (updateReg.version != Properties.Resources.version)
                         if (MessageBox.Show("Do you want to update to the newest" +
                             " version of Image sort?", "Update", MessageBoxButton.YesNo,
@@ -51,8 +51,7 @@ namespace Image_sort.Update
             {
                 try
                 {
-                    json = wc.DownloadString("https://raw.githubusercontent.com" +
-                        "/Lolle2000la/Image-Sort/master/update-reg.json");
+                    json = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/update-reg.json");
                 }
                 catch (WebException)
                 {
