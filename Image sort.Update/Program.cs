@@ -74,14 +74,21 @@ namespace Image_sort.Update
                 // Downloads the installer from the given URL as setup
                 try
                 {
-                    // Download the installer
-                    wc.DownloadFile(updateReg.url, "setup.msi");
-                    // Set the target path for it
-                    string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
-                    // Run it and wait for it to exit
-                    System.Diagnostics.Process.Start(target).WaitForExit();
-                    // Delete the installer
-                    File.Delete(target);
+                    if(updateReg.source != null)
+                    {
+                        // Download the installer
+                        wc.DownloadFile(updateReg.source, "setup.msi");
+                        // Set the target path for it
+                        string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
+                        // Run it and wait for it to exit
+                        System.Diagnostics.Process.Start(target).WaitForExit();
+                        // Delete the installer
+                        File.Delete(target);
+                    }
+                    else
+                    {
+                        MessageBox.Show("Update server did not return an url to the installer!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
                 }
                 // If something goes wrong, show the user that it didn't
                 catch (WebException)
