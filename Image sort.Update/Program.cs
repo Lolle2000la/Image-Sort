@@ -51,7 +51,7 @@ namespace Image_sort.Update
             {
                 try
                 {
-                    json = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/update-reg.json");
+                    json = wc.DownloadString(Properties.Resources.UpdateRegistryUrl);
                 }
                 catch (WebException)
                 {

@@ -31,7 +31,7 @@ namespace Image_sort.UI
         /// </summary>
         private FolderSelector folderSelector = new FolderSelector();
 
-        IEnumerable<string> folders;
+        List<string> folders;
 
         /// <summary>
         /// Initialization method (default right now)
@@ -87,7 +87,8 @@ namespace Image_sort.UI
                 FoldersStack.Items.Clear();
 
                 // Get every directory in the folder
-                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath());
+                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath())
+                                   .ToList();
 
                 // get every folder out of the collection of folders
                 foreach (string folder in folders)
@@ -124,6 +125,7 @@ namespace Image_sort.UI
         {
             SkipFileButton.IsEnabled = true;
             MoveFolderButton.IsEnabled = true;
+            NewFolderButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -133,6 +135,7 @@ namespace Image_sort.UI
         {
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
+            NewFolderButton.IsEnabled = false;
         }
 
         /// <summary>
@@ -293,6 +296,10 @@ namespace Image_sort.UI
                     SelectFolderButton_Click(sender, new RoutedEventArgs());
                     break;
 
+                case Key.F3:
+                    NewFolderButton_Click(sender, new RoutedEventArgs());
+                    break;
+
                 // Insert Characters and numbers only
                 default:
                     if(Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
@@ -321,6 +328,40 @@ namespace Image_sort.UI
                 else
                     foldersStackItem.Visibility = Visibility.Visible;
             }
+        }
+
+        /// <summary>
+        /// Creates new folder when used
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void NewFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Only runs when it's usable
+            if (NewFolderButton.IsEnabled)
+            {
+                // gets the name of the folder the user wants
+                string folderName = Microsoft.VisualBasic.Interaction.InputBox("What name should the folder have", "Create new Folder", "");
+                // Makes sure the user inputted something
+                if (folderName != "")
+                {
+                    // Create the actual directory
+                    Directory.CreateDirectory(folderSelector.GetCurrentFolderPath() + @"\"
+                        + folderName);
+
+                    // Create and add the item to the FoldersStack
+                    ListBoxItem folder = new ListBoxItem()
+                    {
+                        Content = folderName,
+                    };
+
+                    FoldersStack.Items.Add(folder);
+
+                    // Add the whole path to the collection of folders
+                    folders.Add(folderSelector.GetCurrentFolderPath() + @"\" + folderName);
+                }
+            }
+
         }
     }
 }

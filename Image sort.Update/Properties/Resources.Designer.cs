@@ -61,7 +61,16 @@ namespace Image_sort.Update.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 1.2.2.
+        ///   Looks up a localized string similar to https://raw.githubusercontent.com/Lolle2000la/Image-Sort-Updates/master/update-reg.json.
+        /// </summary>
+        internal static string UpdateRegistryUrl {
+            get {
+                return ResourceManager.GetString("UpdateRegistryUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to 1.3.0.
         /// </summary>
         internal static string version {
             get {
