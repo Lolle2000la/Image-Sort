@@ -69,7 +69,7 @@
             Pool containing all the images in the folder
             </summary>
         </member>
-        <member name="F:Image_sort.Logic.ImageSelectorQuery.stringPool">
+        <member name="F:Image_sort.Logic.ImageSelectorQuery.imagePathPool">
             <summary>
             Contains all the paths of all the images in the folder
             </summary>

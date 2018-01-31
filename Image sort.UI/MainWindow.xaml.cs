@@ -75,7 +75,11 @@ namespace Image_sort.UI
                         LoadImage(buffer.Source);
                         EnableControls();
                     }
-                        
+                    else
+                    {
+                        LoadImage(null);
+                        DisableControls();
+                    }
                 }
                     
             }
@@ -90,7 +94,7 @@ namespace Image_sort.UI
         /// <param name="image">The <see cref="Image"/> that should be displayed</param>
         private void LoadImage(ImageSource image)
         {
-            PreviewImage.Source = image;                
+            PreviewImage.Source = image;
         }
 
         /// <summary>
@@ -377,6 +381,11 @@ namespace Image_sort.UI
                         {
                             LoadImage(buffer.Source);
                             EnableControls();
+                        }
+                        else
+                        {
+                            LoadImage(null);
+                            DisableControls();
                         }
 
                     }

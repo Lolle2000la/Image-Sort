@@ -22,7 +22,7 @@ namespace Image_sort.Logic
         /// <summary>
         /// Contains all the paths of all the images in the folder
         /// </summary>
-        private Queue<string> stringPool = new Queue<string>();
+        private Queue<string> imagePathPool = new Queue<string>();
         /// <summary>
         /// Contains the path to the current folder
         /// </summary>
@@ -42,6 +42,11 @@ namespace Image_sort.Logic
         /// </returns>
         public bool SetCurrentFolder(string path)
         {
+            // Cleaning up in beforehand, to make sure everything works
+            imagePool.Clear();
+            imagePathPool.Clear();
+            CurrentImage = null;
+
             // Checks if the dir exists
             if (Directory.Exists(path))
             {
@@ -78,7 +83,7 @@ namespace Image_sort.Logic
                     // Sets the source of the image and puts it into the queue/pool
                     image.Source = bitmapImage;
                     imagePool.Enqueue(image);
-                    stringPool.Enqueue(uri.OriginalString);
+                    imagePathPool.Enqueue(uri.OriginalString);
 
                     // force frees unnecessary resources
                     //image.Source = null;
@@ -107,9 +112,9 @@ namespace Image_sort.Logic
         public Image GetNextImage()
         {
             // Making sure, the image and string pool match up
-            while (imagePool.Count > stringPool.Count)
+            while (imagePool.Count > imagePathPool.Count)
             {
-                stringPool.Dequeue();
+                imagePathPool.Dequeue();
             }
 
             // make sure everything works and there are images left in the queue
@@ -134,12 +139,12 @@ namespace Image_sort.Logic
         public string GetImagePath()
         {
             // Making sure, the image and string pool match up
-            while (imagePool.Count > stringPool.Count)
+            while (imagePool.Count > imagePathPool.Count)
             {
-                stringPool.Dequeue();
+                imagePathPool.Dequeue();
             }
 
-            return stringPool.Dequeue();
+            return imagePathPool.Dequeue();
         }
     }
 }
