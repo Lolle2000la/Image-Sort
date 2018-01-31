@@ -80,33 +80,8 @@ namespace Image_sort.UI
                     
             }
 
-            // Show folders to which it can be moved
-            if (Directory.Exists(folderSelector.GetCurrentFolderPath()))
-            {
-                // Clear all the items out of the list
-                FoldersStack.Items.Clear();
-
-                // Get every directory in the folder
-                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath())
-                                   .ToList();
-
-                // get every folder out of the collection of folders
-                foreach (string folder in folders)
-                {
-                    // well if it exists...
-                    if (Directory.Exists(folder))
-                    {
-                        // add it for choice with the content of it's file name
-                        ListBoxItem listViewItem
-                            = new ListBoxItem
-                            {
-                                Content = System.IO.Path.GetFileName(folder)
-                            };
-
-                        FoldersStack.Items.Add(listViewItem);
-                    }
-                }
-            }
+            // Make folders on the left up to date
+            AddFoldersToFoldersStack();
         }
 
         /// <summary>
@@ -308,6 +283,11 @@ namespace Image_sort.UI
                     NewFolderButton_Click(sender, new RoutedEventArgs());
                     break;
 
+                // "Enters" the folder
+                case Key.Enter:
+                    EnterFolderButton_Click(sender, new RoutedEventArgs());
+                    break;
+
                 // Insert Characters and numbers only
                 default:
                     if(Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
@@ -376,6 +356,80 @@ namespace Image_sort.UI
                 }
             }
 
+        }
+
+        private void EnterFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            if(folders != null)
+            {
+                string folderToEnter = folders[FoldersStack.SelectedIndex];
+                if (Directory.Exists(folderToEnter))
+                {
+                    // if the folder could not be selected, redo the thing
+                    if (folderSelector.Select(folderToEnter) == false)
+                        SelectFolderButton_Click(sender, e);
+                    // otherwise load the image and enable the controls, if there is an image
+                    else
+                    {
+                        Image buffer = folderSelector.GetNextImage();
+
+                        if (buffer != null)
+                        {
+                            LoadImage(buffer.Source);
+                            EnableControls();
+                        }
+
+                    }
+                }
+
+                // Brings the folders on the left up to date
+                AddFoldersToFoldersStack();
+            }
+        }
+
+        /// <summary>
+        /// Brings the folders in the FoldersStack up to date (if possible)
+        /// </summary>
+        public void AddFoldersToFoldersStack()
+        {
+            // Show folders to which it can be moved
+            if (Directory.Exists(folderSelector.GetCurrentFolderPath()))
+            {
+                // Clear all the items out of the list
+                FoldersStack.Items.Clear();
+
+                // Get every directory in the folder
+                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath())
+                                   .ToList();
+
+                folders.Insert(0, folderSelector.GetCurrentFolderPath() + @"\..");
+
+                //ListBoxItem folderUpwards = new ListBoxItem()
+                //{
+                //    Content = ".."
+                //};
+
+                //FoldersStack.Items.Add(folderUpwards);
+
+                // get every folder out of the collection of folders
+                foreach (string folder in folders)
+                {
+                    // well if it exists...
+                    if (Directory.Exists(folder))
+                    {
+                        // add it for choice with the content of it's file name
+                        ListBoxItem listViewItem
+                            = new ListBoxItem
+                            {
+                                Content = System.IO.Path.GetFileName(folder)
+                            };
+
+                        FoldersStack.Items.Add(listViewItem);
+                    }
+                }
+
+                FoldersStack.SelectedIndex = 0;
+            }
         }
     }
 }

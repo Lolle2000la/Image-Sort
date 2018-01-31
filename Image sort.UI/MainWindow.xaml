@@ -36,14 +36,17 @@
                 <Button Content="New Folder" IsEnabled="False" Focusable="False"
                         x:Name="NewFolderButton" Click="NewFolderButton_Click"
                         ToolTip="Creates a new folder inside the current one. Shortcut: F3"/>
-                <ToolBar>
-                    <Button Content="Skip File" IsEnabled="False" Focusable="False"
-                        x:Name="SkipFileButton" Click="SkipFileButton_Click"
-                        ToolTip="Skips the current image. Shortcut: left arrow key"/>
-                    <Button Content="Move" IsEnabled="False" Focusable="False"
-                        x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
-                        ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
-                </ToolBar>
+                <Button Content="Enter Folder" IsEnabled="True" Focusable="False"
+                        x:Name="EnterFolderButton" Click="EnterFolderButton_Click"
+                        ToolTip="Enter folder selected. Shortcut: Enter"/>
+            </ToolBar>
+            <ToolBar>
+                <Button Content="Skip File" IsEnabled="False" Focusable="False"
+                    x:Name="SkipFileButton" Click="SkipFileButton_Click"
+                    ToolTip="Skips the current image. Shortcut: left arrow key"/>
+                <Button Content="Move" IsEnabled="False" Focusable="False"
+                    x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
+                    ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
             </ToolBar>
         </ToolBarTray>
 
