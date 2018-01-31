@@ -33,21 +33,22 @@
                 <Button Content="Select Folder" Focusable="False"
                         x:Name="SelectFolderButton" Click="SelectFolderButton_Click"
                         ToolTip="Selects the folder to sort. Shortcut: F2"/>
-                <Button Content="Skip File" IsEnabled="False" Focusable="False"
-                        x:Name="SkipFileButton" Click="SkipFileButton_Click"
-                        ToolTip="Skips the current image. Shortcut: left arrow key"/>
-                <Button Content="Move" IsEnabled="False" Focusable="False"
-                        x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
-                        ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
                 <Button Content="New Folder" IsEnabled="False" Focusable="False"
                         x:Name="NewFolderButton" Click="NewFolderButton_Click"
                         ToolTip="Creates a new folder inside the current one. Shortcut: F3"/>
+                <ToolBar>
+                    <Button Content="Skip File" IsEnabled="False" Focusable="False"
+                        x:Name="SkipFileButton" Click="SkipFileButton_Click"
+                        ToolTip="Skips the current image. Shortcut: left arrow key"/>
+                    <Button Content="Move" IsEnabled="False" Focusable="False"
+                        x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
+                        ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+                </ToolBar>
             </ToolBar>
         </ToolBarTray>
 
         <!-- StackPanel containing all the buttons with the folders to choose -->
-        <ListBox x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Focusable="False"
-                 >
+        <ListBox x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Focusable="False" Margin="0,0,5,0">
             <i:Interaction.Behaviors>
                 <Behaviors:ScrollIntoViewForListBox />
             </i:Interaction.Behaviors>

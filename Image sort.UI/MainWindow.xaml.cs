@@ -187,31 +187,36 @@ namespace Image_sort.UI
         /// </summary>
         private void DoMove()
         {
-            if(MoveFolderButton.IsEnabled == true)
+            if (folders.Count > 0)
             {
-
-                // set the preview image to nothing
-                PreviewImage.Source = null;
-                // get the next image
-                Image buffer = folderSelector.GetNextImage();
-                // get the next path of the next image
-                string path = folderSelector.GetImagePath();
-
-                // if the buffer is not null, load the image
-                if (buffer != null)
-                    LoadImage(buffer.Source);
-                // else disable the controls
-                else
+                if (MoveFolderButton.IsEnabled == true)
                 {
-                    DisableControls();
+                    // set the preview image to nothing
+                    PreviewImage.Source = null;
+                    // get the next image
+                    Image buffer = folderSelector.GetNextImage();
+                    // get the next path of the next image
+                    string path = folderSelector.GetImagePath();
+
+                    // if the buffer is not null, load the image
+                    if (buffer != null)
+                        LoadImage(buffer.Source);
+                    // else disable the controls
+                    else
+                    {
+                        DisableControls();
+                    }
+
+                    // Move the file
+                    folderSelector.MoveFileTo(path,
+                        folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
+                        System.IO.Path.GetFileName(path));
                 }
-
-                //File.Move(path, folders.ElementAt(FoldersStack.SelectedIndex) + "\\" + System.IO.Path.GetFileName(path));
-
-                // Move the file
-                folderSelector.MoveFileTo(path,
-                    folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
-                    System.IO.Path.GetFileName(path));
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("No Folders to move to. Create one first!", "Warning",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -288,14 +293,17 @@ namespace Image_sort.UI
                         SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
                     break;
 
+                // Add Text when space has been pressed
                 case Key.Space:
                     SearchBarBox.Text += " ";
                     break;
 
+                // Opens Select Folder dialog
                 case Key.F2:
                     SelectFolderButton_Click(sender, new RoutedEventArgs());
                     break;
 
+                // Opens new folder Dialog
                 case Key.F3:
                     NewFolderButton_Click(sender, new RoutedEventArgs());
                     break;
@@ -316,16 +324,22 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void SearchBarBox_TextChanged(object sender, TextChangedEventArgs e)
         {
+            // Get all items from the ListBox
             foreach(ListBoxItem foldersStackItem in FoldersStack.Items)
             {
+                // If the text of the searchbox it is not "" and alphabetic/numeric
                 if (SearchBarBox.Text != "" && Regex.IsMatch(SearchBarBox.Text, @"^[a-zA-Z0-9_]+$"))
                 {
+                    // and if the item currently looped through doesn't contain the text of the searchbox
                     if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text))
+                        // Make it invisible
                         foldersStackItem.Visibility = Visibility.Collapsed;
                     else
+                        // otherwise make it viewable
                         foldersStackItem.Visibility = Visibility.Visible;
                 }
                 else
+                    // otherwise make it visible 
                     foldersStackItem.Visibility = Visibility.Visible;
             }
         }
