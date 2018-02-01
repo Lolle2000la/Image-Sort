@@ -33,9 +33,9 @@ namespace Image_sort.Update
                         if (MessageBox.Show("Do you want to update to the newest" +
                             " version of Image sort?", "Update", MessageBoxButton.YesNo,
                             MessageBoxImage.Question) == MessageBoxResult.Yes)
-                            // At the moments
-                            //System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
-                            DownloadAndRunInstaller(updateReg);
+                            // At the moments the installer has been given up on, GitHub now opens
+                            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
+                            //DownloadAndRunInstaller(updateReg);
             }
         }
 
