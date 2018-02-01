@@ -28,11 +28,13 @@ namespace Image_sort.Update
                 // Serializes the UpdateRegistry from json
                 UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
                 if (updateReg != null)
-                    // if the version given is different, download and run the newest! update
+                    // if the version given is different, download and run the newest update
                     if (updateReg.version != Properties.Resources.version)
                         if (MessageBox.Show("Do you want to update to the newest" +
                             " version of Image sort?", "Update", MessageBoxButton.YesNo,
                             MessageBoxImage.Question) == MessageBoxResult.Yes)
+                            // At the moments
+                            //System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                             DownloadAndRunInstaller(updateReg);
             }
         }
@@ -76,10 +78,10 @@ namespace Image_sort.Update
                 {
                     if(updateReg.url != null)
                     {
-                        // Download the installer
-                        wc.DownloadFile(updateReg.url, "setup.msi");
                         // Set the target path for it
                         string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
+                        // Download the installer
+                        wc.DownloadFile(updateReg.url, target);
                         // Run it and wait for it to exit
                         System.Diagnostics.Process.Start(target).WaitForExit();
                         // Delete the installer

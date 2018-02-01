@@ -59,6 +59,7 @@
     <Compile Include="UpdateRegModel.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include=".gitignore" />
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
