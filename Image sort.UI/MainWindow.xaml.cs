@@ -384,7 +384,7 @@ namespace Image_sort.UI
             string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
                 "Note: Everything equal or smaller to 0 reverts the resolution to default (1000),\n" +
                 "Also note: The higher the resolution, the higher the loading times and RAM usage",
-                "Resolution", "1000", -1, -1);
+                "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
             // Stores the resolution selected by the user
             int resolution;
             /* Gets the resolution by the user via an input box, returns a bool whether 
