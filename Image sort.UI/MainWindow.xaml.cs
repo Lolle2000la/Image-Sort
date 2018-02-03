@@ -35,8 +35,11 @@ namespace Image_sort.UI
         /// is managing the folder selecting and getting the <see cref="Image"/>s
         /// in that folder.
         /// </summary>
-        private FolderSelector folderSelector = new FolderSelector();
-
+        private FolderSelector folderSelector = new FolderSelector(Properties.Settings.Default.MaxHorizontalResolution);
+        /// <summary>
+        /// Contains a <see cref="List"/> of <see cref="string"/>'s 
+        /// being the paths of the folders inside the currently selected folder.
+        /// </summary>
         List<string> folders;
 
 
@@ -48,7 +51,7 @@ namespace Image_sort.UI
 
         /*********************************************************************/
         /*                                                                   */
-        /* MAIN OPENING METHODE                                              */
+        /* CONSTRUCTORS                                                      */
         /*                                                                   */
         /*********************************************************************/
 
@@ -81,6 +84,7 @@ namespace Image_sort.UI
         {
             PreviewImage.Source = image;
         }
+
         /// <summary>
         /// Shifts up the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
@@ -105,6 +109,7 @@ namespace Image_sort.UI
                     FoldersStack.SelectedIndex = FoldersStack.Items.Count - 1;
             }
         }
+
         /// <summary>
         /// Shifts down the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
@@ -125,6 +130,7 @@ namespace Image_sort.UI
                     FoldersStack.SelectedIndex = 0;
             }
         }
+
         /// <summary>
         /// Gives the user to select a (new) folder, 
         /// only loads other folder if the user wants to,
@@ -167,6 +173,7 @@ namespace Image_sort.UI
             // Make folders on the left up to date
             AddFoldersToFoldersStack();
         }
+
         /// <summary>
         /// Enters the folder selected by the user,
         /// if it doesn't work, let the user select a new one
@@ -369,6 +376,49 @@ namespace Image_sort.UI
             }
         }
 
+        /// <summary>
+        /// Lets the user select a resolution for the loaded images
+        /// </summary>
+        public void SetResolution()
+        {
+            string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
+                "Note: Everything equal or smaller to 0 reverts the resolution to default (1000),\n" +
+                "Also note: The higher the resolution, the higher the loading times and RAM usage",
+                "Resolution", "1000", -1, -1);
+            // Stores the resolution selected by the user
+            int resolution;
+            /* Gets the resolution by the user via an input box, returns a bool whether 
+            he inputted a number or not*/
+            bool result = int.TryParse(response, out resolution);
+            // If he did, continue
+            if (result)
+            {
+                // if the resolution is higher 0, then save it in the settings file
+                if(resolution > 0)
+                {
+                    Properties.Settings.Default.MaxHorizontalResolution = resolution;
+                    Properties.Settings.Default.Save();
+                }
+                // otherwise, revert to default 
+                else
+                {
+                    Properties.Settings.Default.MaxHorizontalResolution = 1000;
+                    Properties.Settings.Default.Save();
+                }
+            }
+            // If the response is "" or "default, revert to default
+            else if (response == "" || response == "default")
+            {
+                Properties.Settings.Default.MaxHorizontalResolution = 1000;
+                Properties.Settings.Default.Save();
+            }
+            // If the user did not input valid numbers, than repeat
+            else
+                SetResolution();
+        }
+
+
+
 
 
 
@@ -543,6 +593,16 @@ namespace Image_sort.UI
         private void EnterFolderButton_Click(object sender, RoutedEventArgs e)
         {
             EnterFolder();
+        }
+
+        /// <summary>
+        /// Lets the user select a resolution, by that the images should be loaded.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SetHorizontalResolutionButton_Click(object sender, RoutedEventArgs e)
+        {
+            SetResolution();
         }
     }
 }

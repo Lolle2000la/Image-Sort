@@ -7,7 +7,7 @@
         xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:Behaviors="clr-namespace:Image_sort.UI" 
         mc:Ignorable="d"
-        Title="Image sort" Height="350" Width="525"
+        Title="Image sort" Height="350" Width="600"
         KeyDown="Window_KeyDown">
     <Grid>
         <!-- START GRID DEFINITIONS -->
@@ -29,6 +29,7 @@
         
         <!-- Tool bar containing all the important things -->
         <ToolBarTray Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+            <!-- ToolBar containing everything for folder management -->
             <ToolBar>
                 <Button Content="Select Folder" Focusable="False"
                         x:Name="SelectFolderButton" Click="SelectFolderButton_Click"
@@ -40,6 +41,7 @@
                         x:Name="EnterFolderButton" Click="EnterFolderButton_Click"
                         ToolTip="Enter folder selected. Shortcut: Enter"/>
             </ToolBar>
+            <!-- Contains everything for image management -->
             <ToolBar>
                 <Button Content="Skip File" IsEnabled="False" Focusable="False"
                     x:Name="SkipFileButton" Click="SkipFileButton_Click"
@@ -47,6 +49,26 @@
                 <Button Content="Move" IsEnabled="False" Focusable="False"
                     x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
                     ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+            </ToolBar>
+            <!-- Contains everything around settings -->
+            <ToolBar>
+                <!-- Lets users change the resolution, that the Images should get loaded with -->
+                <Button Content="Set Horizontal Resolution" Focusable="False"
+                    x:Name="SetHorizontalResolutionButton" Click="SetHorizontalResolutionButton_Click">
+                    <!-- ToolTip for better understanding -->
+                    <Button.ToolTip>
+                        <TextBlock>
+                            <Run>
+                                Gives you the option to change the horizontal resolution,
+                                the images should get loaded with.
+                            </Run>
+                            <LineBreak/>
+                            <Run>
+                                Shortcut: F4
+                            </Run>
+                        </TextBlock>
+                    </Button.ToolTip>
+                </Button>
             </ToolBar>
         </ToolBarTray>
 

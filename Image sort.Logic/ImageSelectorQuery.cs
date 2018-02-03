@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -15,6 +16,13 @@ namespace Image_sort.Logic
     /// </summary>
     class ImageSelectorQuery
     {
+
+        /************************************************************************/
+        /*                                                                      */
+        /* ATTRIBUTES                                                           */
+        /*                                                                      */
+        /************************************************************************/
+
         /// <summary>
         /// Pool containing all the images in the folder
         /// </summary>
@@ -31,6 +39,54 @@ namespace Image_sort.Logic
         /// Contains the path to the current Image
         /// </summary>
         public string CurrentImage { get; set; }
+        /// <summary>
+        /// Defines the max resolution to be loaded 
+        /// </summary>
+        public int MaxHorizontalResolution { get; set; }
+
+
+
+
+
+
+
+
+
+
+
+        /************************************************************************/
+        /*                                                                      */
+        /* CONSTRUCTORS                                                         */
+        /*                                                                      */
+        /************************************************************************/
+
+        /// <summary>
+        /// 
+        /// </summary>
+        public ImageSelectorQuery()
+        {
+            MaxHorizontalResolution = 1000;
+        }
+
+        public ImageSelectorQuery(int horizontalResolution)
+        {
+            MaxHorizontalResolution = horizontalResolution;
+        }
+
+
+
+
+
+
+
+
+
+
+        /************************************************************************/
+        /*                                                                      */
+        /* METHODS                                                              */
+        /*                                                                      */
+        /************************************************************************/
 
         /// <summary>
         /// Sets the Folder which should be used and prepares the image pool
@@ -60,9 +116,9 @@ namespace Image_sort.Logic
                     || s.EndsWith(".gif") || s.EndsWith(".PNG") || s.EndsWith(".JPG")
                     || s.EndsWith(".GIF") || s.EndsWith(".tif") || s.EndsWith(".TIF")
                     || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
-                
+
                 // goes through the image paths given and adds them to the image pool
-                foreach(string currImagePath in paths)
+                foreach (string currImagePath in paths)
                 {
                     // Buffers image before putting it in the pool
                     Image image = new Image();
@@ -76,6 +132,7 @@ namespace Image_sort.Logic
                     {
                         bitmapImage.BeginInit();
                         bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
                         bitmapImage.StreamSource = stream;
                         bitmapImage.EndInit();
                     }
@@ -145,6 +202,15 @@ namespace Image_sort.Logic
             }
 
             return imagePathPool.Dequeue();
+        }
+
+        /// <summary>
+        /// Sets the resolution that should get targeted when loading
+        /// </summary>
+        /// <param name="horizontalResolution">Horizontal resolution targeted</param>
+        public void SetResolution(int horizontalResolution)
+        {
+            MaxHorizontalResolution = horizontalResolution;
         }
     }
 }

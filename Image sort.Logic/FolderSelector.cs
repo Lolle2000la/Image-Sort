@@ -15,19 +15,78 @@ namespace Image_sort.Logic
     /// </summary>
     public class FolderSelector
     {
+
+        /************************************************************************/
+        /*                                                                      */
+        /* ATTRIBUTES                                                           */
+        /*                                                                      */
+        /************************************************************************/
+
         /// <summary>
         /// Holds the path to the current folder selected
         /// </summary>
         private string CurrentFolderPath;
+
         /// <summary>
         /// Holds the instance of <see cref="ImageSelectorQuery"/> 
         /// </summary>
-        private ImageSelectorQuery imageSelectorQuery = new ImageSelectorQuery();
+        private ImageSelectorQuery imageSelectorQuery;
+
         /// <summary>
         /// Counts the times access to a file failed 
         /// at the <see cref="MoveFileTo(string, string)"/> Method
         /// </summary>
         private int accessTimesFailed = 0;
+
+
+
+
+
+
+
+
+
+
+        /************************************************************************/
+        /*                                                                      */
+        /* CONSTRUCTORS                                                         */
+        /*                                                                      */
+        /************************************************************************/
+
+        /// <summary>
+        /// Creates a new <see cref="FolderSelector"/>.
+        /// </summary>
+        public FolderSelector()
+        {
+            imageSelectorQuery = new ImageSelectorQuery();
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="FolderSelector"/> with the given resolution.
+        /// </summary>
+        /// <param name="verticalResolution">
+        /// Horizontal Resolution that the image should get loaded with.
+        /// </param>
+        public FolderSelector(int verticalResolution)
+        {
+            imageSelectorQuery = new ImageSelectorQuery(verticalResolution);
+        }
+
+
+
+
+
+
+
+
+
+
+
+        /************************************************************************/
+        /*                                                                      */
+        /* METHODS                                                              */
+        /*                                                                      */
+        /************************************************************************/
 
         /// <summary>
         /// Selects Folder to use
@@ -57,6 +116,7 @@ namespace Image_sort.Logic
         {
             return CurrentFolderPath;
         }
+
         /// <summary>
         /// Gives back current Image as <see cref="Image"/>
         /// </summary>
@@ -104,6 +164,15 @@ namespace Image_sort.Logic
                 accessTimesFailed++;
                 MoveFileTo(source, destination);
             }
+        }
+
+        /// <summary>
+        /// Sets the resolution that should get targeted when loading
+        /// </summary>
+        /// <param name="horizontalResolution">Horizontal resolution targeted</param>
+        public void SetResolution(int horizontalResolution)
+        {
+            imageSelectorQuery.SetResolution(horizontalResolution);
         }
     }
 }
