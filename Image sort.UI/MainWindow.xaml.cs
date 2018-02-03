@@ -563,6 +563,11 @@ namespace Image_sort.UI
                     NewFolder();
                     break;
 
+                // Opens dialog for resolution preference
+                case Key.F4:
+                    SetResolution();
+                    break;
+
                 // "Enters" the folder
                 case Key.Enter:
                     EnterFolder();
