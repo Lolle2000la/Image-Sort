@@ -11,6 +11,7 @@ Sorts your image at high speed
    * right-arrow-key to move the image into the selected folder (or one folder upwards if you select "..")
    * left-arrow-key to skip it
    * you can search by just typing in what you want.
+   * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed)
 
 ## Build-Prerequisites
 * Visual Studio 2017
