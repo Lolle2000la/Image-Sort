@@ -169,7 +169,7 @@ namespace Image_sort.Logic
             // If it isn't supported, tell the user which one is not
             catch (NotSupportedException)
             {
-                MessageBox.Show($"The image \"{Path.GetFileNameWithoutExtension(path)}\" could not be loaded.\n" +
+                MessageBox.Show($"The image {Path.GetFileNameWithoutExtension(path)} could not be loaded.\n" +
                     $"It is not supported by this Program. Please make sure it is fully working");
             }
 
