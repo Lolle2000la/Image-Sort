@@ -124,31 +124,13 @@ namespace Image_sort.Logic
                     // Buffers image before putting it in the pool
                     Image image = new Image();
                     var uri = new Uri(currImagePath);
-                    BitmapImage bitmapImage = new BitmapImage();
-
-                    // Reads in the image into a bitmap for later usage, uses FileStream to ensure
-                    // it works as it should by freeing the access to the file when unneeded
-                    using (var stream =
-                        new FileStream(currImagePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                    {
-                        bitmapImage.BeginInit();
-                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
-                        bitmapImage.StreamSource = stream;
-                        bitmapImage.EndInit();
-                    }
+                    
 
                     // Sets the source of the image and puts it into the queue/pool
-                    image.Source = bitmapImage;
+                    image.Source = LoadImage(currImagePath);
                     imagePool.Enqueue(image);
                     imagePathPool.Enqueue(uri.OriginalString);
-
-                    // force frees unnecessary resources
-                    //image.Source = null;
-                    //image = null;
-                    //uri = null;
                 }
-
 
                 // SUCCESS
                 return true;
@@ -161,6 +143,38 @@ namespace Image_sort.Logic
                 // FAILURE
                 return false;
             }
+        }
+        
+
+        private BitmapImage LoadImage(string path)
+        {
+            // Holds the image
+            BitmapImage bitmapImage = new BitmapImage();
+
+            // try loading the image
+            try
+            {
+                // Reads in the image into a bitmap for later usage, uses FileStream to ensure
+                // it works as it should by freeing the access to the file when unneeded
+                using (var stream =
+                    new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                {
+                    bitmapImage.BeginInit();
+                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
+                    bitmapImage.StreamSource = stream;
+                    bitmapImage.EndInit();
+                }
+            }
+            // If it isn't supported, tell the user which one is not
+            catch (NotSupportedException)
+            {
+                MessageBox.Show($"The image {Path.GetFileNameWithoutExtension(path)} could not be loaded.\n" +
+                    $"It is not supported by this Program. Please make sure it is fully working");
+            }
+
+            // return the bitmap image 
+            return bitmapImage;
         }
 
         /// <summary>
