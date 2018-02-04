@@ -334,12 +334,7 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
             NewFolderButton.IsEnabled = false;
-            // Enable the EnterFolderButton, when there are folders to enter
-            if (folders.Count > 0)
-                EnterFolderButton.IsEnabled = true;
-            // If there aren't, disable it.
-            else
-                EnterFolderButton.IsEnabled = false;
+            // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
         /// <summary>

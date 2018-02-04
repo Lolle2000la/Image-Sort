@@ -124,12 +124,16 @@ namespace Image_sort.Logic
                     // Buffers image before putting it in the pool
                     Image image = new Image();
                     var uri = new Uri(currImagePath);
-                    
 
-                    // Sets the source of the image and puts it into the queue/pool
-                    image.Source = LoadImage(currImagePath);
-                    imagePool.Enqueue(image);
-                    imagePathPool.Enqueue(uri.OriginalString);
+                    BitmapImage buffer = LoadImage(currImagePath);
+                    if (buffer != null)
+                    {
+                        // Sets the source of the image and puts it into the queue/pool
+                        image.Source = buffer;
+                        imagePool.Enqueue(image);
+                        imagePathPool.Enqueue(uri.OriginalString);
+                    }
+                    
                 }
 
                 // SUCCESS
@@ -167,10 +171,12 @@ namespace Image_sort.Logic
                 }
             }
             // If it isn't supported, tell the user which one is not
-            catch (NotSupportedException)
+            catch (NotSupportedException ex)
             {
                 MessageBox.Show($"The image \"{Path.GetFileNameWithoutExtension(path)}\" could not be loaded.\n" +
                     $"It is not supported by this Program. Please make sure it is fully working");
+
+                return null;
             }
 
             // return the bitmap image 
