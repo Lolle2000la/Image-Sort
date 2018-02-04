@@ -36,30 +36,11 @@ namespace Image_sort.UI
         /// in that folder.
         /// </summary>
         private FolderSelector folderSelector = new FolderSelector(Properties.Settings.Default.MaxHorizontalResolution);
-        
         /// <summary>
         /// Contains a <see cref="List"/> of <see cref="string"/>'s 
         /// being the paths of the folders inside the currently selected folder.
         /// </summary>
         List<string> folders;
-        
-        /// <summary>
-        /// Gets and sets the maximum horizontal resolution from the settings
-        /// </summary>
-        public int MaxHorizontalResolution
-        {
-            get
-            {
-                return Properties.Settings.Default.MaxHorizontalResolution;
-            }
-            set
-            {
-                Properties.Settings.Default.MaxHorizontalResolution = value;
-                Properties.Settings.Default.Save();
-                folderSelector.SetResolution(Properties.Settings.Default.MaxHorizontalResolution);
-            }
-        }
-
 
 
 
@@ -410,8 +391,7 @@ namespace Image_sort.UI
         {
             string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
                 "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
-                "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
-                "Will be applied on next loading.",
+                "Also note: The higher the resolution, the higher the loading times and RAM usage",
                 "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
             // Stores the resolution selected by the user
             int resolution;
@@ -424,18 +404,21 @@ namespace Image_sort.UI
                 // if the resolution is higher 0, then save it in the settings file
                 if(resolution > 0)
                 {
-                    MaxHorizontalResolution = resolution;
+                    Properties.Settings.Default.MaxHorizontalResolution = resolution;
+                    Properties.Settings.Default.Save();
                 }
                 // otherwise, revert to default 
                 else
                 {
-                    MaxHorizontalResolution = 1000;
+                    Properties.Settings.Default.MaxHorizontalResolution = 1000;
+                    Properties.Settings.Default.Save();
                 }
             }
             // If the response is "" or "default, revert to default
             else if (response == "default")
             {
-                MaxHorizontalResolution = 1000;
+                Properties.Settings.Default.MaxHorizontalResolution = 1000;
+                Properties.Settings.Default.Save();
             }
             // If nothing was given back, then don't change anything
             else if (response == "")
