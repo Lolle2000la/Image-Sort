@@ -141,5 +141,10 @@
             </summary>
             <param name="horizontalResolution">Horizontal resolution targeted</param>
         </member>
+        <member name="M:Image_sort.Logic.ImageSelectorQuery.CollectGarbage">
+            <summary>
+            Tells the garbage collector to collect garbage, reduces memory usage when called
+            </summary>
+        </member>
     </members>
 </doc>
