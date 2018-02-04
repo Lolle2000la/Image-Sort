@@ -36,11 +36,30 @@ namespace Image_sort.UI
         /// in that folder.
         /// </summary>
         private FolderSelector folderSelector = new FolderSelector(Properties.Settings.Default.MaxHorizontalResolution);
+        
         /// <summary>
         /// Contains a <see cref="List"/> of <see cref="string"/>'s 
         /// being the paths of the folders inside the currently selected folder.
         /// </summary>
         List<string> folders;
+        
+        /// <summary>
+        /// Gets and sets the maximum horizontal resolution from the settings
+        /// </summary>
+        public int MaxHorizontalResolution
+        {
+            get
+            {
+                return Properties.Settings.Default.MaxHorizontalResolution;
+            }
+            set
+            {
+                Properties.Settings.Default.MaxHorizontalResolution = value;
+                Properties.Settings.Default.Save();
+                folderSelector.SetResolution(Properties.Settings.Default.MaxHorizontalResolution);
+            }
+        }
+
 
 
 
@@ -180,6 +199,8 @@ namespace Image_sort.UI
         /// </summary>
         private void EnterFolder()
         {
+
+            // If there are folders in the list (meaning in the folder) then do 
             if (folders != null)
             {
                 string folderToEnter = folders[FoldersStack.SelectedIndex];
@@ -203,7 +224,6 @@ namespace Image_sort.UI
                             LoadImage(null);
                             DisableControls();
                         }
-
                     }
                 }
 
@@ -303,6 +323,7 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = true;
             MoveFolderButton.IsEnabled = true;
             NewFolderButton.IsEnabled = true;
+            EnterFolderButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -313,6 +334,12 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
             NewFolderButton.IsEnabled = false;
+            // Enable the EnterFolderButton, when there are folders to enter
+            if (folders.Count > 0)
+                EnterFolderButton.IsEnabled = true;
+            // If there aren't, disable it.
+            else
+                EnterFolderButton.IsEnabled = false;
         }
 
         /// <summary>
@@ -382,8 +409,9 @@ namespace Image_sort.UI
         public void SetResolution()
         {
             string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
-                "Note: Everything equal or smaller to 0 reverts the resolution to default (1000),\n" +
-                "Also note: The higher the resolution, the higher the loading times and RAM usage",
+                "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
+                "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
+                "Will be applied on next loading.",
                 "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
             // Stores the resolution selected by the user
             int resolution;
@@ -396,27 +424,37 @@ namespace Image_sort.UI
                 // if the resolution is higher 0, then save it in the settings file
                 if(resolution > 0)
                 {
-                    Properties.Settings.Default.MaxHorizontalResolution = resolution;
-                    Properties.Settings.Default.Save();
+                    MaxHorizontalResolution = resolution;
                 }
                 // otherwise, revert to default 
                 else
                 {
-                    Properties.Settings.Default.MaxHorizontalResolution = 1000;
-                    Properties.Settings.Default.Save();
+                    MaxHorizontalResolution = 1000;
                 }
             }
             // If the response is "" or "default, revert to default
-            else if (response == "" || response == "default")
+            else if (response == "default")
             {
-                Properties.Settings.Default.MaxHorizontalResolution = 1000;
-                Properties.Settings.Default.Save();
+                MaxHorizontalResolution = 1000;
+            }
+            // If nothing was given back, then don't change anything
+            else if (response == "")
+            {
+                // Clear so that nothing happens
             }
             // If the user did not input valid numbers, than repeat
             else
                 SetResolution();
         }
 
+        /// <summary>
+        /// Tells the garbage collector to collect garbage, reduces memory usage when called
+        /// </summary>
+        private void CollectGarbage()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
 
 
 
