@@ -37,7 +37,7 @@
                 <Button Content="New Folder" IsEnabled="False" Focusable="False"
                         x:Name="NewFolderButton" Click="NewFolderButton_Click"
                         ToolTip="Creates a new folder inside the current one. Shortcut: F3"/>
-                <Button Content="Enter Folder" IsEnabled="True" Focusable="False"
+                <Button Content="Enter Folder" IsEnabled="False" Focusable="False"
                         x:Name="EnterFolderButton" Click="EnterFolderButton_Click"
                         ToolTip="Enter folder selected. Shortcut: Enter"/>
             </ToolBar>

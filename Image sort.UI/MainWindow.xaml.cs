@@ -180,6 +180,8 @@ namespace Image_sort.UI
         /// </summary>
         private void EnterFolder()
         {
+
+            // If there are folders in the list (meaning in the folder) then do 
             if (folders != null)
             {
                 string folderToEnter = folders[FoldersStack.SelectedIndex];
@@ -203,7 +205,6 @@ namespace Image_sort.UI
                             LoadImage(null);
                             DisableControls();
                         }
-
                     }
                 }
 
@@ -303,6 +304,7 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = true;
             MoveFolderButton.IsEnabled = true;
             NewFolderButton.IsEnabled = true;
+            EnterFolderButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -313,6 +315,12 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
             NewFolderButton.IsEnabled = false;
+            // Enable the EnterFolderButton, when there are folders to enter
+            if (folders.Count > 0)
+                EnterFolderButton.IsEnabled = true;
+            // If there aren't, disable it.
+            else
+                EnterFolderButton.IsEnabled = false;
         }
 
         /// <summary>
@@ -382,7 +390,7 @@ namespace Image_sort.UI
         public void SetResolution()
         {
             string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
-                "Note: Everything equal or smaller to 0 reverts the resolution to default (1000),\n" +
+                "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
                 "Also note: The higher the resolution, the higher the loading times and RAM usage",
                 "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
             // Stores the resolution selected by the user
@@ -407,16 +415,29 @@ namespace Image_sort.UI
                 }
             }
             // If the response is "" or "default, revert to default
-            else if (response == "" || response == "default")
+            else if (response == "default")
             {
                 Properties.Settings.Default.MaxHorizontalResolution = 1000;
                 Properties.Settings.Default.Save();
+            }
+            // If nothing was given back, then don't change anything
+            else if (response == "")
+            {
+                // Clear so that nothing happens
             }
             // If the user did not input valid numbers, than repeat
             else
                 SetResolution();
         }
 
+        /// <summary>
+        /// Tells the garbage collector to collect garbage, reduces memory usage when called
+        /// </summary>
+        private void CollectGarbage()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
 
 
 

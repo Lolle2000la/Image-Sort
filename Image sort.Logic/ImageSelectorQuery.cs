@@ -102,6 +102,7 @@ namespace Image_sort.Logic
             imagePool.Clear();
             imagePathPool.Clear();
             CurrentImage = null;
+            CollectGarbage();
 
             // Checks if the dir exists
             if (Directory.Exists(path))
@@ -211,6 +212,15 @@ namespace Image_sort.Logic
         public void SetResolution(int horizontalResolution)
         {
             MaxHorizontalResolution = horizontalResolution;
+        }
+
+        /// <summary>
+        /// Tells the garbage collector to collect garbage, reduces memory usage when called
+        /// </summary>
+        private void CollectGarbage()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
         }
     }
 }
