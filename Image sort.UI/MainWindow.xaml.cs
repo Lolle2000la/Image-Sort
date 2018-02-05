@@ -622,6 +622,12 @@ namespace Image_sort.UI
                     EnterFolder();
                     break;
 
+                // Goes a folder upwards
+                case Key.Escape:
+                    FoldersStack.SelectedIndex = 0;
+                    EnterFolder();
+                    break;
+
                 // Insert Characters and numbers only
                 default:
                     if(Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
