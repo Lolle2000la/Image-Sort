@@ -409,10 +409,9 @@ namespace Image_sort.UI
                 "Will be applied on next loading.",
                 "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
             // Stores the resolution selected by the user
-            int resolution;
             /* Gets the resolution by the user via an input box, returns a bool whether 
             he inputted a number or not*/
-            bool result = int.TryParse(response, out resolution);
+            bool result = int.TryParse(response, out int resolution);
             // If he did, continue
             if (result)
             {
