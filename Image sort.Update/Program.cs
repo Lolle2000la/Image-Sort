@@ -19,6 +19,9 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            // Makes sure, the dialogs look nice and native
+            System.Windows.Forms.Application.EnableVisualStyles();
+
             // Loads update registry from GitHub
             string json = GetUpdateRegistry();
             
@@ -30,9 +33,9 @@ namespace Image_sort.Update
                 if (updateReg != null)
                     // if the version given is different, download and run the newest update
                     if (updateReg.version != Properties.Resources.version)
-                        if (MessageBox.Show("Do you want to update to the newest" +
-                            " version of Image sort?", "Update", MessageBoxButton.YesNo,
-                            MessageBoxImage.Question) == MessageBoxResult.Yes)
+                        if (System.Windows.Forms.MessageBox.Show("Do you want to update to the newest" +
+                            " version of Image sort?", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
+                            System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                             // At the moments the installer has been given up on, GitHub now opens
                             System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                             //DownloadAndRunInstaller(updateReg);
@@ -57,7 +60,8 @@ namespace Image_sort.Update
                 }
                 catch (WebException)
                 {
-                    MessageBox.Show("Server does not answer", "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!",
+                        System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                     json = "";
                 }
             }
@@ -89,13 +93,13 @@ namespace Image_sort.Update
                     }
                     else
                     {
-                        MessageBox.Show("Update server did not return an url to the installer!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer!", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                     }
                 }
                 // If something goes wrong, show the user that it didn't
                 catch (WebException)
                 {
-                    MessageBox.Show("Server does not answer", "Warning!", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 }
             }
         }

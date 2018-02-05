@@ -1,4 +1,5 @@
 ﻿using Image_sort.Logic;
+using Image_sort.UI.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -241,7 +242,7 @@ namespace Image_sort.UI
             if (NewFolderButton.IsEnabled)
             {
                 // gets the name of the folder the user wants
-                string folderName = Microsoft.VisualBasic.Interaction.InputBox("What name should the folder have", "Create new Folder", "");
+                string folderName = InputBox.Show("What name should the folder have", "Create new Folder", "");
                 // Makes sure the user inputted something
                 if (folderName != "")
                 {
@@ -403,7 +404,7 @@ namespace Image_sort.UI
         /// </summary>
         public void SetResolution()
         {
-            string response = Microsoft.VisualBasic.Interaction.InputBox("Please set the horizontal resolution.\n\n\n" +
+            string response = InputBox.Show("Please set the horizontal resolution.\n\n\n" +
                 "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
                 "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
                 "Will be applied on next loading.",
@@ -489,6 +490,22 @@ namespace Image_sort.UI
                     // otherwise make it visible 
                     foldersStackItem.Visibility = Visibility.Visible;
             }
+
+            // Makes sure that an item is selected beforehand
+            if (FoldersStack.SelectedItem != null)
+                // Makes sure the item on top is selected,
+                // when the currently selected one is not visible.
+                if (((ListBoxItem)FoldersStack.SelectedItem).Visibility != Visibility.Visible)
+                {
+                    // Move selection to the second item (first is "..", which will not be focused anyway)
+                    FoldersStack.SelectedIndex = 1;
+                    // If the item is not visible, move down to the next one visible
+                    if (((ListBoxItem)FoldersStack.SelectedItem).Visibility != Visibility.Visible)
+                        MoveFolderSelectionDown();
+                }
+
+            // Makes sure currently selected element is visible at all times
+            FoldersStack.ScrollToActiveItem();
         }
 
         /// <summary>
@@ -602,6 +619,12 @@ namespace Image_sort.UI
 
                 // "Enters" the folder
                 case Key.Enter:
+                    EnterFolder();
+                    break;
+
+                // Goes a folder upwards
+                case Key.Escape:
+                    FoldersStack.SelectedIndex = 0;
                     EnterFolder();
                     break;
 

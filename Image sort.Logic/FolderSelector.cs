@@ -32,12 +32,6 @@ namespace Image_sort.Logic
         /// </summary>
         private ImageSelectorQuery imageSelectorQuery;
 
-        /// <summary>
-        /// Counts the times access to a file failed 
-        /// at the <see cref="MoveFileTo(string, string)"/> Method
-        /// </summary>
-        private int accessTimesFailed = 0;
-
 
 
 
@@ -147,23 +141,81 @@ namespace Image_sort.Logic
             
             try
             {
-                // Actual moving operation
-                File.Move(source, destination);
-                accessTimesFailed = 0;
+                // Making sure the file doesn't already exist at destination
+                if (!File.Exists(destination))
+                {
+                    // Actual moving operation
+                    File.Move(source, destination);
+                }
+                else
+                {
+                    // Show the user a message box and ask him, if he wants to replace the image,
+                    // rename it, or don't do anything.
+                    System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show(
+                        "The image does already exist in the selected folder." +
+                        " Do you want to replace it?\n\n" +
+                        "*No creates a new File for the image at the destination.", "Replace image?",
+                        System.Windows.Forms.MessageBoxButtons.YesNoCancel,
+                        System.Windows.Forms.MessageBoxIcon.Question);
+
+                    // If the user wants to replace the image
+                    if (dialogResult == System.Windows.Forms.DialogResult.Yes)
+                    {
+                        // Delete the existing file and replace it
+                        File.Delete(destination);
+                        File.Move(source, destination);
+                    }
+                    else if (dialogResult == System.Windows.Forms.DialogResult.No)
+                    {
+                        // Stores the number for the later renamed image (e.g. "image(i=2).jpg
+                        int i = 0;
+
+                        // Stores the path of the new destination name of the image to move.
+                        string newDestinationName;
+
+                        // increments i as long as it has to, so that the image to move
+                        // can be moved with a name that doesn't exist yet.
+                        while (File.Exists(GetPathWithNumber(destination, i)))
+                        {
+                            i++;
+                            // Sets the path to the new path (for example: "image(2).jpg")
+                            newDestinationName = GetPathWithNumber(destination, i);
+                        }
+
+                        // Sets the path to the new path (for example: "image(2).jpg")
+                        newDestinationName = GetPathWithNumber(destination, i);
+
+                        // Move the file
+                        File.Move(source, newDestinationName);
+                    }
+                }
             }
             // When access fails...
             catch(IOException ex)
             {
-                // ... and it failed 10 times ...
-                if(accessTimesFailed < 10)
-                {
-                    throw ex; // ... throw back IOException back to caller
-                }
-                // ... or try again in 50 milliseconds when it did not
-                Thread.Sleep(50);
-                accessTimesFailed++;
-                MoveFileTo(source, destination);
+                // Show the user a message box explaining why.
+                System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
+                    "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
             }
+        }
+
+        /// <summary>
+        /// Takes a Path as a <see cref="string"/> and gives it back with a number
+        /// ("image.jpg" -> "image(i).jpg) of i
+        /// </summary>
+        /// <param name="original">The original string that should be used</param>
+        /// <param name="i">The number which should get inserted</param>
+        /// <returns></returns>
+        public string GetPathWithNumber(string original, int i)
+        {
+            /* First get the directory, in which the original path lives in, 
+             * then add the file name without extension at the end of it,
+             * add the number between the (),
+             * and finally add the extension back at it again. */
+            return Path.GetDirectoryName(original) + @"\" +
+                            Path.GetFileNameWithoutExtension(original) +
+                            $"({i.ToString()})" +
+                            Path.GetExtension(original);
         }
 
         /// <summary>

@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.UI.Dialogs", "Image sort.UI.Dialogs\Image sort.UI.Dialogs.csproj", "{3AFAB814-E713-4175-A071-FD69AB70B67D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63D944ED-ED17-49C5-A78D-DC7D76E567D1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3AFAB814-E713-4175-A071-FD69AB70B67D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3AFAB814-E713-4175-A071-FD69AB70B67D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3AFAB814-E713-4175-A071-FD69AB70B67D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3AFAB814-E713-4175-A071-FD69AB70B67D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
