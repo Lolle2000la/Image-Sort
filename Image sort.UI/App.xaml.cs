@@ -23,8 +23,7 @@ namespace Image_sort.UI
         /// <returns></returns>
         public static bool IsConnectedToInternet()
         {
-            int Desk;
-            return InternetGetConnectedState(out Desk, 0);
+            return InternetGetConnectedState(out int Desk, 0);
         }
 
         /// <summary>
@@ -41,6 +40,9 @@ namespace Image_sort.UI
 
             // Continue normally
             base.OnStartup(e);
+
+            // Makes sure, the dialogs look nice and native
+            System.Windows.Forms.Application.EnableVisualStyles();
         }
     }
 }
