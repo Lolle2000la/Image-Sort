@@ -1,9 +1,12 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Permissions;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,12 +36,35 @@ namespace Image_sort.Update
                 if (updateReg != null)
                     // if the version given is different, download and run the newest update
                     if (updateReg.version != Properties.Resources.version)
-                        if (System.Windows.Forms.MessageBox.Show("Do you want to update to the newest" +
-                            " version of Image sort?", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
-                            System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
-                            // At the moments the installer has been given up on, GitHub now opens
-                            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
-                            //DownloadAndRunInstaller(updateReg);
+                    {
+                        // If the process isn't elevated, ask if update
+                        if (!IsElevated)
+                        {
+                            if (System.Windows.Forms.MessageBox.Show("Do you want to update to the newest" +
+                                " version of Image sort?", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
+                                System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+                            {
+                                // At the moments the installer has been given up on, GitHub now opens
+                                //System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
+
+                                // Elevate process
+                                ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
+                                    @"Image sort.Update.exe");
+                                info.UseShellExecute = true;
+                                info.Verb = "runas";
+                                Process.Start(info);
+                            }
+                        }
+                        // If it is, download and run the installer
+                        else
+                        {
+                            // set the url depending on if one of them is set
+                            string url = (updateReg.url != null) || (updateReg.source != null)
+                                ? updateReg.url : updateReg.source;
+                            // Download and install the installer
+                            DownloadAndRunInstaller(url);
+                        }
+                    }
             }
         }
 
@@ -60,7 +86,7 @@ namespace Image_sort.Update
                 }
                 catch (WebException)
                 {
-                    System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!",
+                    System.Windows.Forms.MessageBox.Show("Server does not answer.", "Warning!",
                         System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                     json = "";
                 }
@@ -72,7 +98,7 @@ namespace Image_sort.Update
         /// Downloads and runs the installer from the newest version specified in the given registry
         /// </summary>
         /// <param name="updateReg"></param>
-        public static void DownloadAndRunInstaller(UpdateRegModel updateReg)
+        public static void DownloadAndRunInstaller(string url)
         {
             // Downloads the installer
             using (WebClient wc = new WebClient())
@@ -80,12 +106,12 @@ namespace Image_sort.Update
                 // Downloads the installer from the given URL as setup
                 try
                 {
-                    if(updateReg.url != null)
+                    if(url != null)
                     {
                         // Set the target path for it
                         string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
                         // Download the installer
-                        wc.DownloadFile(updateReg.url, target);
+                        wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
                         System.Diagnostics.Process.Start(target).WaitForExit();
                         // Delete the installer
@@ -102,6 +128,24 @@ namespace Image_sort.Update
                     System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks if the process is elevated beforehand
+        /// </summary>
+        public static bool IsElevated
+        {
+            get
+            {
+                bool isElevated;
+                using (WindowsIdentity identity = WindowsIdentity.GetCurrent())
+                {
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    isElevated = principal.IsInRole(WindowsBuiltInRole.Administrator);
+                }
+                return isElevated;
+            }
+            
         }
     }
 }
