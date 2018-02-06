@@ -36,7 +36,7 @@ namespace Image_sort.UI
             if(IsConnectedToInternet())
                 // Run the Updater before starting the app
                 System.Diagnostics.Process.Start(AppDomain.CurrentDomain.BaseDirectory 
-                    + @"\Image sort.Update.exe").WaitForExit();
+                    + @"\Image sort.Update.exe");
 
             // Continue normally
             base.OnStartup(e);
