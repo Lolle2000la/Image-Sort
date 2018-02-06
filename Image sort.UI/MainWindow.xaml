@@ -7,7 +7,6 @@
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="600"
         KeyDown="Window_KeyDown">
-    <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Grid>
         <!-- START GRID DEFINITIONS -->
         
