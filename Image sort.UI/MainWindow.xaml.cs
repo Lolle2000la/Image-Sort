@@ -99,6 +99,22 @@ namespace Image_sort.UI
         }
 
         /// <summary>
+        /// Gives back, whether any folder is visible or not
+        /// </summary>
+        public bool IsAnyFolderVisible
+        {
+            get
+            {
+                foreach (ListBoxItem item in FoldersStack.Items)
+                {
+                    if (item.Visibility == Visibility.Visible)
+                        return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Shifts up the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
         private void MoveFolderSelectionUp()
@@ -112,7 +128,7 @@ namespace Image_sort.UI
                 FoldersStack.SelectedIndex = FoldersStack.Items.Count - 1;
 
             // Go through the elements, so that collapsed elements can be skipped
-            while (((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
+            while (IsAnyFolderVisible && ((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
             {
                 // If the selected item is no 0 go up
                 if (FoldersStack.SelectedIndex > 0)
@@ -135,7 +151,7 @@ namespace Image_sort.UI
             else
                 FoldersStack.SelectedIndex = 0;
             // Basically goes through the elements and makes sure the collapsed ones get skipped when navigating
-            while (((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
+            while (IsAnyFolderVisible && ((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
             {
                 if (FoldersStack.SelectedIndex < FoldersStack.Items.Count - 1)
                     FoldersStack.SelectedIndex += 1;
