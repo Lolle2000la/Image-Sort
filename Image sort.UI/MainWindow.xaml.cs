@@ -4,19 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Image_sort.UI
 {
@@ -207,24 +200,34 @@ namespace Image_sort.UI
                 string folderToEnter = folders[FoldersStack.SelectedIndex];
                 if (Directory.Exists(folderToEnter))
                 {
-                    // if the folder could not be selected, let the user select another.
+                    // if the folder could not be selected, show the user that it couldn't
                     if (folderSelector.Select(folderToEnter) == false)
-                        SelectFolder();
-                    // otherwise load the image and enable the controls, if there is an image
+                        System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
+                            " Please check if the folder is working as it should.",
+                            "Could not open folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    //SelectFolder();
+                    // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
+                        // Get next image to load
                         Image buffer = folderSelector.GetNextImage();
 
+                        // If a image could be loaded, well... load it. Also enable the controls.
                         if (buffer != null)
                         {
                             LoadImage(buffer.Source);
                             EnableControls();
                         }
+                        // If it couldn't, well don't. Also disable controls.
                         else
                         {
                             LoadImage(null);
                             DisableControls();
                         }
+
+                        // Clearing the search bar after entering the folder,
+                        // so that it will be more comfortable searching.
+                        SearchBarBox.Text = "";
                     }
                 }
 
