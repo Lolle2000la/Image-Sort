@@ -106,12 +106,13 @@ namespace Image_sort.Update
                 {
                     if(url != null)
                     {
-                        // Set the target path for it
-                        string target = AppDomain.CurrentDomain.BaseDirectory + @"\setup.msi";
+                        // Set the target path for it in User %AppData%
+                        string target = AppDomain.CurrentDomain.BaseDirectory + Path.Combine(Environment.GetFolderPath(
+                            Environment.SpecialFolder.ApplicationData), @"\setup.msi");
                         // Download the installer
                         wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
-                        System.Diagnostics.Process.Start(target).WaitForExit();
+                        Process.Start(target).WaitForExit();
                         // Delete the installer
                         File.Delete(target);
                     }
