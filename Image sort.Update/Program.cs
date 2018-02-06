@@ -44,9 +44,6 @@ namespace Image_sort.Update
                                 " version of Image sort?", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
                                 System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                             {
-                                // At the moments the installer has been given up on, GitHub now opens
-                                //System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
-
                                 // Elevate process
                                 ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
                                     @"Image sort.Update.exe");
@@ -88,6 +85,7 @@ namespace Image_sort.Update
                 {
                     System.Windows.Forms.MessageBox.Show("Server does not answer.", "Warning!",
                         System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    
                     json = "";
                 }
             }
@@ -119,13 +117,23 @@ namespace Image_sort.Update
                     }
                     else
                     {
-                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer!", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer! Please download the newest release from Github.", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        // GitHub now opens show the user the updates
+                        Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                     }
                 }
                 // If something goes wrong, show the user that it didn't
                 catch (WebException)
                 {
                     System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    // GitHub now opens show the user the updates
+                    Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
+                }
+                catch (Exception)
+                {
+                    System.Windows.Forms.MessageBox.Show("Could not install. Please download from GitHub.", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    // GitHub now opens show the user the updates
+                    Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                 }
             }
         }
