@@ -41,7 +41,8 @@ namespace Image_sort.Update
                         if (!IsElevated)
                         {
                             if (System.Windows.Forms.MessageBox.Show("Do you want to update to the newest" +
-                                " version of Image sort?", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
+                                " version of Image sort?\n" +
+                                "* This will close all instances \"Image sort\". Please finish all tasks beforehand.", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
                                 System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                             {
                                 // Elevate process
@@ -98,23 +99,46 @@ namespace Image_sort.Update
         /// <param name="updateReg"></param>
         public static void DownloadAndRunInstaller(string url)
         {
+            // Try killing the main app
+            try
+            {
+                // For every process with the name "Image sort.UI.exe", kill it
+                foreach (Process proc in Process.GetProcessesByName("Image sort.UI"))
+                {
+                    // kill process.
+                    proc.Kill();
+                }
+            }
+            // If an error occurs
+            catch (Exception)
+            {
+                // Well, nothing should happen now. Nothing here!
+            }
+
             // Downloads the installer
             using (WebClient wc = new WebClient())
             {
                 // Downloads the installer from the given URL as setup
                 try
                 {
-                    if(url != null)
+                    // Make sure everything is cleaned up.
+                    DeleteSetup();
+
+                    if (url != null)
                     {
+                        // Makes sure everything is cleaned up.
+                        DeleteSetup();
+
                         // Set the target path for it in User %AppData%
-                        string target = AppDomain.CurrentDomain.BaseDirectory + Path.Combine(Environment.GetFolderPath(
-                            Environment.SpecialFolder.ApplicationData), @"\setup.msi");
+                        string target = Path.Combine(Environment.GetFolderPath
+                            (Environment.SpecialFolder.ApplicationData), @"\setup.msi");
                         // Download the installer
                         wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
-                        Process.Start(target).WaitForExit();
-                        // Delete the installer
-                        File.Delete(target);
+                        Process.Start(target);
+
+                        // Save installer location
+                        LastInstallerPath = target;
                     }
                     else
                     {
@@ -140,6 +164,22 @@ namespace Image_sort.Update
         }
 
         /// <summary>
+        /// Stores and gives back the path to the last installer
+        /// </summary>
+        public static string LastInstallerPath
+        {
+            get
+            {
+                return Properties.Settings.Default.LastPathToInstaller;
+            }
+            set
+            {
+                Properties.Settings.Default.LastPathToInstaller = value;
+                Properties.Settings.Default.Save();
+            }
+        }
+
+        /// <summary>
         /// Checks if the process is elevated beforehand
         /// </summary>
         public static bool IsElevated
@@ -155,6 +195,19 @@ namespace Image_sort.Update
                 return isElevated;
             }
             
+        }
+
+        /// <summary>
+        /// Looks if there is an installer left, that should be deleted
+        /// </summary>
+        public static void DeleteSetup()
+        {
+            // If there already is an installer left, delete it.
+            if (File.Exists(LastInstallerPath))
+            {
+                // Delete it
+                File.Delete(LastInstallerPath);
+            }
         }
     }
 }
