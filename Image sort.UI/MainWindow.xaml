@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
         mc:Ignorable="d"
-        Title="Image sort" Height="350" Width="600"
-        KeyDown="Window_KeyDown">
+        Title="Image sort" Height="350" Width="600" AllowDrop="True"
+        KeyDown="Window_KeyDown" Drop="Window_Drop">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Grid>
         <!-- START GRID DEFINITIONS -->
@@ -29,7 +29,7 @@
         <!-- Tool bar containing all the important things -->
         <ToolBarTray Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <!-- ToolBar containing everything for folder management -->
-            <ToolBar>
+            <ToolBar Focusable="False">
                 <Button Content="Select Folder" Focusable="False"
                         x:Name="SelectFolderButton" Click="SelectFolderButton_Click"
                         ToolTip="Selects the folder to sort. Shortcut: F2"/>
@@ -41,7 +41,7 @@
                         ToolTip="Enter folder selected. Shortcut: Enter"/>
             </ToolBar>
             <!-- Contains everything for image management -->
-            <ToolBar>
+            <ToolBar Focusable="False">
                 <Button Content="Skip File" IsEnabled="False" Focusable="False"
                     x:Name="SkipFileButton" Click="SkipFileButton_Click"
                     ToolTip="Skips the current image. Shortcut: left arrow key"/>
@@ -50,11 +50,11 @@
                     ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
             </ToolBar>
             <!-- Contains everything around settings -->
-            <ToolBar>
+            <ToolBar Focusable="False">
                 <!-- Lets users change the resolution, that the Images should get loaded with -->
-                <Button Content="Set Horizontal Resolution" Focusable="False"
+                <!--<Button Content="Set Horizontal Resolution" Focusable="False"
                     x:Name="SetHorizontalResolutionButton" Click="SetHorizontalResolutionButton_Click">
-                    <!-- ToolTip for better understanding -->
+                    --><!-- ToolTip for better understanding --><!--
                     <Button.ToolTip>
                         <TextBlock>
                             <Run>
@@ -67,7 +67,25 @@
                             </Run>
                         </TextBlock>
                     </Button.ToolTip>
-                </Button>
+                </Button>-->
+                <TextBlock Margin="2" Text="Horizontal Resolution: "/>
+                <!-- Text Box for setting the resolution -->
+                <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
+                         MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyUp="ResolutionBox_KeyUp"
+                         Focusable="False" MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus">
+                    <TextBox.ToolTip>
+                        <TextBlock>
+                            <Run>
+                                Gives you the option to change the horizontal resolution,
+                                the images should get loaded with.
+                            </Run>
+                            <LineBreak/>
+                            <Run>
+                                Shortcut: F4
+                            </Run>
+                        </TextBlock>
+                    </TextBox.ToolTip>
+                </TextBox>
             </ToolBar>
         </ToolBarTray>
 

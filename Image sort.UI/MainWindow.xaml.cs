@@ -54,6 +54,12 @@ namespace Image_sort.UI
             }
         }
 
+        /// <summary>
+        /// Arguments given by the user/caller
+        /// </summary>
+        Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
+
+
 
 
 
@@ -74,7 +80,36 @@ namespace Image_sort.UI
         public MainWindow()
         {
             InitializeComponent();
+
+
+            // Get parameters from the command line
+            string[] args = Environment.GetCommandLineArgs();
+
+            // Add them to the dictionary
+            for (int index = 1; index < args.Length; index += 2)
+            {
+                ArgsGiven.Add(args[index], args[index + 1]);
+            }
+
+            // loads Folder if one was selected
+            // the key for folder is "f"
+            if (ArgsGiven.TryGetValue("-f", out string value))
+            {
+                // Do what ever with the value
+                SelectAndLoadFolder(value);
+
+                // Refresh folders
+                AddFoldersToFoldersStack();
+            }
+
+            // Set the resolution to the saved one.
+            ResolutionBox.Text = MaxHorizontalResolution.ToString();
+            folderSelector.SetResolution(MaxHorizontalResolution);
         }
+
+
+
+
 
 
 
@@ -105,11 +140,14 @@ namespace Image_sort.UI
         {
             get
             {
+                // Get every item in the list
                 foreach (ListBoxItem item in FoldersStack.Items)
                 {
+                    // if one of them turns out to be visible, then return true
                     if (item.Visibility == Visibility.Visible)
                         return true;
                 }
+                // Else false
                 return false;
             }
         }
@@ -183,24 +221,47 @@ namespace Image_sort.UI
                 // otherwise load the image and enable the controls, if there is an image
                 else
                 {
-                    Image buffer = folderSelector.GetNextImage();
+                    // Selects and loads the folder selected by the user.
+                    SelectAndLoadFolder(folderBrowser.SelectedPath);
 
-                    if (buffer != null)
-                    {
-                        LoadImage(buffer.Source);
-                        EnableControls();
-                    }
-                    else
-                    {
-                        LoadImage(null);
-                        DisableControls();
-                    }
+                    // Make folders on the left up to date
+                    AddFoldersToFoldersStack();
                 }
 
             }
+        }
 
-            // Make folders on the left up to date
-            AddFoldersToFoldersStack();
+
+        /// <summary>
+        /// Selects and loads a folder
+        /// </summary>
+        /// <param name="folder">The folder that should get selected</param>
+        private bool SelectAndLoadFolder(string folder)
+        {
+            // if the folder could not be selected, redo the thing
+            if (folderSelector.Select(folder) == false)
+                return false;
+            // otherwise load the image and enable the controls, if there is an image
+            else
+            {
+                // Get the next image
+                Image buffer = folderSelector.GetNextImage();
+
+                // if one was given back, load it (also enable controls)
+                if (buffer != null)
+                {
+                    LoadImage(buffer.Source);
+                    EnableControls();
+                }
+                // otherwise don't (also disable controls)
+                else
+                {
+                    LoadImage(null);
+                    DisableControls();
+                }
+
+                return true;
+            }
         }
 
         /// <summary>
@@ -225,21 +286,8 @@ namespace Image_sort.UI
                     // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
-                        // Get next image to load
-                        Image buffer = folderSelector.GetNextImage();
-
-                        // If a image could be loaded, well... load it. Also enable the controls.
-                        if (buffer != null)
-                        {
-                            LoadImage(buffer.Source);
-                            EnableControls();
-                        }
-                        // If it couldn't, well don't. Also disable controls.
-                        else
-                        {
-                            LoadImage(null);
-                            DisableControls();
-                        }
+                        // Selects and loads folder, obviously.
+                        SelectAndLoadFolder(folderToEnter);
 
                         // Clearing the search bar after entering the folder,
                         // so that it will be more comfortable searching.
@@ -470,6 +518,22 @@ namespace Image_sort.UI
             GC.WaitForPendingFinalizers();
         }
 
+        /// <summary>
+        /// Focuses and enables <see cref="ResolutionBox"/>
+        /// </summary>
+        private void UseResolutionBox()
+        {
+            ResolutionBox.Focusable = true;
+            ResolutionBox.Focus();
+        }
+
+        /// <summary>
+        /// Unfocuses <see cref="ResolutionBox"/> 
+        /// </summary>
+        private void UnuseResolutionBox()
+        {
+            ResolutionBox.Focusable = false;
+        }
 
 
 
@@ -494,10 +558,10 @@ namespace Image_sort.UI
             // Get all items from the ListBox
             foreach (ListBoxItem foldersStackItem in FoldersStack.Items)
             {
-                // If the text of the searchbox it is not "" and alphabetic/numeric
+                // If the text of the search box it is not "" and alphabetic/numeric
                 if (SearchBarBox.Text != "" && Regex.IsMatch(SearchBarBox.Text, @"^[a-zA-Z0-9_]+$"))
                 {
-                    // and if the item currently looped through doesn't contain the text of the searchbox
+                    // and if the item currently looped through doesn't contain the text of the search box
                     if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text))
                         // Make it invisible
                         foldersStackItem.Visibility = Visibility.Collapsed;
@@ -587,6 +651,8 @@ namespace Image_sort.UI
         /// </param>
         private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
+            // Only check if the resolution box is not focused
+            if (!ResolutionBox.Focusable)
             switch (e.Key)
             {
                 // When up key is pressed, move folder selection up
@@ -633,7 +699,8 @@ namespace Image_sort.UI
 
                 // Opens dialog for resolution preference
                 case Key.F4:
-                    SetResolution();
+                    //SetResolution();
+                    UseResolutionBox();
                     break;
 
                 // "Enters" the folder
@@ -649,8 +716,9 @@ namespace Image_sort.UI
 
                 // Insert Characters and numbers only
                 default:
-                    if(Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
-                        SearchBarBox.Text += e.Key.ToString().ToLower();
+                    if (!ResolutionBox.Focusable)
+                        if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
+                            SearchBarBox.Text += e.Key.ToString().ToLower();
                     break;
             }
         }
@@ -682,6 +750,104 @@ namespace Image_sort.UI
         private void SetHorizontalResolutionButton_Click(object sender, RoutedEventArgs e)
         {
             SetResolution();
+        }
+        
+        /// <summary>
+        /// Used for handling drag and drop, good for UX (obviously)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, false))
+            {
+                // Note that you can have more than one file.
+                string[] folder = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+
+                // Only selects folder, if it exists.
+                if (Directory.Exists(folder[0]))
+                {
+                    // Loads up the first folder (ignores the rest)
+                    SelectAndLoadFolder(folder[0]);
+
+                    // Refresh folders
+                    AddFoldersToFoldersStack();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Makes sure only numeric input gets entered
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ResolutionBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
+            // if it is enabled,
+            if (ResolutionBox.IsEnabled)
+            {
+                // get every character in the input
+                foreach (char charItem in e.Text)
+                {
+                    // if it isn't a number, set he handled value to true to prevent input
+                    if (!Char.IsNumber(charItem))
+                    {
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// When enter has been pressed, unuse it
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ResolutionBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // When enter was pressed
+            if (e.Key == Key.Enter)
+            {
+                // If the resolution set is under 20, set it to 20
+                if(!(int.Parse(ResolutionBox.Text) > 20))
+                {
+                    ResolutionBox.Text = 20.ToString();
+                }
+
+                // Unuse the resolution box
+                UnuseResolutionBox();
+                // and set the resolution to the max resolution
+                MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
+            }
+        }
+        
+        /// <summary>
+        /// Focuses <see cref="ResolutionBox"/> when clicking on the text box
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ResolutionBox_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            UseResolutionBox();
+        }
+
+        /// <summary>
+        /// When the focus is lost, unuse it.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ResolutionBox_LostFocus(object sender, RoutedEventArgs e)
+        {
+            // If the resolution set is under 20, set it to 20
+            if (!(int.Parse(ResolutionBox.Text) > 20))
+            {
+                ResolutionBox.Text = 20.ToString();
+            }
+
+            // Unuse the resolution box
+            UnuseResolutionBox();
+            // and set the resolution to the max resolution
+            MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
         }
     }
 }
