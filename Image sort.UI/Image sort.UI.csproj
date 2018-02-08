@@ -43,7 +43,7 @@
     <ApplicationIcon>Image_Sort.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>Image sort.pfx</AssemblyOriginatorKeyFile>
