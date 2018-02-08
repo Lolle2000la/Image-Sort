@@ -54,7 +54,9 @@ namespace Image_sort.Update
                             }
                         }
                         // If it is, download and run the installer
-                        else
+                        else if (System.Windows.Forms.MessageBox.Show("Do you want to continue?", "continue?",
+                            System.Windows.Forms.MessageBoxButtons.YesNoCancel, System.Windows.Forms.MessageBoxIcon.Question,
+                            System.Windows.Forms.MessageBoxDefaultButton.Button3) == System.Windows.Forms.DialogResult.Yes)
                         {
                             // set the url depending on if one of them is set
                             string url = (updateReg.url != null) || (updateReg.source != null)
@@ -124,10 +126,7 @@ namespace Image_sort.Update
                     // Make sure everything is cleaned up.
                     DeleteSetup();
 
-                    // Make sure the server did give back an url and that the user wants to continue.
-                    if (url != null && System.Windows.Forms.MessageBox.Show("Do you want to continue with the installation?",
-                        "Continue?", System.Windows.Forms.MessageBoxButtons.YesNo,
-                        System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+                    if (url != null)
                     {
                         // Makes sure everything is cleaned up.
                         DeleteSetup();
@@ -138,12 +137,16 @@ namespace Image_sort.Update
                         // Download the installer
                         wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
-                        ProcessStartInfo processStartInfo = new ProcessStartInfo(target, "/passive");
-                        processStartInfo.Verb = "runas";
-                        Process.Start(target, "/passive /norestart");
+                        Process.Start(target, "/passive");
 
                         // Save installer location
                         LastInstallerPath = target;
+                    }
+                    else
+                    {
+                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer! Please download the newest release from Github.", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        // GitHub now opens show the user the updates
+                        Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                     }
                 }
                 // If something goes wrong, show the user that it didn't
