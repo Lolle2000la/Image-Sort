@@ -124,7 +124,10 @@ namespace Image_sort.Update
                     // Make sure everything is cleaned up.
                     DeleteSetup();
 
-                    if (url != null)
+                    // Make sure the server did give back an url and that the user wants to continue.
+                    if (url != null && System.Windows.Forms.MessageBox.Show("Do you want to continue with the installation?",
+                        "Continue?", System.Windows.Forms.MessageBoxButtons.YesNo,
+                        System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                     {
                         // Makes sure everything is cleaned up.
                         DeleteSetup();
@@ -135,16 +138,12 @@ namespace Image_sort.Update
                         // Download the installer
                         wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
-                        Process.Start(target);
+                        ProcessStartInfo processStartInfo = new ProcessStartInfo(target, "/passive");
+                        processStartInfo.Verb = "runas";
+                        Process.Start(target, "/passive /norestart");
 
                         // Save installer location
                         LastInstallerPath = target;
-                    }
-                    else
-                    {
-                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer! Please download the newest release from Github.", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
-                        // GitHub now opens show the user the updates
-                        Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                     }
                 }
                 // If something goes wrong, show the user that it didn't

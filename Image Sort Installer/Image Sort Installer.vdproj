@@ -34,13 +34,13 @@
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
+        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -94,25 +94,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A87C41C6DEB6942B8A32BC581162B42C"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A87679A42B444F8385B7C65A7F9ACF32"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_0BE504D09B5F4B1B9CABC07FA2E67343"
+        "OwnerKey" = "8:_A06178DD3F86E177AEFC5810CFA6B176"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -124,7 +106,25 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A06178DD3F86E177AEFC5810CFA6B176"
+        "OwnerKey" = "8:_0BE504D09B5F4B1B9CABC07FA2E67343"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_A87679A42B444F8385B7C65A7F9ACF32"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_A87C41C6DEB6942B8A32BC581162B42C"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -229,11 +229,6 @@
             "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.5.3.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_2444875B8A476DC2CCC6570801FD1260"
-                    {
-                    "Name" = "8:Image sort.Update.exe"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:Image sort.Update.exe"
             "TargetName" = "8:"
@@ -260,11 +255,6 @@
             "AssemblyAsmDisplayName" = "8:Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_3DAFB9AA01507CF132A2916A49A6E64A"
-                    {
-                    "Name" = "8:Newtonsoft.Json.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:Newtonsoft.Json.dll"
             "TargetName" = "8:"
@@ -291,11 +281,6 @@
             "AssemblyAsmDisplayName" = "8:System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
                 "ScatterAssemblies"
                 {
-                    "_A06178DD3F86E177AEFC5810CFA6B176"
-                    {
-                    "Name" = "8:System.Net.Http.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:System.Net.Http.dll"
             "TargetName" = "8:"
@@ -322,11 +307,6 @@
             "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_A87679A42B444F8385B7C65A7F9ACF32"
-                    {
-                    "Name" = "8:Image sort.Logic.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:Image sort.Logic.dll"
             "TargetName" = "8:"
@@ -353,11 +333,6 @@
             "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
-                    "_A87C41C6DEB6942B8A32BC581162B42C"
-                    {
-                    "Name" = "8:Image sort.UI.Dialogs.dll"
-                    "Attributes" = "3:512"
-                    }
                 }
             "SourcePath" = "8:Image sort.UI.Dialogs.dll"
             "TargetName" = "8:"
@@ -473,15 +448,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Image Sort Installer"
-        "ProductCode" = "8:{59A8563A-E5A4-4E70-B9B2-6BE9F3B0A366}"
-        "PackageCode" = "8:{9469712B-A3D3-45BA-956B-F9675800032C}"
+        "ProductCode" = "8:{0555632D-14AC-4E75-B584-78C05407D1E3}"
+        "PackageCode" = "8:{22CB2781-B6C8-4248-995B-DB667B37D95B}"
         "UpgradeCode" = "8:{1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.5.3"
+        "ProductVersion" = "8:1.5.4"
         "Manufacturer" = "8:Lolle2000la"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -1117,7 +1092,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_0BE504D09B5F4B1B9CABC07FA2E67343"
             {
-            "SourcePath" = "8:..\\Image sort.Update\\obj\\Release\\Image sort.Update.exe"
+            "SourcePath" = "8:..\\Image sort.Update\\obj\\Debug\\Image sort.Update.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_4FE78034DF8844EF8FA37D4422726931"
@@ -1145,7 +1120,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_C6AAD1D1C1414E83A48D3F35430D284A"
             {
-            "SourcePath" = "8:..\\Image sort.UI\\obj\\Release\\Image sort.UI.exe"
+            "SourcePath" = "8:..\\Image sort.UI\\obj\\Debug\\Image sort.UI.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_4FE78034DF8844EF8FA37D4422726931"
