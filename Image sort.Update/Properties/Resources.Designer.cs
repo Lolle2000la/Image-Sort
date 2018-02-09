@@ -70,7 +70,7 @@ namespace Image_sort.Update.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to 1.5.4.
+        ///   Looks up a localized string similar to 1.6.0.
         /// </summary>
         internal static string version {
             get {
