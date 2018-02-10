@@ -34,13 +34,13 @@
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
+        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -226,7 +226,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.5.4.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_2444875B8A476DC2CCC6570801FD1260"
@@ -319,7 +319,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.5.2.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_A87679A42B444F8385B7C65A7F9ACF32"
@@ -350,7 +350,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.5.1.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_A87C41C6DEB6942B8A32BC581162B42C"
@@ -474,7 +474,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Image Sort"
         "ProductCode" = "8:{29142825-830B-4728-8563-C437C92C3DE5}"
-        "PackageCode" = "8:{6DA14850-AAC8-4FEE-B2CF-CC927A3BF4BD}"
+        "PackageCode" = "8:{F6B4F7EB-C6B3-4DAE-9C9B-6511C33D2E01}"
         "UpgradeCode" = "8:{1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
@@ -626,6 +626,14 @@
                                         }
                                         "Values"
                                         {
+                                            "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_8D63833F296541B99DA093643DA94F66"
+                                            {
+                                            "Name" = "8:Icon"
+                                            "Condition" = "8:"
+                                            "Transitive" = "11:FALSE"
+                                            "ValueTypes" = "3:1"
+                                            "Value" = "8:\"[TARGETDIR]\\Image sort.UI.exe\""
+                                            }
                                             "{ADCFDA98-8FDD-45E4-90BC-E3D20B029870}:_E96ED0DDCF5644D78DC5A444D3014B6D"
                                             {
                                             "Name" = "8:"
