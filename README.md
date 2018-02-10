@@ -13,7 +13,7 @@ Sorts your image at high speed
    * left-arrow-key to skip it
    * you can search by just typing in what you want.
    #### The not-so-important stuff
-   * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed)
+   * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed). Pressing F4 will move your focus to the text box, so that you can type in your preferred resolution. Pressing Enter or Escape, as well as moving the focus away restores normal keyboard input behavior.
 
 ## Requirements
 * .NET Framework 4.7.1
@@ -24,4 +24,4 @@ Sorts your image at high speed
 * (optional) For building the installer, you need the [Microsoft Visual Studio 2017 Installer Projects](https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.MicrosoftVisualStudio2017InstallerProjects)
 
 ## Screenshot
-![Screenshot of the UI of the image](https://github.com/Lolle2000la/Image-Sort/blob/master/ImageSort.png)
+![Screenshot of the UI of the image](https://github.com/Lolle2000la/Image-Sort/blob/master/ImageSort_Screenshot.png)
