@@ -105,6 +105,8 @@ namespace Image_sort.UI
             // Set the resolution to the saved one.
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
             folderSelector.SetResolution(MaxHorizontalResolution);
+
+            new ProgressWindow().Show();
         }
 
 
