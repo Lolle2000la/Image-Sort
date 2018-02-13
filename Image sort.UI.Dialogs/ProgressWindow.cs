@@ -17,6 +17,19 @@ namespace Image_sort.UI.Dialogs
     public partial class ProgressWindow : Form
     {
         /// <summary>
+        /// Delegate for when the user wants to abort the task.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="eventArgs"></param>
+        /// <returns></returns>
+        public delegate Delegate AbortClickedDel(object sender, EventArgs eventArgs);
+
+        /// <summary>
+        /// Called when the user clicks the abort button.
+        /// </summary>
+        public event AbortClickedDel AbortClicked;
+
+        /// <summary>
         /// Constructor, creates the window.
         /// </summary>
         public ProgressWindow()
@@ -64,5 +77,23 @@ namespace Image_sort.UI.Dialogs
             // Force refresh window
             this.Refresh();
         }
+
+        /// <summary>
+        /// Clicked when the user presses the abort button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void btnAbort_Click(object sender, EventArgs e)
+        {
+            if (AbortClicked.GetInvocationList().Count() > 0)
+                AbortClicked(this, new EventArgs());
+            else
+                throw new AbortException();
+        }
     }
+
+    /// <summary>
+    /// Exception for when the user presses the abort button.
+    /// </summary>
+    public class AbortException : Exception { }
 }
