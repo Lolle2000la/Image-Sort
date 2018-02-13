@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Media;
 
 namespace Image_sort.UI.Dialogs
 {
@@ -30,17 +31,8 @@ namespace Image_sort.UI.Dialogs
         /// <param name="e"></param>
         private void ProgressWindow_Load(object sender, EventArgs e)
         {
-            
-        }
-
-        /// <summary>
-        /// Event handler used for Routing up a progress changed event to the window directly
-        /// </summary>
-        /// <param name="sender">Object calling the method</param>
-        /// <param name="e">Data given for the handler (like the actual progress)</param>
-        public void LoadingProgress_Changed(object sender, ProgressChangedEventArgs e)
-        {
-            ChangeFileLoadingProgress(e.ProgressPercentage);
+            // Force refresh window
+            this.Refresh();
         }
 
         /// <summary>
@@ -68,34 +60,9 @@ namespace Image_sort.UI.Dialogs
             // Sets the text of the label "lblProgressFiles",
             // so that the user can see how much files still are to be loaded.
             lblProgressFiles.Text = $"[{currentFile}/{maxFiles}]";
-        }
 
-        /// <summary>
-        /// Sets the progress for the file being loaded,
-        /// so that the user sees how long it will take to load it.
-        /// </summary>
-        /// <param name="currentProgress">The current progress the loading of the file has</param>
-        /// <param name="minProgress">The minimum progress it can have. Default = 0</param>
-        /// <param name="maxProgress">The maximum progress it can have. Default = 100</param>
-        public void ChangeFileLoadingProgress(int currentProgress, int minProgress=0, int maxProgress=100)
-        {
-            // if the currentProgress parameter doesn't match the given dimensions,
-            // throw an ArgumentOutOfRangeException with the details.
-            if(maxProgress < currentProgress || currentProgress < minProgress)
-            {
-                throw new ArgumentOutOfRangeException("currentProgress", currentProgress,
-                    "The argument is bigger than the maxProgress or smaller than the " +
-                    "minProgress given.");
-            }
-
-            // Sets the state of the progress bar indicating files loaded.
-            pgrProgressLoadingFile.Minimum = minProgress;
-            pgrProgressLoadingFile.Maximum = maxProgress;
-            pgrProgressLoadingFile.Value = currentProgress;
-
-            // Sets the text of the label "lblProgressFiles",
-            // so that the user can see how much files still are to be loaded.
-            lblProgessFileLoad.Text = $"{currentProgress}%";
+            // Force refresh window
+            this.Refresh();
         }
     }
 }

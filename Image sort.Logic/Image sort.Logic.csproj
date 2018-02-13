@@ -63,5 +63,11 @@
   <ItemGroup>
     <None Include=".gitignore" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Image sort.UI.Dialogs\Image sort.UI.Dialogs.csproj">
+      <Project>{3afab814-e713-4175-a071-fd69ab70b67d}</Project>
+      <Name>Image sort.UI.Dialogs</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

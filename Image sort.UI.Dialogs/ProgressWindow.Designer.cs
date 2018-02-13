@@ -32,9 +32,6 @@
             this.pgrProgressPerFile = new System.Windows.Forms.ProgressBar();
             this.lblProgressInfoText = new System.Windows.Forms.Label();
             this.lblProgressFiles = new System.Windows.Forms.Label();
-            this.lblProgessFileLoad = new System.Windows.Forms.Label();
-            this.lblProgressLoadingFilesText = new System.Windows.Forms.Label();
-            this.pgrProgressLoadingFile = new System.Windows.Forms.ProgressBar();
             this.SuspendLayout();
             // 
             // pgrProgressPerFile
@@ -63,41 +60,12 @@
             this.lblProgressFiles.Size = new System.Drawing.Size(0, 25);
             this.lblProgressFiles.TabIndex = 2;
             // 
-            // lblProgessFileLoad
-            // 
-            this.lblProgessFileLoad.AutoSize = true;
-            this.lblProgessFileLoad.Location = new System.Drawing.Point(250, 128);
-            this.lblProgessFileLoad.Name = "lblProgessFileLoad";
-            this.lblProgessFileLoad.Size = new System.Drawing.Size(0, 25);
-            this.lblProgessFileLoad.TabIndex = 4;
-            // 
-            // lblProgressLoadingFilesText
-            // 
-            this.lblProgressLoadingFilesText.AutoSize = true;
-            this.lblProgressLoadingFilesText.Location = new System.Drawing.Point(12, 128);
-            this.lblProgressLoadingFilesText.Name = "lblProgressLoadingFilesText";
-            this.lblProgressLoadingFilesText.Size = new System.Drawing.Size(232, 25);
-            this.lblProgressLoadingFilesText.TabIndex = 3;
-            this.lblProgressLoadingFilesText.Text = "Progress loading Files:";
-            // 
-            // pgrProgressLoadingFile
-            // 
-            this.pgrProgressLoadingFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.pgrProgressLoadingFile.Location = new System.Drawing.Point(12, 180);
-            this.pgrProgressLoadingFile.Name = "pgrProgressLoadingFile";
-            this.pgrProgressLoadingFile.Size = new System.Drawing.Size(773, 38);
-            this.pgrProgressLoadingFile.TabIndex = 5;
-            // 
             // ProgressWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(797, 237);
+            this.ClientSize = new System.Drawing.Size(797, 126);
             this.ControlBox = false;
-            this.Controls.Add(this.pgrProgressLoadingFile);
-            this.Controls.Add(this.lblProgessFileLoad);
-            this.Controls.Add(this.lblProgressLoadingFilesText);
             this.Controls.Add(this.lblProgressFiles);
             this.Controls.Add(this.lblProgressInfoText);
             this.Controls.Add(this.pgrProgressPerFile);
@@ -117,8 +85,5 @@
         private System.Windows.Forms.ProgressBar pgrProgressPerFile;
         private System.Windows.Forms.Label lblProgressInfoText;
         private System.Windows.Forms.Label lblProgressFiles;
-        private System.Windows.Forms.Label lblProgessFileLoad;
-        private System.Windows.Forms.Label lblProgressLoadingFilesText;
-        private System.Windows.Forms.ProgressBar pgrProgressLoadingFile;
     }
 }

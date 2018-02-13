@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Image_sort.UI.Dialogs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,6 +44,10 @@ namespace Image_sort.Logic
         /// Defines the max resolution to be loaded 
         /// </summary>
         public int MaxHorizontalResolution { get; set; }
+        /// <summary>
+        /// Window indicating the progress of the files being loaded to the user.
+        /// </summary>
+        private ProgressWindow progressWindow;
 
 
 
@@ -104,9 +109,11 @@ namespace Image_sort.Logic
             CurrentImage = null;
             CollectGarbage();
 
-            // Checks if the dir exists
+            // Checks if the Directory exists
             if (Directory.Exists(path))
             {
+                progressWindow = new ProgressWindow();
+
                 // Sets the currentFolder var to path, so it can be easily retrieved
                 currentFolder = path;
 
@@ -117,6 +124,14 @@ namespace Image_sort.Logic
                     || s.EndsWith(".gif") || s.EndsWith(".PNG") || s.EndsWith(".JPG")
                     || s.EndsWith(".GIF") || s.EndsWith(".tif") || s.EndsWith(".TIF")
                     || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
+
+                // Show the window and set a few values to make sure the data is correct.
+                progressWindow.Show();
+                progressWindow.ChangeFileProgress(0, 0, path.Count());
+                
+
+                // define an int holding the count of the file to load.
+                int filesLoaded = 0;
 
                 // goes through the image paths given and adds them to the image pool
                 foreach (string currImagePath in paths)
@@ -132,9 +147,19 @@ namespace Image_sort.Logic
                         image.Source = buffer;
                         imagePool.Enqueue(image);
                         imagePathPool.Enqueue(uri.OriginalString);
+
+                        // Sets the progress in the window for the files being loaded.
+                        progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
                     }
-                    
                 }
+
+                // Closes the window when it is no longer needed.
+                while (!progressWindow.IsHandleCreated)
+                {
+                    // Wait for the window to be created, before being closed.
+                    Task.Delay(1);
+                }
+                progressWindow.Close();
 
                 // SUCCESS
                 return true;
@@ -163,6 +188,7 @@ namespace Image_sort.Logic
                 using (var stream =
                     new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
+                    // Loads the image
                     bitmapImage.BeginInit();
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                     bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
