@@ -22,6 +22,7 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+#if (!DEBUG)
             // Makes sure, the dialogs look nice and native
             System.Windows.Forms.Application.EnableVisualStyles();
 
@@ -66,6 +67,7 @@ namespace Image_sort.Update
                         }
                     }
             }
+#endif
         }
 
         /// <summary>
