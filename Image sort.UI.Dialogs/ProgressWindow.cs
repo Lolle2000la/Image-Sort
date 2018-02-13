@@ -77,19 +77,6 @@ namespace Image_sort.UI.Dialogs
             // Force refresh window
             this.Refresh();
         }
-
-        /// <summary>
-        /// Clicked when the user presses the abort button.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void btnAbort_Click(object sender, EventArgs e)
-        {
-            if (AbortClicked.GetInvocationList().Count() > 0)
-                AbortClicked(this, new EventArgs());
-            else
-                throw new AbortException();
-        }
     }
 
     /// <summary>

@@ -32,7 +32,6 @@
             this.pgrProgressPerFile = new System.Windows.Forms.ProgressBar();
             this.lblProgressInfoText = new System.Windows.Forms.Label();
             this.lblProgressFiles = new System.Windows.Forms.Label();
-            this.btnAbort = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // pgrProgressPerFile
@@ -61,23 +60,12 @@
             this.lblProgressFiles.Size = new System.Drawing.Size(0, 25);
             this.lblProgressFiles.TabIndex = 2;
             // 
-            // btnAbort
-            // 
-            this.btnAbort.Location = new System.Drawing.Point(656, 117);
-            this.btnAbort.Name = "btnAbort";
-            this.btnAbort.Size = new System.Drawing.Size(129, 38);
-            this.btnAbort.TabIndex = 0;
-            this.btnAbort.Text = "Abort";
-            this.btnAbort.UseVisualStyleBackColor = true;
-            this.btnAbort.Click += new System.EventHandler(this.btnAbort_Click);
-            // 
             // ProgressWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(797, 169);
+            this.ClientSize = new System.Drawing.Size(797, 116);
             this.ControlBox = false;
-            this.Controls.Add(this.btnAbort);
             this.Controls.Add(this.lblProgressFiles);
             this.Controls.Add(this.lblProgressInfoText);
             this.Controls.Add(this.pgrProgressPerFile);
@@ -97,6 +85,5 @@
         private System.Windows.Forms.ProgressBar pgrProgressPerFile;
         private System.Windows.Forms.Label lblProgressInfoText;
         private System.Windows.Forms.Label lblProgressFiles;
-        private System.Windows.Forms.Button btnAbort;
     }
 }
