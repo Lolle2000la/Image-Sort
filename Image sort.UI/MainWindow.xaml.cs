@@ -216,13 +216,11 @@ namespace Image_sort.UI
             if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 // if the folder could not be selected, redo the thing
-                if (folderSelector.Select(folderBrowser.SelectedPath) == false)
+                if (SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
                     SelectFolder();
                 // otherwise load the image and enable the controls, if there is an image
                 else
                 {
-                    // Selects and loads the folder selected by the user.
-                    SelectAndLoadFolder(folderBrowser.SelectedPath);
 
                     // Make folders on the left up to date
                     AddFoldersToFoldersStack();
@@ -278,7 +276,7 @@ namespace Image_sort.UI
                 if (Directory.Exists(folderToEnter))
                 {
                     // if the folder could not be selected, show the user that it couldn't
-                    if (folderSelector.Select(folderToEnter) == false)
+                    if (SelectAndLoadFolder(folderToEnter) == false)
                         System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
                             " Please check if the folder is working as it should.",
                             "Could not open folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -286,8 +284,7 @@ namespace Image_sort.UI
                     // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
-                        // Selects and loads folder, obviously.
-                        SelectAndLoadFolder(folderToEnter);
+                        
 
                         // Clearing the search bar after entering the folder,
                         // so that it will be more comfortable searching.

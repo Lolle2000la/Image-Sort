@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Image_sort.UI.Dialogs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,7 +17,7 @@ namespace Image_sort.Logic
     /// </summary>
     class ImageSelectorQuery
     {
-
+        #region Attributes
         /************************************************************************/
         /*                                                                      */
         /* ATTRIBUTES                                                           */
@@ -43,17 +44,16 @@ namespace Image_sort.Logic
         /// Defines the max resolution to be loaded 
         /// </summary>
         public int MaxHorizontalResolution { get; set; }
+        /// <summary>
+        /// Window indicating the progress of the files being loaded to the user.
+        /// </summary>
+        private ProgressWindow progressWindow;
+        #endregion
 
 
 
 
-
-
-
-
-
-
-
+        #region Constructors
         /************************************************************************/
         /*                                                                      */
         /* CONSTRUCTORS                                                         */
@@ -72,16 +72,12 @@ namespace Image_sort.Logic
         {
             MaxHorizontalResolution = horizontalResolution;
         }
+        #endregion
 
 
 
 
-
-
-
-
-
-
+        #region Methods
         /************************************************************************/
         /*                                                                      */
         /* METHODS                                                              */
@@ -99,14 +95,15 @@ namespace Image_sort.Logic
         public bool SetCurrentFolder(string path)
         {
             // Cleaning up in beforehand, to make sure everything works
-            imagePool.Clear();
-            imagePathPool.Clear();
-            CurrentImage = null;
-            CollectGarbage();
+            CleanUp();
 
-            // Checks if the dir exists
+            // Checks if the Directory exists
             if (Directory.Exists(path))
             {
+
+                // Sets a new instance for the progress window.
+                progressWindow = new ProgressWindow();
+
                 // Sets the currentFolder var to path, so it can be easily retrieved
                 currentFolder = path;
 
@@ -118,23 +115,44 @@ namespace Image_sort.Logic
                     || s.EndsWith(".GIF") || s.EndsWith(".tif") || s.EndsWith(".TIF")
                     || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
 
-                // goes through the image paths given and adds them to the image pool
-                foreach (string currImagePath in paths)
+                // Show the window.
+                progressWindow.Show();
+                try
                 {
-                    // Buffers image before putting it in the pool
-                    Image image = new Image();
-                    var uri = new Uri(currImagePath);
+                    // set a few values to make sure the data is correct.
+                    progressWindow.ChangeFileProgress(0, 0, path.Count());
 
-                    BitmapImage buffer = LoadImage(currImagePath);
-                    if (buffer != null)
+
+                    // define an int holding the count of the file to load.
+                    int filesLoaded = 0;
+
+                    // goes through the image paths given and adds them to the image pool
+                    foreach (string currImagePath in paths)
                     {
-                        // Sets the source of the image and puts it into the queue/pool
-                        image.Source = buffer;
-                        imagePool.Enqueue(image);
-                        imagePathPool.Enqueue(uri.OriginalString);
+                        // Buffers image before putting it in the pool
+                        Image image = new Image();
+                        var uri = new Uri(currImagePath);
+
+                        BitmapImage buffer = LoadImage(currImagePath);
+                        if (buffer != null)
+                        {
+                            // Sets the source of the image and puts it into the queue/pool
+                            image.Source = buffer;
+                            imagePool.Enqueue(image);
+                            imagePathPool.Enqueue(uri.OriginalString);
+
+                            // Sets the progress in the window for the files being loaded.
+                            progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
+                        }
                     }
-                    
                 }
+                catch (AbortException)
+                {
+                    CleanUp();
+                    return false;
+                }
+                // Close progress window safely
+                CloseProgressWindow();
 
                 // SUCCESS
                 return true;
@@ -149,7 +167,37 @@ namespace Image_sort.Logic
             }
         }
         
+        /// <summary>
+        /// Closes the progress window.
+        /// </summary>
+        private void CloseProgressWindow()
+        {
+            // Closes the window when it is no longer needed.
+            while (!progressWindow.IsHandleCreated)
+            {
+                // Wait for the window to be created, before being closed.
+                Task.Delay(1);
+            }
+            progressWindow.Close();
+        }
 
+        /// <summary>
+        /// Cleans up everything loaded. Clears the images and so on.
+        /// </summary>
+        private void CleanUp()
+        {
+            // Cleans up everything
+            imagePool.Clear();
+            imagePathPool.Clear();
+            CurrentImage = null;
+            CollectGarbage();
+        }
+
+        /// <summary>
+        /// Load the image at the path given. Returns null if it couldn't be loaded.
+        /// </summary>
+        /// <param name="path">Path to the image</param>
+        /// <returns></returns>
         private BitmapImage LoadImage(string path)
         {
             // Holds the image
@@ -163,6 +211,7 @@ namespace Image_sort.Logic
                 using (var stream =
                     new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                 {
+                    // Loads the image
                     bitmapImage.BeginInit();
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                     bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
@@ -242,5 +291,6 @@ namespace Image_sort.Logic
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
+        #endregion
     }
 }

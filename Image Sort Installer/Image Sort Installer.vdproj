@@ -34,13 +34,13 @@
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
+        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
         "MsmKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "OwnerKey" = "8:_C6AAD1D1C1414E83A48D3F35430D284A"
+        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -94,25 +94,7 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A06178DD3F86E177AEFC5810CFA6B176"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_0BE504D09B5F4B1B9CABC07FA2E67343"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_A87679A42B444F8385B7C65A7F9ACF32"
+        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -124,7 +106,25 @@
         "Entry"
         {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_2444875B8A476DC2CCC6570801FD1260"
+        "OwnerKey" = "8:_A87679A42B444F8385B7C65A7F9ACF32"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_0BE504D09B5F4B1B9CABC07FA2E67343"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_3DAFB9AA01507CF132A2916A49A6E64A"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_UNDEFINED"
+        "OwnerKey" = "8:_A06178DD3F86E177AEFC5810CFA6B176"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -226,9 +226,14 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
+                    "_2444875B8A476DC2CCC6570801FD1260"
+                    {
+                    "Name" = "8:Image sort.Update.exe"
+                    "Attributes" = "3:512"
+                    }
                 }
             "SourcePath" = "8:Image sort.Update.exe"
             "TargetName" = "8:"
@@ -255,6 +260,11 @@
             "AssemblyAsmDisplayName" = "8:Newtonsoft.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
+                    "_3DAFB9AA01507CF132A2916A49A6E64A"
+                    {
+                    "Name" = "8:Newtonsoft.Json.dll"
+                    "Attributes" = "3:512"
+                    }
                 }
             "SourcePath" = "8:Newtonsoft.Json.dll"
             "TargetName" = "8:"
@@ -281,6 +291,11 @@
             "AssemblyAsmDisplayName" = "8:System.Net.Http, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
                 "ScatterAssemblies"
                 {
+                    "_A06178DD3F86E177AEFC5810CFA6B176"
+                    {
+                    "Name" = "8:System.Net.Http.dll"
+                    "Attributes" = "3:512"
+                    }
                 }
             "SourcePath" = "8:System.Net.Http.dll"
             "TargetName" = "8:"
@@ -304,9 +319,14 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
+                    "_A87679A42B444F8385B7C65A7F9ACF32"
+                    {
+                    "Name" = "8:Image sort.Logic.dll"
+                    "Attributes" = "3:512"
+                    }
                 }
             "SourcePath" = "8:Image sort.Logic.dll"
             "TargetName" = "8:"
@@ -330,9 +350,14 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.6.0.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.6.1.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
+                    "_A87C41C6DEB6942B8A32BC581162B42C"
+                    {
+                    "Name" = "8:Image sort.UI.Dialogs.dll"
+                    "Attributes" = "3:512"
+                    }
                 }
             "SourcePath" = "8:Image sort.UI.Dialogs.dll"
             "TargetName" = "8:"
@@ -448,15 +473,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Image Sort"
-        "ProductCode" = "8:{1224E431-F4ED-4A36-B747-3D4E0FA8CD32}"
-        "PackageCode" = "8:{24290B3F-EA8E-42C4-AEC5-DC7CCC3F784E}"
+        "ProductCode" = "8:{97E34AB6-3DBF-41A7-9E93-3A00EAD82EA5}"
+        "PackageCode" = "8:{22311EAB-F89C-45C5-BCA3-5730A033488E}"
         "UpgradeCode" = "8:{1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.6.1"
+        "ProductVersion" = "8:1.7.0"
         "Manufacturer" = "8:Lolle2000la"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
