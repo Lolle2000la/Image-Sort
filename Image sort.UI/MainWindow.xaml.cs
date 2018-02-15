@@ -5,11 +5,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Image_sort.UI
 {
@@ -128,10 +130,10 @@ namespace Image_sort.UI
         /// Loads an image into the window
         /// </summary>
         /// <param name="image">The <see cref="Image"/> that should be displayed</param>
-        private void LoadImage(ImageSource image)
+        private void LoadImage(BitmapImage image)
         {
             PreviewImage.Source = image;
-        }
+}
 
         /// <summary>
         /// Gives back, whether any folder is visible or not
@@ -203,7 +205,7 @@ namespace Image_sort.UI
         /// only loads other folder if the user wants to,
         /// and the path given is valid.
         /// </summary>
-        private void SelectFolder()
+        private async void SelectFolder()
         {
             // Creates a dialog for the folder to sort
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
@@ -216,7 +218,7 @@ namespace Image_sort.UI
             if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 // if the folder could not be selected, redo the thing
-                if (SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
+                if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
                     SelectFolder();
                 // otherwise load the image and enable the controls, if there is an image
                 else
@@ -234,21 +236,21 @@ namespace Image_sort.UI
         /// Selects and loads a folder
         /// </summary>
         /// <param name="folder">The folder that should get selected</param>
-        private bool SelectAndLoadFolder(string folder)
+        private async Task<bool> SelectAndLoadFolder(string folder)
         {
             // if the folder could not be selected, redo the thing
-            if (folderSelector.Select(folder) == false)
+            if (await folderSelector.Select(folder) == false)
                 return false;
             // otherwise load the image and enable the controls, if there is an image
             else
             {
                 // Get the next image
-                Image buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = folderSelector.GetNextImage();
 
                 // if one was given back, load it (also enable controls)
                 if (buffer != null)
                 {
-                    LoadImage(buffer.Source);
+                    LoadImage(buffer);
                     EnableControls();
                 }
                 // otherwise don't (also disable controls)
@@ -266,7 +268,7 @@ namespace Image_sort.UI
         /// Enters the folder selected by the user,
         /// if it doesn't work, let the user select a new one
         /// </summary>
-        private void EnterFolder()
+        private async void EnterFolder()
         {
 
             // If there are folders in the list (meaning in the folder) then do 
@@ -276,7 +278,7 @@ namespace Image_sort.UI
                 if (Directory.Exists(folderToEnter))
                 {
                     // if the folder could not be selected, show the user that it couldn't
-                    if (SelectAndLoadFolder(folderToEnter) == false)
+                    if (await SelectAndLoadFolder(folderToEnter) == false)
                         System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
                             " Please check if the folder is working as it should.",
                             "Could not open folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -402,6 +404,24 @@ namespace Image_sort.UI
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
+        public void EnableAllControls()
+        {
+            SkipFileButton.IsEnabled = true;
+            MoveFolderButton.IsEnabled = true;
+            NewFolderButton.IsEnabled = true;
+            EnterFolderButton.IsEnabled = true;
+            SelectFolderButton.IsEnabled = true;
+        }
+
+        public void DisableAllControls()
+        {
+            SkipFileButton.IsEnabled = false;
+            MoveFolderButton.IsEnabled = false;
+            NewFolderButton.IsEnabled = false;
+            EnterFolderButton.IsEnabled = false;
+            SelectFolderButton.IsEnabled = false;
+        }
+
         /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
@@ -412,13 +432,13 @@ namespace Image_sort.UI
                 // set the preview image to nothing
                 PreviewImage.Source = null;
                 // get the next image
-                Image buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = folderSelector.GetNextImage();
                 // get the next path of the next image
                 string path = folderSelector.GetImagePath();
 
                 // if the buffer is not null, load the image
                 if (buffer != null)
-                    LoadImage(buffer.Source);
+                    LoadImage(buffer);
                 // else disable the controls
                 else
                     DisableControls();
@@ -437,13 +457,13 @@ namespace Image_sort.UI
                     // set the preview image to nothing
                     PreviewImage.Source = null;
                     // get the next image
-                    Image buffer = folderSelector.GetNextImage();
+                    BitmapImage buffer = folderSelector.GetNextImage();
                     // get the next path of the next image
                     string path = folderSelector.GetImagePath();
 
                     // if the buffer is not null, load the image
                     if (buffer != null)
-                        LoadImage(buffer.Source);
+                        LoadImage(buffer);
                     // else disable the controls
                     else
                     {

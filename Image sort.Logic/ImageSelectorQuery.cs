@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Media;
@@ -27,7 +29,7 @@ namespace Image_sort.Logic
         /// <summary>
         /// Pool containing all the images in the folder
         /// </summary>
-        private Queue<Image> imagePool = new Queue<Image>();
+        private Queue<BitmapImage> imagePool = new Queue<BitmapImage>();
         /// <summary>
         /// Contains all the paths of all the images in the folder
         /// </summary>
@@ -92,7 +94,7 @@ namespace Image_sort.Logic
         /// returns true if it worked, false if it didn't 
         /// (for example because the folder does not exist)
         /// </returns>
-        public bool SetCurrentFolder(string path)
+        public async Task<bool> SetCurrentFolder(string path)
         {
             // Cleaning up in beforehand, to make sure everything works
             CleanUp();
@@ -126,19 +128,20 @@ namespace Image_sort.Logic
                     // define an int holding the count of the file to load.
                     int filesLoaded = 0;
 
+                    Thread thread = Thread.CurrentThread;
+
                     // goes through the image paths given and adds them to the image pool
                     foreach (string currImagePath in paths)
                     {
+                        
                         // Buffers image before putting it in the pool
-                        Image image = new Image();
                         var uri = new Uri(currImagePath);
 
-                        BitmapImage buffer = LoadImage(currImagePath);
+                        BitmapImage buffer = await LoadImage(currImagePath);
                         if (buffer != null)
                         {
                             // Sets the source of the image and puts it into the queue/pool
-                            image.Source = buffer;
-                            imagePool.Enqueue(image);
+                            imagePool.Enqueue(buffer);
                             imagePathPool.Enqueue(uri.OriginalString);
 
                             // Sets the progress in the window for the files being loaded.
@@ -166,7 +169,7 @@ namespace Image_sort.Logic
                 return false;
             }
         }
-        
+                
         /// <summary>
         /// Closes the progress window.
         /// </summary>
@@ -198,31 +201,41 @@ namespace Image_sort.Logic
         /// </summary>
         /// <param name="path">Path to the image</param>
         /// <returns></returns>
-        private BitmapImage LoadImage(string path)
+        private async Task<BitmapImage> LoadImage(string path)
         {
             // Holds the image
-            BitmapImage bitmapImage = new BitmapImage();
+            BitmapImage bitmapImage/* = new BitmapImage()*/;
 
             // try loading the image
             try
             {
-                // Reads in the image into a bitmap for later usage, uses FileStream to ensure
-                // it works as it should by freeing the access to the file when unneeded
-                using (var stream =
-                    new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                bitmapImage = await Task.Run(() =>
                 {
-                    // Loads the image
-                    bitmapImage.BeginInit();
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.DecodePixelWidth = MaxHorizontalResolution;
-                    bitmapImage.StreamSource = stream;
-                    bitmapImage.EndInit();
-                }
+                    BitmapImage bitmap = new BitmapImage();
+                    // Reads in the image into a bitmap for later usage, uses FileStream to ensure
+                    // it works as it should by freeing the access to the file when unneeded
+                    using (var stream =
+                        new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        // Loads the image
+                        bitmap.BeginInit();
+                        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmap.DecodePixelWidth = MaxHorizontalResolution;
+                        bitmap.StreamSource = stream;
+                        bitmap.EndInit();
+                    }
+
+                    if(bitmap.CanFreeze)
+                        bitmap.Freeze();
+
+                    return bitmap;
+                }).ConfigureAwait(true);
             }
             // If it isn't supported, tell the user which one is not
             catch (NotSupportedException)
             {
-                MessageBox.Show($"The image \"{Path.GetFileNameWithoutExtension(path)}\" could not be loaded.\n" +
+                // Show which one couldn't be opened.
+                System.Windows.Forms.MessageBox.Show($"The image \"{Path.GetFileNameWithoutExtension(path)}\" could not be loaded.\n" +
                     $"It is not supported by this Program. Please make sure it is fully working");
 
                 return null;
@@ -236,7 +249,7 @@ namespace Image_sort.Logic
         /// Pulls the next <see cref="Image"/> out of the image pool
         /// </summary>
         /// <returns>returns the image as a <see cref="Image"/>, or <c>null</c> if no more images are in the folder</returns>
-        public Image GetNextImage()
+        public BitmapImage GetNextImage()
         {
             // Making sure, the image and string pool match up
             while (imagePool.Count > imagePathPool.Count)

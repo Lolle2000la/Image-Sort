@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Media;
@@ -64,18 +65,20 @@ namespace Image_sort.UI.Dialogs
                     "The argument is bigger than the maxProgress or smaller than the " +
                     "minProgress given.");
             }
+            Invoke(new MethodInvoker(delegate
+            {
+                // Sets the state of the progress bar indicating files loaded.
+                pgrProgressPerFile.Minimum = minFiles;
+                pgrProgressPerFile.Maximum = maxFiles;
+                pgrProgressPerFile.Value = currentFile;
 
-            // Sets the state of the progress bar indicating files loaded.
-            pgrProgressPerFile.Minimum = minFiles;
-            pgrProgressPerFile.Maximum = maxFiles;
-            pgrProgressPerFile.Value = currentFile;
+                // Sets the text of the label "lblProgressFiles",
+                // so that the user can see how much files still are to be loaded.
+                lblProgressFiles.Text = $"[{currentFile}/{maxFiles}]";
 
-            // Sets the text of the label "lblProgressFiles",
-            // so that the user can see how much files still are to be loaded.
-            lblProgressFiles.Text = $"[{currentFile}/{maxFiles}]";
-
-            // Force refresh window
-            this.Refresh();
+                // Force refresh window
+                Refresh();
+            }));
         }
     }
 
