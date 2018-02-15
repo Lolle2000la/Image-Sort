@@ -217,6 +217,9 @@ namespace Image_sort.UI
             // Shows it and does things if it works out
             if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                // Disable all user input to prevent unwanted behavior
+                DisableAllControls();
+
                 // if the folder could not be selected, redo the thing
                 if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
                     SelectFolder();
@@ -228,6 +231,8 @@ namespace Image_sort.UI
                     AddFoldersToFoldersStack();
                 }
 
+                // Enable all controls again to allow for user input
+                EnableAllControls();
             }
         }
 
@@ -239,7 +244,7 @@ namespace Image_sort.UI
         private async Task<bool> SelectAndLoadFolder(string folder)
         {
             // if the folder could not be selected, redo the thing
-            if (await folderSelector.Select(folder) == false)
+            if (await folderSelector.SelectAsync(folder) == false)
                 return false;
             // otherwise load the image and enable the controls, if there is an image
             else
@@ -277,6 +282,9 @@ namespace Image_sort.UI
                 string folderToEnter = folders[FoldersStack.SelectedIndex];
                 if (Directory.Exists(folderToEnter))
                 {
+                    // Disable all user input to prevent unwanted behavior
+                    DisableAllControls();
+
                     // if the folder could not be selected, show the user that it couldn't
                     if (await SelectAndLoadFolder(folderToEnter) == false)
                         System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
@@ -292,6 +300,9 @@ namespace Image_sort.UI
                         // so that it will be more comfortable searching.
                         SearchBarBox.Text = "";
                     }
+
+                    // Enable all controls again to allow for user input
+                    EnableAllControls();
                 }
 
                 // Brings the folders on the left up to date
@@ -404,6 +415,9 @@ namespace Image_sort.UI
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
+        /// <summary>
+        /// Enable all controls. Literally all.
+        /// </summary>
         public void EnableAllControls()
         {
             SkipFileButton.IsEnabled = true;
@@ -411,8 +425,12 @@ namespace Image_sort.UI
             NewFolderButton.IsEnabled = true;
             EnterFolderButton.IsEnabled = true;
             SelectFolderButton.IsEnabled = true;
+            ResolutionBox.IsEnabled = true;
         }
 
+        /// <summary>
+        /// Disable all controls. Literally all.
+        /// </summary>
         public void DisableAllControls()
         {
             SkipFileButton.IsEnabled = false;
@@ -420,6 +438,7 @@ namespace Image_sort.UI
             NewFolderButton.IsEnabled = false;
             EnterFolderButton.IsEnabled = false;
             SelectFolderButton.IsEnabled = false;
+            ResolutionBox.IsEnabled = false;
         }
 
         /// <summary>
@@ -616,7 +635,8 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         public void FolderStackItem_DoubleClick(object sender, EventArgs e)
         {
-            EnterFolder();
+            if (EnterFolderButton.IsEnabled)
+                EnterFolder();
         }
         
         /// <summary>

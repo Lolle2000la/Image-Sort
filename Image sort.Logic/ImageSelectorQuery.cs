@@ -94,7 +94,7 @@ namespace Image_sort.Logic
         /// returns true if it worked, false if it didn't 
         /// (for example because the folder does not exist)
         /// </returns>
-        public async Task<bool> SetCurrentFolder(string path)
+        public async Task<bool> SetCurrentFolderAsync(string path)
         {
             // Cleaning up in beforehand, to make sure everything works
             CleanUp();
@@ -127,9 +127,7 @@ namespace Image_sort.Logic
 
                     // define an int holding the count of the file to load.
                     int filesLoaded = 0;
-
-                    Thread thread = Thread.CurrentThread;
-
+                    
                     // goes through the image paths given and adds them to the image pool
                     foreach (string currImagePath in paths)
                     {
@@ -137,7 +135,7 @@ namespace Image_sort.Logic
                         // Buffers image before putting it in the pool
                         var uri = new Uri(currImagePath);
 
-                        BitmapImage buffer = await LoadImage(currImagePath);
+                        BitmapImage buffer = await LoadImageAsync(currImagePath);
                         if (buffer != null)
                         {
                             // Sets the source of the image and puts it into the queue/pool
@@ -201,7 +199,7 @@ namespace Image_sort.Logic
         /// </summary>
         /// <param name="path">Path to the image</param>
         /// <returns></returns>
-        private async Task<BitmapImage> LoadImage(string path)
+        private async Task<BitmapImage> LoadImageAsync(string path)
         {
             // Holds the image
             BitmapImage bitmapImage/* = new BitmapImage()*/;
@@ -225,9 +223,11 @@ namespace Image_sort.Logic
                         bitmap.EndInit();
                     }
 
+                    // Freeze bitmap to be able to use it from another thread.
                     if(bitmap.CanFreeze)
                         bitmap.Freeze();
 
+                    // return the bitmap to the caller.
                     return bitmap;
                 }).ConfigureAwait(true);
             }

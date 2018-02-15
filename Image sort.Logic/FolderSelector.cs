@@ -88,13 +88,13 @@ namespace Image_sort.Logic
         /// </summary>
         /// <param name="path">Path that should be returned</param>
         /// <returns>Returns true when successful and false when not</returns>
-        public async Task<bool> Select(string path)
+        public async Task<bool> SelectAsync(string path)
         {
             // If the directory given exists, set the folder to that and return true
             if (Directory.Exists(path))
             {
                 CurrentFolderPath = path;
-                bool returnValue = await imageSelectorQuery.SetCurrentFolder(path);
+                bool returnValue = await imageSelectorQuery.SetCurrentFolderAsync(path);
                 return true;
             }
             // if not, then set to null and return false
