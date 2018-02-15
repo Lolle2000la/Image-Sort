@@ -5,11 +5,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace Image_sort.UI
 {
@@ -18,6 +20,7 @@ namespace Image_sort.UI
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Atributes
         /*********************************************************************/
         /*                                                                   */
         /* ATRIBUTES                                                         */
@@ -58,16 +61,12 @@ namespace Image_sort.UI
         /// Arguments given by the user/caller
         /// </summary>
         Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
+        #endregion
 
 
 
 
-
-
-
-
-
-
+        #region Constructors
         /*********************************************************************/
         /*                                                                   */
         /* CONSTRUCTORS                                                      */
@@ -106,18 +105,12 @@ namespace Image_sort.UI
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
             folderSelector.SetResolution(MaxHorizontalResolution);
         }
+        #endregion
 
 
 
 
-
-
-
-
-
-
-
-
+        #region Methods
         /*********************************************************************/
         /*                                                                   */
         /* METHODS                                                           */
@@ -128,10 +121,10 @@ namespace Image_sort.UI
         /// Loads an image into the window
         /// </summary>
         /// <param name="image">The <see cref="Image"/> that should be displayed</param>
-        private void LoadImage(ImageSource image)
+        private void LoadImage(BitmapImage image)
         {
             PreviewImage.Source = image;
-        }
+}
 
         /// <summary>
         /// Gives back, whether any folder is visible or not
@@ -203,7 +196,7 @@ namespace Image_sort.UI
         /// only loads other folder if the user wants to,
         /// and the path given is valid.
         /// </summary>
-        private void SelectFolder()
+        private async void SelectFolder()
         {
             // Creates a dialog for the folder to sort
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
@@ -215,8 +208,11 @@ namespace Image_sort.UI
             // Shows it and does things if it works out
             if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
+                // Disable all user input to prevent unwanted behavior
+                DisableAllControls();
+
                 // if the folder could not be selected, redo the thing
-                if (SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
+                if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
                     SelectFolder();
                 // otherwise load the image and enable the controls, if there is an image
                 else
@@ -226,6 +222,8 @@ namespace Image_sort.UI
                     AddFoldersToFoldersStack();
                 }
 
+                // Enable all controls again to allow for user input
+                EnableAllControls();
             }
         }
 
@@ -234,21 +232,21 @@ namespace Image_sort.UI
         /// Selects and loads a folder
         /// </summary>
         /// <param name="folder">The folder that should get selected</param>
-        private bool SelectAndLoadFolder(string folder)
+        private async Task<bool> SelectAndLoadFolder(string folder)
         {
             // if the folder could not be selected, redo the thing
-            if (folderSelector.Select(folder) == false)
+            if (await folderSelector.SelectAsync(folder) == false)
                 return false;
             // otherwise load the image and enable the controls, if there is an image
             else
             {
                 // Get the next image
-                Image buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = folderSelector.GetNextImage();
 
                 // if one was given back, load it (also enable controls)
                 if (buffer != null)
                 {
-                    LoadImage(buffer.Source);
+                    LoadImage(buffer);
                     EnableControls();
                 }
                 // otherwise don't (also disable controls)
@@ -266,7 +264,7 @@ namespace Image_sort.UI
         /// Enters the folder selected by the user,
         /// if it doesn't work, let the user select a new one
         /// </summary>
-        private void EnterFolder()
+        private async void EnterFolder()
         {
 
             // If there are folders in the list (meaning in the folder) then do 
@@ -275,8 +273,11 @@ namespace Image_sort.UI
                 string folderToEnter = folders[FoldersStack.SelectedIndex];
                 if (Directory.Exists(folderToEnter))
                 {
+                    // Disable all user input to prevent unwanted behavior
+                    DisableAllControls();
+
                     // if the folder could not be selected, show the user that it couldn't
-                    if (SelectAndLoadFolder(folderToEnter) == false)
+                    if (await SelectAndLoadFolder(folderToEnter) == false)
                         System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
                             " Please check if the folder is working as it should.",
                             "Could not open folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -290,6 +291,9 @@ namespace Image_sort.UI
                         // so that it will be more comfortable searching.
                         SearchBarBox.Text = "";
                     }
+
+                    // Enable all controls again to allow for user input
+                    EnableAllControls();
                 }
 
                 // Brings the folders on the left up to date
@@ -403,6 +407,32 @@ namespace Image_sort.UI
         }
 
         /// <summary>
+        /// Enable all controls. Literally all.
+        /// </summary>
+        public void EnableAllControls()
+        {
+            SkipFileButton.IsEnabled = true;
+            MoveFolderButton.IsEnabled = true;
+            NewFolderButton.IsEnabled = true;
+            EnterFolderButton.IsEnabled = true;
+            SelectFolderButton.IsEnabled = true;
+            ResolutionBox.IsEnabled = true;
+        }
+
+        /// <summary>
+        /// Disable all controls. Literally all.
+        /// </summary>
+        public void DisableAllControls()
+        {
+            SkipFileButton.IsEnabled = false;
+            MoveFolderButton.IsEnabled = false;
+            NewFolderButton.IsEnabled = false;
+            EnterFolderButton.IsEnabled = false;
+            SelectFolderButton.IsEnabled = false;
+            ResolutionBox.IsEnabled = false;
+        }
+
+        /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
         public void DoSkip()
@@ -412,13 +442,13 @@ namespace Image_sort.UI
                 // set the preview image to nothing
                 PreviewImage.Source = null;
                 // get the next image
-                Image buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = folderSelector.GetNextImage();
                 // get the next path of the next image
                 string path = folderSelector.GetImagePath();
 
                 // if the buffer is not null, load the image
                 if (buffer != null)
-                    LoadImage(buffer.Source);
+                    LoadImage(buffer);
                 // else disable the controls
                 else
                     DisableControls();
@@ -437,13 +467,13 @@ namespace Image_sort.UI
                     // set the preview image to nothing
                     PreviewImage.Source = null;
                     // get the next image
-                    Image buffer = folderSelector.GetNextImage();
+                    BitmapImage buffer = folderSelector.GetNextImage();
                     // get the next path of the next image
                     string path = folderSelector.GetImagePath();
 
                     // if the buffer is not null, load the image
                     if (buffer != null)
-                        LoadImage(buffer.Source);
+                        LoadImage(buffer);
                     // else disable the controls
                     else
                     {
@@ -531,13 +561,12 @@ namespace Image_sort.UI
         {
             ResolutionBox.Focusable = false;
         }
+        #endregion
 
 
 
 
-
-
-
+        #region Event Handlers
         /*********************************************************************/
         /*                                                                   */
         /* EVENT HANDLERS                                                    */
@@ -596,7 +625,8 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         public void FolderStackItem_DoubleClick(object sender, EventArgs e)
         {
-            EnterFolder();
+            if (EnterFolderButton.IsEnabled)
+                EnterFolder();
         }
         
         /// <summary>
@@ -846,5 +876,6 @@ namespace Image_sort.UI
             // and set the resolution to the max resolution
             MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
         }
+        #endregion
     }
 }

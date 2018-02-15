@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Security.AccessControl;
+using System.Windows.Media.Imaging;
 
 namespace Image_sort.Logic
 {
@@ -15,7 +16,7 @@ namespace Image_sort.Logic
     /// </summary>
     public class FolderSelector
     {
-
+        #region Atributes
         /************************************************************************/
         /*                                                                      */
         /* ATTRIBUTES                                                           */
@@ -31,16 +32,12 @@ namespace Image_sort.Logic
         /// Holds the instance of <see cref="ImageSelectorQuery"/> 
         /// </summary>
         private ImageSelectorQuery imageSelectorQuery;
+        #endregion
 
 
 
 
-
-
-
-
-
-
+        #region Constructors
         /************************************************************************/
         /*                                                                      */
         /* CONSTRUCTORS                                                         */
@@ -65,17 +62,12 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery = new ImageSelectorQuery(verticalResolution);
         }
+        #endregion
 
 
 
 
-
-
-
-
-
-
-
+        #region Methods
         /************************************************************************/
         /*                                                                      */
         /* METHODS                                                              */
@@ -87,14 +79,14 @@ namespace Image_sort.Logic
         /// </summary>
         /// <param name="path">Path that should be returned</param>
         /// <returns>Returns true when successful and false when not</returns>
-        public bool Select(string path)
+        public async Task<bool> SelectAsync(string path)
         {
             // If the directory given exists, set the folder to that and return true
             if (Directory.Exists(path))
             {
                 CurrentFolderPath = path;
-                imageSelectorQuery.SetCurrentFolder(path);
-                return true;
+                // Return the result of trying to select the folder.
+                return await imageSelectorQuery.SetCurrentFolderAsync(path);
             }
             // if not, then set to null and return false
             CurrentFolderPath = null;
@@ -115,7 +107,7 @@ namespace Image_sort.Logic
         /// Gives back current Image as <see cref="Image"/>
         /// </summary>
         /// <returns>Returns <see cref="Image"/></returns>
-        public Image GetNextImage()
+        public BitmapImage GetNextImage()
         {
             return imageSelectorQuery.GetNextImage();
         }
@@ -226,5 +218,6 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery.SetResolution(horizontalResolution);
         }
+        #endregion
     }
 }
