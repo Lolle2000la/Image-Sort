@@ -20,6 +20,7 @@ namespace Image_sort.UI
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Atributes
         /*********************************************************************/
         /*                                                                   */
         /* ATRIBUTES                                                         */
@@ -60,16 +61,12 @@ namespace Image_sort.UI
         /// Arguments given by the user/caller
         /// </summary>
         Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
+        #endregion
 
 
 
 
-
-
-
-
-
-
+        #region Constructors
         /*********************************************************************/
         /*                                                                   */
         /* CONSTRUCTORS                                                      */
@@ -108,18 +105,12 @@ namespace Image_sort.UI
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
             folderSelector.SetResolution(MaxHorizontalResolution);
         }
+        #endregion
 
 
 
 
-
-
-
-
-
-
-
-
+        #region Methods
         /*********************************************************************/
         /*                                                                   */
         /* METHODS                                                           */
@@ -570,13 +561,12 @@ namespace Image_sort.UI
         {
             ResolutionBox.Focusable = false;
         }
+        #endregion
 
 
 
 
-
-
-
+        #region Event Handlers
         /*********************************************************************/
         /*                                                                   */
         /* EVENT HANDLERS                                                    */
@@ -886,5 +876,6 @@ namespace Image_sort.UI
             // and set the resolution to the max resolution
             MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
         }
+        #endregion
     }
 }

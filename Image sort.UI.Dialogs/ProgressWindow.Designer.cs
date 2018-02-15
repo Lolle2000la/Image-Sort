@@ -32,6 +32,7 @@
             this.pgrProgressPerFile = new System.Windows.Forms.ProgressBar();
             this.lblProgressInfoText = new System.Windows.Forms.Label();
             this.lblProgressFiles = new System.Windows.Forms.Label();
+            this.btnCancel = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // pgrProgressPerFile
@@ -40,7 +41,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.pgrProgressPerFile.Location = new System.Drawing.Point(12, 61);
             this.pgrProgressPerFile.Name = "pgrProgressPerFile";
-            this.pgrProgressPerFile.Size = new System.Drawing.Size(773, 38);
+            this.pgrProgressPerFile.Size = new System.Drawing.Size(773, 40);
             this.pgrProgressPerFile.TabIndex = 0;
             // 
             // lblProgressInfoText
@@ -60,12 +61,23 @@
             this.lblProgressFiles.Size = new System.Drawing.Size(0, 25);
             this.lblProgressFiles.TabIndex = 2;
             // 
+            // btnCancel
+            // 
+            this.btnCancel.Location = new System.Drawing.Point(669, 112);
+            this.btnCancel.Name = "btnCancel";
+            this.btnCancel.Size = new System.Drawing.Size(116, 40);
+            this.btnCancel.TabIndex = 0;
+            this.btnCancel.Text = "Cancel";
+            this.btnCancel.UseVisualStyleBackColor = true;
+            this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
+            // 
             // ProgressWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(797, 116);
+            this.ClientSize = new System.Drawing.Size(797, 161);
             this.ControlBox = false;
+            this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.lblProgressFiles);
             this.Controls.Add(this.lblProgressInfoText);
             this.Controls.Add(this.pgrProgressPerFile);
@@ -85,5 +97,6 @@
         private System.Windows.Forms.ProgressBar pgrProgressPerFile;
         private System.Windows.Forms.Label lblProgressInfoText;
         private System.Windows.Forms.Label lblProgressFiles;
+        private System.Windows.Forms.Button btnCancel;
     }
 }

@@ -117,6 +117,7 @@ namespace Image_sort.Logic
                     || s.EndsWith(".GIF") || s.EndsWith(".tif") || s.EndsWith(".TIF")
                     || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
 
+
                 // Show the window.
                 progressWindow.Show();
                 try
@@ -131,7 +132,12 @@ namespace Image_sort.Logic
                     // goes through the image paths given and adds them to the image pool
                     foreach (string currImagePath in paths)
                     {
-                        
+                        // if the user wants to abort, throw an exception and abort.
+                        if (progressWindow.AbortRequested)
+                        {
+                            throw new AbortException();
+                        }
+
                         // Buffers image before putting it in the pool
                         var uri = new Uri(currImagePath);
 
@@ -147,8 +153,11 @@ namespace Image_sort.Logic
                         }
                     }
                 }
+                // if the loading was aborted, clean up anything and return false.
                 catch (AbortException)
                 {
+                    // Clean up anything for the next start.
+                    CloseProgressWindow();
                     CleanUp();
                     return false;
                 }

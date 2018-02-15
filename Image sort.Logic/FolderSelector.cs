@@ -16,7 +16,7 @@ namespace Image_sort.Logic
     /// </summary>
     public class FolderSelector
     {
-
+        #region Atributes
         /************************************************************************/
         /*                                                                      */
         /* ATTRIBUTES                                                           */
@@ -32,16 +32,12 @@ namespace Image_sort.Logic
         /// Holds the instance of <see cref="ImageSelectorQuery"/> 
         /// </summary>
         private ImageSelectorQuery imageSelectorQuery;
+        #endregion
 
 
 
 
-
-
-
-
-
-
+        #region Constructors
         /************************************************************************/
         /*                                                                      */
         /* CONSTRUCTORS                                                         */
@@ -66,17 +62,12 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery = new ImageSelectorQuery(verticalResolution);
         }
+        #endregion
 
 
 
 
-
-
-
-
-
-
-
+        #region Methods
         /************************************************************************/
         /*                                                                      */
         /* METHODS                                                              */
@@ -94,8 +85,8 @@ namespace Image_sort.Logic
             if (Directory.Exists(path))
             {
                 CurrentFolderPath = path;
-                bool returnValue = await imageSelectorQuery.SetCurrentFolderAsync(path);
-                return true;
+                // Return the result of trying to select the folder.
+                return await imageSelectorQuery.SetCurrentFolderAsync(path);
             }
             // if not, then set to null and return false
             CurrentFolderPath = null;
@@ -227,5 +218,6 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery.SetResolution(horizontalResolution);
         }
+        #endregion
     }
 }

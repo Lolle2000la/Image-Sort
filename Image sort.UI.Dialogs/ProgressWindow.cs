@@ -31,6 +31,22 @@ namespace Image_sort.UI.Dialogs
         public event AbortClickedDel AbortClicked;
 
         /// <summary>
+        /// Contains whether the user wants to abort or not.
+        /// </summary>
+        private bool abortRequested = false;
+
+        /// <summary>
+        /// Returns if the user wants to abort or not.
+        /// </summary>
+        public bool AbortRequested
+        {
+            get
+            {
+                return abortRequested;
+            }
+        }
+
+        /// <summary>
         /// Constructor, creates the window.
         /// </summary>
         public ProgressWindow()
@@ -79,6 +95,11 @@ namespace Image_sort.UI.Dialogs
                 // Force refresh window
                 Refresh();
             }));
+        }
+
+        private void btnCancel_Click(object sender, EventArgs e)
+        {
+            abortRequested = true;
         }
     }
 
