@@ -92,10 +92,10 @@ namespace Image_sort.UI
 
             // loads Folder if one was selected
             // the key for folder is "f"
-            if (ArgsGiven.TryGetValue("-f", out string value))
+            if (ArgsGiven.TryGetValue("-f", out string argValue))
             {
                 // Do what ever with the value
-                SelectAndLoadFolder(value);
+                SelectAndLoadFolder(argValue).Wait();
 
                 // Refresh folders
                 AddFoldersToFoldersStack();
@@ -234,9 +234,16 @@ namespace Image_sort.UI
         /// <param name="folder">The folder that should get selected</param>
         private async Task<bool> SelectAndLoadFolder(string folder)
         {
+            DisableAllControls();
+
             // if the folder could not be selected, redo the thing
             if (await folderSelector.SelectAsync(folder) == false)
+            {
+                // Only enable opening another one
+                SelectFolderButton.IsEnabled = true;
+
                 return false;
+            }
             // otherwise load the image and enable the controls, if there is an image
             else
             {
@@ -256,8 +263,10 @@ namespace Image_sort.UI
                     DisableControls();
                 }
 
+                EnableAllControls();
                 return true;
             }
+
         }
 
         /// <summary>
@@ -381,6 +390,16 @@ namespace Image_sort.UI
                 }
 
                 FoldersStack.SelectedIndex = 0;
+            }
+            else
+            {
+                // Make sure that there are not folders to select if there is none selected.
+                FoldersStack.Items.Clear();
+                // Make only select folder possible.
+                DisableAllControls();
+                SelectFolderButton.IsEnabled = true;
+
+                LoadImage(null);
             }
         }
 
@@ -784,7 +803,7 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Window_Drop(object sender, System.Windows.DragEventArgs e)
+        private async void Window_Drop(object sender, System.Windows.DragEventArgs e)
         {
             if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, false))
             {
@@ -795,7 +814,7 @@ namespace Image_sort.UI
                 if (Directory.Exists(folder[0]))
                 {
                     // Loads up the first folder (ignores the rest)
-                    SelectAndLoadFolder(folder[0]);
+                    await SelectAndLoadFolder(folder[0]);
 
                     // Refresh folders
                     AddFoldersToFoldersStack();

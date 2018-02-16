@@ -84,12 +84,19 @@ namespace Image_sort.Logic
             // If the directory given exists, set the folder to that and return true
             if (Directory.Exists(path))
             {
-                CurrentFolderPath = path;
+                // Set the folder that should get processed.
+                bool result = await imageSelectorQuery.SetCurrentFolderAsync(path);
+
+                if (result)
+                    CurrentFolderPath = path;
+                else
+                    CurrentFolderPath = string.Empty;
+
                 // Return the result of trying to select the folder.
-                return await imageSelectorQuery.SetCurrentFolderAsync(path);
+                return result;
             }
             // if not, then set to null and return false
-            CurrentFolderPath = null;
+            CurrentFolderPath = string.Empty;
             return false;
         }
 
