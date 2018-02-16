@@ -92,10 +92,10 @@ namespace Image_sort.UI
 
             // loads Folder if one was selected
             // the key for folder is "f"
-            if (ArgsGiven.TryGetValue("-f", out string value))
+            if (ArgsGiven.TryGetValue("-f", out string argValue))
             {
                 // Do what ever with the value
-                SelectAndLoadFolder(value).Wait();
+                SelectAndLoadFolder(argValue).Wait();
 
                 // Refresh folders
                 AddFoldersToFoldersStack();
