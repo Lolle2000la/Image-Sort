@@ -63,10 +63,11 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(669, 112);
+            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.Location = new System.Drawing.Point(669, 113);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(116, 40);
-            this.btnCancel.TabIndex = 0;
+            this.btnCancel.TabIndex = 1;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -75,17 +76,19 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(797, 161);
+            this.ClientSize = new System.Drawing.Size(797, 165);
             this.ControlBox = false;
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.lblProgressFiles);
             this.Controls.Add(this.lblProgressInfoText);
             this.Controls.Add(this.pgrProgressPerFile);
+            this.DoubleBuffered = true;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ProgressWindow";
-            this.Text = "ProgressWindow";
+            this.Text = "Loading...";
             this.Load += new System.EventHandler(this.ProgressWindow_Load);
             this.ResumeLayout(false);
             this.PerformLayout();

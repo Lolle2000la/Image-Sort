@@ -17,19 +17,7 @@ namespace Image_sort.UI.Dialogs
     /// </summary>
     public partial class ProgressWindow : Form
     {
-        /// <summary>
-        /// Delegate for when the user wants to abort the task.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="eventArgs"></param>
-        /// <returns></returns>
-        public delegate Delegate AbortClickedDel(object sender, EventArgs eventArgs);
-
-        /// <summary>
-        /// Called when the user clicks the abort button.
-        /// </summary>
-        public event AbortClickedDel AbortClicked;
-
+        #region Attributes
         /// <summary>
         /// Contains whether the user wants to abort or not.
         /// </summary>
@@ -45,7 +33,12 @@ namespace Image_sort.UI.Dialogs
                 return abortRequested;
             }
         }
+        #endregion
 
+
+
+
+        #region Constructors
         /// <summary>
         /// Constructor, creates the window.
         /// </summary>
@@ -53,18 +46,12 @@ namespace Image_sort.UI.Dialogs
         {
             InitializeComponent();
         }
+        #endregion
 
-        /// <summary>
-        /// Called when the Window has been loaded.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void ProgressWindow_Load(object sender, EventArgs e)
-        {
-            // Force refresh window
-            this.Refresh();
-        }
 
+
+
+        #region Methods
         /// <summary>
         /// Sets the counter for files already loaded.
         /// </summary>
@@ -96,11 +83,33 @@ namespace Image_sort.UI.Dialogs
                 Refresh();
             }));
         }
+        #endregion
 
+
+
+
+        #region Event Handlers
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            // Showing that progress canceling is being made.
+            btnCancel.Text = "Canceling";
+            btnCancel.Enabled = false;
+
+            // Signal that aborting is requested.
             abortRequested = true;
         }
+
+        /// <summary>
+        /// Called when the Window has been loaded.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ProgressWindow_Load(object sender, EventArgs e)
+        {
+            // Force refresh window
+            this.Refresh();
+        }
+        #endregion
     }
 
     /// <summary>

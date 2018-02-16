@@ -39,9 +39,13 @@ namespace Image_sort.Logic
         /// </summary>
         private string currentFolder;
         /// <summary>
+        /// Stores the path to the current image.
+        /// </summary>
+        private string currentImage;
+        /// <summary>
         /// Contains the path to the current Image
         /// </summary>
-        public string CurrentImage { get; set; }
+        public string CurrentImage { get { return currentImage; } }
         /// <summary>
         /// Defines the max resolution to be loaded 
         /// </summary>
@@ -199,7 +203,8 @@ namespace Image_sort.Logic
             // Cleans up everything
             imagePool.Clear();
             imagePathPool.Clear();
-            CurrentImage = null;
+            currentFolder = null;
+            currentImage = null;
             CollectGarbage();
         }
 
