@@ -274,8 +274,12 @@ namespace Image_sort.Logic
             // make sure everything works and there are images left in the queue
             if (imagePool.Count != 0)
             {
+                // Buffer image and freeze it, so that it can be returned thread-safe.
+                BitmapImage bitmapImageBuffer = imagePool.Dequeue();
+                bitmapImageBuffer.Freeze();
+
                 // returns the image in queue
-                return imagePool.Dequeue();
+                return bitmapImageBuffer;
             }
             else
             {
