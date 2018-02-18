@@ -94,11 +94,8 @@ namespace Image_sort.UI
             // the key for folder is "f"
             if (ArgsGiven.TryGetValue("-f", out string argValue))
             {
-                // Do what ever with the value
-                SelectAndLoadFolder(argValue).Wait();
-
-                // Refresh folders
-                AddFoldersToFoldersStack();
+                // Load the image at the given path.
+                LoadFolderAsync(argValue, true);
             }
 
             // Set the resolution to the saved one.
@@ -118,13 +115,42 @@ namespace Image_sort.UI
         /*********************************************************************/
 
         /// <summary>
+        /// Loads the folder at the path given, and then adds the folders in that folder
+        /// to the selection in the <see cref="FoldersStack"/>
+        /// </summary>
+        /// <param name="folder">The folder that should be selected/loaded.</param>
+        /// <param name="hideMainWindow">
+        /// Indicates, whether the main window should be hidden during the loading process.
+        /// </param>
+        private async void LoadFolderAsync(string folder, bool hideMainWindow=false)
+        {
+            if (Directory.Exists(folder))
+            {
+                // Hides the main window before loading.
+                if (hideMainWindow)
+                    Hide();
+
+                // Do what ever with the value
+                await SelectAndLoadFolder(folder);
+
+                // Refresh folders
+                AddFoldersToFoldersStack();
+
+                // Shows the main window after loading is complete.
+                if (hideMainWindow)
+                    Show();
+            }
+        }
+
+
+        /// <summary>
         /// Loads an image into the window
         /// </summary>
         /// <param name="image">The <see cref="Image"/> that should be displayed</param>
         private void LoadImage(BitmapImage image)
         {
             PreviewImage.Source = image;
-}
+        }
 
         /// <summary>
         /// Gives back, whether any folder is visible or not

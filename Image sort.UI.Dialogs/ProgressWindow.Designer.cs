@@ -37,17 +37,17 @@
             // 
             // pgrProgressPerFile
             // 
-            this.pgrProgressPerFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.pgrProgressPerFile.Location = new System.Drawing.Point(12, 61);
+            this.pgrProgressPerFile.Margin = new System.Windows.Forms.Padding(10);
             this.pgrProgressPerFile.Name = "pgrProgressPerFile";
-            this.pgrProgressPerFile.Size = new System.Drawing.Size(773, 40);
+            this.pgrProgressPerFile.Size = new System.Drawing.Size(770, 40);
             this.pgrProgressPerFile.TabIndex = 0;
             // 
             // lblProgressInfoText
             // 
             this.lblProgressInfoText.AutoSize = true;
-            this.lblProgressInfoText.Location = new System.Drawing.Point(13, 13);
+            this.lblProgressInfoText.Location = new System.Drawing.Point(7, 19);
+            this.lblProgressInfoText.Margin = new System.Windows.Forms.Padding(10);
             this.lblProgressInfoText.Name = "lblProgressInfoText";
             this.lblProgressInfoText.Size = new System.Drawing.Size(141, 25);
             this.lblProgressInfoText.TabIndex = 1;
@@ -56,17 +56,18 @@
             // lblProgressFiles
             // 
             this.lblProgressFiles.AutoSize = true;
-            this.lblProgressFiles.Location = new System.Drawing.Point(161, 13);
+            this.lblProgressFiles.Location = new System.Drawing.Point(155, 19);
             this.lblProgressFiles.Name = "lblProgressFiles";
             this.lblProgressFiles.Size = new System.Drawing.Size(0, 25);
             this.lblProgressFiles.TabIndex = 2;
             // 
             // btnCancel
             // 
-            this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCancel.AutoSize = true;
             this.btnCancel.Location = new System.Drawing.Point(669, 113);
+            this.btnCancel.Margin = new System.Windows.Forms.Padding(10);
             this.btnCancel.Name = "btnCancel";
-            this.btnCancel.Size = new System.Drawing.Size(116, 40);
+            this.btnCancel.Size = new System.Drawing.Size(113, 40);
             this.btnCancel.TabIndex = 1;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
@@ -76,7 +77,8 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(797, 165);
+            this.AutoSize = true;
+            this.ClientSize = new System.Drawing.Size(794, 167);
             this.ControlBox = false;
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.lblProgressFiles);

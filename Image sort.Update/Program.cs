@@ -23,6 +23,11 @@ namespace Image_sort.Update
         static void Main(string[] args)
         {
 #if (!DEBUG)
+            // If the updater is already open once, don't open another instance/
+            // close this one right after start.
+            if (Process.GetProcessesByName("Image sort.Update").Count() > 1)
+                Environment.Exit(0);
+
             // Makes sure, the dialogs look nice and native
             System.Windows.Forms.Application.EnableVisualStyles();
 
@@ -70,6 +75,8 @@ namespace Image_sort.Update
 #endif
         }
 
+
+        #region Methods
         /// <summary>
         /// Downloads the registry from the GitHub server
         /// </summary>
@@ -213,5 +220,6 @@ namespace Image_sort.Update
                 File.Delete(LastInstallerPath);
             }
         }
+        #endregion
     }
 }
