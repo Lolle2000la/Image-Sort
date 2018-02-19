@@ -302,7 +302,12 @@ namespace Image_sort.Logic
                 imagePathPool.Dequeue();
             }
 
-            return imagePathPool.Dequeue();
+            if (imagePathPool.Count > 0)
+                // SUCCESS
+                return imagePathPool.Dequeue();
+            else
+                // FAILURE
+                return "";
         }
 
         /// <summary>

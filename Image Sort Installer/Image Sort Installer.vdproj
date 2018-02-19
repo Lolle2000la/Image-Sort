@@ -232,7 +232,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Update, Version=1.7.2.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_2444875B8A476DC2CCC6570801FD1260"
@@ -325,7 +325,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.Logic, Version=1.7.2.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_A87679A42B444F8385B7C65A7F9ACF32"
@@ -356,7 +356,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.7.1.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:Image sort.UI.Dialogs, Version=1.7.2.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_A87C41C6DEB6942B8A32BC581162B42C"
@@ -479,15 +479,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Image Sort"
-        "ProductCode" = "8:{C2320D1A-5531-4750-B73D-EFBC41F373CC}"
-        "PackageCode" = "8:{206BD599-AE40-440A-8C7A-299A528152F1}"
+        "ProductCode" = "8:{A732DAB4-9E13-4DDF-928D-2A8A78985A86}"
+        "PackageCode" = "8:{5D3D18BB-3DB0-4FF6-AD06-67C2F8EBBCB0}"
         "UpgradeCode" = "8:{1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.7.2"
+        "ProductVersion" = "8:1.7.3"
         "Manufacturer" = "8:Lolle2000la"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
