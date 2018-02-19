@@ -113,64 +113,8 @@ namespace Image_sort.UI
         /* METHODS                                                           */
         /*                                                                   */
         /*********************************************************************/
-
-        /// <summary>
-        /// Loads the folder at the path given, and then adds the folders in that folder
-        /// to the selection in the <see cref="FoldersStack"/>
-        /// </summary>
-        /// <param name="folder">The folder that should be selected/loaded.</param>
-        /// <param name="hideMainWindow">
-        /// Indicates, whether the main window should be hidden during the loading process.
-        /// </param>
-        private async void LoadFolderAsync(string folder, bool hideMainWindow=false)
-        {
-            if (Directory.Exists(folder))
-            {
-                // Hides the main window before loading.
-                if (hideMainWindow)
-                    Hide();
-
-                // Do what ever with the value
-                await SelectAndLoadFolder(folder);
-
-                // Refresh folders
-                AddFoldersToFoldersStack();
-
-                // Shows the main window after loading is complete.
-                if (hideMainWindow)
-                    Show();
-            }
-        }
-
-
-        /// <summary>
-        /// Loads an image into the window
-        /// </summary>
-        /// <param name="image">The <see cref="Image"/> that should be displayed</param>
-        private void LoadImage(BitmapImage image)
-        {
-            PreviewImage.Source = image;
-        }
-
-        /// <summary>
-        /// Gives back, whether any folder is visible or not
-        /// </summary>
-        public bool IsAnyFolderVisible
-        {
-            get
-            {
-                // Get every item in the list
-                foreach (ListBoxItem item in FoldersStack.Items)
-                {
-                    // if one of them turns out to be visible, then return true
-                    if (item.Visibility == Visibility.Visible)
-                        return true;
-                }
-                // Else false
-                return false;
-            }
-        }
-
+        
+        #region Folder-Selection Management
         /// <summary>
         /// Shifts up the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
@@ -216,43 +160,51 @@ namespace Image_sort.UI
                     FoldersStack.SelectedIndex = 0;
             }
         }
+        #endregion
 
+        #region Folder-Navigation/Loading
         /// <summary>
-        /// Gives the user to select a (new) folder, 
-        /// only loads other folder if the user wants to,
-        /// and the path given is valid.
+        /// Lets the user select a resolution for the loaded images
         /// </summary>
-        private async void SelectFolder()
+        public void SetResolution()
         {
-            // Creates a dialog for the folder to sort
-            FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
+            string response = InputBox.Show("Please set the horizontal resolution.\n\n\n" +
+                "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
+                "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
+                "Will be applied on next loading.",
+                "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
+            // Stores the resolution selected by the user
+            /* Gets the resolution by the user via an input box, returns a bool whether 
+            he inputted a number or not*/
+            bool result = int.TryParse(response, out int resolution);
+            // If he did, continue
+            if (result)
             {
-                Description = "Which folder needs sorting?",
-                ShowNewFolderButton = true
-            };
-
-            // Shows it and does things if it works out
-            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                // Disable all user input to prevent unwanted behavior
-                DisableAllControls();
-
-                // if the folder could not be selected, redo the thing
-                if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
-                    SelectFolder();
-                // otherwise load the image and enable the controls, if there is an image
+                // if the resolution is higher 0, then save it in the settings file
+                if (resolution > 0)
+                {
+                    MaxHorizontalResolution = resolution;
+                }
+                // otherwise, revert to default 
                 else
                 {
-
-                    // Make folders on the left up to date
-                    AddFoldersToFoldersStack();
+                    MaxHorizontalResolution = 1000;
                 }
-
-                // Enable all controls again to allow for user input
-                EnableAllControls();
             }
+            // If the response is "" or "default, revert to default
+            else if (response == "default")
+            {
+                MaxHorizontalResolution = 1000;
+            }
+            // If nothing was given back, then don't change anything
+            else if (response == "")
+            {
+                // Clear so that nothing happens
+            }
+            // If the user did not input valid numbers, than repeat
+            else
+                SetResolution();
         }
-
 
         /// <summary>
         /// Selects and loads a folder
@@ -292,7 +244,61 @@ namespace Image_sort.UI
                 EnableAllControls();
                 return true;
             }
+        }
 
+        /// <summary>
+        /// Gives the user to select a (new) folder, 
+        /// only loads other folder if the user wants to,
+        /// and the path given is valid.
+        /// </summary>
+        private async void SelectFolder()
+        {
+            // Creates a dialog for the folder to sort
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
+            {
+                Description = "Which folder needs sorting?",
+                ShowNewFolderButton = true
+            };
+
+            // Shows it and does things if it works out
+            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                // Disable all user input to prevent unwanted behavior
+                DisableAllControls();
+
+                // if the folder could not be selected, ask the user if he wants to retry.
+                // Also clean-up and give the user only the ability to select another folder.
+                if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
+                {
+                    // Clean-Up
+                    FoldersStack.Items.Clear();
+                    DisableAllControls();
+                    SelectFolderButton.IsEnabled = true;
+                    ResolutionBox.IsEnabled = true;
+
+                    // Ask the user if he wants to retry
+                    if (System.Windows.Forms.MessageBox.Show("Folder could not be opened. " +
+                        "The process was either aborted or the folder at the given destination " +
+                        "can't be accessed.", "Could not open",
+                        MessageBoxButtons.RetryCancel, MessageBoxIcon.Error) == System.Windows.Forms.DialogResult.Retry)
+                        SelectFolder();
+
+                    // end the function
+                    return;
+                }
+
+
+                // otherwise load the image and enable the controls, if there is an image
+                else
+                {
+
+                    // Make folders on the left up to date
+                    AddFoldersToFoldersStack();
+                }
+
+                // Enable all controls again to allow for user input
+                EnableAllControls();
+            }
         }
 
         /// <summary>
@@ -313,20 +319,31 @@ namespace Image_sort.UI
 
                     // if the folder could not be selected, show the user that it couldn't
                     if (await SelectAndLoadFolder(folderToEnter) == false)
-                        System.Windows.Forms.MessageBox.Show("Folder could not be opened." +
-                            " Please check if the folder is working as it should.",
-                            "Could not open folder", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    //SelectFolder();
+                    {
+                        // notification
+                        System.Windows.Forms.MessageBox.Show("Folder could not be opened. " +
+                        "The process was either aborted or the folder at the given destination " +
+                        "can't be accessed.", "Could not open",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+
+                        // Clean-Up
+                        FoldersStack.Items.Clear();
+                        DisableAllControls();
+                        SelectFolderButton.IsEnabled = true;
+                        ResolutionBox.IsEnabled = true;
+
+                    }
+                        
                     // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
-                        
+
 
                         // Clearing the search bar after entering the folder,
                         // so that it will be more comfortable searching.
                         SearchBarBox.Text = "";
                     }
-
+                    
                     // Enable all controls again to allow for user input
                     EnableAllControls();
                 }
@@ -335,7 +352,44 @@ namespace Image_sort.UI
                 AddFoldersToFoldersStack();
             }
         }
+        /// <summary>
+        /// Loads the folder at the path given, and then adds the folders in that folder
+        /// to the selection in the <see cref="FoldersStack"/>
+        /// </summary>
+        /// <param name="folder">The folder that should be selected/loaded.</param>
+        /// <param name="hideMainWindow">
+        /// Indicates, whether the main window should be hidden during the loading process.
+        /// </param>
+        private async void LoadFolderAsync(string folder, bool hideMainWindow = false)
+        {
+            if (Directory.Exists(folder))
+            {
+                // Hides the main window before loading.
+                if (hideMainWindow)
+                    Hide();
 
+                // Load the folder
+                if(await SelectAndLoadFolder(folder))
+                {
+                    // Refresh folders
+                    AddFoldersToFoldersStack();
+                }
+                // if it doesn't work, clean up and only enable opening another one.
+                else
+                {
+                    DisableAllControls();
+                    SelectFolderButton.IsEnabled = true;
+                    ResolutionBox.IsEnabled = true;
+                }
+
+                // Shows the main window after loading is complete.
+                if (hideMainWindow)
+                    Show();
+            }
+        }
+        #endregion
+
+        #region Folder Management
         /// <summary>
         /// Lets the user create a new folder
         /// </summary>
@@ -368,6 +422,17 @@ namespace Image_sort.UI
                     folders.Add(folderSelector.GetCurrentFolderPath() + @"\" + folderName);
                 }
             }
+        }
+        #endregion
+
+        #region Data-Refreshing
+        /// <summary>
+        /// Loads an image into the window
+        /// </summary>
+        /// <param name="image">The <see cref="Image"/> that should be displayed</param>
+        private void LoadImage(BitmapImage image)
+        {
+            PreviewImage.Source = image;
         }
 
         /// <summary>
@@ -428,6 +493,44 @@ namespace Image_sort.UI
                 LoadImage(null);
             }
         }
+        #endregion
+
+        #region UI-Control-Management
+        /// <summary>
+        /// Focuses and enables <see cref="ResolutionBox"/>
+        /// </summary>
+        private void UseResolutionBox()
+        {
+            ResolutionBox.Focusable = true;
+            ResolutionBox.Focus();
+        }
+
+        /// <summary>
+        /// Unfocuses <see cref="ResolutionBox"/> 
+        /// </summary>
+        private void UnuseResolutionBox()
+        {
+            ResolutionBox.Focusable = false;
+        }
+
+        /// <summary>
+        /// Gives back, whether any folder is visible or not
+        /// </summary>
+        public bool IsAnyFolderVisible
+        {
+            get
+            {
+                // Get every item in the list
+                foreach (ListBoxItem item in FoldersStack.Items)
+                {
+                    // if one of them turns out to be visible, then return true
+                    if (item.Visibility == Visibility.Visible)
+                        return true;
+                }
+                // Else false
+                return false;
+            }
+        }
 
         /// <summary>
         /// Enables all the controls beside the <see cref="SelectFolderButton"/>
@@ -476,7 +579,9 @@ namespace Image_sort.UI
             SelectFolderButton.IsEnabled = false;
             ResolutionBox.IsEnabled = false;
         }
+        #endregion
 
+        #region Image-Management
         /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
@@ -537,50 +642,9 @@ namespace Image_sort.UI
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
-
-        /// <summary>
-        /// Lets the user select a resolution for the loaded images
-        /// </summary>
-        public void SetResolution()
-        {
-            string response = InputBox.Show("Please set the horizontal resolution.\n\n\n" +
-                "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
-                "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
-                "Will be applied on next loading.",
-                "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
-            // Stores the resolution selected by the user
-            /* Gets the resolution by the user via an input box, returns a bool whether 
-            he inputted a number or not*/
-            bool result = int.TryParse(response, out int resolution);
-            // If he did, continue
-            if (result)
-            {
-                // if the resolution is higher 0, then save it in the settings file
-                if(resolution > 0)
-                {
-                    MaxHorizontalResolution = resolution;
-                }
-                // otherwise, revert to default 
-                else
-                {
-                    MaxHorizontalResolution = 1000;
-                }
-            }
-            // If the response is "" or "default, revert to default
-            else if (response == "default")
-            {
-                MaxHorizontalResolution = 1000;
-            }
-            // If nothing was given back, then don't change anything
-            else if (response == "")
-            {
-                // Clear so that nothing happens
-            }
-            // If the user did not input valid numbers, than repeat
-            else
-                SetResolution();
-        }
-
+        #endregion
+        
+        #region Performance
         /// <summary>
         /// Tells the garbage collector to collect garbage, reduces memory usage when called
         /// </summary>
@@ -589,23 +653,8 @@ namespace Image_sort.UI
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
+        #endregion
 
-        /// <summary>
-        /// Focuses and enables <see cref="ResolutionBox"/>
-        /// </summary>
-        private void UseResolutionBox()
-        {
-            ResolutionBox.Focusable = true;
-            ResolutionBox.Focus();
-        }
-
-        /// <summary>
-        /// Unfocuses <see cref="ResolutionBox"/> 
-        /// </summary>
-        private void UnuseResolutionBox()
-        {
-            ResolutionBox.Focusable = false;
-        }
         #endregion
 
 
@@ -739,24 +788,29 @@ namespace Image_sort.UI
 
                 // Move the file when the right key has been pressed to the selected folder.
                 case Key.Right:
-                    DoMove();
+                    if(MoveFolderButton.IsEnabled)
+                        DoMove();
                     break;
 
                 // Skips the file when the left key has been pressed
                 case Key.Left:
-                    DoSkip();
+                    if (SkipFileButton.IsEnabled)
+                        DoSkip();
                     break;
 
                 // When the back button is pressed, remove one char from the search bar.
                 // Do that no matter what is focused.
                 case Key.Back:
-                    if(SearchBarBox.Text.Count() != 0)
+                    if(SearchBarBox.Text.Count() != 0 
+                            && IsAnyFolderVisible 
+                            && FoldersStack.Items.Count > 1)
                         SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
                     break;
 
                 // Add Text when space has been pressed
                 case Key.Space:
-                    SearchBarBox.Text += " ";
+                    if (IsAnyFolderVisible && FoldersStack.Items.Count > 1)
+                        SearchBarBox.Text += " ";
                     break;
 
                 // Opens Select Folder dialog
@@ -766,29 +820,36 @@ namespace Image_sort.UI
 
                 // Opens new folder Dialog
                 case Key.F3:
-                    NewFolder();
+                    if (NewFolderButton.IsEnabled)
+                        NewFolder();
                     break;
 
                 // Opens dialog for resolution preference
                 case Key.F4:
-                    //SetResolution();
-                    UseResolutionBox();
+                    if (ResolutionBox.IsEnabled)
+                        UseResolutionBox();
                     break;
 
                 // "Enters" the folder
                 case Key.Enter:
-                    EnterFolder();
+                    if (IsAnyFolderVisible)
+                        EnterFolder();
                     break;
 
                 // Goes a folder upwards
                 case Key.Escape:
-                    FoldersStack.SelectedIndex = 0;
-                    EnterFolder();
+                    if (IsAnyFolderVisible)
+                    {
+                        FoldersStack.SelectedIndex = 0;
+                        EnterFolder();
+                    }
                     break;
 
                 // Insert Characters and numbers only
                 default:
-                    if (!ResolutionBox.Focusable)
+                    if (!ResolutionBox.Focusable 
+                            && IsAnyFolderVisible 
+                            && FoldersStack.Items.Count > 1)
                         if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
                             SearchBarBox.Text += e.Key.ToString().ToLower();
                     break;
