@@ -8,6 +8,7 @@ Sorts your image at high speed
    * F2 for selecting the folder
    * F3 to create a new folder
    * Enter to enter the currently selected folder
+   * Escape to leave the current folder
    * up- and down-arrow-keys to select a folder to move to
    * right-arrow-key to move the image into the selected folder (or one folder upwards if you select "..")
    * left-arrow-key to skip it
