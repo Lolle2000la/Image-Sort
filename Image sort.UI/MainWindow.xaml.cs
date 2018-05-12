@@ -802,7 +802,7 @@ namespace Image_sort.UI
                 // Do that no matter what is focused.
                 case Key.Back:
                     if(SearchBarBox.Text.Count() != 0 
-                            && IsAnyFolderVisible 
+                            //&& IsAnyFolderVisible 
                             && FoldersStack.Items.Count > 1)
                         SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
                     break;
@@ -847,12 +847,22 @@ namespace Image_sort.UI
 
                 // Insert Characters and numbers only
                 default:
-                    if (!ResolutionBox.Focusable 
-                            && IsAnyFolderVisible 
-                            && FoldersStack.Items.Count > 1)
-                        if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
-                            SearchBarBox.Text += e.Key.ToString().ToLower();
-                    break;
+                        if (!ResolutionBox.Focusable
+                                //&& IsAnyFolderVisible 
+                                && FoldersStack.Items.Count > 1)
+                        {
+                            //if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
+                            //    SearchBarBox.Text += e.Key.ToString().ToLower();
+
+                            // converts the pressed key to the locale char (only letters and numerics)
+                            string converted = new KeyConverter().ConvertToString(null,
+                                System.Globalization.CultureInfo.CurrentUICulture,
+                                e.Key).ToLower();
+                            // Adds the converted char to the input if it is just one char, and not longer, e.g. "Oem3"
+                            if (converted.Length == 1)
+                                SearchBarBox.Text += converted;
+                        }
+                        break;
             }
         }
 

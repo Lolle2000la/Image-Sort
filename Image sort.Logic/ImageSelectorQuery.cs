@@ -249,7 +249,7 @@ namespace Image_sort.Logic
             catch (NotSupportedException)
             {
                 // Show which one couldn't be opened.
-                System.Windows.Forms.MessageBox.Show($"The image \"{Path.GetFileNameWithoutExtension(path)}\" could not be loaded.\n" +
+                System.Windows.Forms.MessageBox.Show($"The image \"{Path.GetFileName(path)}\" could not be loaded.\n" +
                     $"It is not supported by this Program. Please make sure it is fully working");
 
                 return null;
