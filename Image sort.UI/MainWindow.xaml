@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
         mc:Ignorable="d"
-        Title="Image sort" Height="350" Width="600" AllowDrop="True"
+        Title="Image sort" Height="350" Width="650" AllowDrop="True"
+        MinWidth="250" MinHeight="250"
         KeyDown="Window_KeyDown" Drop="Window_Drop">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Grid>
@@ -87,6 +88,18 @@
                     </TextBox.ToolTip>
                 </TextBox>
             </ToolBar>
+            <ToolBar Focusable="False">
+                <ToggleButton x:Name="EnableSearchButton" Content="Search" Focusable="False"
+                              Click="EnableSearchButton_Click" IsChecked="False">
+                    <ToggleButton.ToolTip>
+                        <TextBlock>
+                            <Run>Shows and hides the search box.</Run>
+                            <LineBreak/>
+                            <Run>Shortcut: ctrl+s</Run>
+                        </TextBlock>
+                    </ToggleButton.ToolTip>
+                </ToggleButton>
+            </ToolBar>
         </ToolBarTray>
 
         <!-- StackPanel containing all the buttons with the folders to choose -->
@@ -99,8 +112,10 @@
 
         <!-- Search bar for the user to search for folders -->
         <TextBox x:Name="SearchBarBox" Grid.Row="1" Grid.Column="0" Focusable="False"
-                 Margin="0,0,5,0" IsReadOnlyCaretVisible="True" IsReadOnly="True"
-                 TextChanged="SearchBarBox_TextChanged"/>
+                 Margin="0,0,5,0" IsReadOnlyCaretVisible="True" 
+                 TextChanged="SearchBarBox_TextChanged" Visibility="Collapsed"
+                 PreviewKeyDown="Window_KeyDown"/>
+        <!--IsReadOnly="True"-->
 
         <!-- For better UX -->
         <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="5" Focusable="False"/>

@@ -61,6 +61,31 @@ namespace Image_sort.UI
         /// Arguments given by the user/caller
         /// </summary>
         Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
+
+        private bool searchEnabled = false;
+
+        /// <summary>
+        /// Controls, whether the search is enabled.
+        /// </summary>
+        public bool SearchEnabled
+        {
+            get { return searchEnabled; }
+            set {
+                searchEnabled = value;
+                SearchBarBox.IsEnabled = value;
+                SearchBarBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
+                SearchBarBox.Focusable = value;
+                if (value)
+                {
+                    SearchBarBox.Focus();
+                }
+                else
+                {
+                    Focus();
+                }
+                EnableSearchButton.IsChecked = value;
+            }
+        }
         #endregion
 
 
@@ -679,7 +704,7 @@ namespace Image_sort.UI
             foreach (ListBoxItem foldersStackItem in FoldersStack.Items)
             {
                 // If the text of the search box it is not "" and alphabetic/numeric
-                if (SearchBarBox.Text != "" && Regex.IsMatch(SearchBarBox.Text, @"^[a-zA-Z0-9_]+$"))
+                if (SearchBarBox.Text != ""/* && Regex.IsMatch(SearchBarBox.Text, @"^[a-zA-Z0-9_]+$")*/)
                 {
                     // and if the item currently looped through doesn't contain the text of the search box
                     if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text))
@@ -779,62 +804,75 @@ namespace Image_sort.UI
                 // When up key is pressed, move folder selection up
                 case Key.Up:
                     MoveFolderSelectionUp();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // When down key is pressed, move folder selection down
                 case Key.Down:
                     MoveFolderSelectionDown();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // Move the file when the right key has been pressed to the selected folder.
                 case Key.Right:
-                    if(MoveFolderButton.IsEnabled)
-                        DoMove();
+                    if(MoveFolderButton.IsEnabled && !SearchEnabled)
+                        {
+                            DoMove();
+                            e.Handled = true;
+                        }
+                        
                     break;
 
                 // Skips the file when the left key has been pressed
                 case Key.Left:
-                    if (SkipFileButton.IsEnabled)
-                        DoSkip();
-                    break;
+                    if (SkipFileButton.IsEnabled && !SearchEnabled)
+                        {
+                            DoSkip();
+                            e.Handled = true;
+                        }
+                        break;
 
-                // When the back button is pressed, remove one char from the search bar.
-                // Do that no matter what is focused.
-                case Key.Back:
-                    if(SearchBarBox.Text.Count() != 0 
-                            //&& IsAnyFolderVisible 
-                            && FoldersStack.Items.Count > 1)
-                        SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
-                    break;
+                //// When the back button is pressed, remove one char from the search bar.
+                //// Do that no matter what is focused.
+                //case Key.Back:
+                //    if(SearchBarBox.Text.Count() != 0 
+                //            //&& IsAnyFolderVisible 
+                //            && FoldersStack.Items.Count > 1)
+                //        SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
+                //    break;
 
-                // Add Text when space has been pressed
-                case Key.Space:
-                    if (IsAnyFolderVisible && FoldersStack.Items.Count > 1)
-                        SearchBarBox.Text += " ";
-                    break;
+                //// Add Text when space has been pressed
+                //case Key.Space:
+                //    if (IsAnyFolderVisible && FoldersStack.Items.Count > 1)
+                //        SearchBarBox.Text += " ";
+                //    break;
 
                 // Opens Select Folder dialog
                 case Key.F2:
                     SelectFolder();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // Opens new folder Dialog
                 case Key.F3:
                     if (NewFolderButton.IsEnabled)
                         NewFolder();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // Opens dialog for resolution preference
                 case Key.F4:
                     if (ResolutionBox.IsEnabled)
                         UseResolutionBox();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // "Enters" the folder
                 case Key.Enter:
                     if (IsAnyFolderVisible)
                         EnterFolder();
-                    break;
+                        e.Handled = true;
+                        break;
 
                 // Goes a folder upwards
                 case Key.Escape:
@@ -843,26 +881,35 @@ namespace Image_sort.UI
                         FoldersStack.SelectedIndex = 0;
                         EnterFolder();
                     }
+                        e.Handled = true;
+                        break;
+                // For the keyboard-shortcut for opening the search
+                case Key.S:
+                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                        {
+                            e.Handled = true;
+                            SearchEnabled = !SearchEnabled;
+                        }
                     break;
 
-                // Insert Characters and numbers only
-                default:
-                        if (!ResolutionBox.Focusable
-                                //&& IsAnyFolderVisible 
-                                && FoldersStack.Items.Count > 1)
-                        {
-                            //if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
-                            //    SearchBarBox.Text += e.Key.ToString().ToLower();
+                //// Insert Characters and numbers only
+                //default:
+                //        if (!ResolutionBox.Focusable
+                //                //&& IsAnyFolderVisible 
+                //                && FoldersStack.Items.Count > 1)
+                //        {
+                //            //if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
+                //            //    SearchBarBox.Text += e.Key.ToString().ToLower();
 
-                            // converts the pressed key to the locale char (only letters and numerics)
-                            string converted = new KeyConverter().ConvertToString(null,
-                                System.Globalization.CultureInfo.CurrentUICulture,
-                                e.Key).ToLower();
-                            // Adds the converted char to the input if it is just one char, and not longer, e.g. "Oem3"
-                            if (converted.Length == 1)
-                                SearchBarBox.Text += converted;
-                        }
-                        break;
+                //            // converts the pressed key to the locale char (only letters and numerics)
+                //            string converted = new KeyConverter().ConvertToString(null,
+                //                System.Globalization.CultureInfo.CurrentUICulture,
+                //                e.Key).ToLower();
+                //            // Adds the converted char to the input if it is just one char, and not longer, e.g. "Oem3"
+                //            if (converted.Length == 1)
+                //                SearchBarBox.Text += converted;
+                //        }
+                //        break;
             }
         }
 
@@ -991,6 +1038,16 @@ namespace Image_sort.UI
             UnuseResolutionBox();
             // and set the resolution to the max resolution
             MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
+        }
+
+        /// <summary>
+        /// Event handling the clicking of the enable search button.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void EnableSearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            SearchEnabled = (bool)EnableSearchButton.IsChecked;
         }
         #endregion
     }
