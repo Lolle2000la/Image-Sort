@@ -704,10 +704,10 @@ namespace Image_sort.UI
             foreach (ListBoxItem foldersStackItem in FoldersStack.Items)
             {
                 // If the text of the search box it is not "" and alphabetic/numeric
-                if (SearchBarBox.Text != ""/* && Regex.IsMatch(SearchBarBox.Text, @"^[a-zA-Z0-9_]+$")*/)
+                if (SearchBarBox.Text != "")
                 {
                     // and if the item currently looped through doesn't contain the text of the search box
-                    if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text))
+                    if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text.ToLower()))
                         // Make it invisible
                         foldersStackItem.Visibility = Visibility.Collapsed;
                     else
@@ -832,21 +832,6 @@ namespace Image_sort.UI
                         }
                         break;
 
-                //// When the back button is pressed, remove one char from the search bar.
-                //// Do that no matter what is focused.
-                //case Key.Back:
-                //    if(SearchBarBox.Text.Count() != 0 
-                //            //&& IsAnyFolderVisible 
-                //            && FoldersStack.Items.Count > 1)
-                //        SearchBarBox.Text = SearchBarBox.Text.Remove(SearchBarBox.Text.Count() - 1);
-                //    break;
-
-                //// Add Text when space has been pressed
-                //case Key.Space:
-                //    if (IsAnyFolderVisible && FoldersStack.Items.Count > 1)
-                //        SearchBarBox.Text += " ";
-                //    break;
-
                 // Opens Select Folder dialog
                 case Key.F2:
                     SelectFolder();
@@ -891,25 +876,6 @@ namespace Image_sort.UI
                             SearchEnabled = !SearchEnabled;
                         }
                     break;
-
-                //// Insert Characters and numbers only
-                //default:
-                //        if (!ResolutionBox.Focusable
-                //                //&& IsAnyFolderVisible 
-                //                && FoldersStack.Items.Count > 1)
-                //        {
-                //            //if (Regex.IsMatch(e.Key.ToString(), @"^[a-zA-Z0-9_]+$") && (e.Key.ToString().Count() < 2))
-                //            //    SearchBarBox.Text += e.Key.ToString().ToLower();
-
-                //            // converts the pressed key to the locale char (only letters and numerics)
-                //            string converted = new KeyConverter().ConvertToString(null,
-                //                System.Globalization.CultureInfo.CurrentUICulture,
-                //                e.Key).ToLower();
-                //            // Adds the converted char to the input if it is just one char, and not longer, e.g. "Oem3"
-                //            if (converted.Length == 1)
-                //                SearchBarBox.Text += converted;
-                //        }
-                //        break;
             }
         }
 
