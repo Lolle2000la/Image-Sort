@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
         mc:Ignorable="d"
-        Title="Image sort" Height="350" Width="650" AllowDrop="True"
+        Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
         KeyDown="Window_KeyDown" Drop="Window_Drop">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
@@ -49,6 +49,9 @@
                 <Button Content="Move" IsEnabled="False" Focusable="False"
                     x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
                     ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+                <Button Content="Go back" IsEnabled="False" Focusable="False"
+                    x:Name="GoBackButton" Click="GoBackButton_Click"
+                    ToolTip="Goes back one image you skipped, if possible. Shortcut: ctrl + left arrow key"/>
             </ToolBar>
             <!-- Contains everything around settings -->
             <ToolBar Focusable="False">

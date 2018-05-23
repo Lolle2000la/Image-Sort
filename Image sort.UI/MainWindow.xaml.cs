@@ -566,6 +566,7 @@ namespace Image_sort.UI
             MoveFolderButton.IsEnabled = true;
             NewFolderButton.IsEnabled = true;
             EnterFolderButton.IsEnabled = true;
+            GoBackButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -576,6 +577,7 @@ namespace Image_sort.UI
             SkipFileButton.IsEnabled = false;
             MoveFolderButton.IsEnabled = false;
             NewFolderButton.IsEnabled = false;
+            GoBackButton.IsEnabled = false;
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
@@ -590,6 +592,7 @@ namespace Image_sort.UI
             EnterFolderButton.IsEnabled = true;
             SelectFolderButton.IsEnabled = true;
             ResolutionBox.IsEnabled = true;
+            GoBackButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -603,6 +606,7 @@ namespace Image_sort.UI
             EnterFolderButton.IsEnabled = false;
             SelectFolderButton.IsEnabled = false;
             ResolutionBox.IsEnabled = false;
+            GoBackButton.IsEnabled = false;
         }
         #endregion
 
@@ -626,7 +630,11 @@ namespace Image_sort.UI
                     LoadImage(buffer);
                 // else disable the controls
                 else
+                {
                     DisableControls();
+                    GoBackButton.IsEnabled = true;
+                }
+                    
             }
         }
 
@@ -654,6 +662,7 @@ namespace Image_sort.UI
                     else
                     {
                         DisableControls();
+                        GoBackButton.IsEnabled = true;
                     }
 
                     // Move the file
@@ -1015,6 +1024,22 @@ namespace Image_sort.UI
         private void EnableSearchButton_Click(object sender, RoutedEventArgs e)
         {
             SearchEnabled = (bool)EnableSearchButton.IsChecked;
+        }
+        
+        /// <summary>
+        /// Goes back in time (if the last image wasn't moved)
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void GoBackButton_Click(object sender, RoutedEventArgs e)
+        {
+            folderSelector.GoBackImages();
+
+            // Get the next image.
+            LoadImage(await folderSelector.GetNextImage());
+
+            // Enable the controls again.
+            EnableControls();
         }
         #endregion
     }

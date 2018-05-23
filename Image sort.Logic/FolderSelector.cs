@@ -227,6 +227,19 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery.SetResolution(horizontalResolution);
         }
+
+        /// <summary>
+        /// Goes back in time (or, well, a list).
+        /// </summary>
+        /// <param name="amount">
+        /// Specifies which amount of images it should be set back. 2 is the default, because that sets the image
+        /// to the past one. 1 basically sets it to the current one, if that is needed to be loaded again.
+        /// DO NOT USE NEGATIVE VALUES! 
+        /// </param>
+        public void GoBackImages(int amount = 2)
+        {
+            imageSelectorQuery.GoBackImages(amount);
+        }
         #endregion
     }
 }

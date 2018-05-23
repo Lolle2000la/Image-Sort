@@ -33,19 +33,19 @@ namespace Image_sort.Logic
         /// <summary>
         /// Contains all the paths of all the images in the folder
         /// </summary>
-        private Queue<string> imagePathPool = new Queue<string>();
+        private List<string> imagePathPool = new List<string>();
         /// <summary>
         /// Contains the path to the current folder
         /// </summary>
         private string currentFolder;
         /// <summary>
-        /// Stores the path to the current image.
+        /// Keeps track of which image we are at.
         /// </summary>
-        private string currentImage;
+        private int currentIndex = 0;
         /// <summary>
         /// Contains the path to the current Image
         /// </summary>
-        public string CurrentImage { get { return currentImage; } }
+        public string CurrentImage { get; private set; }
         /// <summary>
         /// Defines the max resolution to be loaded 
         /// </summary>
@@ -150,7 +150,7 @@ namespace Image_sort.Logic
                         //{
                             // Sets the source of the image and puts it into the queue/pool
                             //imagePool.Enqueue(buffer);
-                            imagePathPool.Enqueue(uri.OriginalString);
+                            imagePathPool.Add(uri.OriginalString);
 
                             // Sets the progress in the window for the files being loaded.
                             //progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
@@ -204,7 +204,8 @@ namespace Image_sort.Logic
             imagePool.Clear();
             imagePathPool.Clear();
             currentFolder = null;
-            currentImage = null;
+            CurrentImage = null;
+            currentIndex = 0;
             CollectGarbage();
         }
 
@@ -271,16 +272,36 @@ namespace Image_sort.Logic
             //    imagePathPool.Dequeue();
             //}
 
+            // if there are no images left...
+            if (currentIndex >= imagePathPool.Count)
+            {
+                // increment currentIndex by one for the "Go back" mechanism and return null.
+                currentIndex++;
+                return null;
+            }
+
             // make sure everything works and there are images left in the queue
             if (imagePathPool.Count != 0)
             {
-                currentImage = imagePathPool.Dequeue();
-                // Buffer image and freeze it, so that it can be returned thread-safe.
-                BitmapImage bitmapImageBuffer = await LoadImageAsync(currentImage);
-                bitmapImageBuffer.Freeze();
+                // if the file doesn't exist, then try the next one
+                if (!File.Exists(imagePathPool[currentIndex]))
+                {
+                    // increment currentIndex by one.
+                    currentIndex++;
+                    // Get the next image and return it.
+                    return await GetNextImage();
+                }
+                else
+                {
+                    CurrentImage = imagePathPool[currentIndex];
+                    currentIndex++;
+                    // Buffer image and freeze it, so that it can be returned thread-safe.
+                    BitmapImage bitmapImageBuffer = await LoadImageAsync(CurrentImage);
+                    bitmapImageBuffer.Freeze();
 
-                // returns the image in queue
-                return bitmapImageBuffer;
+                    // returns the image in queue
+                    return bitmapImageBuffer;
+                }
             }
             else
             {
@@ -310,7 +331,28 @@ namespace Image_sort.Logic
             //    // FAILURE
             //    return "";
 
-            return currentImage;
+            return CurrentImage;
+        }
+
+        /// <summary>
+        /// Goes back in time (or, well, a list).
+        /// </summary>
+        /// <param name="amount">
+        /// Specifies which amount of images it should be set back. 2 is the default, because that sets the image
+        /// to the past one. 1 basically sets it to the current one, if that is needed to be loaded again.
+        /// DO NOT USE NEGATIVE VALUES!
+        /// </param>
+        public void GoBackImages(int amount=2)
+        {
+            if (imagePathPool.Count > 1 && currentIndex - amount >= 0)
+                if (File.Exists(imagePathPool[currentIndex-amount]))
+                {
+                    currentIndex -= amount;
+                }
+                else
+                {
+                    GoBackImages(amount + 1);
+                }
         }
 
         /// <summary>
