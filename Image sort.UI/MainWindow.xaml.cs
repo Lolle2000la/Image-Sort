@@ -641,10 +641,11 @@ namespace Image_sort.UI
                 {
                     // set the preview image to nothing
                     PreviewImage.Source = null;
-                    // get the next image
-                    BitmapImage buffer = await folderSelector.GetNextImage();
                     // get the next path of the next image
                     string path = folderSelector.GetImagePath();
+                    // get the next image
+                    BitmapImage buffer = await folderSelector.GetNextImage();
+                    
 
                     // if the buffer is not null, load the image
                     if (buffer != null)
