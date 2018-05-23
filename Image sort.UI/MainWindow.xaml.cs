@@ -240,7 +240,7 @@ namespace Image_sort.UI
             DisableAllControls();
 
             // if the folder could not be selected, redo the thing
-            if (await folderSelector.SelectAsync(folder) == false)
+            if (folderSelector.SelectAsync(folder) == false)
             {
                 // Only enable opening another one
                 SelectFolderButton.IsEnabled = true;
@@ -251,7 +251,7 @@ namespace Image_sort.UI
             else
             {
                 // Get the next image
-                BitmapImage buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = await folderSelector.GetNextImage();
 
                 // if one was given back, load it (also enable controls)
                 if (buffer != null)
@@ -610,14 +610,14 @@ namespace Image_sort.UI
         /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
-        public void DoSkip()
+        public async void DoSkip()
         {
             if (SkipFileButton.IsEnabled == true)
             {
                 // set the preview image to nothing
                 PreviewImage.Source = null;
                 // get the next image
-                BitmapImage buffer = folderSelector.GetNextImage();
+                BitmapImage buffer = await folderSelector.GetNextImage();
                 // get the next path of the next image
                 string path = folderSelector.GetImagePath();
 
@@ -633,7 +633,7 @@ namespace Image_sort.UI
         /// <summary>
         /// Moves the current image to the folder selected and loads the next one
         /// </summary>
-        private void DoMove()
+        private async void DoMove()
         {
             if (folders.Count > 0)
             {
@@ -642,7 +642,7 @@ namespace Image_sort.UI
                     // set the preview image to nothing
                     PreviewImage.Source = null;
                     // get the next image
-                    BitmapImage buffer = folderSelector.GetNextImage();
+                    BitmapImage buffer = await folderSelector.GetNextImage();
                     // get the next path of the next image
                     string path = folderSelector.GetImagePath();
 

@@ -98,7 +98,7 @@ namespace Image_sort.Logic
         /// returns true if it worked, false if it didn't 
         /// (for example because the folder does not exist)
         /// </returns>
-        public async Task<bool> SetCurrentFolderAsync(string path)
+        public bool SetCurrentFolderAsync(string path)
         {
             // Cleaning up in beforehand, to make sure everything works
             CleanUp();
@@ -107,8 +107,8 @@ namespace Image_sort.Logic
             if (Directory.Exists(path))
             {
 
-                // Sets a new instance for the progress window.
-                progressWindow = new ProgressWindow();
+                //// Sets a new instance for the progress window.
+                //progressWindow = new ProgressWindow();
 
                 // Sets the currentFolder var to path, so it can be easily retrieved
                 currentFolder = path;
@@ -122,51 +122,51 @@ namespace Image_sort.Logic
                     || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
 
 
-                // Show the window.
-                progressWindow.Show();
+                //// Show the window.
+                //progressWindow.Show();
                 try
                 {
-                    // set a few values to make sure the data is correct.
-                    progressWindow.ChangeFileProgress(0, 0, path.Count());
+                    //// set a few values to make sure the data is correct.
+                    //progressWindow.ChangeFileProgress(0, 0, path.Count());
 
 
-                    // define an int holding the count of the file to load.
-                    int filesLoaded = 0;
+                    //// define an int holding the count of the file to load.
+                    //int filesLoaded = 0;
                     
                     // goes through the image paths given and adds them to the image pool
                     foreach (string currImagePath in paths)
                     {
-                        // if the user wants to abort, throw an exception and abort.
-                        if (progressWindow.AbortRequested)
-                        {
-                            throw new AbortException();
-                        }
+                        //// if the user wants to abort, throw an exception and abort.
+                        //if (progressWindow.AbortRequested)
+                        //{
+                        //    throw new AbortException();
+                        //}
 
                         // Buffers image before putting it in the pool
                         var uri = new Uri(currImagePath);
 
-                        BitmapImage buffer = await LoadImageAsync(currImagePath);
-                        if (buffer != null)
-                        {
+                        //BitmapImage buffer = await LoadImageAsync(currImagePath);
+                        //if (buffer != null)
+                        //{
                             // Sets the source of the image and puts it into the queue/pool
-                            imagePool.Enqueue(buffer);
+                            //imagePool.Enqueue(buffer);
                             imagePathPool.Enqueue(uri.OriginalString);
 
                             // Sets the progress in the window for the files being loaded.
-                            progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
-                        }
+                            //progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
+                        //}
                     }
                 }
                 // if the loading was aborted, clean up anything and return false.
                 catch (AbortException)
                 {
                     // Clean up anything for the next start.
-                    CloseProgressWindow();
+                    //CloseProgressWindow();
                     CleanUp();
                     return false;
                 }
-                // Close progress window safely
-                CloseProgressWindow();
+                //// Close progress window safely
+                //CloseProgressWindow();
 
                 // SUCCESS
                 return true;
@@ -263,19 +263,20 @@ namespace Image_sort.Logic
         /// Pulls the next <see cref="Image"/> out of the image pool
         /// </summary>
         /// <returns>returns the image as a <see cref="Image"/>, or <c>null</c> if no more images are in the folder</returns>
-        public BitmapImage GetNextImage()
+        public async Task<BitmapImage> GetNextImage()
         {
-            // Making sure, the image and string pool match up
-            while (imagePool.Count > imagePathPool.Count)
-            {
-                imagePathPool.Dequeue();
-            }
+            //// Making sure, the image and string pool match up
+            //while (imagePool.Count > imagePathPool.Count)
+            //{
+            //    imagePathPool.Dequeue();
+            //}
 
             // make sure everything works and there are images left in the queue
-            if (imagePool.Count != 0)
+            if (imagePathPool.Count != 0)
             {
+                currentImage = imagePathPool.Dequeue();
                 // Buffer image and freeze it, so that it can be returned thread-safe.
-                BitmapImage bitmapImageBuffer = imagePool.Dequeue();
+                BitmapImage bitmapImageBuffer = await LoadImageAsync(currentImage);
                 bitmapImageBuffer.Freeze();
 
                 // returns the image in queue
@@ -296,18 +297,20 @@ namespace Image_sort.Logic
         /// <returns>Path to image</returns>
         public string GetImagePath()
         {
-            // Making sure, the image and string pool match up
-            while (imagePool.Count > imagePathPool.Count)
-            {
-                imagePathPool.Dequeue();
-            }
+            //// Making sure, the image and string pool match up
+            //while (imagePool.Count > imagePathPool.Count)
+            //{
+            //    imagePathPool.Dequeue();
+            //}
 
-            if (imagePathPool.Count > 0)
-                // SUCCESS
-                return imagePathPool.Dequeue();
-            else
-                // FAILURE
-                return "";
+            //if (imagePathPool.Count > 0)
+            //    // SUCCESS
+            //    return imagePathPool.Dequeue();
+            //else
+            //    // FAILURE
+            //    return "";
+
+            return currentImage;
         }
 
         /// <summary>
