@@ -677,6 +677,21 @@ namespace Image_sort.UI
                     MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
+
+        /// <summary>
+        /// Goes back to the last (skipped) image if possible.
+        /// </summary>
+        public async void GoBack()
+        {
+            // Actually go back in time!!!
+            folderSelector.GoBackImages();
+
+            // Get the next image.
+            LoadImage(await folderSelector.GetNextImage());
+
+            // Enable the controls again.
+            EnableControls();
+        }
         #endregion
         
         #region Performance
@@ -837,8 +852,17 @@ namespace Image_sort.UI
                 case Key.Left:
                     if (SkipFileButton.IsEnabled && !SearchEnabled)
                         {
-                            DoSkip();
-                            e.Handled = true;
+                            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                            {
+                                GoBack();
+                                e.Handled = true;
+                            }
+                            else
+                            {
+                                DoSkip();
+                                e.Handled = true;
+                            }
+                                
                         }
                         break;
 
@@ -1031,15 +1055,9 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void GoBackButton_Click(object sender, RoutedEventArgs e)
+        private void GoBackButton_Click(object sender, RoutedEventArgs e)
         {
-            folderSelector.GoBackImages();
-
-            // Get the next image.
-            LoadImage(await folderSelector.GetNextImage());
-
-            // Enable the controls again.
-            EnableControls();
+            GoBack();
         }
         #endregion
     }
