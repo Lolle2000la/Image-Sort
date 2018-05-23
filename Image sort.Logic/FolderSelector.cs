@@ -113,7 +113,7 @@ namespace Image_sort.Logic
         /// <summary>
         /// Gives back current Image as <see cref="Image"/>
         /// </summary>
-        /// <returns>Returns <see cref="Image"/></returns>
+        /// <returns>Returns <see cref="BitmapImage"/></returns>
         public async Task<BitmapImage> GetNextImage()
         {
             return await imageSelectorQuery.GetNextImage();
