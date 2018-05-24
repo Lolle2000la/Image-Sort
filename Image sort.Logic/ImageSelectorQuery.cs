@@ -422,6 +422,15 @@ namespace Image_sort.Logic
             if (newPath.Length > 0 && File.Exists(newPath))
                 imagePathPool[currentIndex - 2] += $"*{newPath}";
         }
+
+        /// <summary>
+        /// Returns the current progress in the pool
+        /// </summary>
+        /// <returns>(currentImage, maxImages)</returns>
+        public (int, int) GetCurrentProgress()
+        {
+            return (currentIndex, imagePathPool.Count);
+        }
         #endregion
     }
 }

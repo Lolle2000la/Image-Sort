@@ -470,7 +470,7 @@ namespace Image_sort.UI
         {
             PreviewImage.Source = image;
 
-            // if an image was given, fill in the informations
+            // if an image was given, fill in the information (meta-data)
             if (image != null)
             {
                 string pathToImage = folderSelector.GetImagePath();
@@ -485,6 +485,9 @@ namespace Image_sort.UI
                 // Fill in the links destination and make it visible
                 OpenInExplorerLink.NavigateUri = new Uri(pathToImage);
                 OpenInExplorerLinkHost.Visibility = Visibility.Visible;
+
+                (int current, int max) = folderSelector.GetCurrentProgress();
+                ProgressIndicatorText.Text = $"Progress: {current}/{max}";
             }
             // if that is not the case, remove the old information.
             else
@@ -492,6 +495,7 @@ namespace Image_sort.UI
                 FileNameInfo.Text = "";
                 FileTypeInfo.Text = "";
                 FileSizeInfo.Text = "";
+                ProgressIndicatorText.Text = "";
                 OpenInExplorerLink.NavigateUri = null;
                 // Collapse link again to prevent accidental clicking.
                 OpenInExplorerLinkHost.Visibility = Visibility.Collapsed;

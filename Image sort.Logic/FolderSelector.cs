@@ -255,6 +255,15 @@ namespace Image_sort.Logic
         {
             imageSelectorQuery.GoBackImages(amount);
         }
+
+        /// <summary>
+        /// Returns the current progress in the pool
+        /// </summary>
+        /// <returns>(currentImage, maxImages)</returns>
+        public (int, int) GetCurrentProgress()
+        {
+            return imageSelectorQuery.GetCurrentProgress();
+        }
         #endregion
     }
 }
