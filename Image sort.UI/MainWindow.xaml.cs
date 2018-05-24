@@ -885,91 +885,96 @@ namespace Image_sort.UI
         {
             // Only check if the resolution box is not focused
             if (!ResolutionBox.Focusable)
-            switch (e.Key)
-            {
-                // When up key is pressed, move folder selection up
-                case Key.Up:
-                    MoveFolderSelectionUp();
-                        e.Handled = true;
-                        break;
+                switch (e.Key)
+                {
+                    // When up key is pressed, move folder selection up
+                    case Key.Up:
+                        MoveFolderSelectionUp();
+                            e.Handled = true;
+                            break;
 
-                // When down key is pressed, move folder selection down
-                case Key.Down:
-                    MoveFolderSelectionDown();
-                        e.Handled = true;
-                        break;
+                    // When down key is pressed, move folder selection down
+                    case Key.Down:
+                        MoveFolderSelectionDown();
+                            e.Handled = true;
+                            break;
 
-                // Move the file when the right key has been pressed to the selected folder.
-                case Key.Right:
-                    if(MoveFolderButton.IsEnabled && !SearchEnabled)
+                    // Move the file when the right key has been pressed to the selected folder.
+                    case Key.Right:
+                        if(MoveFolderButton.IsEnabled && !SearchEnabled)
                         {
                             DoMove();
                             e.Handled = true;
                         }
                         
-                    break;
-
-                // Skips the file when the left key has been pressed or goes back one if it 
-                // was pressed with ctrl pressed
-                case Key.Left:
-                    if (GoBackButton.IsEnabled && 
-                        (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
-                    {
-                        GoBack();
-                        e.Handled = true;
-                    }
-                    else if (SkipFileButton.IsEnabled && !SearchEnabled)
-                    {
-                        DoSkip();
-                        e.Handled = true;
-                    }
-                    break;
-
-                // Opens Select Folder dialog
-                case Key.F2:
-                    SelectFolder();
-                        e.Handled = true;
                         break;
 
-                // Opens new folder Dialog
-                case Key.F3:
-                    if (NewFolderButton.IsEnabled)
-                        NewFolder();
-                        e.Handled = true;
-                        break;
-
-                // Opens dialog for resolution preference
-                case Key.F4:
-                    if (ResolutionBox.IsEnabled)
-                        UseResolutionBox();
-                        e.Handled = true;
-                        break;
-
-                // "Enters" the folder
-                case Key.Enter:
-                    if (IsAnyFolderVisible)
-                        EnterFolder();
-                        e.Handled = true;
-                        break;
-
-                // Goes a folder upwards
-                case Key.Escape:
-                    if (IsAnyFolderVisible)
-                    {
-                        FoldersStack.SelectedIndex = 0;
-                        EnterFolder();
-                    }
-                        e.Handled = true;
-                        break;
-                // For the keyboard-shortcut for opening the search
-                case Key.S:
-                    if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                    // Skips the file when the left key has been pressed or goes back one if it 
+                    // was pressed with ctrl pressed
+                    case Key.Left:
+                        if (GoBackButton.IsEnabled && 
+                            (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
                         {
+                            GoBack();
                             e.Handled = true;
-                            SearchEnabled = !SearchEnabled;
                         }
-                    break;
-            }
+                        else if (SkipFileButton.IsEnabled && !SearchEnabled)
+                        {
+                            DoSkip();
+                            e.Handled = true;
+                        }
+                        break;
+
+                    // Opens Select Folder dialog
+                    case Key.F2:
+                        SelectFolder();
+                            e.Handled = true;
+                            break;
+
+                    // Opens new folder Dialog
+                    case Key.F3:
+                        if (NewFolderButton.IsEnabled)
+                            NewFolder();
+                            e.Handled = true;
+                            break;
+
+                    // Opens dialog for resolution preference
+                    case Key.F4:
+                        if (ResolutionBox.IsEnabled)
+                            UseResolutionBox();
+                            e.Handled = true;
+                            break;
+
+                    // Opens the current image in the explorer
+                    case Key.F5:
+                        OpenImageInFileExplorer(folderSelector.GetImagePath());
+                        break;
+
+                    // "Enters" the folder
+                    case Key.Enter:
+                        if (IsAnyFolderVisible)
+                            EnterFolder();
+                            e.Handled = true;
+                            break;
+
+                    // Goes a folder upwards
+                    case Key.Escape:
+                        if (IsAnyFolderVisible)
+                        {
+                            FoldersStack.SelectedIndex = 0;
+                            EnterFolder();
+                        }
+                            e.Handled = true;
+                            break;
+                    // For the keyboard-shortcut for opening the search
+                    case Key.S:
+                        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                            {
+                                e.Handled = true;
+                                SearchEnabled = !SearchEnabled;
+                            }
+                        break;
+                }
         }
 
         /// <summary>
