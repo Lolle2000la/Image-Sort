@@ -126,6 +126,17 @@ namespace Image_sort.UI
             // Set the resolution to the saved one.
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
             folderSelector.SetResolution(MaxHorizontalResolution);
+
+            // Fill in the requiered instance, needed for event bubbling.
+            FoldersStack.MainWindowParent = this;
+
+            //Timer timer = new Timer();
+            //timer.Enabled = true;
+            //timer.Interval = 2000;
+            //timer.Tick += (object s, EventArgs e) =>
+            //{
+            //    Dispatcher.Invoke(() => Focus());
+            //};
         }
         #endregion
 
@@ -820,7 +831,7 @@ namespace Image_sort.UI
         /// Contains the informations about what key was pressed and more,
         /// important for the needs of this app
         /// </param>
-        private void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        public void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             // Only check if the resolution box is not focused
             if (!ResolutionBox.Focusable)
