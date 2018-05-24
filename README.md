@@ -14,7 +14,7 @@ Sorts your image at high speed
    * up- and down-arrow-keys to select a folder to move to
    * right-arrow-key to move the image into the selected folder (or one folder upwards if you select "..")
    * left-arrow-key to skip it
-   * ctlr + left-arrow-key to go back to the last skipped image
+   * ctlr + left-arrow-key to revert the last action done (move/skip)
    * ctrl+s toggles the search bar, allowing for quick searches for the folder you need. Close hide the search bar again to resume using the arrow keys to sort images. You can also achieve this by pressing the "Search" button.
    #### The not-so-important stuff
    * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed). Pressing F4 will move your focus to the text box, so that you can type in your preferred resolution. Pressing Enter or Escape, as well as moving the focus away restores normal keyboard input behavior.
