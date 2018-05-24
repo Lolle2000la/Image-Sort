@@ -469,6 +469,43 @@ namespace Image_sort.UI
         private void LoadImage(BitmapImage image)
         {
             PreviewImage.Source = image;
+
+            // if an image was given, fill in the informations
+            if (image != null)
+            {
+                string pathToImage = folderSelector.GetImagePath();
+
+                FileNameInfo.Text = $"Name: {Path.GetFileNameWithoutExtension(pathToImage)}";
+                FileTypeInfo.Text = $"Format: {Path.GetExtension(pathToImage)}";
+                // Calculates the sizes in MB and KB and rounds them to two digits, before filling in the size.
+                FileSizeInfo.Text = $"Size: " +
+                    $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / (1024 * 1024), 2)} MB, " +
+                    $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / 1024, 2)} KB";
+
+                // Fill in the links destination and make it visible
+                OpenInExplorerLink.NavigateUri = new Uri(pathToImage);
+                OpenInExplorerLinkHost.Visibility = Visibility.Visible;
+            }
+            // if that is not the case, remove the old information.
+            else
+            {
+                FileNameInfo.Text = "";
+                FileTypeInfo.Text = "";
+                FileSizeInfo.Text = "";
+                OpenInExplorerLink.NavigateUri = null;
+                // Collapse link again to prevent accidental clicking.
+                OpenInExplorerLinkHost.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Opens explorer.exe (File Explorer) and selects the given file.
+        /// </summary>
+        /// <param name="path">The file to be selected.</param>
+        private void OpenImageInFileExplorer(string path)
+        {
+            // Opens explorer.exe (File Explorer) and selects the given file.
+            System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{path}\"");
         }
 
         /// <summary>
@@ -629,8 +666,8 @@ namespace Image_sort.UI
         {
             if (SkipFileButton.IsEnabled == true)
             {
-                // set the preview image to nothing
-                PreviewImage.Source = null;
+                //// set the preview image to nothing
+                //PreviewImage.Source = null;
                 // get the next image
                 BitmapImage buffer = await folderSelector.GetNextImage();
                 // get the next path of the next image
@@ -642,6 +679,8 @@ namespace Image_sort.UI
                 // else disable the controls
                 else
                 {
+                    // and unload it
+                    LoadImage(null);
                     DisableControls();
                     GoBackButton.IsEnabled = true;
                 }
@@ -658,8 +697,8 @@ namespace Image_sort.UI
             {
                 if (MoveFolderButton.IsEnabled == true)
                 {
-                    // set the preview image to nothing
-                    PreviewImage.Source = null;
+                    //// set the preview image to nothing
+                    //PreviewImage.Source = null;
                     // get the next path of the next image
                     string path = folderSelector.GetImagePath();
                     // get the next image
@@ -672,6 +711,8 @@ namespace Image_sort.UI
                     // else disable the controls
                     else
                     {
+                        // and unload it
+                        LoadImage(null);
                         DisableControls();
                         GoBackButton.IsEnabled = true;
                     }
@@ -1067,6 +1108,18 @@ namespace Image_sort.UI
         private void GoBackButton_Click(object sender, RoutedEventArgs e)
         {
             GoBack();
+        }
+
+        /// <summary>
+        /// Called when hyperlinks meaned for opening something in File Explorer are clicked.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RequestOpeningInExplorer(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            if (e.Uri != null && File.Exists(e.Uri.OriginalString))
+                // Opens explorer.exe (File Explorer) and selects the given file.
+                OpenImageInFileExplorer(e.Uri.OriginalString);
         }
         #endregion
     }

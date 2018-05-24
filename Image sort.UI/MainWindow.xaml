@@ -17,6 +17,7 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
         
         <!-- Column Definitions for Layout -->
@@ -106,7 +107,7 @@
         </ToolBarTray>
 
         <!-- StackPanel containing all the buttons with the folders to choose -->
-        <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Focusable="False"
+        <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Focusable="False"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0">
             <!--<i:Interaction.Behaviors>
                 <Behaviors:ScrollIntoViewForListBox />
@@ -122,10 +123,21 @@
         <!--IsReadOnly="True"-->
 
         <!-- For better UX -->
-        <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" Width="5" Focusable="False"/>
+        <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" Width="5" Focusable="False"/>
 
         <!-- Image loading the image to sort as a preview -->
-        <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="2"
+        <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="3"
                Grid.Column="1" Margin="0,0,5,0" Focusable="False"></Image>
+
+        <StackPanel Grid.Row="4" Grid.Column="1" Background="#BFFFFFFF">
+            <TextBlock Name="FileNameInfo"/>
+            <TextBlock Name="FileTypeInfo"/>
+            <TextBlock Name="FileSizeInfo"/>
+            <TextBlock Name="OpenInExplorerLinkHost" Visibility="Collapsed">
+                <Hyperlink Focusable="False" Name="OpenInExplorerLink" RequestNavigate="RequestOpeningInExplorer">
+                    Open Image in File Explorer
+                </Hyperlink>
+            </TextBlock>
+        </StackPanel>
     </Grid>
 </Window>
