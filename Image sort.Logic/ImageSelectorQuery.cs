@@ -344,13 +344,50 @@ namespace Image_sort.Logic
         /// </param>
         public void GoBackImages(int amount=2)
         {
+            // Check if there is something to go back to
             if (imagePathPool.Count > 1 && currentIndex - amount >= 0)
+                // If it just works, then just go back
                 if (File.Exists(imagePathPool[currentIndex-amount]))
                 {
                     currentIndex -= amount;
                 }
+                // else try to revert a move operation on the last image,
+                // and if that is not possible, go back once more.
                 else
                 {
+                    if (imagePathPool[currentIndex - amount].Contains("*"))
+                    {
+                        // The new and the old path have been seperated by a ":", because under Windows
+                        // no path is allowed to contain ":". That makes it easy to seperate.
+                        string[] paths = imagePathPool[currentIndex - amount].Split('*');
+                        string oldPath = paths[0];
+                        string newPath = paths[1];
+
+                        if (File.Exists(newPath) && !File.Exists(oldPath))
+                        {
+                            try
+                            {
+                                File.Move(newPath, oldPath);
+                                imagePathPool[currentIndex - amount] = oldPath;
+                                currentIndex -= amount;
+                                return;
+                            }
+                            // When access fails...
+                            catch (IOException ex)
+                            {
+                                // Show the user a message box explaining why.
+                                System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
+                                    "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                            }
+                            
+                        }
+                        else
+                        {
+                            System.Windows.Forms.MessageBox.Show($"Could not move back the last image:" +
+                                $"{System.Environment.NewLine}there already is a file named {Path.GetFileName(oldPath)}.",
+                                "Error");
+                        }
+                    }
                     GoBackImages(amount + 1);
                 }
         }
@@ -371,6 +408,20 @@ namespace Image_sort.Logic
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+        }
+
+        /// <summary>
+        /// Appends the new location of the current image, so that it can be reverted to the 
+        /// current path.
+        /// </summary>
+        /// <param name="newPath">The path to the new image location of the image.</param>
+        public void AppendNewLocation(string newPath)
+        {
+            // Appends the new location to the image with a "*" (not allowed for paths/reserved)
+            // so that it can be reverted again if needed.
+#warning Remember if something goes wrong, this is the place to look!
+            if (newPath.Length > 0 && File.Exists(newPath))
+                imagePathPool[currentIndex - 2] += $"*{newPath}";
         }
         #endregion
     }

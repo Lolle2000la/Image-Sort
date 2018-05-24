@@ -136,59 +136,74 @@ namespace Image_sort.Logic
         /// <param name="destination">The <see cref="string"/> pointing to it's destination</param>
         public void MoveFileTo(string source,string destination)
         {
-            // Counts the amount of times access failed
-            
             try
             {
+                // In the end "finalDestination" will contain the final destination,
+                // which can be different from the one given.
+                string finalDestination = "";
                 // Only run, if there is an existing file, that has been given back.
                 if (File.Exists(source))
-                // Making sure the file doesn't already exist at the destination
-                if (!File.Exists(destination))
                 {
-                    // Actual moving operation
-                    File.Move(source, destination);
-                }
-                else
-                {
-                    // Show the user a message box and ask him, if he wants to replace the image,
-                    // rename it, or don't do anything.
-                    System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show(
-                        "The image does already exist in the selected folder." +
-                        " Do you want to replace it?\n\n" +
-                        "*No creates a new File for the image at the destination.", "Replace image?",
-                        System.Windows.Forms.MessageBoxButtons.YesNoCancel,
-                        System.Windows.Forms.MessageBoxIcon.Question);
-
-                    // If the user wants to replace the image
-                    if (dialogResult == System.Windows.Forms.DialogResult.Yes)
+                    // Making sure the file doesn't already exist at the destination
+                    if (!File.Exists(destination))
                     {
-                        // Delete the existing file and replace it
-                        File.Delete(destination);
+                        // Actual moving operation
                         File.Move(source, destination);
+                        // Remember the new location of the image
+                        finalDestination = destination;
                     }
-                    else if (dialogResult == System.Windows.Forms.DialogResult.No)
+                    else
                     {
-                        // Stores the number for the later renamed image (e.g. "image(i=2).jpg
-                        int i = 0;
+                        // Show the user a message box and ask him, if he wants to replace the image,
+                        // rename it, or don't do anything.
+                        System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show(
+                            "The image does already exist in the selected folder." +
+                            " Do you want to replace it?\n\n" +
+                            "*No creates a new File for the image at the destination.", "Replace image?",
+                            System.Windows.Forms.MessageBoxButtons.YesNoCancel,
+                            System.Windows.Forms.MessageBoxIcon.Question);
 
-                        // Stores the path of the new destination name of the image to move.
-                        string newDestinationName;
-
-                        // increments i as long as it has to, so that the image to move
-                        // can be moved with a name that doesn't exist yet.
-                        while (File.Exists(GetPathWithNumber(destination, i)))
+                        // If the user wants to replace the image
+                        if (dialogResult == System.Windows.Forms.DialogResult.Yes)
                         {
-                            i++;
+                            // Delete the existing file and replace it
+                            File.Delete(destination);
+                            File.Move(source, destination);
+
+                            // Remember the new location of the image
+                            finalDestination = destination;
+                        }
+                        else if (dialogResult == System.Windows.Forms.DialogResult.No)
+                        {
+                            // Stores the number for the later renamed image (e.g. "image(i=2).jpg
+                            int i = 0;
+
+                            // Stores the path of the new destination name of the image to move.
+                            string newDestinationName;
+
+                            // increments i as long as it has to, so that the image to move
+                            // can be moved with a name that doesn't exist yet.
+                            while (File.Exists(GetPathWithNumber(destination, i)))
+                            {
+                                i++;
+                                // Sets the path to the new path (for example: "image(2).jpg")
+                                newDestinationName = GetPathWithNumber(destination, i);
+                            }
+
                             // Sets the path to the new path (for example: "image(2).jpg")
                             newDestinationName = GetPathWithNumber(destination, i);
+
+                            // Move the file
+                            File.Move(source, newDestinationName);
+
+                            // Remember the new location of the image
+                            finalDestination = newDestinationName;
                         }
-
-                        // Sets the path to the new path (for example: "image(2).jpg")
-                        newDestinationName = GetPathWithNumber(destination, i);
-
-                        // Move the file
-                        File.Move(source, newDestinationName);
                     }
+
+                    // Append the new location to the the current path for possible
+                    // future retrievement and reversion.
+                    imageSelectorQuery.AppendNewLocation(finalDestination);
                 }
             }
             // When access fails...
