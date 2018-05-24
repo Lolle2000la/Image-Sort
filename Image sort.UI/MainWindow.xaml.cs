@@ -848,23 +848,21 @@ namespace Image_sort.UI
                         
                     break;
 
-                // Skips the file when the left key has been pressed
+                // Skips the file when the left key has been pressed or goes back one if it 
+                // was pressed with ctrl pressed
                 case Key.Left:
-                    if (SkipFileButton.IsEnabled && !SearchEnabled)
-                        {
-                            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                            {
-                                GoBack();
-                                e.Handled = true;
-                            }
-                            else
-                            {
-                                DoSkip();
-                                e.Handled = true;
-                            }
-                                
-                        }
-                        break;
+                    if (GoBackButton.IsEnabled && 
+                        (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
+                    {
+                        GoBack();
+                        e.Handled = true;
+                    }
+                    else if (SkipFileButton.IsEnabled && !SearchEnabled)
+                    {
+                        DoSkip();
+                        e.Handled = true;
+                    }
+                    break;
 
                 // Opens Select Folder dialog
                 case Key.F2:
