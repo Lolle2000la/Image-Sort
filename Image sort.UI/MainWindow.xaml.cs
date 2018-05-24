@@ -486,6 +486,7 @@ namespace Image_sort.UI
                 OpenInExplorerLink.NavigateUri = new Uri(pathToImage);
                 OpenInExplorerLinkHost.Visibility = Visibility.Visible;
 
+                // Show Progress
                 (int current, int max) = folderSelector.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"Progress: {current}/{max}";
             }
@@ -495,7 +496,11 @@ namespace Image_sort.UI
                 FileNameInfo.Text = "";
                 FileTypeInfo.Text = "";
                 FileSizeInfo.Text = "";
-                ProgressIndicatorText.Text = "";
+
+                // Show progress
+                (int current, int max) = folderSelector.GetCurrentProgress();
+                ProgressIndicatorText.Text = $"Progress: {current}/{max}";
+
                 OpenInExplorerLink.NavigateUri = null;
                 // Collapse link again to prevent accidental clicking.
                 OpenInExplorerLinkHost.Visibility = Visibility.Collapsed;

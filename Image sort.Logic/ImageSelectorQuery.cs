@@ -429,7 +429,7 @@ namespace Image_sort.Logic
         /// <returns>(currentImage, maxImages)</returns>
         public (int, int) GetCurrentProgress()
         {
-            return (currentIndex, imagePathPool.Count);
+            return (currentIndex-1, imagePathPool.Count);
         }
         #endregion
     }
