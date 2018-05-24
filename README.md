@@ -9,6 +9,7 @@ Sorts your image at high speed
    #### The important stuff
    * F2 for selecting the folder
    * F3 to create a new folder
+   * F5 to open the currently selected image in the explorer
    * Enter to enter the currently selected folder
    * Escape to leave the current folder
    * up- and down-arrow-keys to select a folder to move to
