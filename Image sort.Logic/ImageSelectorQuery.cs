@@ -50,10 +50,10 @@ namespace Image_sort.Logic
         /// Defines the max resolution to be loaded 
         /// </summary>
         public int MaxHorizontalResolution { get; set; }
-        /// <summary>
-        /// Window indicating the progress of the files being loaded to the user.
-        /// </summary>
-        private ProgressWindow progressWindow;
+        ///// <summary>
+        ///// Window indicating the progress of the files being loaded to the user.
+        ///// </summary>
+        //private ProgressWindow progressWindow;
         #endregion
 
 
@@ -181,19 +181,19 @@ namespace Image_sort.Logic
             }
         }
                 
-        /// <summary>
-        /// Closes the progress window.
-        /// </summary>
-        private void CloseProgressWindow()
-        {
-            // Closes the window when it is no longer needed.
-            while (!progressWindow.IsHandleCreated)
-            {
-                // Wait for the window to be created, before being closed.
-                Task.Delay(1);
-            }
-            progressWindow.Close();
-        }
+        ///// <summary>
+        ///// Closes the progress window.
+        ///// </summary>
+        //private void CloseProgressWindow()
+        //{
+        //    // Closes the window when it is no longer needed.
+        //    while (!progressWindow.IsHandleCreated)
+        //    {
+        //        // Wait for the window to be created, before being closed.
+        //        Task.Delay(1);
+        //    }
+        //    progressWindow.Close();
+        //}
 
         /// <summary>
         /// Cleans up everything loaded. Clears the images and so on.

@@ -142,7 +142,7 @@ namespace Image_sort.Logic
             {
                 // Only run, if there is an existing file, that has been given back.
                 if (File.Exists(source))
-                // Making sure the file doesn't already exist at destination
+                // Making sure the file doesn't already exist at the destination
                 if (!File.Exists(destination))
                 {
                     // Actual moving operation
