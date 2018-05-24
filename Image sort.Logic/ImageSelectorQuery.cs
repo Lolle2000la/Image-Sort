@@ -419,7 +419,6 @@ namespace Image_sort.Logic
         {
             // Appends the new location to the image with a "*" (not allowed for paths/reserved)
             // so that it can be reverted again if needed.
-#warning Remember if something goes wrong, this is the place to look!
             if (newPath.Length > 0 && File.Exists(newPath))
                 imagePathPool[currentIndex - 2] += $"*{newPath}";
         }
