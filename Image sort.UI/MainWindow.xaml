@@ -180,6 +180,7 @@
                     <TextBlock Name="FileNameInfo"/>
                     <TextBlock Name="FileTypeInfo"/>
                     <TextBlock Name="FileSizeInfo"/>
+                    <TextBlock Name="FileCreationTimeInfo"/>
                     <TextBlock Name="OpenInExplorerLinkHost" Visibility="Collapsed">
                         <Hyperlink Focusable="False" Name="OpenInExplorerLink"
                                    Command="local:Command.OpenInExplorerCommand">

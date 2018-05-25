@@ -519,6 +519,8 @@ namespace Image_sort.UI
 
                 FileNameInfo.Text = $"Name: {Path.GetFileNameWithoutExtension(pathToImage)}";
                 FileTypeInfo.Text = $"Format: {Path.GetExtension(pathToImage)}";
+                DateTime creationTime = File.GetCreationTime(pathToImage).ToLocalTime();
+                FileCreationTimeInfo.Text = $"Created at: {creationTime.ToLongDateString()} {creationTime.ToShortTimeString()}";
                 // Calculates the sizes in MB and KB and rounds them to two digits, before filling in the size.
                 FileSizeInfo.Text = $"Size: " +
                     $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / (1024 * 1024), 2)} MB, " +
@@ -537,6 +539,7 @@ namespace Image_sort.UI
             {
                 FileNameInfo.Text = "";
                 FileTypeInfo.Text = "";
+                FileCreationTimeInfo.Text = "";
                 FileSizeInfo.Text = "";
 
                 // Show progress
