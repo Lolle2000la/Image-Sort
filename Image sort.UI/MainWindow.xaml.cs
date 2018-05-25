@@ -275,6 +275,7 @@ namespace Image_sort.UI
                 {
                     LoadImage(null);
                     DisableControls();
+                    return true;
                 }
 
                 EnableAllControls();
@@ -327,6 +328,29 @@ namespace Image_sort.UI
                 // otherwise load the image and enable the controls, if there is an image
                 else
                 {
+                    // if there was no image inside the folder, 
+                    // disable anything except for the controls needed for navigation.
+                    if (PreviewImage.Source == null)
+                    {
+                        DisableAllControls();
+                        SelectFolderButton.IsEnabled = true;
+                        ResolutionBox.IsEnabled = true;
+                        EnableSearchButton.IsEnabled = true;
+                        EnterFolderButton.IsEnabled = true;
+
+                        // Make folders on the left up to date
+                        AddFoldersToFoldersStack();
+
+                        // Clearing the search bar after entering the folder,
+                        // so that it will be more comfortable searching.
+                        SearchBarBox.Text = "";
+
+                        return;
+                    }
+
+                    // Clearing the search bar after entering the folder,
+                    // so that it will be more comfortable searching.
+                    SearchBarBox.Text = "";
 
                     // Make folders on the left up to date
                     AddFoldersToFoldersStack();
@@ -373,7 +397,25 @@ namespace Image_sort.UI
                     // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
+                        // if there was no image inside the folder, 
+                        // disable anything except for the controls needed for navigation.
+                        if (PreviewImage.Source == null)
+                        {
+                            DisableAllControls();
+                            SelectFolderButton.IsEnabled = true;
+                            ResolutionBox.IsEnabled = true;
+                            EnableSearchButton.IsEnabled = true;
+                            EnterFolderButton.IsEnabled = true;
 
+                            // Make folders on the left up to date
+                            AddFoldersToFoldersStack();
+
+                            // Clearing the search bar after entering the folder,
+                            // so that it will be more comfortable searching.
+                            SearchBarBox.Text = "";
+
+                            return;
+                        }
 
                         // Clearing the search bar after entering the folder,
                         // so that it will be more comfortable searching.
