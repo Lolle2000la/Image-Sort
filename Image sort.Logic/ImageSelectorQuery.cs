@@ -347,7 +347,7 @@ namespace Image_sort.Logic
             // Check if there is something to go back to
             if (imagePathPool.Count > 1 && currentIndex - amount >= 0)
                 // If it just works, then just go back
-                if (File.Exists(imagePathPool[currentIndex-amount]))
+                if (File.Exists(imagePathPool[currentIndex - amount]))
                 {
                     currentIndex -= amount;
                 }
@@ -379,7 +379,7 @@ namespace Image_sort.Logic
                                 System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
                                     "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
                             }
-                            
+
                         }
                         else
                         {
@@ -390,6 +390,9 @@ namespace Image_sort.Logic
                     }
                     GoBackImages(amount + 1);
                 }
+            // if there is nothing to go back to, just go back to the current image.
+            else
+                currentIndex--;
         }
 
         /// <summary>
