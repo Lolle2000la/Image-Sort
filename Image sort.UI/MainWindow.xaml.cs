@@ -1286,7 +1286,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (IsAnyFolderVisible)
+            if (IsAnyFolderVisible && !ResolutionBox.IsFocused)
                 EnterFolder();
         }
 
