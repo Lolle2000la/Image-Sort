@@ -108,7 +108,8 @@
 
         <!-- StackPanel containing all the buttons with the folders to choose -->
         <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Focusable="False"
-                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0">
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0"
+                             ScrollViewer.PanningMode="VerticalOnly">
             <!--<i:Interaction.Behaviors>
                 <Behaviors:ScrollIntoViewForListBox />
             </i:Interaction.Behaviors>-->
