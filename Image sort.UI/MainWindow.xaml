@@ -7,8 +7,38 @@
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
-        KeyDown="Window_KeyDown" Drop="Window_Drop">
+        Drop="Window_Drop">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
+    <Window.CommandBindings>
+        <CommandBinding Command="local:Command.GoBackCommand" Executed="GoBack_Executed"/>
+        <CommandBinding Command="local:Command.SelectFolderCommand" Executed="SelectFolder_Executed"/>
+        <CommandBinding Command="local:Command.CreateFolderCommand" Executed="CreateFolder_Executed"/>
+        <CommandBinding Command="local:Command.MoveUpCommand" Executed="MoveUp_Executed"/>
+        <CommandBinding Command="local:Command.MoveDownCommand" Executed="MoveDown_Executed"/>
+        <CommandBinding Command="local:Command.MoveImageCommand" Executed="MoveImage_Executed"/>
+        <CommandBinding Command="local:Command.SkipImageCommand" Executed="SkipImage_Executed"/>
+        <CommandBinding Command="local:Command.FocusResolutionBoxCommand" Executed="FocusResolutionBox_Executed"/>
+        <CommandBinding Command="local:Command.OpenInExplorerCommand" Executed="OpenInExplorer_Executed"/>
+        <CommandBinding Command="local:Command.EnterFolderCommand" Executed="EnterFolder_Executed"/>
+        <CommandBinding Command="local:Command.GoUpwardsCommand" Executed="GoUpwards_Executed"/>
+        <CommandBinding Command="local:Command.ToggleSearchCommand" Executed="ToggleSearch_Executed"/>
+    </Window.CommandBindings>
+
+    <Window.InputBindings>
+        <KeyBinding Command="local:Command.GoBackCommand" Modifiers="Ctrl" Key="Left"/>
+        <KeyBinding Command="local:Command.SelectFolderCommand" Key="F2"/>
+        <KeyBinding Command="local:Command.CreateFolderCommand" Key="F3"/>
+        <KeyBinding Command="local:Command.MoveUpCommand" Key="Up"/>
+        <KeyBinding Command="local:Command.MoveDownCommand" Key="Down"/>
+        <KeyBinding Command="local:Command.MoveImageCommand" Key="Right"/>
+        <KeyBinding Command="local:Command.SkipImageCommand" Key="Left"/>
+        <KeyBinding Command="local:Command.FocusResolutionBoxCommand" Key="F4"/>
+        <KeyBinding Command="local:Command.OpenInExplorerCommand" Key="F5"/>
+        <KeyBinding Command="local:Command.EnterFolderCommand" Key="Enter"/>
+        <KeyBinding Command="local:Command.GoUpwardsCommand" Key="Esc"/>
+        <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
+    </Window.InputBindings>
+    
     <Grid>
         <!-- START GRID DEFINITIONS -->
         
@@ -33,26 +63,33 @@
             <!-- ToolBar containing everything for folder management -->
             <ToolBar Focusable="False">
                 <Button Content="Select Folder" Focusable="False"
-                        x:Name="SelectFolderButton" Click="SelectFolderButton_Click"
-                        ToolTip="Selects the folder to sort. Shortcut: F2"/>
+                        x:Name="SelectFolderButton" 
+                        ToolTip="Selects the folder to sort. Shortcut: F2"
+                        Command="local:Command.SelectFolderCommand"/>
+                <!-- Click="SelectFolderButton_Click" -->
                 <Button Content="New Folder" IsEnabled="False" Focusable="False"
-                        x:Name="NewFolderButton" Click="NewFolderButton_Click"
+                        x:Name="NewFolderButton" Command="local:Command.CreateFolderCommand"
                         ToolTip="Creates a new folder inside the current one. Shortcut: F3"/>
+                <!-- Click="NewFolderButton_Click" -->
                 <Button Content="Enter Folder" IsEnabled="False" Focusable="False"
-                        x:Name="EnterFolderButton" Click="EnterFolderButton_Click"
+                        x:Name="EnterFolderButton" Command="local:Command.EnterFolderCommand"
                         ToolTip="Enter folder selected. Shortcut: Enter"/>
+                <!-- Click="EnterFolderButton_Click" -->
             </ToolBar>
             <!-- Contains everything for image management -->
             <ToolBar Focusable="False">
                 <Button Content="Skip File" IsEnabled="False" Focusable="False"
-                    x:Name="SkipFileButton" Click="SkipFileButton_Click"
+                    x:Name="SkipFileButton" Command="local:Command.SkipImageCommand"
                     ToolTip="Skips the current image. Shortcut: left arrow key"/>
+                <!-- Click="SkipFileButton_Click" -->
                 <Button Content="Move" IsEnabled="False" Focusable="False"
-                    x:Name="MoveFolderButton" Click="MoveFolderButton_Click"
+                    x:Name="MoveFolderButton" Command="local:Command.MoveImageCommand"
                     ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+                <!-- Click="MoveFolderButton_Click" -->
                 <Button Content="Go back" IsEnabled="False" Focusable="False"
-                    x:Name="GoBackButton" Click="GoBackButton_Click"
+                    x:Name="GoBackButton" Command="local:Command.GoBackCommand"
                     ToolTip="Goes back one image you skipped, if possible. Shortcut: ctrl + left arrow key"/>
+                <!-- Click="GoBackButton_Click" -->
             </ToolBar>
             <!-- Contains everything around settings -->
             <ToolBar Focusable="False">
@@ -109,18 +146,17 @@
         <!-- StackPanel containing all the buttons with the folders to choose -->
         <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Focusable="False"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0"
-                             ScrollViewer.PanningMode="VerticalOnly">
+                             ScrollViewer.PanningMode="VerticalOnly" KeyDown="FoldersStack_KeyDown" >
             <!--<i:Interaction.Behaviors>
                 <Behaviors:ScrollIntoViewForListBox />
             </i:Interaction.Behaviors>-->
-
         </local:ListBoxScroll>
 
         <!-- Search bar for the user to search for folders -->
         <TextBox x:Name="SearchBarBox" Grid.Row="1" Grid.Column="0" Focusable="False"
                  Margin="0,0,5,0" IsReadOnlyCaretVisible="True" 
                  TextChanged="SearchBarBox_TextChanged" Visibility="Collapsed"
-                 PreviewKeyDown="Window_KeyDown"/>
+                 PreviewKeyDown="FoldersStack_KeyDown"/>
         <!--IsReadOnly="True"-->
 
         <!-- For better UX -->
@@ -145,9 +181,11 @@
                     <TextBlock Name="FileTypeInfo"/>
                     <TextBlock Name="FileSizeInfo"/>
                     <TextBlock Name="OpenInExplorerLinkHost" Visibility="Collapsed">
-                <Hyperlink Focusable="False" Name="OpenInExplorerLink" RequestNavigate="RequestOpeningInExplorer">
-                    Open Image in File Explorer
-                </Hyperlink>
+                        <Hyperlink Focusable="False" Name="OpenInExplorerLink"
+                                   Command="local:Command.OpenInExplorerCommand">
+                            Open Image in File Explorer
+                        </Hyperlink>
+                        <!-- RequestNavigate="RequestOpeningInExplorer" -->
                     </TextBlock>
                 </StackPanel>
 

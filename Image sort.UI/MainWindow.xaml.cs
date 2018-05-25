@@ -551,7 +551,7 @@ namespace Image_sort.UI
                         ListBoxItem listBoxItem
                             = new ListBoxItem
                             {
-                                Content = System.IO.Path.GetFileName(folder)
+                                Content = System.IO.Path.GetFileName(folder),
                             };
 
                         // Make it possible to enter the folder by double clicking it
@@ -834,40 +834,40 @@ namespace Image_sort.UI
                 EnterFolder();
         }
         
-        /// <summary>
-        /// Gets called, when the user clicks the "Select Folder" Button in
-        /// the tool bar
-        /// </summary>
-        /// <param name="sender">
-        /// the sender-object of the event
-        /// (used when generalizing the event for more controls)
-        /// </param>
-        /// <param name="e">Contains informations about the event</param>
-        private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            SelectFolder();
-        }
+        ///// <summary>
+        ///// Gets called, when the user clicks the "Select Folder" Button in
+        ///// the tool bar
+        ///// </summary>
+        ///// <param name="sender">
+        ///// the sender-object of the event
+        ///// (used when generalizing the event for more controls)
+        ///// </param>
+        ///// <param name="e">Contains informations about the event</param>
+        //private void SelectFolderButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    SelectFolder();
+        //}
         
-        /// <summary>
-        /// Handles the Skip File buttons click event.
-        /// Loads next image when clicked, without performing an action
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void SkipFileButton_Click(object sender, RoutedEventArgs e)
-        {
-            DoSkip();
-        }
+        ///// <summary>
+        ///// Handles the Skip File buttons click event.
+        ///// Loads next image when clicked, without performing an action
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void SkipFileButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    DoSkip();
+        //}
         
-        /// <summary>
-        /// Called when the <see cref="MoveFolderButton.Click"/>-Event is being raised
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void MoveFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            DoMove();
-        }
+        ///// <summary>
+        ///// Called when the <see cref="MoveFolderButton.Click"/>-Event is being raised
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void MoveFolderButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    DoMove();
+        //}
         
         /// <summary>
         /// Handles the Keyboard, so that the user is more productive
@@ -881,38 +881,38 @@ namespace Image_sort.UI
         /// Contains the informations about what key was pressed and more,
         /// important for the needs of this app
         /// </param>
-        public void Window_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        public void FoldersStack_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             // Only check if the resolution box is not focused
             if (!ResolutionBox.Focusable)
                 switch (e.Key)
                 {
-                    // When up key is pressed, move folder selection up
-                    case Key.Up:
-                        MoveFolderSelectionUp();
-                            e.Handled = true;
-                            break;
+                    //        // When up key is pressed, move folder selection up
+                    //        case Key.Up:
+                    //            MoveFolderSelectionUp();
+                    //                e.Handled = true;
+                    //                break;
 
-                    // When down key is pressed, move folder selection down
-                    case Key.Down:
-                        MoveFolderSelectionDown();
-                            e.Handled = true;
-                            break;
+                    //        // When down key is pressed, move folder selection down
+                    //        case Key.Down:
+                    //            MoveFolderSelectionDown();
+                    //                e.Handled = true;
+                    //                break;
 
                     // Move the file when the right key has been pressed to the selected folder.
                     case Key.Right:
-                        if(MoveFolderButton.IsEnabled && !SearchEnabled)
+                        if (MoveFolderButton.IsEnabled && !SearchEnabled)
                         {
                             DoMove();
                             e.Handled = true;
                         }
-                        
+
                         break;
 
                     // Skips the file when the left key has been pressed or goes back one if it 
                     // was pressed with ctrl pressed
                     case Key.Left:
-                        if (GoBackButton.IsEnabled && 
+                        if (GoBackButton.IsEnabled &&
                             (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl)))
                         {
                             GoBack();
@@ -925,86 +925,86 @@ namespace Image_sort.UI
                         }
                         break;
 
-                    // Opens Select Folder dialog
-                    case Key.F2:
-                        SelectFolder();
-                            e.Handled = true;
-                            break;
+                        //        // Opens Select Folder dialog
+                        //        case Key.F2:
+                        //            SelectFolder();
+                        //                e.Handled = true;
+                        //                break;
 
-                    // Opens new folder Dialog
-                    case Key.F3:
-                        if (NewFolderButton.IsEnabled)
-                            NewFolder();
-                            e.Handled = true;
-                            break;
+                        //        // Opens new folder Dialog
+                        //        case Key.F3:
+                        //            if (NewFolderButton.IsEnabled)
+                        //                NewFolder();
+                        //                e.Handled = true;
+                        //                break;
 
-                    // Opens dialog for resolution preference
-                    case Key.F4:
-                        if (ResolutionBox.IsEnabled)
-                            UseResolutionBox();
-                            e.Handled = true;
-                            break;
+                        //        // Opens dialog for resolution preference
+                        //        case Key.F4:
+                        //            if (ResolutionBox.IsEnabled)
+                        //                UseResolutionBox();
+                        //                e.Handled = true;
+                        //                break;
 
-                    // Opens the current image in the explorer
-                    case Key.F5:
-                        OpenImageInFileExplorer(folderSelector.GetImagePath());
-                        break;
+                        //        // Opens the current image in the explorer
+                        //        case Key.F5:
+                        //            OpenImageInFileExplorer(folderSelector.GetImagePath());
+                        //            break;
 
-                    // "Enters" the folder
-                    case Key.Enter:
-                        if (IsAnyFolderVisible)
-                            EnterFolder();
-                            e.Handled = true;
-                            break;
+                        //        // "Enters" the folder
+                        //        case Key.Enter:
+                        //            if (IsAnyFolderVisible)
+                        //                EnterFolder();
+                        //                e.Handled = true;
+                        //                break;
 
-                    // Goes a folder upwards
-                    case Key.Escape:
-                        if (IsAnyFolderVisible)
-                        {
-                            FoldersStack.SelectedIndex = 0;
-                            EnterFolder();
-                        }
-                            e.Handled = true;
-                            break;
-                    // For the keyboard-shortcut for opening the search
-                    case Key.S:
-                        if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                            {
-                                e.Handled = true;
-                                SearchEnabled = !SearchEnabled;
-                            }
-                        break;
+                        //        // Goes a folder upwards
+                        //        case Key.Escape:
+                        //            if (IsAnyFolderVisible)
+                        //            {
+                        //                FoldersStack.SelectedIndex = 0;
+                        //                EnterFolder();
+                        //            }
+                        //                e.Handled = true;
+                        //                break;
+                        //        // For the keyboard-shortcut for opening the search
+                        //        case Key.S:
+                        //            if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                        //                {
+                        //                    e.Handled = true;
+                        //                    SearchEnabled = !SearchEnabled;
+                        //                }
+                        //            break;
                 }
         }
 
-        /// <summary>
-        /// Creates new folder when used
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void NewFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            NewFolder();
-        }
-        /// <summary>
-        /// Enters the folder in question when called by user
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void EnterFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            EnterFolder();
-        }
+        ///// <summary>
+        ///// Creates new folder when used
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void NewFolderButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    NewFolder();
+        //}
+        ///// <summary>
+        ///// Enters the folder in question when called by user
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void EnterFolderButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    EnterFolder();
+        //}
 
-        /// <summary>
-        /// Lets the user select a resolution, by that the images should be loaded.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void SetHorizontalResolutionButton_Click(object sender, RoutedEventArgs e)
-        {
-            SetResolution();
-        }
+        ///// <summary>
+        ///// Lets the user select a resolution, by that the images should be loaded.
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void SetHorizontalResolutionButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    SetResolution();
+        //}
         
         /// <summary>
         /// Used for handling drag and drop, good for UX (obviously)
@@ -1114,27 +1114,229 @@ namespace Image_sort.UI
             SearchEnabled = (bool)EnableSearchButton.IsChecked;
         }
         
+        ///// <summary>
+        ///// Goes back in time (if the last image wasn't moved)
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void GoBackButton_Click(object sender, RoutedEventArgs e)
+        //{
+        //    GoBack();
+        //}
+
+        ///// <summary>
+        ///// Called when hyperlinks meaned for opening something in File Explorer are clicked.
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="e"></param>
+        //private void RequestOpeningInExplorer(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        //{
+        //    if (e.Uri != null && File.Exists(e.Uri.OriginalString))
+        //        // Opens explorer.exe (File Explorer) and selects the given file.
+        //        OpenImageInFileExplorer(e.Uri.OriginalString);
+        //}
+
+        #region CommandBindings
         /// <summary>
-        /// Goes back in time (if the last image wasn't moved)
+        /// Executed when the <see cref="Command.GoBackCommand"/> is executed.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void GoBackButton_Click(object sender, RoutedEventArgs e)
+        private void GoBack_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            GoBack();
+            if (GoBackButton.IsEnabled)
+                GoBack();
         }
 
         /// <summary>
-        /// Called when hyperlinks meaned for opening something in File Explorer are clicked.
+        /// Executed when the <see cref="Command.SelectFolderComand"/> is executed.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void RequestOpeningInExplorer(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        private void SelectFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (e.Uri != null && File.Exists(e.Uri.OriginalString))
-                // Opens explorer.exe (File Explorer) and selects the given file.
-                OpenImageInFileExplorer(e.Uri.OriginalString);
+            SelectFolder();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.CreateFolderCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void CreateFolder_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (NewFolderButton.IsEnabled)
+                NewFolder();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.MoveUpCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MoveUp_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            MoveFolderSelectionUp();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.MoveDownCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MoveDown_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            MoveFolderSelectionDown();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.MoveImageCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MoveImage_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (MoveFolderButton.IsEnabled && !SearchEnabled)
+            {
+                DoMove();
+            }
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.SkipImageCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void SkipImage_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (SkipFileButton.IsEnabled && !SearchEnabled)
+            {
+                DoSkip();
+            }
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.FocusResolutionBoxCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FocusResolutionBox_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (ResolutionBox.IsEnabled)
+                UseResolutionBox();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.OpenInExplorerCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OpenInExplorer_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (OpenInExplorerLinkHost.Visibility == Visibility.Visible)
+                OpenImageInFileExplorer(folderSelector.GetImagePath());
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.EnterFolderCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (IsAnyFolderVisible)
+                EnterFolder();
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.EnterFolderCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void GoUpwards_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (IsAnyFolderVisible)
+            {
+                FoldersStack.SelectedIndex = 0;
+                EnterFolder();
+            }
+        }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.ToggleSearchCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ToggleSearch_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            SearchEnabled = !SearchEnabled;
         }
         #endregion
+        #endregion
     }
+
+    #region Commands
+    public static class Command
+    {
+        /// <summary>
+        /// Gives the user the option to select a(nother) folder, when executed.
+        /// </summary>
+        public static RoutedCommand SelectFolderCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Gives the user the option to create a new folder, when executed.
+        /// </summary>
+        public static RoutedCommand CreateFolderCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Moves the folder selection up, when executed.
+        /// </summary>
+        public static RoutedCommand MoveUpCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Moves the folder selection down, when executed.
+        /// </summary>
+        public static RoutedCommand MoveDownCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Moves the image to the currently selected folder, when executed.
+        /// </summary>
+        public static RoutedCommand MoveImageCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Skips the current image, when executed.
+        /// </summary>
+        public static RoutedCommand SkipImageCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Focuses the resolution box, when executed.
+        /// </summary>
+        public static RoutedCommand FocusResolutionBoxCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Opens the current image in explorer, when executed.
+        /// </summary>
+        public static RoutedCommand OpenInExplorerCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Enters the currently selected folder, when executed.
+        /// </summary>
+        public static RoutedCommand EnterFolderCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Goes to the folder upwards in the hierarchy to the currently selected one, when executed.
+        /// </summary>
+        public static RoutedCommand GoUpwardsCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Toggles the search box, when executed.
+        /// </summary>
+        public static RoutedCommand ToggleSearchCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Goes back to the last image, when executed.
+        /// </summary>
+        public static RoutedCommand GoBackCommand = new RoutedCommand();
+    }
+    #endregion
 }

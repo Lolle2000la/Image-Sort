@@ -21,7 +21,7 @@ namespace Image_sort.UI
         {
             if (e.Key == System.Windows.Input.Key.Left || e.Key == System.Windows.Input.Key.Right)
             {
-                MainWindowParent.Window_KeyDown(sender, e);
+                MainWindowParent.FoldersStack_KeyDown(sender, e);
                 e.Handled = true;
             }
         }
