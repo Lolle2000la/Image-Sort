@@ -195,6 +195,11 @@
                         </Hyperlink>
                         <!-- RequestNavigate="RequestOpeningInExplorer" -->
                     </TextBlock>
+                    <Slider Name="ProgressSlider" 
+                            Focusable="False" Visibility="Collapsed" TickFrequency="1"
+                            IsSnapToTickEnabled="True"
+                            ValueChanged="ProgressSlider_ValueChanged"
+                            ToolTip="Sets the position"/>
                 </StackPanel>
 
                 <TextBlock Name="ProgressIndicatorText" Grid.Column="1" Grid.Row="1"/>

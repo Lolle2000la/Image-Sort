@@ -75,6 +75,15 @@ namespace Image_sort.Logic
         /************************************************************************/
 
         /// <summary>
+        /// Keeps track of which image we are at.
+        /// </summary>
+        public int CurrentIndex
+        {
+            get => imageSelectorQuery.CurrentIndex;
+            set => imageSelectorQuery.CurrentIndex = value;
+        }
+
+        /// <summary>
         /// Selects Folder to use
         /// </summary>
         /// <param name="path">Path that should be returned</param>

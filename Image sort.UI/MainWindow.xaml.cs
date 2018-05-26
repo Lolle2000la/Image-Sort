@@ -40,6 +40,11 @@ namespace Image_sort.UI
         /// being the paths of the folders inside the currently selected folder.
         /// </summary>
         List<string> folders;
+
+        /// <summary>
+        /// Used to prevent image loading when the ProgressSliders value has changed.
+        /// </summary>
+        private bool loadImageProgressSlider = true;
         
         /// <summary>
         /// Gets and sets the maximum horizontal resolution from the settings
@@ -87,6 +92,40 @@ namespace Image_sort.UI
                 EnableSearchButton.IsChecked = value;
             }
         }
+
+        /// <summary>
+        /// Gets the max of the possible images.
+        /// </summary>
+        public int MaxImages
+        {
+            get
+            {
+                (int progress, int max) = folderSelector.GetCurrentProgress();
+                return max;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the index of the image we are at.
+        /// </summary>
+        public int CurrentIndex
+        {
+            get
+            {
+                return folderSelector.CurrentIndex;
+            }
+            set
+            {
+                folderSelector.CurrentIndex = value;
+                SetValue(CurrentIndexProperty, value);
+            }
+        }
+
+        // Using a DependencyProperty as the backing store for CurrentIndex.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CurrentIndexProperty =
+            DependencyProperty.Register("CurrentIndex", typeof(int), typeof(MainWindow), null);
+
+
         #endregion
 
 
@@ -287,9 +326,12 @@ namespace Image_sort.UI
                 {
                     LoadImage(null);
                     DisableControls();
+                    ProgressSlider.Maximum = MaxImages;
+                    ProgressSlider.Value = 0;
                     return true;
                 }
-
+                ProgressSlider.Maximum = MaxImages;
+                ProgressSlider.Value = 0;
                 EnableAllControls();
                 return true;
             }
@@ -542,6 +584,9 @@ namespace Image_sort.UI
                 OpenInExplorerLink.NavigateUri = new Uri(pathToImage);
                 OpenInExplorerLinkHost.Visibility = Visibility.Visible;
 
+                ProgressSlider.Visibility = Visibility.Visible;
+                ProgressSlider.Maximum = MaxImages;
+
                 // Show Progress
                 (int current, int max) = folderSelector.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"Progress: {current}/{max}";
@@ -752,7 +797,9 @@ namespace Image_sort.UI
                     DisableControls();
                     GoBackButton.IsEnabled = true;
                 }
-                    
+
+                loadImageProgressSlider = false;
+                ProgressSlider.Value = folderSelector.CurrentIndex-1;
             }
         }
 
@@ -789,6 +836,9 @@ namespace Image_sort.UI
                     folderSelector.MoveFileTo(path,
                         folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
                         System.IO.Path.GetFileName(path));
+
+                    loadImageProgressSlider = false;
+                    ProgressSlider.Value = folderSelector.CurrentIndex-1;
                 }
             }
             else
@@ -811,6 +861,9 @@ namespace Image_sort.UI
 
             // Enable the controls again.
             EnableControls();
+
+            loadImageProgressSlider = false;
+            ProgressSlider.Value = folderSelector.CurrentIndex - 1;
         }
         #endregion
         
@@ -1362,8 +1415,39 @@ namespace Image_sort.UI
 
             Properties.Settings.Default.Save();
         }
-        #endregion
+        
+        /// <summary>
+        /// Called when the progress slider was used. Loads the selected image.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void ProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (loadImageProgressSlider)
+            {
+                CurrentIndex = (int)ProgressSlider.Value;
+                SkipFileButton.IsEnabled = true;
+                // get the next image
+                BitmapImage buffer = await folderSelector.GetNextImage();
+                // get the next path of the next image
+                string path = folderSelector.GetImagePath();
 
+                // if the buffer is not null, load the image
+                if (buffer != null)
+                    LoadImage(buffer);
+                // else disable the controls
+                else
+                {
+                    // and unload it
+                    LoadImage(null);
+                    DisableControls();
+                    GoBackButton.IsEnabled = true;
+                }
+            }
+            else
+                loadImageProgressSlider = true;
+        }
+        #endregion
     }
 
     #region Commands

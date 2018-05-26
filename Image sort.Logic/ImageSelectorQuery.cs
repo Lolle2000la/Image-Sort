@@ -39,10 +39,6 @@ namespace Image_sort.Logic
         /// </summary>
         private string currentFolder;
         /// <summary>
-        /// Keeps track of which image we are at.
-        /// </summary>
-        private int currentIndex = 0;
-        /// <summary>
         /// Contains the path to the current Image
         /// </summary>
         public string CurrentImage { get; private set; }
@@ -54,6 +50,10 @@ namespace Image_sort.Logic
         ///// Window indicating the progress of the files being loaded to the user.
         ///// </summary>
         //private ProgressWindow progressWindow;
+        /// <summary>
+        /// Keeps track of which image we are at.
+        /// </summary>
+        public int CurrentIndex { get; set; } = 0;
         #endregion
 
 
@@ -205,7 +205,7 @@ namespace Image_sort.Logic
             imagePathPool.Clear();
             currentFolder = null;
             CurrentImage = null;
-            currentIndex = 0;
+            CurrentIndex = 0;
             CollectGarbage();
         }
 
@@ -273,10 +273,10 @@ namespace Image_sort.Logic
             //}
 
             // if there are no images left...
-            if (currentIndex >= imagePathPool.Count)
+            if (CurrentIndex >= imagePathPool.Count)
             {
                 // increment currentIndex by one for the "Go back" mechanism and return null.
-                currentIndex++;
+                CurrentIndex++;
                 return null;
             }
 
@@ -284,17 +284,17 @@ namespace Image_sort.Logic
             if (imagePathPool.Count != 0)
             {
                 // if the file doesn't exist, then try the next one
-                if (!File.Exists(imagePathPool[currentIndex]))
+                if (!File.Exists(imagePathPool[CurrentIndex]))
                 {
                     // increment currentIndex by one.
-                    currentIndex++;
+                    CurrentIndex++;
                     // Get the next image and return it.
                     return await GetNextImage();
                 }
                 else
                 {
-                    CurrentImage = imagePathPool[currentIndex];
-                    currentIndex++;
+                    CurrentImage = imagePathPool[CurrentIndex];
+                    CurrentIndex++;
                     // Buffer image and freeze it, so that it can be returned thread-safe.
                     BitmapImage bitmapImageBuffer = await LoadImageAsync(CurrentImage);
                     bitmapImageBuffer.Freeze();
@@ -345,21 +345,21 @@ namespace Image_sort.Logic
         public void GoBackImages(int amount=2)
         {
             // Check if there is something to go back to
-            if (imagePathPool.Count > 1 && currentIndex - amount >= 0)
+            if (imagePathPool.Count > 1 && CurrentIndex - amount >= 0)
                 // If it just works, then just go back
-                if (File.Exists(imagePathPool[currentIndex - amount]))
+                if (File.Exists(imagePathPool[CurrentIndex - amount]))
                 {
-                    currentIndex -= amount;
+                    CurrentIndex -= amount;
                 }
                 // else try to revert a move operation on the last image,
                 // and if that is not possible, go back once more.
                 else
                 {
-                    if (imagePathPool[currentIndex - amount].Contains("*"))
+                    if (imagePathPool[CurrentIndex - amount].Contains("*"))
                     {
                         // The new and the old path have been seperated by a ":", because under Windows
                         // no path is allowed to contain ":". That makes it easy to seperate.
-                        string[] paths = imagePathPool[currentIndex - amount].Split('*');
+                        string[] paths = imagePathPool[CurrentIndex - amount].Split('*');
                         string oldPath = paths[0];
                         string newPath = paths[1];
 
@@ -368,8 +368,8 @@ namespace Image_sort.Logic
                             try
                             {
                                 File.Move(newPath, oldPath);
-                                imagePathPool[currentIndex - amount] = oldPath;
-                                currentIndex -= amount;
+                                imagePathPool[CurrentIndex - amount] = oldPath;
+                                CurrentIndex -= amount;
                                 return;
                             }
                             // When access fails...
@@ -392,7 +392,7 @@ namespace Image_sort.Logic
                 }
             // if there is nothing to go back to, just go back to the current image.
             else
-                currentIndex--;
+                CurrentIndex--;
         }
 
         /// <summary>
@@ -423,7 +423,7 @@ namespace Image_sort.Logic
             // Appends the new location to the image with a "*" (not allowed for paths/reserved)
             // so that it can be reverted again if needed.
             if (newPath.Length > 0 && File.Exists(newPath))
-                imagePathPool[currentIndex - 2] += $"*{newPath}";
+                imagePathPool[CurrentIndex - 2] += $"*{newPath}";
         }
 
         /// <summary>
@@ -432,7 +432,7 @@ namespace Image_sort.Logic
         /// <returns>(currentImage, maxImages)</returns>
         public (int, int) GetCurrentProgress()
         {
-            return (currentIndex-1, imagePathPool.Count);
+            return (CurrentIndex-1, imagePathPool.Count);
         }
         #endregion
     }
