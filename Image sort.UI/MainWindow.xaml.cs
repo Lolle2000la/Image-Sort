@@ -1335,8 +1335,12 @@ namespace Image_sort.UI
         }
         #endregion
 
-        
-        private void MetroWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        /// <summary>
+        /// Executed when the main Window closes. Saves the current dimensions of the window.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
             if (WindowState == WindowState.Maximized)
             {

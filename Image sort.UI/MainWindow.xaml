@@ -9,7 +9,7 @@
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
         Drop="Window_Drop" Icon="Image_Sort.png"
-        Closing="MetroWindow_Closing">
+        Closing="Window_Closing">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Window.CommandBindings>
         <CommandBinding Command="local:Command.GoBackCommand" Executed="GoBack_Executed"/>
