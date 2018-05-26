@@ -113,7 +113,7 @@
                 <TextBlock Margin="2" Text="Horizontal Resolution: "/>
                 <!-- Text Box for setting the resolution -->
                 <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
-                         MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyUp="ResolutionBox_KeyUp"
+                         MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyDown="ResolutionBox_KeyDown"
                          Focusable="False" MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus">
                     <TextBox.ToolTip>
                         <TextBlock>

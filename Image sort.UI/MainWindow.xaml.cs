@@ -638,6 +638,8 @@ namespace Image_sort.UI
         private void UnuseResolutionBox()
         {
             ResolutionBox.Focusable = false;
+            Keyboard.ClearFocus();
+            Focus();
         }
 
         /// <summary>
@@ -1102,7 +1104,7 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void ResolutionBox_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        private void ResolutionBox_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
         {
             // When enter was pressed
             if (e.Key == Key.Enter)
@@ -1117,6 +1119,9 @@ namespace Image_sort.UI
                 UnuseResolutionBox();
                 // and set the resolution to the max resolution
                 MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
+
+                // Prevent further processing.
+                e.Handled = true;
             }
         }
         
@@ -1289,7 +1294,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (IsAnyFolderVisible && !ResolutionBox.IsFocused)
+            if (IsAnyFolderVisible && !ResolutionBox.Focusable)
                 EnterFolder();
         }
 
