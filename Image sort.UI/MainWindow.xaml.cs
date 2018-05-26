@@ -1,5 +1,6 @@
 ﻿using Image_sort.Logic;
 using Image_sort.UI.Dialogs;
+using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,7 +19,7 @@ namespace Image_sort.UI
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : MetroWindow
     {
         #region Atributes
         /*********************************************************************/

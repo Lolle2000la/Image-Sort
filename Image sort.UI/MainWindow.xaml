@@ -1,13 +1,14 @@
-﻿<Window x:Class="Image_sort.UI.MainWindow"
+﻿<Controls:MetroWindow x:Class="Image_sort.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
+        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
-        Drop="Window_Drop">
+        Drop="Window_Drop" Icon="Image_Sort.png">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Window.CommandBindings>
         <CommandBinding Command="local:Command.GoBackCommand" Executed="GoBack_Executed"/>
@@ -38,6 +39,21 @@
         <KeyBinding Command="local:Command.GoUpwardsCommand" Key="Esc"/>
         <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
     </Window.InputBindings>
+
+    <Controls:MetroWindow.RightWindowCommands>
+        <Controls:WindowCommands>
+            <ToggleButton x:Name="EnableSearchButton" Content="Search" Focusable="False"
+                              Click="EnableSearchButton_Click" IsChecked="False">
+                <ToggleButton.ToolTip>
+                    <TextBlock>
+                            <Run>Shows and hides the search box.</Run>
+                            <LineBreak/>
+                            <Run>Shortcut: ctrl+s</Run>
+                    </TextBlock>
+                </ToggleButton.ToolTip>
+            </ToggleButton>
+        </Controls:WindowCommands>
+    </Controls:MetroWindow.RightWindowCommands>
     
     <Grid>
         <!-- START GRID DEFINITIONS -->
@@ -96,7 +112,9 @@
                 <!-- Lets users change the resolution, that the Images should get loaded with -->
                 <!--<Button Content="Set Horizontal Resolution" Focusable="False"
                     x:Name="SetHorizontalResolutionButton" Click="SetHorizontalResolutionButton_Click">
-                    --><!-- ToolTip for better understanding --><!--
+                    -->
+                <!-- ToolTip for better understanding -->
+                <!--
                     <Button.ToolTip>
                         <TextBlock>
                             <Run>
@@ -110,7 +128,7 @@
                         </TextBlock>
                     </Button.ToolTip>
                 </Button>-->
-                <TextBlock Margin="2" Text="Horizontal Resolution: "/>
+                <TextBlock Margin="5" Text="Horizontal Resolution: "/>
                 <!-- Text Box for setting the resolution -->
                 <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
                          MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyDown="ResolutionBox_KeyDown"
@@ -128,18 +146,6 @@
                         </TextBlock>
                     </TextBox.ToolTip>
                 </TextBox>
-            </ToolBar>
-            <ToolBar Focusable="False">
-                <ToggleButton x:Name="EnableSearchButton" Content="Search" Focusable="False"
-                              Click="EnableSearchButton_Click" IsChecked="False">
-                    <ToggleButton.ToolTip>
-                        <TextBlock>
-                            <Run>Shows and hides the search box.</Run>
-                            <LineBreak/>
-                            <Run>Shortcut: ctrl+s</Run>
-                        </TextBlock>
-                    </ToggleButton.ToolTip>
-                </ToggleButton>
             </ToolBar>
         </ToolBarTray>
 
@@ -194,4 +200,4 @@
             </Grid>
         </Grid>
     </Grid>
-</Window>
+</Controls:MetroWindow>
