@@ -9,7 +9,7 @@
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
         Drop="Window_Drop" Icon="Image_Sort.png"
-        Closing="Window_Closing">
+        Closing="Window_Closing" Loaded="MetroWindow_Loaded">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Window.CommandBindings>
         <CommandBinding Command="local:Command.GoBackCommand" Executed="GoBack_Executed"/>
@@ -24,6 +24,7 @@
         <CommandBinding Command="local:Command.EnterFolderCommand" Executed="EnterFolder_Executed"/>
         <CommandBinding Command="local:Command.GoUpwardsCommand" Executed="GoUpwards_Executed"/>
         <CommandBinding Command="local:Command.ToggleSearchCommand" Executed="ToggleSearch_Executed"/>
+        <CommandBinding Command="local:Command.HelpCommand" Executed="Help_Executed"/>
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -39,6 +40,7 @@
         <KeyBinding Command="local:Command.EnterFolderCommand" Key="Enter"/>
         <KeyBinding Command="local:Command.GoUpwardsCommand" Key="Esc"/>
         <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
+        <KeyBinding Command="local:Command.HelpCommand" Key="F1"/>
     </Window.InputBindings>
 
     <Controls:MetroWindow.RightWindowCommands>
@@ -53,6 +55,8 @@
                     </TextBlock>
                 </ToggleButton.ToolTip>
             </ToggleButton>
+            <ToggleButton x:Name="HelpButton" Content="Help" Focusable="False"
+                          Click="HelpButton_Click"/>
         </Controls:WindowCommands>
     </Controls:MetroWindow.RightWindowCommands>
     
@@ -95,7 +99,7 @@
             </ToolBar>
             <!-- Contains everything for image management -->
             <ToolBar Focusable="False">
-                <Button Content="Skip File" IsEnabled="False" Focusable="False"
+                <Button Content="Skip" IsEnabled="False" Focusable="False"
                     x:Name="SkipFileButton" Command="local:Command.SkipImageCommand"
                     ToolTip="Skips the current image. Shortcut: left arrow key"/>
                 <!-- Click="SkipFileButton_Click" -->

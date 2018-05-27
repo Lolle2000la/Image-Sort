@@ -125,7 +125,10 @@ namespace Image_sort.UI
         public static readonly DependencyProperty CurrentIndexProperty =
             DependencyProperty.Register("CurrentIndex", typeof(int), typeof(MainWindow), null);
 
-
+        /// <summary>
+        /// Window used for giving the user a little help.
+        /// </summary>
+        private HelpWindow helpWindow;
         #endregion
 
 
@@ -145,6 +148,13 @@ namespace Image_sort.UI
         {
             InitializeComponent();
 
+            // Upgrade settings if needed.
+            if (Properties.Settings.Default.UpgradeRequired)
+            {
+                Properties.Settings.Default.Upgrade();
+                Properties.Settings.Default.UpgradeRequired = false;
+                Properties.Settings.Default.Save();
+            }
 
             // Get parameters from the command line
             string[] args = Environment.GetCommandLineArgs();
@@ -163,6 +173,7 @@ namespace Image_sort.UI
                 LoadFolderAsync(argValue, true);
             }
 
+#if !DEBUG_WINDOW
             // Sets the size and position of the window to one from the last session.
             Top = Properties.Settings.Default.Top;
             Left = Properties.Settings.Default.Left;
@@ -173,6 +184,7 @@ namespace Image_sort.UI
             {
                 WindowState = WindowState.Maximized;
             }
+#endif
 
             // Set the resolution to the saved one.
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
@@ -189,19 +201,19 @@ namespace Image_sort.UI
             //    Dispatcher.Invoke(() => Focus());
             //};
         }
-        #endregion
+#endregion
 
 
 
 
-        #region Methods
+#region Methods
         /*********************************************************************/
         /*                                                                   */
         /* METHODS                                                           */
         /*                                                                   */
         /*********************************************************************/
         
-        #region Folder-Selection Management
+#region Folder-Selection Management
         /// <summary>
         /// Shifts up the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
@@ -247,9 +259,9 @@ namespace Image_sort.UI
                     FoldersStack.SelectedIndex = 0;
             }
         }
-        #endregion
+#endregion
 
-        #region Folder-Navigation/Loading
+#region Folder-Navigation/Loading
         /// <summary>
         /// Lets the user select a resolution for the loaded images
         /// </summary>
@@ -519,9 +531,9 @@ namespace Image_sort.UI
                     Show();
             }
         }
-        #endregion
+#endregion
 
-        #region Folder Management
+#region Folder Management
         /// <summary>
         /// Lets the user create a new folder
         /// </summary>
@@ -555,9 +567,9 @@ namespace Image_sort.UI
                 }
             }
         }
-        #endregion
+#endregion
 
-        #region Data-Refreshing
+#region Data-Refreshing
         /// <summary>
         /// Loads an image into the window
         /// </summary>
@@ -677,9 +689,9 @@ namespace Image_sort.UI
                 LoadImage(null);
             }
         }
-        #endregion
+#endregion
 
-        #region UI-Control-Management
+#region UI-Control-Management
         /// <summary>
         /// Focuses and enables <see cref="ResolutionBox"/>
         /// </summary>
@@ -769,9 +781,9 @@ namespace Image_sort.UI
             ResolutionBox.IsEnabled = false;
             GoBackButton.IsEnabled = false;
         }
-        #endregion
+#endregion
 
-        #region Image-Management
+#region Image-Management
         /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
@@ -865,9 +877,9 @@ namespace Image_sort.UI
             loadImageProgressSlider = false;
             ProgressSlider.Value = folderSelector.CurrentIndex - 1;
         }
-        #endregion
+#endregion
         
-        #region Performance
+#region Performance
         /// <summary>
         /// Tells the garbage collector to collect garbage, reduces memory usage when called
         /// </summary>
@@ -876,14 +888,14 @@ namespace Image_sort.UI
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
-        #endregion
+#endregion
 
-        #endregion
-
-
+#endregion
 
 
-        #region Event Handlers
+
+
+#region Event Handlers
         /*********************************************************************/
         /*                                                                   */
         /* EVENT HANDLERS                                                    */
@@ -1251,7 +1263,7 @@ namespace Image_sort.UI
         //        OpenImageInFileExplorer(e.Uri.OriginalString);
         //}
 
-        #region CommandBindings
+#region CommandBindings
         /// <summary>
         /// Executed when the <see cref="Command.GoBackCommand"/> is executed.
         /// </summary>
@@ -1386,6 +1398,20 @@ namespace Image_sort.UI
         {
             SearchEnabled = !SearchEnabled;
         }
+
+        /// <summary>
+        /// Executed when the <see cref="Command.HelpCommand"/> is executed.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void Help_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            HelpButton.IsChecked = !HelpButton.IsChecked;
+            if (HelpButton.IsChecked == true)
+                helpWindow.Show();
+            else
+                helpWindow.Hide();
+        }
         #endregion
 
         /// <summary>
@@ -1395,6 +1421,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+#if !DEBUG_WINDOW
             if (WindowState == WindowState.Maximized)
             {
                 // Use the RestoreBounds as the current values will be 0, 0 and the size of the screen
@@ -1414,6 +1441,7 @@ namespace Image_sort.UI
             }
 
             Properties.Settings.Default.Save();
+#endif
         }
         
         /// <summary>
@@ -1446,6 +1474,40 @@ namespace Image_sort.UI
             }
             else
                 loadImageProgressSlider = true;
+        }
+
+        /// <summary>
+        /// Called when the window was loaded. Opens the <see cref="HelpWindow"/> when loaded.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            helpWindow = new HelpWindow();
+#if !DEBUG_HELP
+            if (Properties.Settings.Default.FirstRun)
+            {
+#endif
+                // Open the help window
+                helpWindow.Show();
+                Properties.Settings.Default.FirstRun = false;
+                Properties.Settings.Default.Save();
+#if !DEBUG_HELP
+            }
+#endif
+        }
+
+        /// <summary>
+        /// Used, when the <see cref="HelpButton"/> was clicked. Toggles the HelpWindow on and off.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HelpButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (HelpButton.IsChecked == true)
+                helpWindow.Show();
+            else
+                helpWindow.Hide();
         }
         #endregion
     }
@@ -1512,6 +1574,11 @@ namespace Image_sort.UI
         /// Goes back to the last image, when executed.
         /// </summary>
         public static RoutedCommand GoBackCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Goes back to the last image, when executed.
+        /// </summary>
+        public static RoutedCommand HelpCommand = new RoutedCommand();
     }
-    #endregion
+#endregion
 }
