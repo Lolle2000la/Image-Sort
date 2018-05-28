@@ -353,3 +353,7 @@ TestResult.xml
 Version.cs
 Version.h
 Version.cpp
+
+# Screenshots
+"Image sort screenshots"
+"Image sort screenshots/*"
