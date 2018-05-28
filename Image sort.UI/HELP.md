@@ -1,4 +1,7 @@
-﻿# Getting started
+﻿Note, this is the offline version of the Help file. This may be out of date.
+---
+
+# Getting started
 To get started, just follow this tour though the app:
 1. Select a folder, by pressing the "Select Folder" Button,
 and open the folder you want to sort.

@@ -32,7 +32,24 @@ namespace Image_sort.UI
             // Inserts the HELP.md into the markdown. This way, we don't need to touch the xaml in order
             // to edit the help text.
 #if !DEBUG_HELP
-            HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md");
+            try
+            {
+                // Downloads the help file from github.
+                using (WebClient wc = new WebClient())
+                {
+                    HelpViewer.Markdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true");
+                }
+            }
+            catch (WebException)
+            {
+                // if not possible, fall back to offline file.
+                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"))
+                    HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md");
+                // Show error text if even that fails.
+                else
+                    HelpViewer.Markdown = "# Could not load the help file. \r\n Make sure it exists.";
+
+            }
 #else
             HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "..\\..\\HELP.md");
 
