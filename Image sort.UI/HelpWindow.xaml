@@ -8,7 +8,10 @@
         xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
         mc:Ignorable="d"
         Title="Help" Height="450" Width="800" Icon="Image_sort.png" Closing="HelpWindow_Closing">
-    <markdigwpf:MarkdownViewer Name="HelpViewer">
+    <Window.CommandBindings>
+        <CommandBinding Command="markdigwpf:Commands.Hyperlink" Executed="HyperlinkCommand_Executed"/>
+    </Window.CommandBindings>
+    <markdigwpf:MarkdownViewer  Name="HelpViewer" Hyperlink.RequestNavigate="HelpViewer_RequestNavigate">
         
     </markdigwpf:MarkdownViewer>
 </Controls:MetroWindow>

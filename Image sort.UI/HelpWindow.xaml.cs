@@ -1,8 +1,10 @@
 ﻿using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
@@ -66,6 +68,21 @@ namespace Image_sort.UI
             }, null);
             //Do not close application
             e.Cancel = true;
+        }
+
+        /// <summary>
+        /// Opens the links.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void HelpViewer_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            Process.Start(e.Uri.OriginalString);
+        }
+
+        private void HyperlinkCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            // empty, needed for launchable links.
         }
     }
 }
