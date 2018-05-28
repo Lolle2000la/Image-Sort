@@ -3,7 +3,7 @@ To get started, just follow this tour though the app:
 1. Select a folder, by pressing the "Select Folder" Button,
 and open the folder you want to sort.
 
-![Screenshot showing the select folder button](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Select_Folder.png?raw=true)
+    ![Screenshot showing the select folder button](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Select_Folder.png?raw=true)
 
 2. Look at the UI. You should see a couple of buttons: 
     * "Skip": Skips the current image and loads
