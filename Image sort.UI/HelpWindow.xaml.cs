@@ -28,45 +28,6 @@ namespace Image_sort.UI
         public HelpWindow()
         {
             InitializeComponent();
-
-            // Inserts the HELP.md into the markdown. This way, we don't need to touch the xaml in order
-            // to edit the help text.
-#if !DEBUG_HELP
-            try
-            {
-                // Downloads the help file from github.
-                using (WebClient wc = new WebClient())
-                {
-                    HelpViewer.Markdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true");
-                }
-            }
-            catch (WebException)
-            {
-                // if not possible, fall back to offline file.
-                if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"))
-                    HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md");
-                // Show error text if even that fails.
-                else
-                    HelpViewer.Markdown = "# Could not load the help file. \r\n Make sure it exists.";
-
-            }
-#else
-            HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "..\\..\\HELP.md");
-
-            Timer reloadTimer = new Timer();
-            reloadTimer.Interval = 1000;
-            reloadTimer.Enabled = true;
-            reloadTimer.Elapsed += (s, e) =>
-            {
-                string markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "..\\..\\HELP.md");
-                Func<bool> compare = () => { return HelpViewer.Markdown != markdown; };
-                if (Dispatcher.Invoke<bool>(compare))
-                {
-                    Dispatcher.Invoke(() => HelpViewer.Markdown = markdown);
-                }
-            };
-            reloadTimer.Start();
-#endif
         }
 
         /// <summary>
@@ -100,6 +61,33 @@ namespace Image_sort.UI
         private void HyperlinkCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             // empty, needed for launchable links.
+        }
+
+        private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Inserts the HELP.md into the markdown. This way, we don't need to touch the xaml in order
+            // to edit the help text.
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Downloads the help file from github.
+                    using (WebClient wc = new WebClient())
+                    {
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true"));
+                    }
+                }
+                catch (WebException)
+                {
+                    // if not possible, fall back to offline file.
+                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"))
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"));
+                    // Show error text if even that fails.
+                    else
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = "# Could not load the help file. \r\n Make sure it exists.");
+
+                }
+            });
         }
     }
 }
