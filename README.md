@@ -1,7 +1,7 @@
 # Image-Sort
 Sorts your image at high speed
 
-![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/blob/master/screenshot_1.12.0.png)
+![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/blob/master/screenshot_1.12.0.png?raw=true)
 
 ## How to use
 1. Open the app, select a folder to sort and finished. The app will now show you the images one by one for you. You must then choose the folder you want the image to sort into (subfolders of the selected folder) and press the move button. You can also skip the image if you don't want to move it.
