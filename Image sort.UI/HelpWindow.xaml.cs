@@ -25,6 +25,12 @@ namespace Image_sort.UI
     /// </summary>
     public partial class HelpWindow : MetroWindow
     {
+        /// <summary>
+        /// Indicates whether the <see cref="HelpWindow"/> should actually close AND unload, or just hide,
+        /// when the user closes it.
+        /// </summary>
+        public bool DoNotClose { get; set; } = true;
+
         public HelpWindow()
         {
             InitializeComponent();
@@ -37,15 +43,18 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void HelpWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            // taken from https://balajiramesh.wordpress.com/2008/07/24/hide-a-window-instead-of-closing-it-in-wpf/
-            //Hide Window
-            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (DispatcherOperationCallback)delegate (object o)
+            if (DoNotClose)
             {
-                Hide();
-                return null;
-            }, null);
-            //Do not close application
-            e.Cancel = true;
+                // taken from https://balajiramesh.wordpress.com/2008/07/24/hide-a-window-instead-of-closing-it-in-wpf/
+                //Hide Window
+                Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, (DispatcherOperationCallback)delegate (object o)
+                {
+                    Hide();
+                    return null;
+                }, null);
+                //Do not close application
+                e.Cancel = true;
+            }
         }
 
         /// <summary>

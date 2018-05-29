@@ -1442,6 +1442,10 @@ namespace Image_sort.UI
 
             Properties.Settings.Default.Save();
 #endif
+
+            // Close the help window.
+            helpWindow.DoNotClose = false;
+            helpWindow.Close();
         }
         
         /// <summary>
