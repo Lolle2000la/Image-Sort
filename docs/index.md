@@ -8,6 +8,24 @@ Image sort is an open source app that lets you sort your folders in an fast fash
 * It's fast
 * It's completely controllable via keyboard, with a one-click shortcut for nearly anything. Read the [help](help.md) for more details.
 
+## How to use
+1. Open the app, select a folder to sort and finished. The app will now show you the images one by one for you. You must then choose the folder you want the image to sort into (subfolders of the selected folder) and press the move button. You can also skip the image if you don't want to move it.
+2. If you want to you can use the keyboard allone for all the tasks:
+   #### The important stuff
+   * F2 for selecting the folder
+   * F3 to create a new folder
+   * F5 to open the currently selected image in the explorer
+   * Enter to enter the currently selected folder
+   * Escape to leave the current folder
+   * up- and down-arrow-keys to select a folder to move to
+   * right-arrow-key to move the image into the selected folder (or one folder upwards if you select "..")
+   * left-arrow-key to skip it
+   * ctlr + left-arrow-key to revert the last action done (move/skip)
+   * ctrl+s toggles the search bar, allowing for quick searches for the folder you need. Close hide the search bar again to resume using the arrow keys to sort images. You can also achieve this by pressing the "Search" button.
+   #### The not-so-important stuff
+   * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed). Pressing F4 will move your focus to the text box, so that you can type in your preferred resolution. Pressing Enter or Escape, as well as moving the focus away restores normal keyboard input behavior.
+   _Read the [help](help.md) page for more details_
+
 ## Install
 Go to the [releases](https://github.com/Lolle2000la/Image-Sort/releases) page, and download and run the installer of the newest version. Then follow the instructions in the installer.
 
