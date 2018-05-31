@@ -22,7 +22,7 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-#if (!DEBUG)
+#if (!DEBUG || true)
             // If the updater is already open once, don't open another instance/
             // close this one right after start.
             if (Process.GetProcessesByName("Image sort.Update").Count() > 1)
@@ -40,8 +40,11 @@ namespace Image_sort.Update
                 // Serializes the UpdateRegistry from json
                 UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
                 if (updateReg != null)
+                {
+                    Version version = System.Reflection.Assembly.LoadFile($"{AppDomain.CurrentDomain.BaseDirectory}\\Image sort.UI.exe")
+                        .GetName().Version;
                     // if the version given is different, download and run the newest update
-                    if (updateReg.version != Properties.Resources.version)
+                    if (updateReg.version != $"{version.Major}.{version.Minor}.{version.Build}" /*Properties.Resources.version*/)
                     {
                         // If the process isn't elevated, ask if update
                         if (!IsElevated)
@@ -53,9 +56,11 @@ namespace Image_sort.Update
                             {
                                 // Elevate process
                                 ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
-                                    @"Image sort.Update.exe");
-                                info.UseShellExecute = true;
-                                info.Verb = "runas";
+                                    @"Image sort.Update.exe")
+                                {
+                                    UseShellExecute = true,
+                                    Verb = "runas"
+                                };
                                 Process.Start(info);
                             }
                         }
@@ -71,6 +76,7 @@ namespace Image_sort.Update
                             DownloadAndRunInstaller(url);
                         }
                     }
+                }
             }
 #endif
         }
