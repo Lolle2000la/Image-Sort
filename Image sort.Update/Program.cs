@@ -22,7 +22,7 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-#if (!DEBUG || true)
+#if (!DEBUG)
             // If the updater is already open once, don't open another instance/
             // close this one right after start.
             if (Process.GetProcessesByName("Image sort.Update").Count() > 1)
