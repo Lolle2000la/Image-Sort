@@ -1,3 +1,5 @@
+![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/blob/master/screenshot_1.12.0.png?raw=true)
+
 ## A quick description
 Image sort is an open source app that lets you sort your folders in an fast fashion. It let's you select an folder and move the images around as you like. You get one image after another and the choice to move it to one of the subfolders (or the hostfolder, that means the folder containing the currently selected folder) or skip it. You can also revert your last action (skip/move).
 
