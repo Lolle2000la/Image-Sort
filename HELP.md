@@ -66,6 +66,8 @@ and open the folder you want to sort.
         _Use it by clicking the link or by pressing the **F5** key._
     * A slider indicating your progress: This slider can be used to go through the images you have
         and jump to a specific one.
+        _Note: the progress is counted, by how many images you have sorted (skipped/moved), not by the
+        index of the image you are at. The first image is basically 0 progress._
         
         ![Screenshot showing the progress slider](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Progress_Slider.png?raw=true)
     
