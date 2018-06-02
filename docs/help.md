@@ -1,4 +1,4 @@
-# Getting started
+﻿# Getting started
 To get started, just follow this tour though the app:
 1. Select a folder, by pressing the "Select Folder" Button,
 and open the folder you want to sort.
@@ -72,6 +72,10 @@ and open the folder you want to sort.
         ![Screenshot showing the progress slider](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Progress_Slider.png?raw=true)
     
         _Use it by dragging the slider._
+        
+    * "Feedback": Opens the issues page on GitHub. You can give feedback there
+    
+        _Use it by pressing the feedback button._
 3. Now try out all those features. Try doing all this stuff with the keyboard only. Once you are good,
 close this Window and come back to it later on if you need to. You can open it, by pressing the "Help"
  button or the **F1** key.
