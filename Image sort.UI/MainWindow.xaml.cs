@@ -1528,7 +1528,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void FeedbackButton_Click(object sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Process.Start("https://github.com/");
+            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues");
         }
         #endregion
     }
