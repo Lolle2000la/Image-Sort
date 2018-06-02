@@ -1520,6 +1520,16 @@ namespace Image_sort.UI
             else
                 helpWindow.Hide();
         }
+
+        /// <summary>
+        /// Used, when the <see cref="FeedbackButton"/> was clicked. Opens GitHub page.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void FeedbackButton_Click(object sender, RoutedEventArgs e)
+        {
+            System.Diagnostics.Process.Start("https://github.com/");
+        }
         #endregion
     }
 

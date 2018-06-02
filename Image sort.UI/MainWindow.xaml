@@ -43,6 +43,7 @@
         <KeyBinding Command="local:Command.HelpCommand" Key="F1"/>
     </Window.InputBindings>
 
+    <!-- Buttons seen in the right of the window -->
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands>
             <ToggleButton x:Name="EnableSearchButton" Content="Search" Focusable="False"
@@ -57,6 +58,16 @@
             </ToggleButton>
             <ToggleButton x:Name="HelpButton" Content="Help" Focusable="False"
                           Click="HelpButton_Click"/>
+            <Button Content="Feedback" x:Name="FeedbackButton" Click="FeedbackButton_Click">
+                <Button.ToolTip>
+                    <TextBlock>
+                        <Run>Opens the github issues page.</Run> <LineBreak/>
+                        <Run>There you can file an issue and give your feedback.</Run><LineBreak/>
+                        <Run>Your feedback will be heard!</Run><LineBreak/><LineBreak/>
+                        <Run FontWeight="Bold">An Github account is required to file an issue</Run>
+                    </TextBlock>
+                </Button.ToolTip>
+            </Button>
         </Controls:WindowCommands>
     </Controls:MetroWindow.RightWindowCommands>
     
