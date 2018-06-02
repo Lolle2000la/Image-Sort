@@ -530,6 +530,13 @@ namespace Image_sort.UI
                 if (hideMainWindow)
                     Show();
             }
+            else if (folder.EndsWith(".jpg") || folder.EndsWith(".png"))
+            {
+                // if a image was given, open the host folder.
+                string hostFolder = Path.GetDirectoryName(folder);
+                if (Directory.Exists(hostFolder))
+                    LoadFolderAsync(hostFolder);
+            }
         }
 #endregion
 

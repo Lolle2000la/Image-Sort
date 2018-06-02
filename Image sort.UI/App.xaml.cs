@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -32,11 +33,14 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         protected override void OnStartup(StartupEventArgs e)
         {
-            // Run updater, if connected to internet
-            if(IsConnectedToInternet())
+#if !IS_UWP
+            // Run updater, if connected to internet and the updater exists.
+            if(IsConnectedToInternet() && File.Exists(AppDomain.CurrentDomain.BaseDirectory
+                    + @"\Image sort.Update.exe"))
                 // Run the Updater before starting the app
                 System.Diagnostics.Process.Start(AppDomain.CurrentDomain.BaseDirectory 
                     + @"\Image sort.Update.exe");
+#endif
 
             // Continue normally
             base.OnStartup(e);
