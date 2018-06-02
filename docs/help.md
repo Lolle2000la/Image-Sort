@@ -73,7 +73,7 @@ and open the folder you want to sort.
     
         _Use it by dragging the slider._
         
-    * "Feedback": Opens the issues page on GitHub. You can give feedback there
+    * "Feedback": Opens the issues page on GitHub. You can give feedback there.
     
         _Use it by pressing the feedback button._
 3. Now try out all those features. Try doing all this stuff with the keyboard only. Once you are good,
