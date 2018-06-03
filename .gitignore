@@ -357,3 +357,5 @@ Version.cpp
 # Screenshots
 "Image sort screenshots"
 "Image sort screenshots/*"
+
+Image_sort.uwp/
