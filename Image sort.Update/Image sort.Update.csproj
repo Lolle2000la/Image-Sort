@@ -100,7 +100,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == Release xcopy /y "$(TargetDir)*.*" "$(SolutionDir)Image sort.UI\bin\Release\."
-if $(ConfigurationName) == Debug xcopy /y "$(TargetDir)*.*" "$(SolutionDir)Image sort.UI\bin\Debug\."</PostBuildEvent>
+    <PostBuildEvent>if $(ConfigurationName) == Release xcopy /y "$(TargetDir)*.*" "$(SolutionDir)Image sort.UI\bin\Release"
+if $(ConfigurationName) == Debug xcopy /y "$(TargetDir)*.*" "$(SolutionDir)Image sort.UI\bin\Debug"</PostBuildEvent>
   </PropertyGroup>
 </Project>
