@@ -34,7 +34,7 @@ Go to the [releases](https://github.com/Lolle2000la/Image-Sort/releases) page, a
 Image sort includes an updater that checks for updates every time the apps runs. When a new version is available, it will ask you if you want to do the update. If yes, the updater will close the app and run the update. Once finished, you can start the app again.
 
 ## Privacy Policy
-Read the [Privacy Policy](privacy_policy.md) page for details on what we do with your data.
+Read the [Privacy Policy](privacy_policy.md) page for details on what data we collect.
 
 ## Contributing
 If you want to contribute, you should fork this repository, make your changes and then make a pull request.
