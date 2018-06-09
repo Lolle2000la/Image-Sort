@@ -20,6 +20,9 @@ Sorts your image at high speed
    * ctrl+s toggles the search bar, allowing for quick searches for the folder you need. Close hide the search bar again to resume using the arrow keys to sort images. You can also achieve this by pressing the "Search" button.
    #### The not-so-important stuff
    * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed). Pressing F4 will move your focus to the text box, so that you can type in your preferred resolution. Pressing Enter or Escape, as well as moving the focus away restores normal keyboard input behavior.
+   
+## Privacy Policy
+Read the [Privacy Policy](https://imagesort.org/privacy_policy.html) page for details on what data we collect.
 
 ## Requirements
 * .NET Framework 4.7.1
