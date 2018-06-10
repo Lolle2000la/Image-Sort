@@ -26,6 +26,23 @@ namespace Image_sort.UI
     public partial class HelpWindow : MetroWindow
     {
         /// <summary>
+        /// string to the base help file inside the application folder.
+        /// </summary>
+        private readonly string baseHelpPath = AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md";
+        /// <summary>
+        /// Path to the cached help file from the internet.
+        /// </summary>
+        private readonly string cachedHelpPath = System.IO.Path.GetTempPath() + "\\Image_sort\\HELP.md";
+        /// <summary>
+        /// URL to the HELP.md file online.
+        /// </summary>
+        private readonly string webHelpUrl = "https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/docs/help.md?raw=true";
+        /// <summary>
+        /// Path to the local temp directory of the app.
+        /// </summary>
+        private readonly string localTempDirectory = System.IO.Path.GetTempPath() + "\\Image_sort";
+
+        /// <summary>
         /// Indicates whether the <see cref="HelpWindow"/> should actually close AND unload, or just hide,
         /// when the user closes it.
         /// </summary>
@@ -83,24 +100,40 @@ namespace Image_sort.UI
                     // Downloads the help file from github.
                     using (WebClient wc = new WebClient())
                     {
-                        // download markdown from github
-                        string downloadedMarkdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true");
+                        // download markdown from github and convert the line endings.
+                        string downloadedMarkdown = wc.DownloadString(webHelpUrl).Replace("\n", Environment.NewLine);
 
-                        // Load the markdown into the HelpViewer
-                        Dispatcher.Invoke(() => HelpViewer.Markdown = downloadedMarkdown);
-                        // Write the markdown into the local HELP.md file to keep that up-to-date
-                        File.WriteAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md", $"Note: this is an offline " +
-                            $"version. It has been last updated at {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
-                            $"---" +
-                            $"{Environment.NewLine}{Environment.NewLine}" +
-                            $"{downloadedMarkdown}");
+                        // if something was returned, then 
+                        if (downloadedMarkdown != "")
+                        {
+                            // Load the markdown into the HelpViewer
+                            Dispatcher.Invoke(() => HelpViewer.Markdown = downloadedMarkdown);
+
+                            // 
+                            if (!Directory.Exists(localTempDirectory))
+                                Directory.CreateDirectory(localTempDirectory);
+
+                            // Write the markdown into the local HELP.md file to keep that up-to-date
+                            File.WriteAllText(cachedHelpPath, $"Note: this is an offline " +
+                                $"version. It has been last updated at {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
+                                $"---" +
+                                $"{Environment.NewLine}{Environment.NewLine}" +
+                                $"{downloadedMarkdown}");
+                        }
+                        else
+                        {
+                            throw new WebException();
+                        }
                     }
                 }
                 catch (WebException)
                 {
+                    // Load the cached help file, if it exists.
+                    if (Directory.Exists(localTempDirectory) && File.Exists(cachedHelpPath))
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = File.ReadAllText(cachedHelpPath));
                     // if not possible, fall back to offline file.
-                    if (File.Exists(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"))
-                        Dispatcher.Invoke(() => HelpViewer.Markdown = File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md"));
+                    else if (File.Exists(baseHelpPath))
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = File.ReadAllText(baseHelpPath));
                     // Show error text if even that fails.
                     else
                         Dispatcher.Invoke(() => HelpViewer.Markdown = "# Could not load the help file. \r\n Make sure it exists.");
