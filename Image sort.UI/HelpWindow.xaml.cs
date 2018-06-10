@@ -115,7 +115,7 @@ namespace Image_sort.UI
 
                             // Write the markdown into the local HELP.md file to keep that up-to-date
                             File.WriteAllText(cachedHelpPath, $"Note: this is an offline " +
-                                $"version. It has been last updated at {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
+                                $"version. It has been last updated on {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
                                 $"---" +
                                 $"{Environment.NewLine}{Environment.NewLine}" +
                                 $"{downloadedMarkdown}");
