@@ -83,7 +83,17 @@ namespace Image_sort.UI
                     // Downloads the help file from github.
                     using (WebClient wc = new WebClient())
                     {
-                        Dispatcher.Invoke(() => HelpViewer.Markdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true"));
+                        // download markdown from github
+                        string downloadedMarkdown = wc.DownloadString("https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/HELP.md?raw=true");
+
+                        // Load the markdown into the HelpViewer
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = downloadedMarkdown);
+                        // Write the markdown into the local HELP.md file to keep that up-to-date
+                        File.WriteAllText(AppDomain.CurrentDomain.BaseDirectory + "\\HELP.md", $"Note: this is an offline " +
+                            $"version. It has been last updated at {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
+                            $"---" +
+                            $"{Environment.NewLine}{Environment.NewLine}" +
+                            $"{downloadedMarkdown}");
                     }
                 }
                 catch (WebException)

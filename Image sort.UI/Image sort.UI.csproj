@@ -41,7 +41,7 @@
     <StartupObject>Image_sort.UI.App</StartupObject>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>Image_Sort.ico</ApplicationIcon>
+    <ApplicationIcon>Image_sort_new.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <SignAssembly>false</SignAssembly>
@@ -131,6 +131,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Resource Include="Image_sort_new.png" />
+    <Resource Include="Image_sort_new.ico" />
     <Content Include="Image_sort_new.svg" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
@@ -162,12 +164,6 @@
       <Project>{63d944ed-ed17-49c5-a78d-dc7d76e567d1}</Project>
       <Name>Image sort.Update</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Image_Sort.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="Image_Sort.png" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
