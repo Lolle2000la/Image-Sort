@@ -129,6 +129,11 @@ namespace Image_sort.UI
         /// Window used for giving the user a little help.
         /// </summary>
         private HelpWindow helpWindow;
+
+        /// <summary>
+        /// keeps track of whether the slider progress was changed.
+        /// </summary>
+        private bool SliderValueChanged = false;
         #endregion
 
 
@@ -193,13 +198,32 @@ namespace Image_sort.UI
             // Fill in the requiered instance, needed for event bubbling.
             FoldersStack.MainWindowParent = this;
 
-            //Timer timer = new Timer();
-            //timer.Enabled = true;
-            //timer.Interval = 2000;
-            //timer.Tick += (object s, EventArgs e) =>
-            //{
-            //    Dispatcher.Invoke(() => Focus());
-            //};
+            // task containing the last loading run, so that it's always in sync.
+            Task lastRun = null;
+
+            // Timer used to update the loaded image based on the slider value, if that has changed.
+            Timer timer = new Timer();
+            timer.Enabled = true;
+            // timer should run every 500 seconds.
+            timer.Interval = 500;
+            timer.Tick += (object s, EventArgs e) =>
+            {
+                // Only change things if the slider value has changed.
+                if (SliderValueChanged)
+                {
+                    // set SliderValueChanged to false to prevent endless reloads.
+                    SliderValueChanged = false;
+                    // ensure right execution context.
+                    Dispatcher.Invoke(() =>
+                    {
+                        // if a task is still executing, then wait for exit.
+                        if (lastRun != null && !lastRun.IsCompleted)
+                            lastRun.Wait();
+                        // then load the image and set lastRun to the new Task.
+                        lastRun = LoadImageFromSliderValue();
+                    });
+                }
+            };
         }
 #endregion
 
@@ -884,6 +908,31 @@ namespace Image_sort.UI
             loadImageProgressSlider = false;
             ProgressSlider.Value = folderSelector.CurrentIndex - 1;
         }
+
+        /// <summary>
+        /// Load an image based on the value the <see cref="ProgressSlider"/> has.
+        /// </summary>
+        public async Task LoadImageFromSliderValue()
+        {
+            CurrentIndex = (int)ProgressSlider.Value;
+            SkipFileButton.IsEnabled = true;
+            // get the next image
+            BitmapImage buffer = await folderSelector.GetNextImage();
+            // get the next path of the next image
+            string path = folderSelector.GetImagePath();
+
+            // if the buffer is not null, load the image
+            if (buffer != null)
+                LoadImage(buffer);
+            // else disable the controls
+            else
+            {
+                // and unload it
+                LoadImage(null);
+                DisableControls();
+                GoBackButton.IsEnabled = true;
+            }
+        }
 #endregion
         
 #region Performance
@@ -1460,28 +1509,11 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private async void ProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void ProgressSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             if (loadImageProgressSlider)
             {
-                CurrentIndex = (int)ProgressSlider.Value;
-                SkipFileButton.IsEnabled = true;
-                // get the next image
-                BitmapImage buffer = await folderSelector.GetNextImage();
-                // get the next path of the next image
-                string path = folderSelector.GetImagePath();
-
-                // if the buffer is not null, load the image
-                if (buffer != null)
-                    LoadImage(buffer);
-                // else disable the controls
-                else
-                {
-                    // and unload it
-                    LoadImage(null);
-                    DisableControls();
-                    GoBackButton.IsEnabled = true;
-                }
+                SliderValueChanged = true;
             }
             else
                 loadImageProgressSlider = true;
