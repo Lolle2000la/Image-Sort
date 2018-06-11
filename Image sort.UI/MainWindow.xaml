@@ -4,7 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
-        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"        
+        xmlns:res="clr-namespace:Image_sort.UI.LocalResources.AppResources"
+        xmlns:tooltip="clr-namespace:Image_sort.UI.LocalResources.ToolTips"
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
@@ -46,25 +48,16 @@
     <!-- Buttons seen in the right of the window -->
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands>
-            <ToggleButton x:Name="EnableSearchButton" Content="Search" Focusable="False"
-                              Click="EnableSearchButton_Click" IsChecked="False">
-                <ToggleButton.ToolTip>
-                    <TextBlock>
-                            <Run>Shows and hides the search box.</Run>
-                            <LineBreak/>
-                            <Run>Shortcut: ctrl+s</Run>
-                    </TextBlock>
-                </ToggleButton.ToolTip>
+            <ToggleButton x:Name="EnableSearchButton" Content="{x:Static res:AppResources.Search}" Focusable="False"
+                              Click="EnableSearchButton_Click" IsChecked="False" ToolTip="{x:Static tooltip:ToolTips.SearchToolTip}">
             </ToggleButton>
-            <ToggleButton x:Name="HelpButton" Content="Help" Focusable="False"
+            <ToggleButton x:Name="HelpButton" Content="{x:Static res:AppResources.Help}" Focusable="False"
                           Click="HelpButton_Click"/>
-            <Button Content="Feedback" x:Name="FeedbackButton" Click="FeedbackButton_Click">
+            <Button Content="{x:Static res:AppResources.Feedback}" x:Name="FeedbackButton" Click="FeedbackButton_Click">
                 <Button.ToolTip>
                     <TextBlock>
-                        <Run>Opens the github issues page.</Run> <LineBreak/>
-                        <Run>There you can file an issue and give your feedback.</Run><LineBreak/>
-                        <Run>Your feedback will be heard!</Run><LineBreak/><LineBreak/>
-                        <Run FontWeight="Bold">An Github account is required to file an issue</Run>
+                        <Run Text="{x:Static tooltip:ToolTips.FeedbackToolTip}"/><LineBreak/><LineBreak/>
+                        <Run FontWeight="Bold" Text="{x:Static tooltip:ToolTips.GitHubAccountRequired}"/>
                     </TextBlock>
                 </Button.ToolTip>
             </Button>
@@ -94,73 +87,43 @@
         <ToolBarTray Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <!-- ToolBar containing everything for folder management -->
             <ToolBar Focusable="False">
-                <Button Content="Select Folder" Focusable="False"
+                <Button Content="{x:Static res:AppResources.SelectFolder}" Focusable="False"
                         x:Name="SelectFolderButton" 
-                        ToolTip="Selects the folder to sort. Shortcut: F2"
+                        ToolTip="{x:Static tooltip:ToolTips.SelectFolderToolTip}"
                         Command="local:Command.SelectFolderCommand"/>
                 <!-- Click="SelectFolderButton_Click" -->
-                <Button Content="New Folder" IsEnabled="False" Focusable="False"
+                <Button Content="{x:Static res:AppResources.NewFolder}" IsEnabled="False" Focusable="False"
                         x:Name="NewFolderButton" Command="local:Command.CreateFolderCommand"
-                        ToolTip="Creates a new folder inside the current one. Shortcut: F3"/>
+                        ToolTip="{x:Static tooltip:ToolTips.NewFolderToolTip}"/>
                 <!-- Click="NewFolderButton_Click" -->
-                <Button Content="Enter Folder" IsEnabled="False" Focusable="False"
+                <Button Content="{x:Static res:AppResources.EnterFolder}" IsEnabled="False" Focusable="False"
                         x:Name="EnterFolderButton" Command="local:Command.EnterFolderCommand"
-                        ToolTip="Enter folder selected. Shortcut: Enter"/>
+                        ToolTip="{x:Static tooltip:ToolTips.EnterFolderToolTip}"/>
                 <!-- Click="EnterFolderButton_Click" -->
             </ToolBar>
             <!-- Contains everything for image management -->
             <ToolBar Focusable="False">
-                <Button Content="Skip" IsEnabled="False" Focusable="False"
+                <Button Content="{x:Static res:AppResources.Skip}" IsEnabled="False" Focusable="False"
                     x:Name="SkipFileButton" Command="local:Command.SkipImageCommand"
-                    ToolTip="Skips the current image. Shortcut: left arrow key"/>
+                    ToolTip="{x:Static tooltip:ToolTips.SkipToolTip}"/>
                 <!-- Click="SkipFileButton_Click" -->
-                <Button Content="Move" IsEnabled="False" Focusable="False"
+                <Button Content="{x:Static res:AppResources.Move}" IsEnabled="False" Focusable="False"
                     x:Name="MoveFolderButton" Command="local:Command.MoveImageCommand"
-                    ToolTip="Moves the image to the selected folder. Shortcut: right arrow key"/>
+                    ToolTip="{x:Static tooltip:ToolTips.MoveToolTip}"/>
                 <!-- Click="MoveFolderButton_Click" -->
-                <Button Content="Go back" IsEnabled="False" Focusable="False"
+                <Button Content="{x:Static res:AppResources.GoBack}" IsEnabled="False" Focusable="False"
                     x:Name="GoBackButton" Command="local:Command.GoBackCommand"
                     ToolTip="Goes back one image you skipped, if possible. Shortcut: ctrl + left arrow key"/>
                 <!-- Click="GoBackButton_Click" -->
             </ToolBar>
             <!-- Contains everything around settings -->
             <ToolBar Focusable="False">
-                <!-- Lets users change the resolution, that the Images should get loaded with -->
-                <!--<Button Content="Set Horizontal Resolution" Focusable="False"
-                    x:Name="SetHorizontalResolutionButton" Click="SetHorizontalResolutionButton_Click">
-                    -->
-                <!-- ToolTip for better understanding -->
-                <!--
-                    <Button.ToolTip>
-                        <TextBlock>
-                            <Run>
-                                Gives you the option to change the horizontal resolution,
-                                the images should get loaded with.
-                            </Run>
-                            <LineBreak/>
-                            <Run>
-                                Shortcut: F4
-                            </Run>
-                        </TextBlock>
-                    </Button.ToolTip>
-                </Button>-->
-                <TextBlock Margin="5" Text="Horizontal Resolution: "/>
+                <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
                 <!-- Text Box for setting the resolution -->
                 <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
                          MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyDown="ResolutionBox_KeyDown"
-                         Focusable="False" MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus">
-                    <TextBox.ToolTip>
-                        <TextBlock>
-                            <Run>
-                                Gives you the option to change the horizontal resolution,
-                                the images should get loaded with.
-                            </Run>
-                            <LineBreak/>
-                            <Run>
-                                Shortcut: F4
-                            </Run>
-                        </TextBlock>
-                    </TextBox.ToolTip>
+                         Focusable="False" MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus"
+                         ToolTip="{x:Static tooltip:ToolTips.ResolutionBoxToolTip}">
                 </TextBox>
             </ToolBar>
         </ToolBarTray>
@@ -205,8 +168,9 @@
                     <TextBlock Name="FileCreationTimeInfo"/>
                     <TextBlock Name="OpenInExplorerLinkHost" Visibility="Collapsed">
                         <Hyperlink Focusable="False" Name="OpenInExplorerLink"
-                                   Command="local:Command.OpenInExplorerCommand">
-                            Open Image in File Explorer
+                                   Command="local:Command.OpenInExplorerCommand"
+                                   ToolTip="{x:Static tooltip:ToolTips.OpenImageInExplorerToolTip}">
+                            <Run Text="{x:Static res:AppResources.OpenImageInFileExplorer}"/>
                         </Hyperlink>
                         <!-- RequestNavigate="RequestOpeningInExplorer" -->
                     </TextBlock>
@@ -214,7 +178,7 @@
                             Focusable="False" Visibility="Collapsed" TickFrequency="1"
                             IsSnapToTickEnabled="True"
                             ValueChanged="ProgressSlider_ValueChanged"
-                            ToolTip="Sets the position"/>
+                            ToolTip="{x:Static tooltip:ToolTips.ProgressSliderToolTip}"/>
                 </StackPanel>
 
                 <TextBlock Name="ProgressIndicatorText" Grid.Column="1" Grid.Row="1"/>

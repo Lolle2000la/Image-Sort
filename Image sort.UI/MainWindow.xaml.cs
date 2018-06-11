@@ -13,6 +13,8 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Image_sort.UI.LocalResources.AppResources;
+using Image_sort.UI.LocalResources.ToolTips;
 
 namespace Image_sort.UI
 {
@@ -383,7 +385,7 @@ namespace Image_sort.UI
             // Creates a dialog for the folder to sort
             FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
             {
-                Description = "Which folder needs sorting?",
+                Description = AppResources.WhichFolderQuestion,
                 ShowNewFolderButton = true
             };
 
@@ -614,12 +616,12 @@ namespace Image_sort.UI
             {
                 string pathToImage = folderSelector.GetImagePath();
 
-                FileNameInfo.Text = $"Name: {Path.GetFileNameWithoutExtension(pathToImage)}";
-                FileTypeInfo.Text = $"Format: {Path.GetExtension(pathToImage)}";
+                FileNameInfo.Text = $"{AppResources.Name}: {Path.GetFileNameWithoutExtension(pathToImage)}";
+                FileTypeInfo.Text = $"{AppResources.Format}: {Path.GetExtension(pathToImage)}";
                 DateTime creationTime = File.GetCreationTime(pathToImage).ToLocalTime();
-                FileCreationTimeInfo.Text = $"Created at: {creationTime.ToLongDateString()} {creationTime.ToShortTimeString()}";
+                FileCreationTimeInfo.Text = $"{AppResources.CreatedAt}: {creationTime.ToLongDateString()} {creationTime.ToShortTimeString()}";
                 // Calculates the sizes in MB and KB and rounds them to two digits, before filling in the size.
-                FileSizeInfo.Text = $"Size: " +
+                FileSizeInfo.Text = $"{AppResources.Size}: " +
                     $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / (1024 * 1024), 2)} MB, " +
                     $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / 1024, 2)} KB";
 
@@ -632,7 +634,7 @@ namespace Image_sort.UI
 
                 // Show Progress
                 (int current, int max) = folderSelector.GetCurrentProgress();
-                ProgressIndicatorText.Text = $"Progress: {current}/{max}";
+                ProgressIndicatorText.Text = $"{AppResources.Progress}: {current}/{max}";
             }
             // if that is not the case, remove the old information.
             else

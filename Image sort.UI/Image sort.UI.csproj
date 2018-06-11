@@ -98,6 +98,36 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Classes\ListBoxScroll.cs" />
+    <Compile Include="LocalResources\AppResources\AppResources.Designer.cs">
+      <DependentUpon>AppResources.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\AppResources\AppResources.en.Designer.cs">
+      <DependentUpon>AppResources.en.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\AppResources\AppResources.de.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>AppResources.de.resx</DependentUpon>
+    </Compile>
+    <Compile Include="LocalResources\ToolTips\ToolTips.de.Designer.cs">
+      <DependentUpon>ToolTips.de.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\ToolTips\ToolTips.en.Designer.cs">
+      <DependentUpon>ToolTips.en.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\ToolTips\ToolTips.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ToolTips.resx</DependentUpon>
+    </Compile>
     <Page Include="HelpWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -131,6 +161,30 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <EmbeddedResource Include="LocalResources\AppResources\AppResources.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AppResources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\AppResources\AppResources.en.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AppResources.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\AppResources\AppResources.de.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>AppResources.de.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\ToolTips\ToolTips.de.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ToolTips.de.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\ToolTips\ToolTips.en.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ToolTips.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\ToolTips\ToolTips.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ToolTips.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <Resource Include="Image_sort_new.png" />
     <Resource Include="Image_sort_new.ico" />
     <Content Include="Image_sort_new.svg" />
