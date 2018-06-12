@@ -200,31 +200,26 @@ namespace Image_sort.UI
             // Fill in the requiered instance, needed for event bubbling.
             FoldersStack.MainWindowParent = this;
 
-            // task containing the last loading run, so that it's always in sync.
-            Task lastRun = null;
-
             // Timer used to update the loaded image based on the slider value, if that has changed.
             Timer timer = new Timer
             {
                 Enabled = true,
                 // timer should run every 500 seconds.
-                Interval = 500
+                Interval = 250
             };
-            timer.Tick += (object s, EventArgs e) =>
+            timer.Tick += async (object s, EventArgs e) =>
             {
                 // Only change things if the slider value has changed.
                 if (SliderValueChanged)
                 {
                     // set SliderValueChanged to false to prevent endless reloads.
                     SliderValueChanged = false;
+
                     // ensure right execution context.
-                    Dispatcher.Invoke(() =>
+                    await Dispatcher.Invoke(async () =>
                     {
-                        // if a task is still executing, then wait for exit.
-                        if (lastRun != null && !lastRun.IsCompleted)
-                            lastRun.Wait();
                         // then load the image and set lastRun to the new Task.
-                        lastRun = LoadImageFromSliderValue();
+                        await LoadImageFromSliderValue();
                     });
                 }
             };
