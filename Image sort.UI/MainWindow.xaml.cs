@@ -204,10 +204,12 @@ namespace Image_sort.UI
             Task lastRun = null;
 
             // Timer used to update the loaded image based on the slider value, if that has changed.
-            Timer timer = new Timer();
-            timer.Enabled = true;
-            // timer should run every 500 seconds.
-            timer.Interval = 500;
+            Timer timer = new Timer
+            {
+                Enabled = true,
+                // timer should run every 500 seconds.
+                Interval = 500
+            };
             timer.Tick += (object s, EventArgs e) =>
             {
                 // Only change things if the slider value has changed.
