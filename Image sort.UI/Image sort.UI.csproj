@@ -128,7 +128,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ToolTips.resx</DependentUpon>
     </Compile>
-    <Page Include="HelpWindow.xaml">
+    <Page Include="Windows\HelpWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="MainWindow.xaml">
@@ -139,7 +139,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="HelpWindow.xaml.cs">
+    <Compile Include="Windows\HelpWindow.xaml.cs">
       <DependentUpon>HelpWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">

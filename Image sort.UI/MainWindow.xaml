@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250"
-        Drop="Window_Drop" Icon="Image_sort_new.png"
+        Drop="Window_Drop" Icon="..\Image_sort_new.png"
         Closing="Window_Closing" Loaded="MetroWindow_Loaded">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Window.CommandBindings>
