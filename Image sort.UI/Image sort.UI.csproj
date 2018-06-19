@@ -113,6 +113,21 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>AppResources.de.resx</DependentUpon>
     </Compile>
+    <Compile Include="LocalResources\Help\HelpUrls.de.Designer.cs">
+      <DependentUpon>HelpUrls.de.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\Help\HelpUrls.en.Designer.cs">
+      <DependentUpon>HelpUrls.en.resx</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="LocalResources\Help\HelpUrls.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>HelpUrls.resx</DependentUpon>
+    </Compile>
     <Compile Include="LocalResources\ToolTips\ToolTips.de.Designer.cs">
       <DependentUpon>ToolTips.de.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -172,6 +187,18 @@
     <EmbeddedResource Include="LocalResources\AppResources\AppResources.de.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AppResources.de.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\Help\HelpUrls.de.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>HelpUrls.de.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\Help\HelpUrls.en.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>HelpUrls.en.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Include="LocalResources\Help\HelpUrls.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>HelpUrls.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="LocalResources\ToolTips\ToolTips.de.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

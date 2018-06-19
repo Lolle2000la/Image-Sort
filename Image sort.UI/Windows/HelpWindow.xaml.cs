@@ -36,7 +36,7 @@ namespace Image_sort.UI
         /// <summary>
         /// URL to the HELP.md file online.
         /// </summary>
-        private readonly string webHelpUrl = "https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/docs/help.md?raw=true";
+        private readonly string webHelpUrl = LocalResources.Help.HelpUrls.HelpUrl;
         /// <summary>
         /// Path to the local temp directory of the app.
         /// </summary>
