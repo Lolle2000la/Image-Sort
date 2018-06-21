@@ -6,8 +6,9 @@
         xmlns:local="clr-namespace:Image_sort.UI"
         xmlns:markdigwpf="clr-namespace:Markdig.Wpf;assembly=Markdig.Wpf"
         xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+        xmlns:res="clr-namespace:Image_sort.UI.LocalResources.AppResources"
         mc:Ignorable="d"
-        Title="Help" Height="450" Width="800" Icon="..\Image_sort_new.png" Closing="HelpWindow_Closing"
+        Title="{x:Static res:AppResources.Help}" Height="450" Width="800" Icon="..\Image_sort_new.png" Closing="HelpWindow_Closing"
         Loaded="MetroWindow_Loaded">
     <Window.CommandBindings>
         <CommandBinding Command="markdigwpf:Commands.Hyperlink" Executed="HyperlinkCommand_Executed"/>

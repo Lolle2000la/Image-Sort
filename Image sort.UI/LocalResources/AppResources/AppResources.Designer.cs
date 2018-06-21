@@ -61,6 +61,16 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to # Could not load the help file.
+        /// Make sure it exists..
+        /// </summary>
+        public static string CouldNotLoadHelpMarkdown {
+            get {
+                return ResourceManager.GetString("CouldNotLoadHelpMarkdown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Created at.
         /// </summary>
         public static string CreatedAt {
@@ -111,6 +121,18 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string Help {
             get {
                 return ResourceManager.GetString("Help", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note: this is an offline version. It has been last updated on {date}.
+        ///---
+        ///
+        ///{content}.
+        /// </summary>
+        public static string HelpLastLoadedMarkdown {
+            get {
+                return ResourceManager.GetString("HelpLastLoadedMarkdown", resourceCulture);
             }
         }
         

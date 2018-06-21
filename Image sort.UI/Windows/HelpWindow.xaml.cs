@@ -114,11 +114,9 @@ namespace Image_sort.UI
                                 Directory.CreateDirectory(localTempDirectory);
 
                             // Write the markdown into the local HELP.md file to keep that up-to-date
-                            File.WriteAllText(cachedHelpPath, $"Note: this is an offline " +
-                                $"version. It has been last updated on {DateTime.Now.ToLongDateString()}. {Environment.NewLine}" +
-                                $"---" +
-                                $"{Environment.NewLine}{Environment.NewLine}" +
-                                $"{downloadedMarkdown}");
+                            File.WriteAllText(cachedHelpPath, LocalResources.AppResources.AppResources.HelpLastLoadedMarkdown
+                                .Replace("{date}", DateTime.Now.ToLongDateString())
+                                .Replace("{content}", downloadedMarkdown));
                         }
                         else
                         {
@@ -136,7 +134,7 @@ namespace Image_sort.UI
                         Dispatcher.Invoke(() => HelpViewer.Markdown = File.ReadAllText(baseHelpPath));
                     // Show error text if even that fails.
                     else
-                        Dispatcher.Invoke(() => HelpViewer.Markdown = "# Could not load the help file. \r\n Make sure it exists.");
+                        Dispatcher.Invoke(() => HelpViewer.Markdown = LocalResources.AppResources.AppResources.CouldNotLoadHelpMarkdown);
 
                 }
             });
