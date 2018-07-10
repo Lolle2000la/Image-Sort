@@ -22,6 +22,7 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            Debug.WriteLine(Resources.AppResources.UpdateConsentQuestion);
 #if (!DEBUG)
             // If the updater is already open once, don't open another instance/
             // close this one right after start.
@@ -33,7 +34,7 @@ namespace Image_sort.Update
 
             // Loads update registry from GitHub
             string json = GetUpdateRegistry();
-            
+
             // Checks if something was given back
             if (json != "")
             {
@@ -49,9 +50,9 @@ namespace Image_sort.Update
                         // If the process isn't elevated, ask if update
                         if (!IsElevated)
                         {
-                            if (System.Windows.Forms.MessageBox.Show("Do you want to update to the newest" +
-                                " version of Image sort?\n" +
-                                "* This will close all instances \"Image sort\". Please finish all tasks beforehand.", "Update", System.Windows.Forms.MessageBoxButtons.YesNo,
+                            if (System.Windows.Forms.MessageBox.Show(
+                                Resources.AppResources.UpdateConsentQuestion,
+                                    "Image sort - " + Resources.AppResources.UpdateAvailable, System.Windows.Forms.MessageBoxButtons.YesNo,
                                 System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                             {
                                 // Elevate process
@@ -65,9 +66,10 @@ namespace Image_sort.Update
                             }
                         }
                         // If it is, download and run the installer
-                        else if (System.Windows.Forms.MessageBox.Show("Do you want to continue?", "continue?",
-                            System.Windows.Forms.MessageBoxButtons.YesNoCancel, System.Windows.Forms.MessageBoxIcon.Question,
-                            System.Windows.Forms.MessageBoxDefaultButton.Button3) == System.Windows.Forms.DialogResult.Yes)
+                        else if (System.Windows.Forms.MessageBox.Show(Resources.AppResources.ContinueConsentQuestion,
+                            Resources.AppResources.ContinueQuestion, System.Windows.Forms.MessageBoxButtons.YesNoCancel,
+                            System.Windows.Forms.MessageBoxIcon.Question, System.Windows.Forms.MessageBoxDefaultButton.Button3)
+                                == System.Windows.Forms.DialogResult.Yes)
                         {
                             // set the url depending on if one of them is set
                             string url = (updateReg.url != null) || (updateReg.source != null)
@@ -101,9 +103,9 @@ namespace Image_sort.Update
                 }
                 catch (WebException)
                 {
-                    System.Windows.Forms.MessageBox.Show("Server does not answer.", "Warning!",
+                    System.Windows.Forms.MessageBox.Show(Resources.AppResources.ServerNotAnswering, Resources.AppResources.Warning,
                         System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
-                    
+
                     json = "";
                 }
             }
@@ -159,7 +161,9 @@ namespace Image_sort.Update
                     }
                     else
                     {
-                        System.Windows.Forms.MessageBox.Show("Update server did not return an url to the installer! Please download the newest release from Github.", "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                        System.Windows.Forms.MessageBox.Show(Resources.AppResources.UpdateServerDidNotRespondWithUrl,
+                            Resources.AppResources.Error, System.Windows.Forms.MessageBoxButtons.OK,
+                            System.Windows.Forms.MessageBoxIcon.Error);
                         // GitHub now opens show the user the updates
                         Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                     }
@@ -167,13 +171,17 @@ namespace Image_sort.Update
                 // If something goes wrong, show the user that it didn't
                 catch (WebException)
                 {
-                    System.Windows.Forms.MessageBox.Show("Server does not answer", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    System.Windows.Forms.MessageBox.Show(Resources.AppResources.ServerNotAnswering,
+                        Resources.AppResources.Warning, System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Error);
                     // GitHub now opens show the user the updates
                     Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                 }
                 catch (Exception)
                 {
-                    System.Windows.Forms.MessageBox.Show("Could not install. Please download from GitHub.", "Warning!", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+                    System.Windows.Forms.MessageBox.Show(Resources.AppResources.CouldNotInstall,
+                        Resources.AppResources.Warning, System.Windows.Forms.MessageBoxButtons.OK,
+                        System.Windows.Forms.MessageBoxIcon.Error);
                     // GitHub now opens show the user the updates
                     Process.Start("https://github.com/Lolle2000la/Image-Sort/releases");
                 }
@@ -211,7 +219,7 @@ namespace Image_sort.Update
                 }
                 return isElevated;
             }
-            
+
         }
 
         /// <summary>
