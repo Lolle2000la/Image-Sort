@@ -200,6 +200,10 @@ namespace Image_sort.UI
             // Fill in the requiered instance, needed for event bubbling.
             FoldersStack.MainWindowParent = this;
 
+#if IS_UWP
+            LaunchingInText.Text = ToolTips.LaunchesWindowsStore;
+#endif
+
             // Timer used to update the loaded image based on the slider value, if that has changed.
             Timer timer = new Timer
             {
@@ -1467,7 +1471,7 @@ namespace Image_sort.UI
             else
                 helpWindow.Hide();
         }
-        #endregion
+#endregion
 
         /// <summary>
         /// Executed when the main Window closes. Saves the current dimensions of the window.
@@ -1559,12 +1563,16 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void FeedbackButton_Click(object sender, RoutedEventArgs e)
         {
+#if (!IS_UWP)
             System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues");
+#else
+            System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
+#endif
         }
-        #endregion
+#endregion
     }
 
-    #region Commands
+#region Commands
     public static class Command
     {
         /// <summary>

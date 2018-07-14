@@ -129,13 +129,20 @@ Dein Feedback wird gehört und angenommen!</value>
     <comment>Used for the Feedback button</comment>
   </data>
   <data name="GitHubAccountRequired" xml:space="preserve">
-    <value>Ein GitHub Account wird für das posten eines Issues benötigt</value>
+    <value>Ein GitHub Account wird für das posten von Issues benötigt</value>
     <comment>Used for the feedback button</comment>
   </data>
   <data name="GoBackToolTip" xml:space="preserve">
     <value>Macht die letzte Aktion rückgängig. 
 
 Schnellzugriff: strg + linke Pfeiltaste</value>
+  </data>
+  <data name="LaunchesWindowsStore" xml:space="preserve">
+    <value>Wenn sie diesen Knopf drücken, dann öffnet sich die Microsoft 
+Store Bewertungen Seite. Wegen Inkompatibilitäten kann 
+Feedback Hub momentan dafür nicht benutzt werden. Sie müssen
+eine Review hinterlassen mit ihrem Feedback, und diese 
+gegebenenfalls überarbeiten, wenn sich etwas geändert hat.</value>
   </data>
   <data name="MoveToolTip" xml:space="preserve">
     <value>Verschiebt das Bild in den ausgewählten Ordner. 

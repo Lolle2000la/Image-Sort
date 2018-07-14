@@ -57,7 +57,8 @@
                 <Button.ToolTip>
                     <TextBlock>
                         <Run Text="{x:Static tooltip:ToolTips.FeedbackToolTip}"/><LineBreak/><LineBreak/>
-                        <Run FontWeight="Bold" Text="{x:Static tooltip:ToolTips.GitHubAccountRequired}"/>
+                        <Run FontWeight="Bold" x:Name="LaunchingInText" Text="{x:Static tooltip:ToolTips.GitHubAccountRequired}"/>
+                        
                     </TextBlock>
                 </Button.ToolTip>
             </Button>

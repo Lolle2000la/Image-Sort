@@ -103,6 +103,15 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Pressing this button will launch the windows store review page. Due to incompatibilities, feedback hub currently cannot be used for giving feedback. You have to give feedback through a review and update the review, when there was an improvement..
+        /// </summary>
+        public static string LaunchesWindowsStore {
+            get {
+                return ResourceManager.GetString("LaunchesWindowsStore", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Moves the image to the selected folder. 
         ///
         ///Shortcut: right arrow key.
