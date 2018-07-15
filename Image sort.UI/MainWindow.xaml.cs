@@ -1569,7 +1569,8 @@ namespace Image_sort.UI
                                     MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
                                     {
                                         AffirmativeButtonText = AppResources.Yes,
-                                        NegativeButtonText = AppResources.No
+                                        NegativeButtonText = AppResources.No,
+                                        DefaultButtonFocus = MessageDialogResult.Affirmative
                                     });
 
                                 // tell the updater whether consent was given or not
