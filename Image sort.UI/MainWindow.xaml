@@ -179,10 +179,11 @@
                             Focusable="False" Visibility="Collapsed" TickFrequency="1"
                             IsSnapToTickEnabled="True"
                             ValueChanged="ProgressSlider_ValueChanged"
+                            Margin="0,5,0,0"
                             ToolTip="{x:Static tooltip:ToolTips.ProgressSliderToolTip}"/>
                 </StackPanel>
 
-                <TextBlock Name="ProgressIndicatorText" Grid.Column="1" Grid.Row="1"/>
+                <TextBlock Name="ProgressIndicatorText" Margin="10,0,0,0" Grid.Column="1" Grid.Row="1"/>
             </Grid>
         </Grid>
     </Grid>
