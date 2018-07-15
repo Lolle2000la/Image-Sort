@@ -243,7 +243,7 @@
       <Project>{3afab814-e713-4175-a071-fd69ab70b67d}</Project>
       <Name>Image sort.UI.Dialogs</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Image sort.Update\Image sort.Update.csproj">
+    <ProjectReference Condition="'$(Configuration)' != 'UWP'" Include="..\Image sort.Update\Image sort.Update.csproj">
       <Project>{63d944ed-ed17-49c5-a78d-dc7d76e567d1}</Project>
       <Name>Image sort.Update</Name>
     </ProjectReference>
