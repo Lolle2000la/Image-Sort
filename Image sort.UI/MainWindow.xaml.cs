@@ -1609,7 +1609,7 @@ namespace Image_sort.UI
         private void FeedbackButton_Click(object sender, RoutedEventArgs e)
         {
 #if (!IS_UWP)
-            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues");
+            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues/new");
 #else
             System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
 #endif
