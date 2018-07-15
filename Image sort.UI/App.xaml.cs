@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -17,6 +18,11 @@ namespace Image_sort.UI
     {
         [DllImport("wininet.dll")]
         public extern static bool InternetGetConnectedState(out int Description, int ReservedValue);
+
+        /// <summary>
+        /// Contains an <see cref="Process"/> object with the updater.
+        /// </summary>
+        public static Process updaterProcess = null;
 
         /// <summary>
         /// Gets internet state, returns true if connected
@@ -35,11 +41,21 @@ namespace Image_sort.UI
         {
 #if !IS_UWP
             // Run updater, if connected to internet and the updater exists.
-            if(IsConnectedToInternet() && File.Exists(AppDomain.CurrentDomain.BaseDirectory
+            if (IsConnectedToInternet() && File.Exists(AppDomain.CurrentDomain.BaseDirectory
                     + @"\Image sort.Update.exe"))
                 // Run the Updater before starting the app
-                System.Diagnostics.Process.Start(AppDomain.CurrentDomain.BaseDirectory 
-                    + @"\Image sort.Update.exe");
+                updaterProcess = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = AppDomain.CurrentDomain.BaseDirectory
+                                    + @"\Image sort.Update.exe",
+                        UseShellExecute = false,
+                        RedirectStandardError = true,
+                        RedirectStandardInput = true,
+                        RedirectStandardOutput = true
+                    }
+                };
 #endif
 
             // Continue normally

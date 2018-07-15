@@ -49,10 +49,16 @@ namespace Image_sort.Update
                         // If the process isn't elevated, ask if update
                         if (!IsElevated)
                         {
-                            if (System.Windows.Forms.MessageBox.Show(
-                                Resources.AppResources.UpdateConsentQuestion,
+                            Console.WriteLine("user_consent");
+                            // asks if consent is given (yes the true : false is performance optimization)
+                            bool consentGiven = (Console.ReadLine() == "yes") ? true : false;
+
+                            /* System.Windows.Forms.MessageBox.Show(
+                            Resources.AppResources.UpdateConsentQuestion,
                                     "Image sort - " + Resources.AppResources.UpdateAvailable, System.Windows.Forms.MessageBoxButtons.YesNo,
-                                System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+                                System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes*/
+
+                            if (consentGiven)
                             {
                                 // Elevate process
                                 ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
@@ -64,11 +70,15 @@ namespace Image_sort.Update
                                 Process.Start(info);
                             }
                         }
-                        // If it is, download and run the installer
-                        else if (System.Windows.Forms.MessageBox.Show(Resources.AppResources.ContinueConsentQuestion,
+                        /*
+                         * for archival reasons.
+                         *  if (System.Windows.Forms.MessageBox.Show(Resources.AppResources.ContinueConsentQuestion,
                             Resources.AppResources.ContinueQuestion, System.Windows.Forms.MessageBoxButtons.YesNoCancel,
                             System.Windows.Forms.MessageBoxIcon.Question, System.Windows.Forms.MessageBoxDefaultButton.Button3)
                                 == System.Windows.Forms.DialogResult.Yes)
+                         */
+                        // If it is, download and run the installer
+                        else
                         {
                             // set the url depending on if one of them is set
                             string url = (updateReg.url != null) || (updateReg.source != null)

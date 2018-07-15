@@ -173,6 +173,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to No.
+        /// </summary>
+        public static string No {
+            get {
+                return ResourceManager.GetString("No", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open Image in File Explorer.
         /// </summary>
         public static string OpenImageInFileExplorer {
@@ -227,11 +236,31 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?
+        ///
+        ///* This will close all open instances &quot;Image sort&quot;. Please finish all tasks beforehand..
+        /// </summary>
+        public static string UpdateConsentQuestion {
+            get {
+                return ResourceManager.GetString("UpdateConsentQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Which folder needs sorting?.
         /// </summary>
         public static string WhichFolderQuestion {
             get {
                 return ResourceManager.GetString("WhichFolderQuestion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Yes.
+        /// </summary>
+        public static string Yes {
+            get {
+                return ResourceManager.GetString("Yes", resourceCulture);
             }
         }
     }

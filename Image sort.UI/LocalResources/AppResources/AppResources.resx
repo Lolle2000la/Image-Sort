@@ -165,6 +165,9 @@
     <value>New Folder</value>
     <comment>Folder management</comment>
   </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
   <data name="OpenImageInFileExplorer" xml:space="preserve">
     <value>Open Image in File Explorer</value>
     <comment>File info</comment>
@@ -189,8 +192,17 @@
     <value>Skip</value>
     <comment>Image management</comment>
   </data>
+  <data name="UpdateConsentQuestion" xml:space="preserve">
+    <value>A new version of Image sort is available. Do you want to update?
+
+* This will close all open instances "Image sort". Please finish all tasks beforehand.</value>
+    <comment>Question that asks for user consent on updating.</comment>
+  </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Which folder needs sorting?</value>
     <comment>Folder selection</comment>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
   </data>
 </root>

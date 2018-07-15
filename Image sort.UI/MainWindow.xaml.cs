@@ -15,6 +15,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Image_sort.UI.LocalResources.AppResources;
 using Image_sort.UI.LocalResources.ToolTips;
+using System.Diagnostics;
+using MahApps.Metro.Controls.Dialogs;
 
 namespace Image_sort.UI
 {
@@ -36,7 +38,7 @@ namespace Image_sort.UI
         /// in that folder.
         /// </summary>
         private FolderSelector folderSelector = new FolderSelector(Properties.Settings.Default.MaxHorizontalResolution);
-        
+
         /// <summary>
         /// Contains a <see cref="List"/> of <see cref="string"/>'s 
         /// being the paths of the folders inside the currently selected folder.
@@ -47,7 +49,7 @@ namespace Image_sort.UI
         /// Used to prevent image loading when the ProgressSliders value has changed.
         /// </summary>
         private bool loadImageProgressSlider = true;
-        
+
         /// <summary>
         /// Gets and sets the maximum horizontal resolution from the settings
         /// </summary>
@@ -78,7 +80,8 @@ namespace Image_sort.UI
         public bool SearchEnabled
         {
             get { return searchEnabled; }
-            set {
+            set
+            {
                 searchEnabled = value;
                 SearchBarBox.IsEnabled = value;
                 SearchBarBox.Visibility = value ? Visibility.Visible : Visibility.Collapsed;
@@ -228,19 +231,19 @@ namespace Image_sort.UI
                 }
             };
         }
-#endregion
+        #endregion
 
 
 
 
-#region Methods
+        #region Methods
         /*********************************************************************/
         /*                                                                   */
         /* METHODS                                                           */
         /*                                                                   */
         /*********************************************************************/
-        
-#region Folder-Selection Management
+
+        #region Folder-Selection Management
         /// <summary>
         /// Shifts up the selected folder, to one that is visible, in the <see cref="FoldersStack"/>
         /// </summary>
@@ -286,9 +289,9 @@ namespace Image_sort.UI
                     FoldersStack.SelectedIndex = 0;
             }
         }
-#endregion
+        #endregion
 
-#region Folder-Navigation/Loading
+        #region Folder-Navigation/Loading
         /// <summary>
         /// Lets the user select a resolution for the loaded images
         /// </summary>
@@ -486,7 +489,7 @@ namespace Image_sort.UI
                         ResolutionBox.IsEnabled = true;
 
                     }
-                        
+
                     // otherwise load the image and enable the controls, if there is an image.
                     else
                     {
@@ -514,7 +517,7 @@ namespace Image_sort.UI
                         // so that it will be more comfortable searching.
                         SearchBarBox.Text = "";
                     }
-                    
+
                     // Enable all controls again to allow for user input
                     EnableAllControls();
                 }
@@ -540,7 +543,7 @@ namespace Image_sort.UI
                     Hide();
 
                 // Load the folder
-                if(await SelectAndLoadFolder(folder))
+                if (await SelectAndLoadFolder(folder))
                 {
                     // Refresh folders
                     AddFoldersToFoldersStack();
@@ -565,9 +568,9 @@ namespace Image_sort.UI
                     LoadFolderAsync(hostFolder);
             }
         }
-#endregion
+        #endregion
 
-#region Folder Management
+        #region Folder Management
         /// <summary>
         /// Lets the user create a new folder
         /// </summary>
@@ -601,9 +604,9 @@ namespace Image_sort.UI
                 }
             }
         }
-#endregion
+        #endregion
 
-#region Data-Refreshing
+        #region Data-Refreshing
         /// <summary>
         /// Loads an image into the window
         /// </summary>
@@ -723,9 +726,9 @@ namespace Image_sort.UI
                 LoadImage(null);
             }
         }
-#endregion
+        #endregion
 
-#region UI-Control-Management
+        #region UI-Control-Management
         /// <summary>
         /// Focuses and enables <see cref="ResolutionBox"/>
         /// </summary>
@@ -815,9 +818,9 @@ namespace Image_sort.UI
             ResolutionBox.IsEnabled = false;
             GoBackButton.IsEnabled = false;
         }
-#endregion
+        #endregion
 
-#region Image-Management
+        #region Image-Management
         /// <summary>
         /// Skips the current image and loads the next one
         /// </summary>
@@ -845,7 +848,7 @@ namespace Image_sort.UI
                 }
 
                 loadImageProgressSlider = false;
-                ProgressSlider.Value = folderSelector.CurrentIndex-1;
+                ProgressSlider.Value = folderSelector.CurrentIndex - 1;
             }
         }
 
@@ -864,7 +867,7 @@ namespace Image_sort.UI
                     string path = folderSelector.GetImagePath();
                     // get the next image
                     BitmapImage buffer = await folderSelector.GetNextImage();
-                    
+
 
                     // if the buffer is not null, load the image
                     if (buffer != null)
@@ -884,7 +887,7 @@ namespace Image_sort.UI
                         System.IO.Path.GetFileName(path));
 
                     loadImageProgressSlider = false;
-                    ProgressSlider.Value = folderSelector.CurrentIndex-1;
+                    ProgressSlider.Value = folderSelector.CurrentIndex - 1;
                 }
             }
             else
@@ -936,9 +939,9 @@ namespace Image_sort.UI
                 GoBackButton.IsEnabled = true;
             }
         }
-#endregion
-        
-#region Performance
+        #endregion
+
+        #region Performance
         /// <summary>
         /// Tells the garbage collector to collect garbage, reduces memory usage when called
         /// </summary>
@@ -947,14 +950,14 @@ namespace Image_sort.UI
             GC.Collect();
             GC.WaitForPendingFinalizers();
         }
-#endregion
+        #endregion
 
-#endregion
-
-
+        #endregion
 
 
-#region Event Handlers
+
+
+        #region Event Handlers
         /*********************************************************************/
         /*                                                                   */
         /* EVENT HANDLERS                                                    */
@@ -1016,7 +1019,7 @@ namespace Image_sort.UI
             if (EnterFolderButton.IsEnabled)
                 EnterFolder();
         }
-        
+
         ///// <summary>
         ///// Gets called, when the user clicks the "Select Folder" Button in
         ///// the tool bar
@@ -1030,7 +1033,7 @@ namespace Image_sort.UI
         //{
         //    SelectFolder();
         //}
-        
+
         ///// <summary>
         ///// Handles the Skip File buttons click event.
         ///// Loads next image when clicked, without performing an action
@@ -1041,7 +1044,7 @@ namespace Image_sort.UI
         //{
         //    DoSkip();
         //}
-        
+
         ///// <summary>
         ///// Called when the <see cref="MoveFolderButton.Click"/>-Event is being raised
         ///// </summary>
@@ -1051,7 +1054,7 @@ namespace Image_sort.UI
         //{
         //    DoMove();
         //}
-        
+
         /// <summary>
         /// Handles the Keyboard, so that the user is more productive
         /// (Handles all the shortcuts to more productivity)
@@ -1188,7 +1191,7 @@ namespace Image_sort.UI
         //{
         //    SetResolution();
         //}
-        
+
         /// <summary>
         /// Used for handling drag and drop, good for UX (obviously)
         /// </summary>
@@ -1246,7 +1249,7 @@ namespace Image_sort.UI
             if (e.Key == Key.Enter)
             {
                 // If the resolution set is under 20, set it to 20
-                if(!(int.Parse(ResolutionBox.Text) > 20))
+                if (!(int.Parse(ResolutionBox.Text) > 20))
                 {
                     ResolutionBox.Text = 20.ToString();
                 }
@@ -1260,7 +1263,7 @@ namespace Image_sort.UI
                 e.Handled = true;
             }
         }
-        
+
         /// <summary>
         /// Focuses <see cref="ResolutionBox"/> when clicking on the text box
         /// </summary>
@@ -1299,7 +1302,7 @@ namespace Image_sort.UI
         {
             SearchEnabled = (bool)EnableSearchButton.IsChecked;
         }
-        
+
         ///// <summary>
         ///// Goes back in time (if the last image wasn't moved)
         ///// </summary>
@@ -1322,7 +1325,7 @@ namespace Image_sort.UI
         //        OpenImageInFileExplorer(e.Uri.OriginalString);
         //}
 
-#region CommandBindings
+        #region CommandBindings
         /// <summary>
         /// Executed when the <see cref="Command.GoBackCommand"/> is executed.
         /// </summary>
@@ -1471,7 +1474,7 @@ namespace Image_sort.UI
             else
                 helpWindow.Hide();
         }
-#endregion
+        #endregion
 
         /// <summary>
         /// Executed when the main Window closes. Saves the current dimensions of the window.
@@ -1506,7 +1509,7 @@ namespace Image_sort.UI
             helpWindow.DoNotClose = false;
             helpWindow.Close();
         }
-        
+
         /// <summary>
         /// Called when the progress slider was used. Loads the selected image.
         /// </summary>
@@ -1527,7 +1530,7 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
+        private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             helpWindow = new HelpWindow();
 #if !DEBUG_HELP
@@ -1541,6 +1544,47 @@ namespace Image_sort.UI
 #if !DEBUG_HELP
             }
 #endif
+            // get the updater process from the App class.
+            Process proc = App.updaterProcess;
+
+            // if the process has been started, then...
+            if (proc != null && proc.Start())
+                // use its standard output
+                using (StreamReader output = proc.StandardOutput)
+                {
+                    // and stardard input
+                    using (StreamWriter input = proc.StandardInput)
+                    {
+                        // and read the output till the end.
+                        while (!output.EndOfStream)
+                        {
+                            // get the last line from the stream.
+                            string line = output.ReadLine();
+
+                            // and if the updater asks for user consent, then
+                            if (line == "user_consent")
+                            {
+                                // ask the user for consent and save the result.
+                                MessageDialogResult result = await this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
+                                    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
+                                    {
+                                        AffirmativeButtonText = AppResources.Yes,
+                                        NegativeButtonText = AppResources.No
+                                    });
+
+                                // tell the updater whether consent was given or not
+                                if (result == MessageDialogResult.Affirmative)
+                                {
+                                    input.WriteLine("yes");
+                                }
+                                else
+                                {
+                                    input.WriteLine("no");
+                                }
+                            }
+                        }
+                    }
+                }
         }
 
         /// <summary>
@@ -1569,10 +1613,10 @@ namespace Image_sort.UI
             System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
 #endif
         }
-#endregion
+        #endregion
     }
 
-#region Commands
+    #region Commands
     public static class Command
     {
         /// <summary>
@@ -1640,5 +1684,5 @@ namespace Image_sort.UI
         /// </summary>
         public static RoutedCommand HelpCommand = new RoutedCommand();
     }
-#endregion
+    #endregion
 }
