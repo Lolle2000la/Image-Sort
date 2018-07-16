@@ -9,7 +9,7 @@
         xmlns:tooltip="clr-namespace:Image_sort.UI.LocalResources.ToolTips"
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
-        MinWidth="250" MinHeight="250"
+        MinWidth="250" MinHeight="250" PreviewKeyDown="MetroWindow_PreviewKeyDown"
         Drop="Window_Drop" Icon="Image_sort_new.png"
         Closing="Window_Closing" Loaded="MetroWindow_Loaded">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->

@@ -1614,6 +1614,29 @@ namespace Image_sort.UI
             System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
 #endif
         }
+
+        /// <summary>
+        /// Handler used to prevent unwanted key-repitition.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MetroWindow_PreviewKeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            // if the event is called because the user hold down a key
+            if (e.IsRepeat)
+            {
+                // and that key is either the left or right arrow key
+                if (e.Key == Key.Left || e.Key == Key.Right)
+                {
+                    // and the focused control is not an textbox (where such behaviour is wished)
+                    if (!typeof(System.Windows.Controls.TextBox).IsAssignableFrom(Keyboard.FocusedElement.GetType()))
+                    {
+                        // prevent repeat
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
         #endregion
     }
 
