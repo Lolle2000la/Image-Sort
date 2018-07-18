@@ -61,6 +61,15 @@ namespace Image_sort.Update.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to https://api.github.com/repos/lolle2000la/image-sort/releases/latest.
+        /// </summary>
+        internal static string LatestReleaseUrl {
+            get {
+                return ResourceManager.GetString("LatestReleaseUrl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to https://raw.githubusercontent.com/Lolle2000la/Image-Sort-Updates/master/update-reg.json.
         /// </summary>
         internal static string UpdateRegistryUrl {

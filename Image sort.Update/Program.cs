@@ -1,10 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using Image_sort.Update.GitHub;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Security.Permissions;
 using System.Security.Principal;
 using System.Text;
@@ -22,7 +24,7 @@ namespace Image_sort.Update
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-#if (!DEBUG)
+#if (DEBUG)
             // If the updater is already open once, don't open another instance/
             // close this one right after start.
             if (Process.GetProcessesByName("Image sort.Update").Count() > 1)
@@ -32,25 +34,32 @@ namespace Image_sort.Update
             System.Windows.Forms.Application.EnableVisualStyles();
 
             // Loads update registry from GitHub
-            string json = GetUpdateRegistry();
+            //string json = GetUpdateRegistry();
+
+            // Get the latest release of image sort on GitHub.
+            GithubRelease latestRelease = GetLatestReleaseInfo();
 
             // Checks if something was given back
-            if (json != "")
+            if (latestRelease != null)
             {
                 // Serializes the UpdateRegistry from json
-                UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
-                if (updateReg != null)
+                //UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
+
+                // makes sure the latest release isn't a prerelease.
+                if (!latestRelease.prerelease)
                 {
+                    // Get the version of Image sort.UI
                     Version version = System.Reflection.Assembly.LoadFile($"{AppDomain.CurrentDomain.BaseDirectory}\\Image sort.UI.exe")
                         .GetName().Version;
                     // if the version given is different, download and run the newest update
-                    if (updateReg.version != $"{version.Major}.{version.Minor}.{version.Build}" /*Properties.Resources.version*/)
+                    if (latestRelease.tag_name.Substring(1) != $"{version.Major}.{version.Minor}.{version.Build}" /*Properties.Resources.version*/)
                     {
                         // If the process isn't elevated, ask if update
                         if (!IsElevated)
                         {
+                            // asks the parent process for user consent
                             Console.WriteLine("user_consent");
-                            // asks if consent is given (yes the true : false is performance optimization)
+                            // asks if consent is given (yes the true : false is for performance optimization)
                             bool consentGiven = (Console.ReadLine() == "yes") ? true : false;
 
                             /* System.Windows.Forms.MessageBox.Show(
@@ -58,12 +67,12 @@ namespace Image_sort.Update
                                     "Image sort - " + Resources.AppResources.UpdateAvailable, System.Windows.Forms.MessageBoxButtons.YesNo,
                                 System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes*/
 
+                            // if consent was given, then elavate the process and start it.
                             if (consentGiven)
                             {
                                 // Elevate process
                                 ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
-                                    @"Image sort.Update.exe")
-                                {
+                                    @"Image sort.Update.exe") {
                                     UseShellExecute = true,
                                     Verb = "runas"
                                 };
@@ -81,15 +90,36 @@ namespace Image_sort.Update
                         else
                         {
                             // set the url depending on if one of them is set
-                            string url = (updateReg.url != null) || (updateReg.source != null)
-                                ? updateReg.url : updateReg.source;
-                            // Download and install the installer
-                            DownloadAndRunInstaller(url);
+                            string url = latestRelease.assets[0].browser_download_url;
+
+                            // Check if the url even exists.
+                            if (url != "")
+                                // Download and install the installer
+                                DownloadAndRunInstaller(url);
                         }
                     }
                 }
             }
 #endif
+        }
+
+        /// <summary>
+        /// Get the latest release info from GitHub.
+        /// </summary>
+        /// <returns></returns>
+        private static GithubRelease GetLatestReleaseInfo()
+        {
+            using (WebClient wc = new WebClient())
+            {
+                // GitHub requires an user-agent, but it's not important what its value is.
+                wc.Headers.Add(HttpRequestHeader.UserAgent, "agent");
+
+                // Download the JSON from GitHub and encode it to UTF8
+                string json = Encoding.UTF8.GetString(wc.DownloadData(Properties.Resources.LatestReleaseUrl));
+
+                // Deserialize the JSON to an Object and return it.
+                return JsonConvert.DeserializeObject<GithubRelease>(json);
+            }
         }
 
 
@@ -98,6 +128,8 @@ namespace Image_sort.Update
         /// Downloads the registry from the GitHub server
         /// </summary>
         /// <returns>Returns it a as a string in JSON form</returns>
+        [Obsolete("Image sort just downloads the latest release from GitHub in the future. \r\n" +
+            "Please use GetLatestReleaseInfo()", true)]
         public static string GetUpdateRegistry()
         {
             // Used to keep the string
