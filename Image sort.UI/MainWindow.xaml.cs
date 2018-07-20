@@ -5,16 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Image_sort.UI.LocalResources.AppResources;
-using Image_sort.UI.LocalResources.ToolTips;
 using System.Diagnostics;
 using MahApps.Metro.Controls.Dialogs;
 
@@ -208,8 +205,7 @@ namespace Image_sort.UI
 #endif
 
             // Timer used to update the loaded image based on the slider value, if that has changed.
-            Timer timer = new Timer
-            {
+            Timer timer = new Timer {
                 Enabled = true,
                 // timer should run every 500 seconds.
                 Interval = 250
@@ -258,7 +254,7 @@ namespace Image_sort.UI
                 FoldersStack.SelectedIndex = FoldersStack.Items.Count - 1;
 
             // Go through the elements, so that collapsed elements can be skipped
-            while (IsAnyFolderVisible && ((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
+            while (IsAnyFolderVisible && ((ListBoxItem) FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
             {
                 // If the selected item is no 0 go up
                 if (FoldersStack.SelectedIndex > 0)
@@ -281,7 +277,7 @@ namespace Image_sort.UI
             else
                 FoldersStack.SelectedIndex = 0;
             // Basically goes through the elements and makes sure the collapsed ones get skipped when navigating
-            while (IsAnyFolderVisible && ((ListBoxItem)FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
+            while (IsAnyFolderVisible && ((ListBoxItem) FoldersStack.SelectedItem).Visibility == Visibility.Collapsed)
             {
                 if (FoldersStack.SelectedIndex < FoldersStack.Items.Count - 1)
                     FoldersStack.SelectedIndex += 1;
@@ -387,8 +383,7 @@ namespace Image_sort.UI
         private async void SelectFolder()
         {
             // Creates a dialog for the folder to sort
-            FolderBrowserDialog folderBrowser = new FolderBrowserDialog()
-            {
+            FolderBrowserDialog folderBrowser = new FolderBrowserDialog() {
                 Description = AppResources.WhichFolderQuestion,
                 ShowNewFolderButton = true
             };
@@ -589,8 +584,7 @@ namespace Image_sort.UI
                         + folderName);
 
                     // Create and add the item to the FoldersStack
-                    ListBoxItem folder = new ListBoxItem()
-                    {
+                    ListBoxItem folder = new ListBoxItem() {
                         Content = folderName,
                     };
 
@@ -626,8 +620,8 @@ namespace Image_sort.UI
                 FileCreationTimeInfo.Text = $"{AppResources.CreatedAt}: {creationTime.ToLongDateString()} {creationTime.ToShortTimeString()}";
                 // Calculates the sizes in MB and KB and rounds them to two digits, before filling in the size.
                 FileSizeInfo.Text = $"{AppResources.Size}: " +
-                    $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / (1024 * 1024), 2)} MB, " +
-                    $"{Math.Round(((double)(new FileInfo(pathToImage)).Length) / 1024, 2)} KB";
+                    $"{Math.Round(((double) (new FileInfo(pathToImage)).Length) / (1024 * 1024), 2)} MB, " +
+                    $"{Math.Round(((double) (new FileInfo(pathToImage)).Length) / 1024, 2)} KB";
 
                 // Fill in the links destination and make it visible
                 OpenInExplorerLink.NavigateUri = new Uri(pathToImage);
@@ -700,8 +694,7 @@ namespace Image_sort.UI
                     {
                         // add it for choice with the content of it's file name
                         ListBoxItem listBoxItem
-                            = new ListBoxItem
-                            {
+                            = new ListBoxItem {
                                 Content = System.IO.Path.GetFileName(folder),
                             };
 
@@ -920,7 +913,7 @@ namespace Image_sort.UI
         /// </summary>
         public async Task LoadImageFromSliderValue()
         {
-            CurrentIndex = (int)ProgressSlider.Value;
+            CurrentIndex = (int) ProgressSlider.Value;
             SkipFileButton.IsEnabled = true;
             // get the next image
             BitmapImage buffer = await folderSelector.GetNextImage();
@@ -995,12 +988,12 @@ namespace Image_sort.UI
             if (FoldersStack.SelectedItem != null)
                 // Makes sure the item on top is selected,
                 // when the currently selected one is not visible.
-                if (((ListBoxItem)FoldersStack.SelectedItem).Visibility != Visibility.Visible)
+                if (((ListBoxItem) FoldersStack.SelectedItem).Visibility != Visibility.Visible)
                 {
                     // Move selection to the second item (first is "..", which will not be focused anyway)
                     FoldersStack.SelectedIndex = 1;
                     // If the item is not visible, move down to the next one visible
-                    if (((ListBoxItem)FoldersStack.SelectedItem).Visibility != Visibility.Visible)
+                    if (((ListBoxItem) FoldersStack.SelectedItem).Visibility != Visibility.Visible)
                         MoveFolderSelectionDown();
                 }
 
@@ -1202,7 +1195,7 @@ namespace Image_sort.UI
             if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, false))
             {
                 // Note that you can have more than one file.
-                string[] folder = (string[])e.Data.GetData(System.Windows.DataFormats.FileDrop);
+                string[] folder = (string[]) e.Data.GetData(System.Windows.DataFormats.FileDrop);
 
                 // Only selects folder, if it exists.
                 if (Directory.Exists(folder[0]))
@@ -1300,7 +1293,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void EnableSearchButton_Click(object sender, RoutedEventArgs e)
         {
-            SearchEnabled = (bool)EnableSearchButton.IsChecked;
+            SearchEnabled = (bool) EnableSearchButton.IsChecked;
         }
 
         ///// <summary>
@@ -1566,8 +1559,7 @@ namespace Image_sort.UI
                             {
                                 // ask the user for consent and save the result.
                                 MessageDialogResult result = await this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
-                                    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings()
-                                    {
+                                    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() {
                                         AffirmativeButtonText = AppResources.Yes,
                                         NegativeButtonText = AppResources.No,
                                         DefaultButtonFocus = MessageDialogResult.Affirmative
@@ -1635,6 +1627,105 @@ namespace Image_sort.UI
                         e.Handled = true;
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Used to initiate drag and drop.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PreviewImage_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            InitializePreviewImageDrag();
+        }
+
+        /// <summary>
+        /// Used to initiate drag and drop.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PreviewImage_TouchDown(object sender, TouchEventArgs e)
+        {
+            InitializePreviewImageDrag();
+        }
+
+        /// <summary>
+        /// Used to initiate drag and drop.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PreviewImage_StylusDown(object sender, StylusDownEventArgs e)
+        {
+            InitializePreviewImageDrag();
+        }
+
+        /// <summary>
+        /// Initializes drag for the preview image.
+        /// </summary>
+        private void InitializePreviewImageDrag()
+        {
+            // Create a new DataObject for dragging and set the Data
+            var dataObj = new System.Windows.DataObject();
+            dataObj.SetImage((BitmapImage) PreviewImage.Source);
+            dataObj.SetFileDropList(
+                new System.Collections.Specialized.StringCollection() { folderSelector.GetImagePath() });
+            DragDrop.DoDragDrop(PreviewImage, dataObj, System.Windows.DragDropEffects.All);
+        }
+
+        /// <summary>
+        /// Selects the hovered over element.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ListBoxItem_DragEnter(object sender, System.Windows.DragEventArgs e)
+        {
+            // only allow for drag and drop when there is t
+            if (e.Data != null && ((System.Windows.DataObject) e.Data).ContainsImage()
+                && ((System.Windows.DataObject) e.Data).ContainsFileDropList())
+            {
+                e.Effects = System.Windows.DragDropEffects.Move;
+                FoldersStack.SelectedIndex = FoldersStack.Items.IndexOf(sender);
+                ((UIElement) sender).AllowDrop = true;
+                return;
+            }
+            ((UIElement) sender).AllowDrop = false;
+        }
+
+        /// <summary>
+        /// Used to move an image into an folder.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void ListBoxItem_Drop(object sender, System.Windows.DragEventArgs e)
+        {
+            if (MoveFolderButton.IsEnabled)
+            {
+                DoMove();
+            }
+        }
+
+        /// <summary>
+        /// Used to disable unwanted drops.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void MetroWindow_DragEnter(object sender, System.Windows.DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(System.Windows.DataFormats.FileDrop, false))
+            {
+                // Note that you can have more than one file. 
+                string[] folder = (string[]) e.Data.GetData(System.Windows.DataFormats.FileDrop);
+
+                // Only allow a folder, if it exists.
+                if (Directory.Exists(folder[0]))
+                {
+                    AllowDrop = true;
+                    return;
+                }
+
+                // If it isn't an folder, then just stop.
+                AllowDrop = false;
             }
         }
         #endregion

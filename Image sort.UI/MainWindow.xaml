@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="680" AllowDrop="True"
         MinWidth="250" MinHeight="250" PreviewKeyDown="MetroWindow_PreviewKeyDown"
-        Drop="Window_Drop" Icon="Image_sort_new.png"
+        Drop="Window_Drop" Icon="Image_sort_new.png" DragEnter="MetroWindow_DragEnter"
         Closing="Window_Closing" Loaded="MetroWindow_Loaded">
     <!--xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"-->
     <Window.CommandBindings>
@@ -58,16 +58,16 @@
                     <TextBlock>
                         <Run Text="{x:Static tooltip:ToolTips.FeedbackToolTip}"/><LineBreak/><LineBreak/>
                         <Run FontWeight="Bold" x:Name="LaunchingInText" Text="{x:Static tooltip:ToolTips.GitHubAccountRequired}"/>
-                        
+
                     </TextBlock>
                 </Button.ToolTip>
             </Button>
         </Controls:WindowCommands>
     </Controls:MetroWindow.RightWindowCommands>
-    
+
     <Grid>
         <!-- START GRID DEFINITIONS -->
-        
+
         <!-- Row Definitions for Layout -->
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -75,15 +75,15 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
-        
+
         <!-- Column Definitions for Layout -->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"  />
             <ColumnDefinition Width="2*"/>
         </Grid.ColumnDefinitions>
-        
+
         <!-- END GRID DEFINITIONS -->
-        
+
         <!-- Tool bar containing all the important things -->
         <ToolBarTray Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <!-- ToolBar containing everything for folder management -->
@@ -132,7 +132,14 @@
         <!-- StackPanel containing all the buttons with the folders to choose -->
         <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Focusable="False"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0"
-                             ScrollViewer.PanningMode="VerticalOnly" KeyDown="FoldersStack_KeyDown" >
+                             ScrollViewer.PanningMode="VerticalOnly" KeyDown="FoldersStack_KeyDown">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="AllowDrop" Value="true" />
+                    <EventSetter Event="DragEnter" Handler="ListBoxItem_DragEnter"/>
+                    <EventSetter Event="Drop" Handler="ListBoxItem_Drop"/>
+                </Style>
+            </ListBox.ItemContainerStyle>
             <!--<i:Interaction.Behaviors>
                 <Behaviors:ScrollIntoViewForListBox />
             </i:Interaction.Behaviors>-->
@@ -150,7 +157,9 @@
 
         <!-- Image loading the image to sort as a preview -->
         <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="3"
-               Grid.Column="1" Margin="0,0,5,0" Focusable="False"></Image>
+               Grid.Column="1" Margin="0,0,5,0" Focusable="False"
+               MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
+               TouchDown="PreviewImage_TouchDown" StylusDown="PreviewImage_StylusDown"></Image>
 
         <Grid Grid.Row="4" Grid.Column="1" Background="#BFFFFFFF">
             <Grid Margin="10">
@@ -183,7 +192,7 @@
                             ToolTip="{x:Static tooltip:ToolTips.ProgressSliderToolTip}"/>
                 </StackPanel>
 
-                <TextBlock Name="ProgressIndicatorText" Margin="10,0,0,0" Grid.Column="1" Grid.Row="1"/>
+                <TextBlock Name="ProgressIndicatorText" Margin="10,0,0,1" Grid.Column="1" Grid.Row="1"/>
             </Grid>
         </Grid>
     </Grid>
