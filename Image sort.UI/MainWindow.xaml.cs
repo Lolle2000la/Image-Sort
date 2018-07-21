@@ -462,7 +462,7 @@ namespace Image_sort.UI
             // If there are folders in the list (meaning in the folder) then do 
             if (folders != null)
             {
-                string folderToEnter = folders[FoldersStack.SelectedIndex];
+                string folderToEnter = Path.GetFullPath(folders[FoldersStack.SelectedIndex]);
                 if (Directory.Exists(folderToEnter))
                 {
                     // Disable all user input to prevent unwanted behavior
@@ -677,7 +677,11 @@ namespace Image_sort.UI
                 folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath())
                                    .ToList();
 
-                folders.Insert(0, folderSelector.GetCurrentFolderPath() + @"\..");
+                // only add the .. when there is another parent folder.
+                if (Path.GetPathRoot(folderSelector.GetCurrentFolderPath()) != folderSelector.GetCurrentFolderPath())
+                {
+                    folders.Insert(0, folderSelector.GetCurrentFolderPath() + @"\..");
+                }
 
                 //ListBoxItem folderUpwards = new ListBoxItem()
                 //{
@@ -1439,8 +1443,13 @@ namespace Image_sort.UI
         {
             if (IsAnyFolderVisible)
             {
-                FoldersStack.SelectedIndex = 0;
-                EnterFolder();
+                // only go upwards when there is another parent folder.
+                if (Path.GetPathRoot(folderSelector.GetCurrentFolderPath()) != folderSelector.GetCurrentFolderPath())
+                {
+                    // select the top folder (..) and enter it, results in an upwards traversal in folders.
+                    FoldersStack.SelectedIndex = 0;
+                    EnterFolder();
+                }
             }
         }
 
