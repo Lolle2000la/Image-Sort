@@ -1595,7 +1595,7 @@ namespace Image_sort.UI
                                         await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.RateLimitExceeded,
                                             AppResources.RateLimitExceededMessage.Replace("{TIME}", output.ReadLine())));
                                 }
-                                // Tell the user that an error occured.
+                                // Tell the user that an error occured, if it occured.
                                 else if (line == UpdaterConstants.Error)
                                 {
                                     await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.UpdaterErrorOccured,
