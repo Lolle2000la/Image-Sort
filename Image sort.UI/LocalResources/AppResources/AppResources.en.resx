@@ -205,6 +205,13 @@ Please wait till {TIME} for your rate limit to reset.</value>
 * This will close all open instances "Image sort". Please finish all tasks beforehand.</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
+  <data name="UpdaterErrorOccured" xml:space="preserve">
+    <value>An error occured</value>
+  </data>
+  <data name="UpdaterErrorOccuredMessage" xml:space="preserve">
+    <value>An error occured.
+Message or status code:</value>
+  </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Which folder needs sorting?</value>
     <comment>Folder selection</comment>

@@ -205,6 +205,13 @@ Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
 * Dies wird alle offenen Fenster von "Image sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
+  <data name="UpdaterErrorOccured" xml:space="preserve">
+    <value>Ein Fehler ist aufgetreten</value>
+  </data>
+  <data name="UpdaterErrorOccuredMessage" xml:space="preserve">
+    <value>Ein Fehler ist aufgetreten.
+Nachricht oder Status Code:</value>
+  </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Welcher Ordner benötigt eine Sortierung?</value>
     <comment>Folder selection</comment>

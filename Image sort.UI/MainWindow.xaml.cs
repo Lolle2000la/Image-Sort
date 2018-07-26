@@ -1593,7 +1593,13 @@ namespace Image_sort.UI
                                 {
                                     if (output.ReadLine() == UpdaterConstants.ResetsOnTime)
                                         await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.RateLimitExceeded,
-                                            AppResources.RateLimitExceededMessage.Replace ("{TIME}", output.ReadLine())));
+                                            AppResources.RateLimitExceededMessage.Replace("{TIME}", output.ReadLine())));
+                                }
+                                // Tell the user that an error occured.
+                                else if (line == UpdaterConstants.Error)
+                                {
+                                    await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.UpdaterErrorOccured,
+                                            $"{AppResources.UpdaterErrorOccuredMessage} {output.ReadLine()}"));
                                 }
                             }
                         }

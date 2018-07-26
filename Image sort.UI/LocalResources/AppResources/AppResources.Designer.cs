@@ -266,6 +266,25 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to An error occured.
+        /// </summary>
+        public static string UpdaterErrorOccured {
+            get {
+                return ResourceManager.GetString("UpdaterErrorOccured", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to An error occured.
+        ///Message or status code:.
+        /// </summary>
+        public static string UpdaterErrorOccuredMessage {
+            get {
+                return ResourceManager.GetString("UpdaterErrorOccuredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Which folder needs sorting?.
         /// </summary>
         public static string WhichFolderQuestion {
