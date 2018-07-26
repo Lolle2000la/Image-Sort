@@ -41,11 +41,13 @@ namespace Image_sort.Update
             var ghub = new GitHubClient(new ProductHeaderValue("Image-sort"));
             string latestVersion = "";
             Release release = null;
+            // try getting the latest release and version from GitHub
             try
             {
                 release = ghub.Repository.Release.GetLatest("Lolle2000la", "Image-Sort").Result;
                 latestVersion = release.TagName;
             }
+            // GitHub imposes and rate limit on api requests.
             catch (RateLimitExceededException ex)
             {
                 // Notify the accessing app of the reached rate limit and when it's going to reset.
@@ -103,6 +105,7 @@ namespace Image_sort.Update
                                 checkForRunningInstances = false;
                             }
 
+                            // wait for a bit till the next check to reduce CPU load.
                             Task.Delay(2000);
                         }
                     }
