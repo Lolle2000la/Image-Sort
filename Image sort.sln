@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.UI.Dialogs", "Im
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "Image sort.uwp", "Image sort.uwp\Image sort.uwp.wapproj", "{194CEC44-DFFC-474D-8729-45B684DCD1D0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Image sort.Communication", "Image sort.Communication\Image sort.Communication.csproj", "{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -148,6 +150,24 @@ Global
 		{194CEC44-DFFC-474D-8729-45B684DCD1D0}.UWP|x86.ActiveCfg = UWP|x86
 		{194CEC44-DFFC-474D-8729-45B684DCD1D0}.UWP|x86.Build.0 = UWP|x86
 		{194CEC44-DFFC-474D-8729-45B684DCD1D0}.UWP|x86.Deploy.0 = UWP|x86
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|x64.Build.0 = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Debug|x86.Build.0 = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|x64.ActiveCfg = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|x64.Build.0 = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|x86.ActiveCfg = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.Release|x86.Build.0 = Release|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|Any CPU.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|Any CPU.Build.0 = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|x64.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|x64.Build.0 = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|x86.ActiveCfg = Debug|Any CPU
+		{A753ABEC-7E6B-4CF5-BAE3-FB53FCAD2195}.UWP|x86.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

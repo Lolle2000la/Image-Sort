@@ -75,6 +75,10 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Reactive, Version=4.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.4.0.0\lib\net46\System.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net462\System.Windows.Interactivity.dll</HintPath>
@@ -235,6 +239,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Image sort.Communication\Image sort.Communication.csproj">
+      <Project>{a753abec-7e6b-4cf5-bae3-fb53fcad2195}</Project>
+      <Name>Image sort.Communication</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Image sort.Logic\Image sort.Logic.csproj">
       <Project>{09d2909f-a180-453e-b278-85d0a0bd02dd}</Project>
       <Name>Image sort.Logic</Name>

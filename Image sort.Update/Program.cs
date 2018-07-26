@@ -1,5 +1,7 @@
-﻿using Image_sort.Update.GitHub;
+﻿using Image_sort.Communication;
+using Image_sort.Update.GitHub;
 using Newtonsoft.Json;
+using Octokit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -17,14 +19,13 @@ namespace Image_sort.Update
 {
     class Program
     {
-
         /// <summary>
         /// Main method of the app, everything is in here
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-#if (!DEBUG)
+#if (!DEBUG || DEBUG_UPDATER)
             // If the updater is already open once, don't open another instance/
             // close this one right after start.
             if (Process.GetProcessesByName("Image sort.Update").Count() > 1)
@@ -36,71 +37,143 @@ namespace Image_sort.Update
             // Loads update registry from GitHub
             //string json = GetUpdateRegistry();
 
-            // Get the latest release of image sort on GitHub.
-            GithubRelease latestRelease = GetLatestReleaseInfo();
+            // Use the GitHub Api to get the latest release
+            var ghub = new GitHubClient(new ProductHeaderValue("Image-sort"));
+            string latestVersion = "";
+            Release release = null;
+            try
+            {
+                release = ghub.Repository.Release.GetLatest("Lolle2000la", "Image-Sort").Result;
+                latestVersion = release.TagName;
+            }
+            catch (RateLimitExceededException ex)
+            {
+                // Notify the accessing app of the reached rate limit and when it's going to reset.
+                Console.WriteLine(UpdaterConstants.RateLimitReached);
+                Console.WriteLine(UpdaterConstants.ResetsOnTime);
+                Console.WriteLine(ex.Reset.UtcDateTime);
+            }
+            // when that doesn't work, tell the main app.
+            catch (ApiException ex)
+            {
+                Console.WriteLine(UpdaterConstants.Error);
+                Console.WriteLine(ex.StatusCode);
+            }
+
+            //// Get the latest release of image sort on GitHub.
+            //GithubRelease latestRelease = GetLatestReleaseInfo();
 
             // Checks if something was given back
-            if (latestRelease != null)
+            if (release != null)
             {
                 // Serializes the UpdateRegistry from json
                 //UpdateRegModel updateReg = JsonConvert.DeserializeObject<UpdateRegModel>(json);
 
                 // makes sure the latest release isn't a prerelease.
-                if (!latestRelease.prerelease)
+                if (!release.Prerelease)
                 {
-                    // Get the version of Image sort.UI
-                    Version version = System.Reflection.Assembly.LoadFile($"{AppDomain.CurrentDomain.BaseDirectory}\\Image sort.UI.exe")
-                        .GetName().Version;
                     // if the version given is different, download and run the newest update
-                    if (latestRelease.tag_name.Substring(1) != $"{version.Major}.{version.Minor}.{version.Build}" /*Properties.Resources.version*/)
+                    if (IsVersionNew(release))
                     {
-                        // If the process isn't elevated, ask if update
-                        if (!IsElevated)
+                        InitUpdating(release);
+                    }
+                    // if thats not the case subscribe to the latest release, to check for updates.
+                    else
+                    {
+                        // create a new object for handling releases.
+                        var observableReleases = new Octokit.Reactive.ObservableReleasesClient(ghub);
+                        // keeps track of whether the running instances should be looked after.
+                        bool checkForRunningInstances = true;
+                        // subscribe to the latest release
+                        observableReleases.GetLatest("Lolle2000la", "Image-Sort").Subscribe((newRelease) =>
                         {
-                            // asks the parent process for user consent
-                            Console.WriteLine("user_consent");
-                            // asks if consent is given (yes the true : false is for performance optimization)
-                            bool consentGiven = (Console.ReadLine() == "yes") ? true : false;
-
-                            /* System.Windows.Forms.MessageBox.Show(
-                            Resources.AppResources.UpdateConsentQuestion,
-                                    "Image sort - " + Resources.AppResources.UpdateAvailable, System.Windows.Forms.MessageBoxButtons.YesNo,
-                                System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes*/
-
-                            // if consent was given, then elavate the process and start it.
-                            if (consentGiven)
+                            // check if the latest release is not a prerelease and a new version.
+                            if (!newRelease.Prerelease && IsVersionNew(newRelease))
                             {
-                                // Elevate process
-                                ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
-                                    @"Image sort.Update.exe") {
-                                    UseShellExecute = true,
-                                    Verb = "runas"
-                                };
-                                Process.Start(info);
+                                checkForRunningInstances = false;
+                                InitUpdating(newRelease);
                             }
-                        }
-                        /*
-                         * for archival reasons.
-                         *  if (System.Windows.Forms.MessageBox.Show(Resources.AppResources.ContinueConsentQuestion,
-                            Resources.AppResources.ContinueQuestion, System.Windows.Forms.MessageBoxButtons.YesNoCancel,
-                            System.Windows.Forms.MessageBoxIcon.Question, System.Windows.Forms.MessageBoxDefaultButton.Button3)
-                                == System.Windows.Forms.DialogResult.Yes)
-                         */
-                        // If it is, download and run the installer
-                        else
+                        });
+                        // check the whole time if any instance of Image sort is still running.
+                        while (checkForRunningInstances)
                         {
-                            // set the url depending on if one of them is set
-                            string url = latestRelease.assets[0].browser_download_url;
+                            if (Process.GetProcessesByName("Image sort.UI").Length == 0)
+                            {
+                                // if not end the loop.
+                                checkForRunningInstances = false;
+                            }
 
-                            // Check if the url even exists.
-                            if (url != "")
-                                // Download and install the installer
-                                DownloadAndRunInstaller(url);
+                            Task.Delay(2000);
                         }
                     }
                 }
             }
 #endif
+        }
+
+        /// <summary>
+        /// Get if the given <see cref="Release"/> contains a new version.
+        /// </summary>
+        /// <param name="release">The release to be checked.</param>
+        /// <returns>Whether the latest release is new.</returns>
+        private static bool IsVersionNew(Release release)
+        {
+            // Get the version of Image sort.UI
+            Version version = System.Reflection.Assembly.LoadFile($"{AppDomain.CurrentDomain.BaseDirectory}\\Image sort.UI.exe")
+                .GetName().Version;
+            return release.TagName.Substring(1) != $"{version.Major}.{version.Minor}.{version.Build}";
+        }
+
+        /// <summary>
+        /// Inits the updating process, aks the accessing app for consent first.
+        /// </summary>
+        /// <param name="release">The release with which updating should get initialised.</param>
+        private static void InitUpdating(Release release)
+        {
+            // If the process isn't elevated, ask if update
+            if (!IsElevated)
+            {
+                // asks the parent process for user consent
+                Console.WriteLine(UpdaterConstants.UserConsent);
+                // asks if consent is given (yes the true : false is for performance optimization)
+                bool consentGiven = (Console.ReadLine() == UpdaterConstants.Positive) ? true : false;
+
+                // if consent was given, then elavate the process and start it.
+                if (consentGiven)
+                {
+                    // Elevate process
+                    ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
+                        @"Image sort.Update.exe") {
+                        UseShellExecute = true,
+                        Verb = "runas"
+                    };
+                    Process.Start(info);
+                }
+                else
+                {
+                    Environment.Exit(0);
+                }
+            }
+            // If it is, download and run the installer
+            else
+            {
+                // set the url depending on if one of them is set
+                string url = "";
+
+                // Get the asset, that is an installer.
+                foreach (var asset in release.Assets)
+                {
+                    if (asset.Name.EndsWith(".msi"))
+                    {
+                        url = asset.BrowserDownloadUrl;
+                    }
+                }
+
+                // Check if the url even exists.
+                if (url != "")
+                    // Download and install the installer
+                    DownloadAndRunInstaller(url);
+            }
         }
 
         /// <summary>
@@ -170,9 +243,11 @@ namespace Image_sort.Update
                 }
             }
             // If an error occurs
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Well, nothing should happen now. Nothing here!
+                // Notify the calling app of the error.
+                Console.WriteLine(UpdaterConstants.Error);
+                Console.WriteLine(ex.Message);
             }
 
             // Downloads the installer

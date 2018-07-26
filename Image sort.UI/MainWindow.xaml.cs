@@ -1546,47 +1546,51 @@ namespace Image_sort.UI
 #if !DEBUG_HELP
             }
 #endif
+
             // get the updater process from the App class.
-            Process proc = App.updaterProcess;
+            await Task.Run(async () =>
+            {
+                Process proc = App.updaterProcess;
 
-            // if the process has been started, then...
-            if (proc != null && proc.Start())
-                // use its standard output
-                using (StreamReader output = proc.StandardOutput)
-                {
-                    // and stardard input
-                    using (StreamWriter input = proc.StandardInput)
+                // if the process has been started, then...
+                if (proc != null && proc.Start())
+                    // use its standard output
+                    using (StreamReader output = proc.StandardOutput)
                     {
-                        // and read the output till the end.
-                        while (!output.EndOfStream)
+                        // and stardard input
+                        using (StreamWriter input = proc.StandardInput)
                         {
-                            // get the last line from the stream.
-                            string line = output.ReadLine();
-
-                            // and if the updater asks for user consent, then
-                            if (line == "user_consent")
+                            // and read the output till the end.
+                            while (!output.EndOfStream)
                             {
-                                // ask the user for consent and save the result.
-                                MessageDialogResult result = await this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
-                                    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() {
-                                        AffirmativeButtonText = AppResources.Yes,
-                                        NegativeButtonText = AppResources.No,
-                                        DefaultButtonFocus = MessageDialogResult.Affirmative
-                                    });
+                                // get the last line from the stream.
+                                string line = output.ReadLine();
 
-                                // tell the updater whether consent was given or not
-                                if (result == MessageDialogResult.Affirmative)
+                                // and if the updater asks for user consent, then
+                                if (line == "user_consent")
                                 {
-                                    input.WriteLine("yes");
-                                }
-                                else
-                                {
-                                    input.WriteLine("no");
+                                    // ask the user for consent and save the result.
+                                    MessageDialogResult result = await Dispatcher.Invoke(() => this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
+                                        MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() {
+                                            AffirmativeButtonText = AppResources.Yes,
+                                            NegativeButtonText = AppResources.No,
+                                            DefaultButtonFocus = MessageDialogResult.Affirmative
+                                        }));
+
+                                    // tell the updater whether consent was given or not
+                                    if (result == MessageDialogResult.Affirmative)
+                                    {
+                                        input.WriteLine("yes");
+                                    }
+                                    else
+                                    {
+                                        input.WriteLine("no");
+                                    }
                                 }
                             }
                         }
                     }
-                }
+            });
         }
 
         /// <summary>
