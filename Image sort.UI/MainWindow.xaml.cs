@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using Image_sort.UI.LocalResources.AppResources;
 using System.Diagnostics;
 using MahApps.Metro.Controls.Dialogs;
+using Image_sort.Communication;
 
 namespace Image_sort.UI
 {
@@ -1567,7 +1568,7 @@ namespace Image_sort.UI
                                 string line = output.ReadLine();
 
                                 // and if the updater asks for user consent, then
-                                if (line == "user_consent")
+                                if (line == UpdaterConstants.UserConsent)
                                 {
                                     // ask the user for consent and save the result.
                                     MessageDialogResult result = await Dispatcher.Invoke(() => this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
@@ -1580,12 +1581,19 @@ namespace Image_sort.UI
                                     // tell the updater whether consent was given or not
                                     if (result == MessageDialogResult.Affirmative)
                                     {
-                                        input.WriteLine("yes");
+                                        input.WriteLine(UpdaterConstants.Positive);
                                     }
                                     else
                                     {
-                                        input.WriteLine("no");
+                                        input.WriteLine(UpdaterConstants.Negative);
                                     }
+                                }
+                                // Tell the user, that he has exceeded his rate limit.
+                                else if (line == UpdaterConstants.RateLimitReached)
+                                {
+                                    if (output.ReadLine() == UpdaterConstants.ResetsOnTime)
+                                        await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.RateLimitExceeded,
+                                            AppResources.RateLimitExceededMessage.Replace ("{TIME}", output.ReadLine())));
                                 }
                             }
                         }

@@ -200,6 +200,25 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Rate limit exceeded..
+        /// </summary>
+        public static string RateLimitExceeded {
+            get {
+                return ResourceManager.GetString("RateLimitExceeded", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to You have exceeded your GitHub rate limit. You can only update, when your rate limit is not exceeded.
+        ///Please wait till {TIME} for your rate limit to reset..
+        /// </summary>
+        public static string RateLimitExceededMessage {
+            get {
+                return ResourceManager.GetString("RateLimitExceededMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Search.
         /// </summary>
         public static string Search {

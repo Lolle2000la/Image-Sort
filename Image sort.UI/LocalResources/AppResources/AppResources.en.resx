@@ -176,6 +176,13 @@
     <value>Progress</value>
     <comment>File info</comment>
   </data>
+  <data name="RateLimitExceeded" xml:space="preserve">
+    <value>Rate limit exceeded.</value>
+  </data>
+  <data name="RateLimitExceededMessage" xml:space="preserve">
+    <value>You have exceeded your GitHub rate limit. You can only update, when your rate limit is not exceeded.
+Please wait till {TIME} for your rate limit to reset.</value>
+  </data>
   <data name="Search" xml:space="preserve">
     <value>Search</value>
     <comment>Folder filtering</comment>

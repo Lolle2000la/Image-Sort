@@ -176,6 +176,13 @@
     <value>Fortschritt</value>
     <comment>File info</comment>
   </data>
+  <data name="RateLimitExceeded" xml:space="preserve">
+    <value>Rate limit exceeded.</value>
+  </data>
+  <data name="RateLimitExceededMessage" xml:space="preserve">
+    <value>Sie habe ihr GitHub Anfagen Limit überschritten. Sie können nur updaten, wenn Ihr rate limit nicht überschritten ist.
+Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
+  </data>
   <data name="Search" xml:space="preserve">
     <value>Suche</value>
     <comment>Folder filtering</comment>
