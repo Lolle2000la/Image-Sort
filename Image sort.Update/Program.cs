@@ -136,6 +136,7 @@ namespace Image_sort.Update
             // If the process isn't elevated, ask if update
             if (!IsElevated)
             {
+                string version = release.TagName;
                 string releaseBody = release.Body;
                 if (releaseBody != null)
                 {
@@ -147,6 +148,15 @@ namespace Image_sort.Update
 
                     // Signal that the transmission ends.
                     Console.WriteLine(UpdaterConstants.StopTransmittingChangelog);
+                }
+
+                if (version != null)
+                {
+                    // Signal the main app that the version is going to be transmitted.
+                    Console.WriteLine(UpdaterConstants.UpdateVersion);
+
+                    // Send the version.
+                    Console.WriteLine(version);
                 }
 
                 // asks the parent process for user consent

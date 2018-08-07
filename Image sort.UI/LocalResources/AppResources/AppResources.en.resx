@@ -223,4 +223,7 @@ Message or status code:</value>
   <data name="UpdateWhatsNew" xml:space="preserve">
     <value>What's new in this version?</value>
   </data>
+  <data name="UpdateVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
 </root>

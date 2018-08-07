@@ -48,5 +48,9 @@ namespace Image_sort.Communication
         /// Signals that no more changelog content is going to be transmitted.
         /// </summary>
         public const string StopTransmittingChangelog = "stop_changelog_transmission";
+        /// <summary>
+        /// Signals that the new version number of the update is outputted in the next line.
+        /// </summary>
+        public const string UpdateVersion = "new_update_version";
     }
 }

@@ -1563,6 +1563,7 @@ namespace Image_sort.UI
                         using (StreamWriter input = proc.StandardInput)
                         {
                             string changelog = "";
+                            string version = "unknown";
 
                             // and read the output till the end.
                             while (!output.EndOfStream)
@@ -1578,6 +1579,7 @@ namespace Image_sort.UI
                                         // Create a new UpdateDialog to ask for user consent.
                                         var dlg = new UpdateDialog() {
                                             ChangelogMarkdown = changelog,
+                                            Version = version,
                                             Title = AppResources.UpdateConsentQuestion
                                         };
                                         // When the negative Button was clicked, then hide the metro dialog.
@@ -1611,16 +1613,26 @@ namespace Image_sort.UI
                                         await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.RateLimitExceeded,
                                             AppResources.RateLimitExceededMessage.Replace("{TIME}", output.ReadLine())));
                                 }
+                                // Get the Changelog from the updater
                                 else if (line == UpdaterConstants.StartTransmittingChangelog)
                                 {
                                     StringBuilder sb = new StringBuilder();
+                                    // Read the first line
                                     string newLine = output.ReadLine();
+                                    // while there is still a transmission, read the contents and
+                                    // add them to the changelog
                                     while (newLine != UpdaterConstants.StopTransmittingChangelog)
                                     {
                                         sb.AppendLine(newLine);
                                         newLine = output.ReadLine();
                                     }
+                                    // build the changelog and save it for later use.
                                     changelog = sb.ToString();
+                                }
+                                // if the version is going to be set, then read it.
+                                else if (line == UpdaterConstants.UpdateVersion)
+                                {
+                                    version = output.ReadLine();
                                 }
                                 // Tell the user that an error occured, if it occured.
                                 else if (line == UpdaterConstants.Error)

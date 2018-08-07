@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Image_sort.Communication;
+using Image_sort.UI.LocalResources.AppResources;
 using MahApps.Metro.Controls.Dialogs;
 
 namespace Image_sort.UI
@@ -34,6 +36,18 @@ namespace Image_sort.UI
             set
             {
                 ChangelogViewer.Markdown = value;
+            }
+        }
+
+        /// <summary>
+        /// Sets the version of the update to be shown to the user.
+        /// </summary>
+        public string Version
+        {
+            set
+            {
+                VersionText.Text = $"{AppResources.UpdateVersion}: {value}";
+                VersionText.Visibility = Visibility.Visible;
             }
         }
     }

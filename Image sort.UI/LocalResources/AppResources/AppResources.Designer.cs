@@ -283,6 +283,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Version.
+        /// </summary>
+        public static string UpdateVersion {
+            get {
+                return ResourceManager.GetString("UpdateVersion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to What&apos;s new in this version?.
         /// </summary>
         public static string UpdateWhatsNew {
