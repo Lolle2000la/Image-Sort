@@ -1621,17 +1621,18 @@ namespace Image_sort.UI
         }
 
         /// <summary>
-        /// Used, when the <see cref="FeedbackButton"/> was clicked. Opens GitHub page.
+        /// Used, when the <see cref="FeedbackButton"/> was clicked. Opens Google Forms page.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void FeedbackButton_Click(object sender, RoutedEventArgs e)
         {
-#if (!IS_UWP)
-            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues/new");
-#else
-            System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
-#endif
+            //#if (!IS_UWP)
+            //            System.Diagnostics.Process.Start("https://github.com/Lolle2000la/Image-Sort/issues/new");
+            //#else
+            //            System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
+            //#endif
+            Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform?usp=sf_link");
         }
 
         /// <summary>

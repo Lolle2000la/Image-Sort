@@ -56,9 +56,7 @@
             <Button Content="{x:Static res:AppResources.Feedback}" x:Name="FeedbackButton" Click="FeedbackButton_Click">
                 <Button.ToolTip>
                     <TextBlock>
-                        <Run Text="{x:Static tooltip:ToolTips.FeedbackToolTip}"/><LineBreak/><LineBreak/>
-                        <Run FontWeight="Bold" x:Name="LaunchingInText" Text="{x:Static tooltip:ToolTips.GitHubAccountRequired}"/>
-
+                        <Run Text="{x:Static tooltip:ToolTips.FeedbackToolTip}"/>
                     </TextBlock>
                 </Button.ToolTip>
             </Button>

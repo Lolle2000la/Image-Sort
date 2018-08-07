@@ -123,9 +123,8 @@
 Schnellzugriff: Enter</value>
   </data>
   <data name="FeedbackToolTip" xml:space="preserve">
-    <value>Öffnet die GitHub issues Seite.
-Dort kannst man ein Issue posten und somit Feedback geben.
-Dein Feedback wird gehört und angenommen!</value>
+    <value>Öffnet die Feeback Seite im Web Browser.
+Ihr Feedback wird gehört und angenommen.</value>
     <comment>Used for the Feedback button</comment>
   </data>
   <data name="GitHubAccountRequired" xml:space="preserve">

@@ -123,8 +123,7 @@
 Shortcut: Enter</value>
   </data>
   <data name="FeedbackToolTip" xml:space="preserve">
-    <value>Opens the github issues page.
-There you can file an issue and give your feedback.
+    <value>Opens the Feedback page in the web browser.
 Your feedback will be heard!</value>
     <comment>Used for the Feedback button</comment>
   </data>

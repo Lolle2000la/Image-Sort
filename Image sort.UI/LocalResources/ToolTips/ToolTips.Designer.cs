@@ -72,8 +72,7 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens the github issues page.
-        ///There you can file an issue and give your feedback.
+        ///   Looks up a localized string similar to Opens the Feedback page in the web browser.
         ///Your feedback will be heard!.
         /// </summary>
         public static string FeedbackToolTip {
