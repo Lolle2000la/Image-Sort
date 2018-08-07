@@ -200,9 +200,7 @@ Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
     <comment>Image management</comment>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>Eine neue Version von Image sort ist verfügbar. Wollen sie auf die neue Version updaten?
-
-* Dies wird alle offenen Fenster von "Image sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
+    <value>Eine neue Version von Image sort ist verfügbar. Wollen sie auf die neue Version updaten?</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdaterErrorOccured" xml:space="preserve">
@@ -212,11 +210,17 @@ Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
     <value>Ein Fehler ist aufgetreten.
 Nachricht oder Status Code:</value>
   </data>
+  <data name="UpdateWillCloseAppMessage" xml:space="preserve">
+    <value>Dies wird alle offenen Fenster von "Image sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
+  </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Welcher Ordner benötigt eine Sortierung?</value>
     <comment>Folder selection</comment>
   </data>
   <data name="Yes" xml:space="preserve">
     <value>Ja</value>
+  </data>
+  <data name="UpdateWhatsNew" xml:space="preserve">
+    <value>Was ist neu in dieser Version? (Englisch)</value>
   </data>
 </root>

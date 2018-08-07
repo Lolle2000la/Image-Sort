@@ -40,5 +40,13 @@ namespace Image_sort.Communication
         /// Signals that something is not (supposed) to happen.
         /// </summary>
         public const string Negative = "no";
+        /// <summary>
+        /// Signals that the changelog is going to be transmitted following this line.
+        /// </summary>
+        public const string StartTransmittingChangelog = "start_changelog_transmission";
+        /// <summary>
+        /// Signals that no more changelog content is going to be transmitted.
+        /// </summary>
+        public const string StopTransmittingChangelog = "stop_changelog_transmission";
     }
 }

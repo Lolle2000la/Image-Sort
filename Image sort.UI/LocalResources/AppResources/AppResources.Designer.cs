@@ -255,9 +255,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?
-        ///
-        ///* This will close all open instances &quot;Image sort&quot;. Please finish all tasks beforehand..
+        ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?.
         /// </summary>
         public static string UpdateConsentQuestion {
             get {
@@ -281,6 +279,24 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string UpdaterErrorOccuredMessage {
             get {
                 return ResourceManager.GetString("UpdaterErrorOccuredMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What&apos;s new in this version?.
+        /// </summary>
+        public static string UpdateWhatsNew {
+            get {
+                return ResourceManager.GetString("UpdateWhatsNew", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This will close all open instances of &quot;Image sort&quot;. Please finish all tasks beforehand..
+        /// </summary>
+        public static string UpdateWillCloseAppMessage {
+            get {
+                return ResourceManager.GetString("UpdateWillCloseAppMessage", resourceCulture);
             }
         }
         

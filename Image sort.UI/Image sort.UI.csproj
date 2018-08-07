@@ -147,6 +147,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ToolTips.resx</DependentUpon>
     </Compile>
+    <Page Include="UpdateDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\HelpWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -157,6 +160,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="UpdateDialog.xaml.cs">
+      <DependentUpon>UpdateDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\HelpWindow.xaml.cs">
       <DependentUpon>HelpWindow.xaml</DependentUpon>

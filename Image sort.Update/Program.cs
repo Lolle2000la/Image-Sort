@@ -106,7 +106,7 @@ namespace Image_sort.Update
                             }
 
                             // wait for a bit till the next check to reduce CPU load.
-                            Task.Delay(2000);
+                            Task.Delay(5000).Wait();
                         }
                     }
                 }
@@ -136,6 +136,19 @@ namespace Image_sort.Update
             // If the process isn't elevated, ask if update
             if (!IsElevated)
             {
+                string releaseBody = release.Body;
+                if (releaseBody != null)
+                {
+                    // Signal that the changelog is going to be transmitted.
+                    Console.WriteLine(UpdaterConstants.StartTransmittingChangelog);
+
+                    // Transmit the actual changelog.
+                    Console.WriteLine(releaseBody);
+
+                    // Signal that the transmission ends.
+                    Console.WriteLine(UpdaterConstants.StopTransmittingChangelog);
+                }
+
                 // asks the parent process for user consent
                 Console.WriteLine(UpdaterConstants.UserConsent);
                 // asks if consent is given (yes the true : false is for performance optimization)

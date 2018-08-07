@@ -15,6 +15,7 @@ using Image_sort.UI.LocalResources.AppResources;
 using System.Diagnostics;
 using MahApps.Metro.Controls.Dialogs;
 using Image_sort.Communication;
+using System.Text;
 
 namespace Image_sort.UI
 {
@@ -1561,6 +1562,8 @@ namespace Image_sort.UI
                         // and stardard input
                         using (StreamWriter input = proc.StandardInput)
                         {
+                            string changelog = "";
+
                             // and read the output till the end.
                             while (!output.EndOfStream)
                             {
@@ -1570,23 +1573,36 @@ namespace Image_sort.UI
                                 // and if the updater asks for user consent, then
                                 if (line == UpdaterConstants.UserConsent)
                                 {
-                                    // ask the user for consent and save the result.
-                                    MessageDialogResult result = await Dispatcher.Invoke(() => this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
-                                        MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() {
-                                            AffirmativeButtonText = AppResources.Yes,
-                                            NegativeButtonText = AppResources.No,
-                                            DefaultButtonFocus = MessageDialogResult.Affirmative
-                                        }));
+                                    await Dispatcher.InvokeAsync(async () =>
+                                    {
+                                        // Create a new UpdateDialog to ask for user consent.
+                                        var dlg = new UpdateDialog() {
+                                            ChangelogMarkdown = changelog,
+                                            Title = AppResources.UpdateConsentQuestion
+                                        };
+                                        // When the negative Button was clicked, then hide the metro dialog.
+                                        dlg.NegativeButton.Click += (s, e1) =>
+                                        {
+                                            this.HideMetroDialogAsync(dlg);
+                                            input.WriteLine(UpdaterConstants.Negative);
+                                        };
+                                        // When the positive button was clicked, then consent was given.
+                                        dlg.PositiveButton.Click += (s, e1) =>
+                                        {
+                                            this.HideMetroDialogAsync(dlg);
+                                            input.WriteLine(UpdaterConstants.Positive);
+                                        };
+                                        // show the dialog.
+                                        await this.ShowMetroDialogAsync(dlg);
+                                    });
 
-                                    // tell the updater whether consent was given or not
-                                    if (result == MessageDialogResult.Affirmative)
-                                    {
-                                        input.WriteLine(UpdaterConstants.Positive);
-                                    }
-                                    else
-                                    {
-                                        input.WriteLine(UpdaterConstants.Negative);
-                                    }
+                                    //// ask the user for consent and save the result.
+                                    //MessageDialogResult result = await Dispatcher.Invoke(() => this.ShowMessageAsync("Update", AppResources.UpdateConsentQuestion,
+                                    //    MessageDialogStyle.AffirmativeAndNegative, new MetroDialogSettings() {
+                                    //        AffirmativeButtonText = AppResources.Yes,
+                                    //        NegativeButtonText = AppResources.No,
+                                    //        DefaultButtonFocus = MessageDialogResult.Affirmative
+                                    //    }));
                                 }
                                 // Tell the user, that he has exceeded his rate limit.
                                 else if (line == UpdaterConstants.RateLimitReached)
@@ -1594,6 +1610,17 @@ namespace Image_sort.UI
                                     if (output.ReadLine() == UpdaterConstants.ResetsOnTime)
                                         await Dispatcher.Invoke(() => this.ShowMessageAsync(AppResources.RateLimitExceeded,
                                             AppResources.RateLimitExceededMessage.Replace("{TIME}", output.ReadLine())));
+                                }
+                                else if (line == UpdaterConstants.StartTransmittingChangelog)
+                                {
+                                    StringBuilder sb = new StringBuilder();
+                                    string newLine = output.ReadLine();
+                                    while (newLine != UpdaterConstants.StopTransmittingChangelog)
+                                    {
+                                        sb.AppendLine(newLine);
+                                        newLine = output.ReadLine();
+                                    }
+                                    changelog = sb.ToString();
                                 }
                                 // Tell the user that an error occured, if it occured.
                                 else if (line == UpdaterConstants.Error)

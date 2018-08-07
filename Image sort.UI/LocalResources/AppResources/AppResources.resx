@@ -200,9 +200,7 @@ Please wait till {TIME} for your rate limit to reset.</value>
     <comment>Image management</comment>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>A new version of Image sort is available. Do you want to update?
-
-* This will close all open instances "Image sort". Please finish all tasks beforehand.</value>
+    <value>A new version of Image sort is available. Do you want to update?</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdaterErrorOccured" xml:space="preserve">
@@ -212,11 +210,17 @@ Please wait till {TIME} for your rate limit to reset.</value>
     <value>An error occured.
 Message or status code:</value>
   </data>
+  <data name="UpdateWillCloseAppMessage" xml:space="preserve">
+    <value>This will close all open instances of "Image sort". Please finish all tasks beforehand.</value>
+  </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Which folder needs sorting?</value>
     <comment>Folder selection</comment>
   </data>
   <data name="Yes" xml:space="preserve">
     <value>Yes</value>
+  </data>
+  <data name="UpdateWhatsNew" xml:space="preserve">
+    <value>What's new in this version?</value>
   </data>
 </root>
