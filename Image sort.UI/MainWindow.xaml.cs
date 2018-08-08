@@ -202,10 +202,6 @@ namespace Image_sort.UI
             // Fill in the requiered instance, needed for event bubbling.
             FoldersStack.MainWindowParent = this;
 
-#if IS_UWP
-            LaunchingInText.Text = ToolTips.LaunchesWindowsStore;
-#endif
-
             // Timer used to update the loaded image based on the slider value, if that has changed.
             Timer timer = new Timer {
                 Enabled = true,
