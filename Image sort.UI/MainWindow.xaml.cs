@@ -1566,6 +1566,11 @@ namespace Image_sort.UI
                 helpWindow.Hide();
         }
 
+        /// <summary>
+        /// Called, when the user wants to delete the current image.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void DeleteCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             DoDelete();
