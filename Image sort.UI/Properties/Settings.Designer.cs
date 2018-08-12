@@ -118,5 +118,29 @@ namespace Image_sort.UI.Properties {
                 this["UpgradeRequired"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SystemServeyAnswered {
+            get {
+                return ((bool)(this["SystemServeyAnswered"]));
+            }
+            set {
+                this["SystemServeyAnswered"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int TimesAppOpenedSinceUpgrade {
+            get {
+                return ((int)(this["TimesAppOpenedSinceUpgrade"]));
+            }
+            set {
+                this["TimesAppOpenedSinceUpgrade"] = value;
+            }
+        }
     }
 }

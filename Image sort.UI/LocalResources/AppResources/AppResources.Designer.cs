@@ -61,6 +61,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Can you help me?.
+        /// </summary>
+        public static string CanYouHelpMe {
+            get {
+                return ResourceManager.GetString("CanYouHelpMe", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to # Could not load the help file.
         /// Make sure it exists..
         /// </summary>
@@ -142,6 +151,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string HorizontalResolution {
             get {
                 return ResourceManager.GetString("HorizontalResolution", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to It&apos;s important!.
+        /// </summary>
+        public static string ItsImportant {
+            get {
+                return ResourceManager.GetString("ItsImportant", resourceCulture);
             }
         }
         
@@ -251,6 +269,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string Skip {
             get {
                 return ResourceManager.GetString("Skip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won&apos;t take long. We won&apos;t ask You again soon either way. This survey gives me information about which systems and operating systems (32/64 bit) to support in the future..
+        /// </summary>
+        public static string SystemInfoSurveyMessage {
+            get {
+                return ResourceManager.GetString("SystemInfoSurveyMessage", resourceCulture);
             }
         }
         

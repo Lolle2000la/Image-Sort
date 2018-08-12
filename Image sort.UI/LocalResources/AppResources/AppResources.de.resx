@@ -226,4 +226,18 @@ Nachricht oder Status Code:</value>
   <data name="UpdateVersion" xml:space="preserve">
     <value>Version</value>
   </data>
+  <data name="CanYouHelpMe" xml:space="preserve">
+    <value>Können Sie mir helfen?</value>
+    <comment>English: "Can You help me?". Use when appropiate</comment>
+  </data>
+  <data name="SystemInfoSurveyMessage" xml:space="preserve">
+    <value>Ich muss mehr über den Computer wissen, auf dem Sie Image sort laufen lassen. Könnten Sie schnell 3 kurze Fragen beantworten? Es wird nicht lange dauern. Wir werden Sie so oder so bald nicht mehr fragen. Diese Umfrage gibt mir Aufschluss, welche Systeme (32/64 bit) und Betriebssysteme ich in der Zukunft unterstützen sollte.
+
+Hinweis: Die Umfrage ist auf Englisch</value>
+    <comment>Used to ask the user to answer a survey</comment>
+  </data>
+  <data name="ItsImportant" xml:space="preserve">
+    <value>Es ist wichtig!</value>
+    <comment>English: "It's important!". Use when appropiate</comment>
+  </data>
 </root>

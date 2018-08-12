@@ -226,4 +226,16 @@ Message or status code:</value>
   <data name="UpdateVersion" xml:space="preserve">
     <value>Version</value>
   </data>
+  <data name="CanYouHelpMe" xml:space="preserve">
+    <value>Can you help me?</value>
+    <comment>English: "Can You help me?". Use when appropiate</comment>
+  </data>
+  <data name="SystemInfoSurveyMessage" xml:space="preserve">
+    <value>I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won't take long. We won't ask You again soon either way. This survey gives me information about which systems and operating systems (z.b. 32/64 bit) to support in the future.</value>
+    <comment>Used to ask the user to answer a survey</comment>
+  </data>
+  <data name="ItsImportant" xml:space="preserve">
+    <value>It's important!</value>
+    <comment>English: "It's important!". Use when appropiate</comment>
+  </data>
 </root>

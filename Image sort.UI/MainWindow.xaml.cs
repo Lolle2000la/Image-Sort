@@ -1640,6 +1640,49 @@ namespace Image_sort.UI
                         }
                     }
             });
+
+            // Count the times the app was opened.
+            if (Properties.Settings.Default.TimesAppOpenedSinceUpgrade < Math.Pow(2, sizeof(int)* 8))
+            {
+                Properties.Settings.Default.TimesAppOpenedSinceUpgrade++;
+                Properties.Settings.Default.Save();
+            }
+
+#if DEBUG_SURVEY
+            // reset the app counter when debugging the survey feature
+            if (Properties.Settings.Default.TimesAppOpenedSinceUpgrade > 2)
+            {
+                Properties.Settings.Default.SystemServeyAnswered = false;
+                Properties.Settings.Default.TimesAppOpenedSinceUpgrade = 0;
+                Properties.Settings.Default.Save();
+            }
+#endif
+
+#if (!IS_UWP)
+            // When the survey on system informations wasn't yet answered, then ask the user if he would answer. 
+            // Only ask on the second run and when not running on the UWP / Store version.
+            if (!Properties.Settings.Default.SystemServeyAnswered 
+                && Properties.Settings.Default.TimesAppOpenedSinceUpgrade > 1)
+            {
+                if (await this.ShowMessageAsync($"{AppResources.CanYouHelpMe} {AppResources.ItsImportant}",
+                                                AppResources.SystemInfoSurveyMessage,
+                                                MessageDialogStyle.AffirmativeAndNegative,
+                                                new MetroDialogSettings() {
+                                                    AffirmativeButtonText = AppResources.Yes,
+                                                    NegativeButtonText = AppResources.No,
+                                                    DefaultButtonFocus = MessageDialogResult.Affirmative
+                                                }) 
+                    == MessageDialogResult.Affirmative)
+                {
+                    // if the user consents, then open the survey
+                    Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSerxGS4JVltRDUptS5BfRw5RK8hYG2WhGaT6jxwVuOMLw8lfg/viewform?usp=sf_link");
+                }
+
+                // Save that user answered the servey (or doesn't want to)
+                Properties.Settings.Default.SystemServeyAnswered = true;
+                Properties.Settings.Default.Save();
+            }
+#endif
         }
 
         /// <summary>

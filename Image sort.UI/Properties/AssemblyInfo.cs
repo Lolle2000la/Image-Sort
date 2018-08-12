@@ -7,8 +7,8 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Image sort.UI")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("Image sort")]
+[assembly: AssemblyDescription("An app for sorting Your folders")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Lolle2000la")]
 [assembly: AssemblyProduct("Image sort.UI")]
@@ -51,7 +51,7 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.21.1.0")]
-[assembly: AssemblyFileVersion("1.21.1.0")]
-[assembly: NeutralResourcesLanguage("en-GB")]
+[assembly: AssemblyVersion("1.22.0.0")]
+[assembly: AssemblyFileVersion("1.22.0.0")]
+[assembly: NeutralResourcesLanguage("en-US")]
 
