@@ -224,6 +224,35 @@ namespace Image_sort.UI
                     });
                 }
             };
+
+            // called when an folder was changed.
+            folderSelector.FolderChanged += async (o, e) =>
+            {
+                // sets the current index back before loading the "next"
+                folderSelector.CurrentIndex--;
+
+                //// set the preview image to nothing
+                //PreviewImage.Source = null;
+                // get the next image
+                BitmapImage buffer = await folderSelector.GetNextImage();
+                // get the next path of the next image
+                string path = folderSelector.GetImagePath();
+
+                // if the buffer is not null, load the image
+                if (buffer != null)
+                    Dispatcher.Invoke(() => LoadImage(buffer));
+                // else disable the controls
+                else
+                {
+                    // and unload it
+                    Dispatcher.Invoke(() => LoadImage(null));
+                    DisableControls();
+                    GoBackButton.IsEnabled = true;
+                }
+
+                loadImageProgressSlider = false;
+                Dispatcher.Invoke(() => ProgressSlider.Value = folderSelector.CurrentIndex - 1);
+            };
         }
         #endregion
 
@@ -1642,7 +1671,7 @@ namespace Image_sort.UI
             });
 
             // Count the times the app was opened.
-            if (Properties.Settings.Default.TimesAppOpenedSinceUpgrade < Math.Pow(2, sizeof(int)* 8))
+            if (Properties.Settings.Default.TimesAppOpenedSinceUpgrade < Math.Pow(2, sizeof(int) * 8))
             {
                 Properties.Settings.Default.TimesAppOpenedSinceUpgrade++;
                 Properties.Settings.Default.Save();
@@ -1661,7 +1690,7 @@ namespace Image_sort.UI
 #if (!IS_UWP)
             // When the survey on system informations wasn't yet answered, then ask the user if he would answer. 
             // Only ask on the second run and when not running on the UWP / Store version.
-            if (!Properties.Settings.Default.SystemServeyAnswered 
+            if (!Properties.Settings.Default.SystemServeyAnswered
                 && Properties.Settings.Default.TimesAppOpenedSinceUpgrade > 1)
             {
                 if (await this.ShowMessageAsync($"{AppResources.CanYouHelpMe} {AppResources.ItsImportant}",
@@ -1671,7 +1700,7 @@ namespace Image_sort.UI
                                                     AffirmativeButtonText = AppResources.Yes,
                                                     NegativeButtonText = AppResources.No,
                                                     DefaultButtonFocus = MessageDialogResult.Affirmative
-                                                }) 
+                                                })
                     == MessageDialogResult.Affirmative)
                 {
                     // if the user consents, then open the survey

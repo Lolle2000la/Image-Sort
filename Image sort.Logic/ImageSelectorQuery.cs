@@ -54,6 +54,20 @@ namespace Image_sort.Logic
         /// Keeps track of which image we are at.
         /// </summary>
         public int CurrentIndex { get; set; } = 0;
+        /// <summary>
+        /// Contains all supported file types.
+        /// </summary>
+        public readonly string[] SupportedFileTypes = new string[] { ".jpg", ".png", ".gif", "tif", "tiff" };
+        /// <summary>
+        /// Handles the folder change event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public delegate void FolderChangedHandler(object sender, FolderChangedEventArgs e);
+        /// <summary>
+        /// Raised when an folder(s content) was changed.
+        /// </summary>
+        public event FolderChangedHandler FolderChanged;
         #endregion
 
 
@@ -114,12 +128,9 @@ namespace Image_sort.Logic
                 currentFolder = path;
 
                 // Gets images in the folder given in the parameter path
-                IEnumerable<string> paths = Directory.EnumerateFiles(path, "*.*", 
+                IEnumerable<string> paths = Directory.EnumerateFiles(path, "*.*",
                     SearchOption.TopDirectoryOnly)
-                    .Where(s => s.EndsWith(".jpg") || s.EndsWith(".png")
-                    || s.EndsWith(".gif") || s.EndsWith(".PNG") || s.EndsWith(".JPG")
-                    || s.EndsWith(".GIF") || s.EndsWith(".tif") || s.EndsWith(".TIF")
-                    || s.EndsWith(".tiff") || s.EndsWith(".TIFF"))/*.ToList<string>()*/;
+                    .Where(s => s.ToLower().EndsWithEither(SupportedFileTypes));
 
 
                 //// Show the window.
@@ -143,7 +154,7 @@ namespace Image_sort.Logic
                         //}
 
                         // Buffers image before putting it in the pool
-                        var uri = new Uri(currImagePath);
+                        Uri uri = new Uri(currImagePath);
 
                         //BitmapImage buffer = await LoadImageAsync(currImagePath);
                         //if (buffer != null)
@@ -167,6 +178,15 @@ namespace Image_sort.Logic
                 }
                 //// Close progress window safely
                 //CloseProgressWindow();
+
+                // keeps track of changes in the current folder.
+                FileSystemWatcher watcher = new FileSystemWatcher(path) {
+                    EnableRaisingEvents = true
+                };
+                watcher.Renamed += OnFileRenamed;
+                watcher.Deleted += OnFileDeleted;
+                watcher.Created += OnFileCreated;
+
 
                 // SUCCESS
                 return true;
@@ -227,7 +247,7 @@ namespace Image_sort.Logic
                     BitmapImage bitmap = new BitmapImage();
                     // Reads in the image into a bitmap for later usage, uses FileStream to ensure
                     // it works as it should by freeing the access to the file when unneeded
-                    using (var stream =
+                    using (FileStream stream =
                         new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
                     {
                         // Loads the image
@@ -435,5 +455,123 @@ namespace Image_sort.Logic
             return (CurrentIndex-1, imagePathPool.Count);
         }
         #endregion
+
+        #region Event Handlers
+        /// <summary>
+        /// Keeps track of file renames.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void OnFileRenamed(object sender, RenamedEventArgs e)
+        {
+            // look if the renamed file is one of thhe used files that are currently used in Image sort.
+            // if so, replace the old path known with the new one.
+            for (int i = 0; i < imagePathPool.Count; i++)
+            {
+                if (imagePathPool[i] == e.OldFullPath)
+                {
+                    imagePathPool[i] = e.FullPath;
+                }
+            }
+
+            // if the current image is the renamed one, then update the change.
+            if (CurrentImage == e.OldFullPath)
+            {
+                CurrentImage = e.FullPath;
+            }
+
+            // raises the FolderChanged event
+            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+        }
+
+        /// <summary>
+        /// Keeps track of any kind of file change relevant to the app.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void OnFileDeleted(object sender, FileSystemEventArgs e)
+        {
+            // if a file was deleted, remove it from the path pool.
+            if (e.ChangeType == WatcherChangeTypes.Deleted)
+            {
+                for (int i = 0; i < imagePathPool.Count; i++)
+                {
+                    if (imagePathPool[i] == e.FullPath)
+                    {
+                        imagePathPool.RemoveAt(i);
+                    }
+                }
+            }
+
+            // raises the FolderChanged event
+            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+        }
+
+        /// <summary>
+        /// Used to keep track of file creations, like
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void OnFileCreated(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType == WatcherChangeTypes.Created)
+            {
+                // check if the created file is supported, and if it is, add it to the imagePathPool.
+                if (e.FullPath.ToLower().EndsWithEither(SupportedFileTypes))
+                {
+                    imagePathPool.Add(e.FullPath);
+                }
+            }
+
+            // raises the FolderChanged event
+            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// Contains helpers used in the <see cref="ImageSelectorQuery"/> class.
+    /// </summary>
+    static class ImageSelectoreQueryHelpers
+    {
+        /// <summary>
+        /// Determines whether a <see cref="string"/> ends with one of the <see cref="string"/>s given in an 
+        /// <see cref="Array"/> of <see cref="string"/>s.
+        /// </summary>
+        /// <param name="source"></param>
+        /// <param name="endings"></param>
+        /// <returns></returns>
+        public static bool EndsWithEither(this string source, string[] endings)
+        {
+            bool endsWithOne = false;
+            foreach (string ending in endings)
+            {
+                if (source.EndsWith(ending))
+                {
+                    endsWithOne = true;
+                }
+            }
+            return endsWithOne;
+        }
+    }
+
+    /// <summary>
+    /// Contains info about the type of change.
+    /// </summary>
+    public class FolderChangedEventArgs : EventArgs
+    {
+        /// <summary>
+        /// Contains the path to the changed file.
+        /// </summary>
+        public string ChangedFileFullPath { get; private set; }
+
+        /// <summary>
+        /// Initialises an new instance of <see cref="FolderChangedEventArgs"/>.
+        /// </summary>
+        /// <param name="changedFilePath">The full path to the changed file.</param>
+        public FolderChangedEventArgs(string changedFilePath) : base()
+        {
+            ChangedFileFullPath = changedFilePath;
+        }
     }
 }

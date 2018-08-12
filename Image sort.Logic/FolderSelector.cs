@@ -32,6 +32,17 @@ namespace Image_sort.Logic
         /// Holds the instance of <see cref="ImageSelectorQuery"/> 
         /// </summary>
         private ImageSelectorQuery imageSelectorQuery;
+
+        /// <summary>
+        /// Handles the folder change event
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        public delegate void FolderChangedHandler(object sender, FolderChangedEventArgs e);
+        /// <summary>
+        /// Raised when an folder(s content) was changed.
+        /// </summary>
+        public event FolderChangedHandler FolderChanged;
         #endregion
 
 
@@ -50,6 +61,8 @@ namespace Image_sort.Logic
         public FolderSelector()
         {
             imageSelectorQuery = new ImageSelectorQuery();
+
+            imageSelectorQuery.FolderChanged += OnFolderChanged;
         }
 
         /// <summary>
@@ -61,6 +74,8 @@ namespace Image_sort.Logic
         public FolderSelector(int verticalResolution)
         {
             imageSelectorQuery = new ImageSelectorQuery(verticalResolution);
+
+            imageSelectorQuery.FolderChanged += OnFolderChanged;
         }
         #endregion
 
@@ -272,6 +287,16 @@ namespace Image_sort.Logic
         public (int, int) GetCurrentProgress()
         {
             return imageSelectorQuery.GetCurrentProgress();
+        }
+
+        /// <summary>
+        /// Bubbles through the FolderChanged event.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected virtual void OnFolderChanged(object sender, FolderChangedEventArgs e)
+        {
+            FolderChanged(sender, e);
         }
         #endregion
     }
