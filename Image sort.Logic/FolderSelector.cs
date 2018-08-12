@@ -160,6 +160,7 @@ namespace Image_sort.Logic
         /// <param name="destination">The <see cref="string"/> pointing to it's destination</param>
         public void MoveFileTo(string source,string destination)
         {
+            imageSelectorQuery.MovingFile = true;
             try
             {
                 // In the end "finalDestination" will contain the final destination,
@@ -237,6 +238,8 @@ namespace Image_sort.Logic
                 System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
                     "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
             }
+
+            imageSelectorQuery.MovingFile = false;
         }
 
         /// <summary>

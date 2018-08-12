@@ -68,6 +68,10 @@ namespace Image_sort.Logic
         /// Raised when an folder(s content) was changed.
         /// </summary>
         public event FolderChangedHandler FolderChanged;
+        /// <summary>
+        /// Marks that a file is being moved.
+        /// </summary>
+        public bool MovingFile { get; set; } = false;
         #endregion
 
 
@@ -492,7 +496,7 @@ namespace Image_sort.Logic
         protected virtual void OnFileDeleted(object sender, FileSystemEventArgs e)
         {
             // if a file was deleted, remove it from the path pool.
-            if (e.ChangeType == WatcherChangeTypes.Deleted)
+            if (!MovingFile && e.ChangeType == WatcherChangeTypes.Deleted)
             {
                 for (int i = 0; i < imagePathPool.Count; i++)
                 {
