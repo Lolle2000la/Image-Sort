@@ -240,4 +240,14 @@ Hinweis: Die Umfrage ist auf Englisch</value>
     <value>Es ist wichtig!</value>
     <comment>English: "It's important!". Use when appropiate</comment>
   </data>
+  <data name="DeleteImage" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="CouldNotDeleteFile" xml:space="preserve">
+    <value>Die Datei "{filename}" konnte nicht gelöscht werden.</value>
+  </data>
+  <data name="CouldNotDeleteFileMessage" xml:space="preserve">
+    <value>Die Datei "{filename}" konnte nicht gelöscht werden. 
+Der Fehlercode ist: {errcode}</value>
+  </data>
 </root>

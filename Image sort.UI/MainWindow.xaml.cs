@@ -16,6 +16,7 @@ using System.Diagnostics;
 using MahApps.Metro.Controls.Dialogs;
 using Image_sort.Communication;
 using System.Text;
+using Image_sort.UI.Classes;
 
 namespace Image_sort.UI
 {
@@ -205,7 +206,7 @@ namespace Image_sort.UI
             // Timer used to update the loaded image based on the slider value, if that has changed.
             Timer timer = new Timer {
                 Enabled = true,
-                // timer should run every 500 seconds.
+                // timer should run every 250 seconds.
                 Interval = 250
             };
             timer.Tick += async (object s, EventArgs e) =>
@@ -240,14 +241,23 @@ namespace Image_sort.UI
 
                 // if the buffer is not null, load the image
                 if (buffer != null)
-                    Dispatcher.Invoke(() => LoadImage(buffer));
+                {
+                    Dispatcher.Invoke(() => {
+                        LoadImage(buffer);
+                        // Enable the controls again.
+                        EnableControls();
+                    });
+                }
                 // else disable the controls
                 else
                 {
                     // and unload it
-                    Dispatcher.Invoke(() => LoadImage(null));
-                    DisableControls();
-                    GoBackButton.IsEnabled = true;
+                    Dispatcher.Invoke(() =>
+                    {
+                        LoadImage(null);
+                        DisableControls();
+                        GoBackButton.IsEnabled = true;
+                    });
                 }
 
                 loadImageProgressSlider = false;
@@ -801,6 +811,7 @@ namespace Image_sort.UI
             NewFolderButton.IsEnabled = true;
             EnterFolderButton.IsEnabled = true;
             GoBackButton.IsEnabled = true;
+            DeleteImageButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -812,6 +823,7 @@ namespace Image_sort.UI
             MoveFolderButton.IsEnabled = false;
             NewFolderButton.IsEnabled = false;
             GoBackButton.IsEnabled = false;
+            DeleteImageButton.IsEnabled = false;
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
@@ -827,6 +839,7 @@ namespace Image_sort.UI
             SelectFolderButton.IsEnabled = true;
             ResolutionBox.IsEnabled = true;
             GoBackButton.IsEnabled = true;
+            DeleteImageButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -841,6 +854,7 @@ namespace Image_sort.UI
             SelectFolderButton.IsEnabled = false;
             ResolutionBox.IsEnabled = false;
             GoBackButton.IsEnabled = false;
+            DeleteImageButton.IsEnabled = false;
         }
         #endregion
 
@@ -918,6 +932,54 @@ namespace Image_sort.UI
             {
                 System.Windows.MessageBox.Show("No Folders to move to. Create one first!", "Warning",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public async void DoDelete()
+        {
+            if (DeleteImageButton.IsEnabled == true)
+            {
+                // get the current image to use it later.
+                string currentImage = folderSelector.GetImagePath();
+
+                try
+                {
+                    // send image to the recycle bin
+                    if (!FileOperationApiWrapper.Send(currentImage,
+                        FileOperationApiWrapper.FileOperationFlags.FOF_ALLOWUNDO
+                        | FileOperationApiWrapper.FileOperationFlags.FOF_WANTNUKEWARNING))
+                    {
+                        //// set the preview image to nothing
+                        //PreviewImage.Source = null;
+                        // get the next image
+                        BitmapImage buffer = await folderSelector.GetNextImage();
+                        // get the next path of the next image
+                        string path = folderSelector.GetImagePath();
+
+                        // if the buffer is not null, load the image
+                        if (buffer != null)
+                            LoadImage(buffer);
+                        // else disable the controls
+                        else
+                        {
+                            // and unload it
+                            LoadImage(null);
+                            DisableControls();
+                            GoBackButton.IsEnabled = true;
+                        }
+
+                        loadImageProgressSlider = false;
+                        ProgressSlider.Value = folderSelector.CurrentIndex - 1;
+                    }
+                }
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    await this.ShowMessageAsync(
+                        AppResources.CouldNotDeleteFile.Replace("{filename}", currentImage),
+                        AppResources.CouldNotDeleteFileMessage.Replace("{filename}", currentImage)
+                                                              .Replace("{errcode}", ex.NativeErrorCode.ToString())
+                        );
+                }
             }
         }
 
@@ -1503,6 +1565,11 @@ namespace Image_sort.UI
             else
                 helpWindow.Hide();
         }
+
+        private void DeleteCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            DoDelete();
+        }
         #endregion
 
         /// <summary>
@@ -1933,6 +2000,11 @@ namespace Image_sort.UI
         /// Goes back to the last image, when executed.
         /// </summary>
         public static RoutedCommand HelpCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Deletes the current image when executed.
+        /// </summary>
+        public static RoutedCommand DeleteCommand = new RoutedCommand();
     }
     #endregion
 }

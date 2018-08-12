@@ -101,6 +101,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Classes\FileOperationApiWrapper.cs" />
     <Compile Include="Classes\ListBoxScroll.cs" />
     <Compile Include="LocalResources\AppResources\AppResources.Designer.cs">
       <DependentUpon>AppResources.resx</DependentUpon>

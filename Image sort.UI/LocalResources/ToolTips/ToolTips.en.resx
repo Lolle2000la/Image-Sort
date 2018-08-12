@@ -117,6 +117,11 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="DeleteImageTip" xml:space="preserve">
+    <value>Moves the current image to the recycle bin.
+
+Note: This cannot be reverted in-app. You must revert an deletion from inside the recycle bin yourself.</value>
+  </data>
   <data name="EnterFolderToolTip" xml:space="preserve">
     <value>Enter the folder selected.
 

@@ -238,4 +238,14 @@ Message or status code:</value>
     <value>It's important!</value>
     <comment>English: "It's important!". Use when appropiate</comment>
   </data>
+  <data name="DeleteImage" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="CouldNotDeleteFile" xml:space="preserve">
+    <value>Could not delete file "{filename}".</value>
+  </data>
+  <data name="CouldNotDeleteFileMessage" xml:space="preserve">
+    <value>The file "{filename}" could not be deleted. 
+The error code is: {errcode}</value>
+  </data>
 </root>

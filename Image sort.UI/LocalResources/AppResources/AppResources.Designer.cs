@@ -70,6 +70,25 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not delete file &quot;{filename}&quot;..
+        /// </summary>
+        public static string CouldNotDeleteFile {
+            get {
+                return ResourceManager.GetString("CouldNotDeleteFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file &quot;{filename}&quot; could not be deleted. 
+        ///The error code is: {errcode}.
+        /// </summary>
+        public static string CouldNotDeleteFileMessage {
+            get {
+                return ResourceManager.GetString("CouldNotDeleteFileMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to # Could not load the help file.
         /// Make sure it exists..
         /// </summary>
@@ -85,6 +104,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string CreatedAt {
             get {
                 return ResourceManager.GetString("CreatedAt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete.
+        /// </summary>
+        public static string DeleteImage {
+            get {
+                return ResourceManager.GetString("DeleteImage", resourceCulture);
             }
         }
         

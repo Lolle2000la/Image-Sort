@@ -27,6 +27,7 @@
         <CommandBinding Command="local:Command.GoUpwardsCommand" Executed="GoUpwards_Executed"/>
         <CommandBinding Command="local:Command.ToggleSearchCommand" Executed="ToggleSearch_Executed"/>
         <CommandBinding Command="local:Command.HelpCommand" Executed="Help_Executed"/>
+        <CommandBinding Command="local:Command.DeleteCommand" Executed="DeleteCommand_Executed" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -43,6 +44,7 @@
         <KeyBinding Command="local:Command.GoUpwardsCommand" Key="Esc"/>
         <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
         <KeyBinding Command="local:Command.HelpCommand" Key="F1"/>
+        <KeyBinding Command="local:Command.DeleteCommand" Key="Delete" />
     </Window.InputBindings>
 
     <!-- Buttons seen in the right of the window -->
@@ -109,6 +111,9 @@
                 <Button Content="{x:Static res:AppResources.Move}" IsEnabled="False" Focusable="False"
                     x:Name="MoveFolderButton" Command="local:Command.MoveImageCommand"
                     ToolTip="{x:Static tooltip:ToolTips.MoveToolTip}"/>
+                <Button Content="{x:Static res:AppResources.DeleteImage}" IsEnabled="False" Focusable="False"
+                    x:Name="DeleteImageButton" Command="local:Command.DeleteCommand"
+                    ToolTip="{x:Static tooltip:ToolTips.DeleteImageTip}"/>
                 <!-- Click="MoveFolderButton_Click" -->
                 <Button Content="{x:Static res:AppResources.GoBack}" IsEnabled="False" Focusable="False"
                     x:Name="GoBackButton" Command="local:Command.GoBackCommand"
