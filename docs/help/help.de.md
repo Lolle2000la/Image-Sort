@@ -26,7 +26,7 @@ und wählen Sie den zu sortierenden Ordner aus.
        _Um ein Bild zu verschieben, drücken Sie einfach den Knopf oder die **rechte Pfeiltaste**._
     * "Löschen": Verschiebt das aktuelle Bild in den Papierkorb.
     
-        ![Screenshot Löschen Knopf](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete.png)
+        ![Screenshot Löschen Knopf](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete_new.png)
     
        _Um ein Bild zu löschen, drücken Sie einfach den Knopf oder die **Entfernen**-Taste._
     * "Rückgängig machen": Dies ist ihr bester Freund, wenn Sie mal ausversehen ein Bild verschieben oder überspringen. Dies wird deine letzte Aktion (überspringen/verschieben) rückgängig machen.
