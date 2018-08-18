@@ -39,6 +39,7 @@ namespace Image_sort.Logic
         /// <param name="sender"></param>
         /// <param name="e"></param>
         public delegate void FolderChangedHandler(object sender, FolderChangedEventArgs e);
+
         /// <summary>
         /// Raised when an folder(s content) was changed.
         /// </summary>
@@ -240,6 +241,33 @@ namespace Image_sort.Logic
             }
 
             imageSelectorQuery.MovingFile = false;
+        }
+
+        /// <summary>
+        /// Renames the given file and disables raising revents because of that.
+        /// </summary>
+        /// <param name="path">The path to the file to be renamed.</param>
+        /// <param name="newName">the name of the file to be renamed.</param>
+        public void RenameFile(string path, string newName)
+        {
+            // tell the imageSelectorQuery to not raise rename events.
+            imageSelectorQuery.RenamingFile = true;
+
+            // ensure the file exists
+            if (!File.Exists(path))
+            {
+                throw new ArgumentException($"{path} does not exist.", "path");
+            }
+            // ensure the new name is not an directory.
+            if (newName.Contains("\\") || newName.Contains("/"))
+            {
+                throw new ArgumentException($"{newName} contains an directory seperation char.", "newName");
+            }
+            // remame the file.
+            File.Move(path, Path.Combine(Path.GetDirectoryName(path), newName));
+
+            // tell the imageSelectorQuery to start raising rename events again.
+            imageSelectorQuery.RenamingFile = false;
         }
 
         /// <summary>

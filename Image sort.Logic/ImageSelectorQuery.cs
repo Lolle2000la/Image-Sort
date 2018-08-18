@@ -72,6 +72,10 @@ namespace Image_sort.Logic
         /// Marks that a file is being moved.
         /// </summary>
         public bool MovingFile { get; set; } = false;
+        /// <summary>
+        /// Marks that a file is being renamed.
+        /// </summary>
+        public bool RenamingFile { get; set; } = false;
         #endregion
 
 
@@ -460,6 +464,9 @@ namespace Image_sort.Logic
         }
         #endregion
 
+
+        
+
         #region Event Handlers
         /// <summary>
         /// Keeps track of file renames.
@@ -484,8 +491,10 @@ namespace Image_sort.Logic
                 CurrentImage = e.FullPath;
             }
 
-            // raises the FolderChanged event
-            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+            // only raise when there is no app initiated renaming in process.
+            if (!RenamingFile)
+                // raises the FolderChanged event
+                FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
         }
 
         /// <summary>

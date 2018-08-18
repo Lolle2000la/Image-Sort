@@ -250,4 +250,10 @@ Hinweis: Die Umfrage ist auf Englisch</value>
     <value>Die Datei "{filename}" konnte nicht gelöscht werden. 
 Der Fehlercode ist: {errcode}</value>
   </data>
+  <data name="CouldNotRenameFile" xml:space="preserve">
+    <value>Die Datei "{file}" konnte nich umbenannt werden</value>
+  </data>
+  <data name="ExceptionMoreInfo" xml:space="preserve">
+    <value>Mehr Informationen: {message}</value>
+  </data>
 </root>

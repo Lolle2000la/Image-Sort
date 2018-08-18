@@ -93,6 +93,18 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Displays the name of the current image. You can rename image by clicking the text, editing it and then pressing enter.
+        ///If you accidentally clicked on the box and don&apos;t want to rename the file, just don&apos;t change anything and press enter.
+        ///
+        ///Shortcut: ctrl + r.
+        /// </summary>
+        public static string FileNameAndRenameTip {
+            get {
+                return ResourceManager.GetString("FileNameAndRenameTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to An Github account is required to file an issue.
         /// </summary>
         public static string GitHubAccountRequired {

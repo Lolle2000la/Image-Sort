@@ -132,6 +132,12 @@ Shortcut: Enter</value>
 Your feedback will be heard!</value>
     <comment>Used for the Feedback button</comment>
   </data>
+  <data name="FileNameAndRenameTip" xml:space="preserve">
+    <value>Displays the name of the current image. You can rename image by clicking the text, editing it and then pressing enter.
+If you accidentally clicked on the box and don't want to rename the file, just don't change anything and press enter.
+
+Shortcut: ctrl + r</value>
+  </data>
   <data name="GitHubAccountRequired" xml:space="preserve">
     <value>An Github account is required to file an issue</value>
     <comment>Used for the feedback button</comment>

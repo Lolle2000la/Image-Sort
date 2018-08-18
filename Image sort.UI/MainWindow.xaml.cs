@@ -242,7 +242,8 @@ namespace Image_sort.UI
                 // if the buffer is not null, load the image
                 if (buffer != null)
                 {
-                    Dispatcher.Invoke(() => {
+                    Dispatcher.Invoke(() =>
+                    {
                         LoadImage(buffer);
                         // Enable the controls again.
                         EnableControls();
@@ -651,7 +652,10 @@ namespace Image_sort.UI
             {
                 string pathToImage = folderSelector.GetImagePath();
 
-                FileNameInfo.Text = $"{AppResources.Name}: {Path.GetFileNameWithoutExtension(pathToImage)}";
+                FileNameInfoLabel.Text = $"{AppResources.Name}:";
+                FileNameInfo.Text = Path.GetFileNameWithoutExtension(pathToImage);
+                FileNameInfo.Visibility = Visibility.Visible;
+                FileNameInfo.Focusable = true;
                 FileTypeInfo.Text = $"{AppResources.Format}: {Path.GetExtension(pathToImage)}";
                 DateTime creationTime = File.GetCreationTime(pathToImage).ToLocalTime();
                 FileCreationTimeInfo.Text = $"{AppResources.CreatedAt}: {creationTime.ToLongDateString()} {creationTime.ToShortTimeString()}";
@@ -674,7 +678,10 @@ namespace Image_sort.UI
             // if that is not the case, remove the old information.
             else
             {
+                FileNameInfoLabel.Text = "";
                 FileNameInfo.Text = "";
+                FileNameInfo.Visibility = Visibility.Collapsed;
+                FileNameInfo.Focusable = false;
                 FileTypeInfo.Text = "";
                 FileCreationTimeInfo.Text = "";
                 FileSizeInfo.Text = "";
@@ -932,6 +939,36 @@ namespace Image_sort.UI
             {
                 System.Windows.MessageBox.Show("No Folders to move to. Create one first!", "Warning",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        public async void DoRename()
+        {
+            string currentImagePath = folderSelector.GetImagePath();
+            string newImageName = FileNameInfo.Text;
+            string fileExtension = Path.GetExtension(currentImagePath);
+
+            // remove focus, taken from decasteljaus anwer at https://stackoverflow.com/questions/2914495/wpf-how-to-programmatically-remove-focus-from-a-textbox
+            // Move to a parent that can take focus
+            FrameworkElement parent = (FrameworkElement) FileNameInfo.Parent;
+            while (parent != null && parent is IInputElement && !((IInputElement) parent).Focusable)
+            {
+                parent = (FrameworkElement) parent.Parent;
+            }
+
+            DependencyObject scope = FocusManager.GetFocusScope(FileNameInfo);
+            FocusManager.SetFocusedElement(scope, parent as IInputElement);
+
+            try
+            {
+                if (Path.GetFileNameWithoutExtension(currentImagePath) != newImageName)
+                    // rename the file.
+                    folderSelector.RenameFile(currentImagePath, $"{newImageName}{fileExtension}");
+            }
+            catch (Exception ex)
+            {
+                await this.ShowMessageAsync(AppResources.CouldNotRenameFile.Replace("{file}", Path.GetFileName(folderSelector.GetImagePath())),
+                    AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
             }
         }
 
@@ -1519,7 +1556,12 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (IsAnyFolderVisible && !ResolutionBox.Focusable)
+            // prevents entering a folder when a rename is initiated.
+            if (FileNameInfo.IsFocused)
+            {
+                DoRename();
+            }
+            else if (IsAnyFolderVisible && !ResolutionBox.Focusable)
                 EnterFolder();
         }
 
@@ -1574,6 +1616,20 @@ namespace Image_sort.UI
         private void DeleteCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             DoDelete();
+        }
+
+        /// <summary>
+        /// Called, when the user wants to rename the current image.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RenameCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (FileNameInfo.Focusable)
+            {
+                FileNameInfo.Focus();
+                FileNameInfo.CaretIndex = FileNameInfo.Text.Length;
+            }
         }
         #endregion
 
@@ -2010,6 +2066,11 @@ namespace Image_sort.UI
         /// Deletes the current image when executed.
         /// </summary>
         public static RoutedCommand DeleteCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Focuses the <see cref="MainWindow.FileNameInfo"/> box to enable renaming when executed.
+        /// </summary>
+        public static RoutedCommand RenameCommand = new RoutedCommand();
     }
     #endregion
 }

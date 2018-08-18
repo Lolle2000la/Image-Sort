@@ -248,4 +248,10 @@ Message or status code:</value>
     <value>The file "{filename}" could not be deleted. 
 The error code is: {errcode}</value>
   </data>
+  <data name="CouldNotRenameFile" xml:space="preserve">
+    <value>Could not rename file "{file}"</value>
+  </data>
+  <data name="ExceptionMoreInfo" xml:space="preserve">
+    <value>More info: {message}</value>
+  </data>
 </root>

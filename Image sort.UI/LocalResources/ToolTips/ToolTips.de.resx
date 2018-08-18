@@ -132,6 +132,12 @@ Schnellzugriff: Enter</value>
 Ihr Feedback wird gehört und angenommen.</value>
     <comment>Used for the Feedback button</comment>
   </data>
+  <data name="FileNameAndRenameTip" xml:space="preserve">
+    <value>Zeigt den Namen des aktuellen Bildes. Sie können ein Bild umbenennen, indem Sie den Text anklicken, ihn bearbeiten und darauf folgend Enter drücken.
+Wenn Sie die Box ausversehen angeklickt haben und die Datei nicht umbenennen wollen, dann machen Sie keine Änderungen und drücken Sie Enter.
+
+Schnellzugriff: Strg + R</value>
+  </data>
   <data name="GitHubAccountRequired" xml:space="preserve">
     <value>Ein GitHub Account wird für das posten von Issues benötigt</value>
     <comment>Used for the feedback button</comment>

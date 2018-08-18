@@ -28,6 +28,7 @@
         <CommandBinding Command="local:Command.ToggleSearchCommand" Executed="ToggleSearch_Executed"/>
         <CommandBinding Command="local:Command.HelpCommand" Executed="Help_Executed"/>
         <CommandBinding Command="local:Command.DeleteCommand" Executed="DeleteCommand_Executed" />
+        <CommandBinding Command="local:Command.RenameCommand" Executed="RenameCommand_Executed" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -45,6 +46,7 @@
         <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
         <KeyBinding Command="local:Command.HelpCommand" Key="F1"/>
         <KeyBinding Command="local:Command.DeleteCommand" Key="Delete" />
+        <KeyBinding Command="local:Command.RenameCommand" Key="R" Modifiers="Ctrl" />
     </Window.InputBindings>
 
     <!-- Buttons seen in the right of the window -->
@@ -175,7 +177,15 @@
                     <RowDefinition Height="auto"/>
                 </Grid.RowDefinitions>
                 <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
-                    <TextBlock Name="FileNameInfo"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Name="FileNameInfoLabel"/>
+                        <TextBox Name="FileNameInfo" BorderThickness="0" Margin="0 -4 0 -6">
+                            <TextBox.ToolTip>
+                                <TextBlock Text="{x:Static tooltip:ToolTips.FileNameAndRenameTip}"
+                                           MaxWidth="400" TextWrapping="Wrap"/>
+                            </TextBox.ToolTip>
+                        </TextBox>
+                    </StackPanel>
                     <TextBlock Name="FileTypeInfo"/>
                     <TextBlock Name="FileSizeInfo"/>
                     <TextBlock Name="FileCreationTimeInfo"/>

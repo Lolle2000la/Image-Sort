@@ -99,6 +99,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not rename file &quot;{file}&quot;.
+        /// </summary>
+        public static string CouldNotRenameFile {
+            get {
+                return ResourceManager.GetString("CouldNotRenameFile", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Created at.
         /// </summary>
         public static string CreatedAt {
@@ -122,6 +131,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         public static string EnterFolder {
             get {
                 return ResourceManager.GetString("EnterFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to More info: {message}.
+        /// </summary>
+        public static string ExceptionMoreInfo {
+            get {
+                return ResourceManager.GetString("ExceptionMoreInfo", resourceCulture);
             }
         }
         
