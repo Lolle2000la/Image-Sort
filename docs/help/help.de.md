@@ -29,6 +29,11 @@ und wählen Sie den zu sortierenden Ordner aus.
         ![Screenshot Löschen Knopf](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete_new.png)
     
        _Um ein Bild zu löschen, drücken Sie einfach den Knopf oder die **Entfernen**-Taste._
+    * Ein Bild umbenennen: Sie können ein Bild innerhalb von Image sort umbenennen.
+    
+        ![Screenshot Text Box zum editieren des Namens](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Rename.png)
+        
+       _Um ein Bild umzubenennen müssen Sie entweder auf den Namen des bildes oder **Strg+R** drücken drücken und ihn editieren._
     * "Rückgängig machen": Dies ist ihr bester Freund, wenn Sie mal ausversehen ein Bild verschieben oder überspringen. Dies wird deine letzte Aktion (überspringen/verschieben) rückgängig machen.
     
        ![Screenshot Rückgängig machen](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Go_back.png?raw=true)
