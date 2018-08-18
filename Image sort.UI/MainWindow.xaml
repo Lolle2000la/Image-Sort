@@ -179,7 +179,7 @@
                 <StackPanel Grid.Column="0" Grid.Row="0" Grid.RowSpan="2">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Name="FileNameInfoLabel"/>
-                        <TextBox Name="FileNameInfo" BorderThickness="0" Margin="0 -4 0 -6">
+                        <TextBox Name="FileNameInfo" Background="Transparent" BorderThickness="0" Margin="0 -4 0 -6">
                             <TextBox.ToolTip>
                                 <TextBlock Text="{x:Static tooltip:ToolTips.FileNameAndRenameTip}"
                                            MaxWidth="400" TextWrapping="Wrap"/>
