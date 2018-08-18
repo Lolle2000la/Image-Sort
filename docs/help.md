@@ -27,7 +27,7 @@ and open the folder you want to sort.
        _To move an image, press the button or use the **right arrow key**._
     * "Delete": Moves an image to the recycle bin.
     
-        ![Screenshot Löschen Knopf](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete.png)
+        ![Screenshot delete button](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete_new.png)
     
        _To delete an image, just press the button or the **delete**-key._
     * "Go back": This is your best friend when you accidentally skipped
