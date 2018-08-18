@@ -35,7 +35,7 @@ and open the folder you want to sort.
         ![Screenshot text box to click to edit the name](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Rename.png)
         
        _To rename an image you must either click on the name of the image and edit it
-       or press **ctrl+r**.
+       or press **ctrl+r**._
     * "Go back": This is your best friend when you accidentally skipped
     or moved the current image. This will revert your last skip/move action.
     
