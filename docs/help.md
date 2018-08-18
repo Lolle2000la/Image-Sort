@@ -25,11 +25,11 @@ and open the folder you want to sort.
         ![Screenshot showing the subfolders](https://github.com/Lolle2000la/Image-Sort/blob/master/Image%20sort%20screenshots/Subfolders.png?raw=true)
     
        _To move an image, press the button or use the **right arrow key**._
-    * "Löschen": Verschiebt das aktuelle Bild in den Papierkorb.
+    * "Delete": Moves an image to the recycle bin.
     
         ![Screenshot Löschen Knopf](https://github.com/Lolle2000la/Image-Sort/raw/master/Image%20sort%20screenshots/Delete.png)
     
-       _Um ein Bild zu löschen, drücken Sie einfach den Knopf oder die **Entfernen**-Taste._
+       _To delete an image, just press the button or the **delete**-key._
     * "Go back": This is your best friend when you accidentally skipped
     or moved the current image. This will revert your last skip/move action.
     
