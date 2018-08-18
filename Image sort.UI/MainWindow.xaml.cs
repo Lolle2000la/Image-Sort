@@ -1717,6 +1717,7 @@ namespace Image_sort.UI
                         {
                             string changelog = "";
                             string version = "unknown";
+                            string title = "";
 
                             // and read the output till the end.
                             while (!output.EndOfStream)
@@ -1731,7 +1732,7 @@ namespace Image_sort.UI
                                     {
                                         // Create a new UpdateDialog to ask for user consent.
                                         var dlg = new UpdateDialog() {
-                                            ChangelogMarkdown = changelog,
+                                            ChangelogMarkdown = $"# {title}{Environment.NewLine}{changelog}",
                                             Version = version,
                                             Title = AppResources.UpdateConsentQuestion
                                         };
@@ -1786,6 +1787,11 @@ namespace Image_sort.UI
                                 else if (line == UpdaterConstants.UpdateVersion)
                                 {
                                     version = output.ReadLine();
+                                }
+                                // if the title is going to be set, then read it.
+                                else if (line == UpdaterConstants.UpdateTitle)
+                                {
+                                    title = output.ReadLine();
                                 }
                                 // Tell the user that an error occured, if it occured.
                                 else if (line == UpdaterConstants.Error)

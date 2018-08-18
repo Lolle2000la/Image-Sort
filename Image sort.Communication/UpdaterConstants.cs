@@ -52,5 +52,9 @@ namespace Image_sort.Communication
         /// Signals that the new version number of the update is outputted in the next line.
         /// </summary>
         public const string UpdateVersion = "new_update_version";
+        /// <summary>
+        /// Signals that the title of the new version is going to be outputted in the next line.
+        /// </summary>
+        public const string UpdateTitle = "transmitting_title";
     }
 }

@@ -24,7 +24,7 @@
         <TextBlock Margin="0 10 0 0" Text="{x:Static res:AppResources.UpdateWhatsNew}"
                    FontSize="18" TextWrapping="Wrap" Grid.Row="1" FontWeight="Bold"/>
         <Border BorderThickness="2" BorderBrush="Black" Margin="0 10 0 0" Grid.Row="2">
-            <markdigwpf:MarkdownViewer Name="ChangelogViewer" MaxHeight="150" TabIndex="2" Padding="5"/>
+            <markdigwpf:MarkdownViewer Name="ChangelogViewer" MaxHeight="200" TabIndex="2" Padding="5"/>
         </Border>
         <!-- Warning the user that the app will close when giving consent -->
         <TextBlock Text="{x:Static res:AppResources.UpdateWillCloseAppMessage}"

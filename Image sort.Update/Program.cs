@@ -138,6 +138,7 @@ namespace Image_sort.Update
             {
                 string version = release.TagName;
                 string releaseBody = release.Body;
+                string releaseTitle = release.Name;
                 if (releaseBody != null)
                 {
                     // Signal that the changelog is going to be transmitted.
@@ -157,6 +158,15 @@ namespace Image_sort.Update
 
                     // Send the version.
                     Console.WriteLine(version);
+                }
+
+                if (releaseTitle != null)
+                {
+                    // Signal the main app that the title of the new version is going to be transmitted
+                    Console.WriteLine(UpdaterConstants.UpdateTitle);
+
+                    // Send the title
+                    Console.WriteLine(releaseTitle);
                 }
 
                 // asks the parent process for user consent
