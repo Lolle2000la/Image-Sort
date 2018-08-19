@@ -117,6 +117,24 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Create new folder.
+        /// </summary>
+        public static string CreateNewFolder {
+            get {
+                return ResourceManager.GetString("CreateNewFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to What name should the folder have?.
+        /// </summary>
+        public static string CreateNewFolderMessage {
+            get {
+                return ResourceManager.GetString("CreateNewFolderMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delete.
         /// </summary>
         public static string DeleteImage {

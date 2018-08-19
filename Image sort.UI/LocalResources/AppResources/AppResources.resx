@@ -254,4 +254,10 @@ The error code is: {errcode}</value>
   <data name="ExceptionMoreInfo" xml:space="preserve">
     <value>More info: {message}</value>
   </data>
+  <data name="CreateNewFolder" xml:space="preserve">
+    <value>Create new folder</value>
+  </data>
+  <data name="CreateNewFolderMessage" xml:space="preserve">
+    <value>What name should the folder have?</value>
+  </data>
 </root>

@@ -14,6 +14,7 @@ namespace Image_sort.Logic
     /// <summary>
     /// Class for Selecting and Managing the folders selected
     /// </summary>
+    [Obsolete("Use IImageManager and ImageFolderManager instead.", true)]
     public class FolderSelector
     {
         #region Atributes
@@ -29,9 +30,9 @@ namespace Image_sort.Logic
         private string CurrentFolderPath;
 
         /// <summary>
-        /// Holds the instance of <see cref="ImageSelectorQuery"/> 
+        /// Holds the instance of <see cref="ImageFolderManager"/> 
         /// </summary>
-        private ImageSelectorQuery imageSelectorQuery;
+        private IImageManager imageSelectorQuery;
 
         /// <summary>
         /// Handles the folder change event
@@ -61,7 +62,7 @@ namespace Image_sort.Logic
         /// </summary>
         public FolderSelector()
         {
-            imageSelectorQuery = new ImageSelectorQuery();
+            imageSelectorQuery = new ImageFolderManager();
 
             imageSelectorQuery.FolderChanged += OnFolderChanged;
         }
@@ -69,12 +70,12 @@ namespace Image_sort.Logic
         /// <summary>
         /// Creates a new <see cref="FolderSelector"/> with the given resolution.
         /// </summary>
-        /// <param name="verticalResolution">
+        /// <param name="horizontalResolution">
         /// Horizontal Resolution that the image should get loaded with.
         /// </param>
-        public FolderSelector(int verticalResolution)
+        public FolderSelector(int horizontalResolution)
         {
-            imageSelectorQuery = new ImageSelectorQuery(verticalResolution);
+            imageSelectorQuery = new ImageFolderManager(horizontalResolution);
 
             imageSelectorQuery.FolderChanged += OnFolderChanged;
         }
@@ -110,7 +111,7 @@ namespace Image_sort.Logic
             if (Directory.Exists(path))
             {
                 // Set the folder that should get processed.
-                bool result = imageSelectorQuery.SetCurrentFolderAsync(path);
+                bool result = imageSelectorQuery.SetCurrentFolder(path);
 
                 if (result)
                     CurrentFolderPath = path;
@@ -229,7 +230,7 @@ namespace Image_sort.Logic
 
                     // Append the new location to the the current path for possible
                     // future retrievement and reversion.
-                    imageSelectorQuery.AppendNewLocation(finalDestination);
+                    imageSelectorQuery.RememberNewPathToImage(finalDestination);
                 }
             }
             // When access fails...

@@ -1,5 +1,4 @@
-﻿using Image_sort.UI.Dialogs;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -17,7 +16,7 @@ namespace Image_sort.Logic
     /// <summary>
     /// Gives back all the images out of the selected folder returns them one by one
     /// </summary>
-    class ImageSelectorQuery
+    public class ImageFolderManager : IImageManager
     {
         #region Attributes
         /************************************************************************/
@@ -35,21 +34,13 @@ namespace Image_sort.Logic
         /// </summary>
         private List<string> imagePathPool = new List<string>();
         /// <summary>
-        /// Contains the path to the current folder
-        /// </summary>
-        private string currentFolder;
-        /// <summary>
         /// Contains the path to the current Image
         /// </summary>
         public string CurrentImage { get; private set; }
         /// <summary>
         /// Defines the max resolution to be loaded 
         /// </summary>
-        public int MaxHorizontalResolution { get; set; }
-        ///// <summary>
-        ///// Window indicating the progress of the files being loaded to the user.
-        ///// </summary>
-        //private ProgressWindow progressWindow;
+        public int HorizontalResolution { get; set; }
         /// <summary>
         /// Keeps track of which image we are at.
         /// </summary>
@@ -59,15 +50,9 @@ namespace Image_sort.Logic
         /// </summary>
         public readonly string[] SupportedFileTypes = new string[] { ".jpg", ".png", ".gif", "tif", "tiff" };
         /// <summary>
-        /// Handles the folder change event
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        public delegate void FolderChangedHandler(object sender, FolderChangedEventArgs e);
-        /// <summary>
         /// Raised when an folder(s content) was changed.
         /// </summary>
-        public event FolderChangedHandler FolderChanged;
+        public event EventHandlerTypes.FolderChangedHandler FolderChanged;
         /// <summary>
         /// Marks that a file is being moved.
         /// </summary>
@@ -76,6 +61,22 @@ namespace Image_sort.Logic
         /// Marks that a file is being renamed.
         /// </summary>
         public bool RenamingFile { get; set; } = false;
+        /// <summary>
+        /// Holds the path to the current folder selected
+        /// </summary>
+        public string CurrentFolder { get; private set; }
+        /// <summary>
+        /// Contains an <see cref="List{T}"/> with all files, that are currently moving.
+        /// </summary>
+        private Dictionary<string, string> filesMoving = new Dictionary<string, string>();
+        /// <summary>
+        /// Contains an <see cref="IReadOnlyList{T}"/> with all files, that are currently moving.
+        /// </summary>
+        public IReadOnlyDictionary<string, string> FilesMoving => filesMoving;
+        /// <summary>
+        /// Keeps watch for changes on the file system.
+        /// </summary>
+        private FileSystemWatcher watcher;
         #endregion
 
 
@@ -89,16 +90,23 @@ namespace Image_sort.Logic
         /************************************************************************/
 
         /// <summary>
-        /// 
+        /// Constructs a new instance of ImageSelectorQuery.
         /// </summary>
-        public ImageSelectorQuery()
+        /// <remarks>The default for <see cref="HorizontalResolution"/> used will be 1000.</remarks>
+        public ImageFolderManager()
         {
-            MaxHorizontalResolution = 1000;
+            HorizontalResolution = 1000;
         }
-
-        public ImageSelectorQuery(int horizontalResolution)
+        /// <summary>
+        /// Constructs a new instance of ImageSelectorQuery.
+        /// </summary>
+        /// <param name="horizontalResolution">
+        /// The Value of <see cref="HorizontalResolution"/>, used to determine which horizontal resolution
+        /// to load images with.
+        /// </param>
+        public ImageFolderManager(int horizontalResolution)
         {
-            MaxHorizontalResolution = horizontalResolution;
+            HorizontalResolution = horizontalResolution;
         }
         #endregion
 
@@ -120,7 +128,7 @@ namespace Image_sort.Logic
         /// returns true if it worked, false if it didn't 
         /// (for example because the folder does not exist)
         /// </returns>
-        public bool SetCurrentFolderAsync(string path)
+        public bool SetCurrentFolder(string path)
         {
             // Cleaning up in beforehand, to make sure everything works
             CleanUp();
@@ -128,67 +136,30 @@ namespace Image_sort.Logic
             // Checks if the Directory exists
             if (Directory.Exists(path))
             {
-
-                //// Sets a new instance for the progress window.
-                //progressWindow = new ProgressWindow();
-
-                // Sets the currentFolder var to path, so it can be easily retrieved
-                currentFolder = path;
+                // Sets the CurrentFolderPath var to path, so it can be easily retrieved
+                CurrentFolder = path;
 
                 // Gets images in the folder given in the parameter path
                 IEnumerable<string> paths = Directory.EnumerateFiles(path, "*.*",
                     SearchOption.TopDirectoryOnly)
                     .Where(s => s.ToLower().EndsWithEither(SupportedFileTypes));
 
-
-                //// Show the window.
-                //progressWindow.Show();
-                try
+                // goes through the image paths given and adds them to the image pool
+                foreach (string currImagePath in paths)
                 {
-                    //// set a few values to make sure the data is correct.
-                    //progressWindow.ChangeFileProgress(0, 0, path.Count());
-
-
-                    //// define an int holding the count of the file to load.
-                    //int filesLoaded = 0;
-                    
-                    // goes through the image paths given and adds them to the image pool
-                    foreach (string currImagePath in paths)
-                    {
-                        //// if the user wants to abort, throw an exception and abort.
-                        //if (progressWindow.AbortRequested)
-                        //{
-                        //    throw new AbortException();
-                        //}
-
-                        // Buffers image before putting it in the pool
-                        Uri uri = new Uri(currImagePath);
-
-                        //BitmapImage buffer = await LoadImageAsync(currImagePath);
-                        //if (buffer != null)
-                        //{
-                            // Sets the source of the image and puts it into the queue/pool
-                            //imagePool.Enqueue(buffer);
-                            imagePathPool.Add(uri.OriginalString);
-
-                            // Sets the progress in the window for the files being loaded.
-                            //progressWindow.ChangeFileProgress(++filesLoaded, 0, paths.Count());
-                        //}
-                    }
+                    imagePathPool.Add(currImagePath);
                 }
-                // if the loading was aborted, clean up anything and return false.
-                catch (AbortException)
+
+                // free the old watcher.
+                if (watcher != null)
                 {
-                    // Clean up anything for the next start.
-                    //CloseProgressWindow();
-                    CleanUp();
-                    return false;
+                    watcher.EnableRaisingEvents = false;
+                    watcher.Dispose();
+                    watcher = null;
                 }
-                //// Close progress window safely
-                //CloseProgressWindow();
 
                 // keeps track of changes in the current folder.
-                FileSystemWatcher watcher = new FileSystemWatcher(path) {
+                watcher = new FileSystemWatcher(path) {
                     EnableRaisingEvents = true
                 };
                 watcher.Renamed += OnFileRenamed;
@@ -202,26 +173,12 @@ namespace Image_sort.Logic
             else
             {
                 // set the current folder to null, to keep it from doing bad things
-                currentFolder = null;
+                CurrentFolder = null;
 
                 // FAILURE
                 return false;
             }
         }
-                
-        ///// <summary>
-        ///// Closes the progress window.
-        ///// </summary>
-        //private void CloseProgressWindow()
-        //{
-        //    // Closes the window when it is no longer needed.
-        //    while (!progressWindow.IsHandleCreated)
-        //    {
-        //        // Wait for the window to be created, before being closed.
-        //        Task.Delay(1);
-        //    }
-        //    progressWindow.Close();
-        //}
 
         /// <summary>
         /// Cleans up everything loaded. Clears the images and so on.
@@ -231,7 +188,7 @@ namespace Image_sort.Logic
             // Cleans up everything
             imagePool.Clear();
             imagePathPool.Clear();
-            currentFolder = null;
+            CurrentFolder = null;
             CurrentImage = null;
             CurrentIndex = 0;
             CollectGarbage();
@@ -261,13 +218,13 @@ namespace Image_sort.Logic
                         // Loads the image
                         bitmap.BeginInit();
                         bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                        bitmap.DecodePixelWidth = MaxHorizontalResolution;
+                        bitmap.DecodePixelWidth = HorizontalResolution;
                         bitmap.StreamSource = stream;
                         bitmap.EndInit();
                     }
 
                     // Freeze bitmap to be able to use it from another thread.
-                    if(bitmap.CanFreeze)
+                    if (bitmap.CanFreeze)
                         bitmap.Freeze();
 
                     // return the bitmap to the caller.
@@ -294,12 +251,6 @@ namespace Image_sort.Logic
         /// <returns>returns the image as a <see cref="Image"/>, or <c>null</c> if no more images are in the folder</returns>
         public async Task<BitmapImage> GetNextImage()
         {
-            //// Making sure, the image and string pool match up
-            //while (imagePool.Count > imagePathPool.Count)
-            //{
-            //    imagePathPool.Dequeue();
-            //}
-
             // if there are no images left...
             if (CurrentIndex >= imagePathPool.Count)
             {
@@ -337,7 +288,7 @@ namespace Image_sort.Logic
                 return null;
             }
 
-            
+
         }
 
         /// <summary>
@@ -346,19 +297,6 @@ namespace Image_sort.Logic
         /// <returns>Path to image</returns>
         public string GetImagePath()
         {
-            //// Making sure, the image and string pool match up
-            //while (imagePool.Count > imagePathPool.Count)
-            //{
-            //    imagePathPool.Dequeue();
-            //}
-
-            //if (imagePathPool.Count > 0)
-            //    // SUCCESS
-            //    return imagePathPool.Dequeue();
-            //else
-            //    // FAILURE
-            //    return "";
-
             return CurrentImage;
         }
 
@@ -370,7 +308,7 @@ namespace Image_sort.Logic
         /// to the past one. 1 basically sets it to the current one, if that is needed to be loaded again.
         /// DO NOT USE NEGATIVE VALUES!
         /// </param>
-        public void GoBackImages(int amount=2)
+        public void GoBackImages(int amount = 2)
         {
             // Check if there is something to go back to
             if (imagePathPool.Count > 1 && CurrentIndex - amount >= 0)
@@ -395,14 +333,17 @@ namespace Image_sort.Logic
                         {
                             try
                             {
-                                File.Move(newPath, oldPath);
+                                MovingFile = true;
+                                MoveFileWithoutRemembering(newPath, oldPath);
                                 imagePathPool[CurrentIndex - amount] = oldPath;
                                 CurrentIndex -= amount;
+                                MovingFile = false;
                                 return;
                             }
                             // When access fails...
                             catch (IOException ex)
                             {
+                                MovingFile = false;
                                 // Show the user a message box explaining why.
                                 System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
                                     "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
@@ -429,7 +370,7 @@ namespace Image_sort.Logic
         /// <param name="horizontalResolution">Horizontal resolution targeted</param>
         public void SetResolution(int horizontalResolution)
         {
-            MaxHorizontalResolution = horizontalResolution;
+            HorizontalResolution = horizontalResolution;
         }
 
         /// <summary>
@@ -446,7 +387,7 @@ namespace Image_sort.Logic
         /// current path.
         /// </summary>
         /// <param name="newPath">The path to the new image location of the image.</param>
-        public void AppendNewLocation(string newPath)
+        public void RememberNewPathToImage(string newPath)
         {
             // Appends the new location to the image with a "*" (not allowed for paths/reserved)
             // so that it can be reverted again if needed.
@@ -460,12 +401,185 @@ namespace Image_sort.Logic
         /// <returns>(currentImage, maxImages)</returns>
         public (int, int) GetCurrentProgress()
         {
-            return (CurrentIndex-1, imagePathPool.Count);
+            return (CurrentIndex - 1, imagePathPool.Count);
+        }
+
+        /// <summary>
+        /// Moves the file from source to destination, makes sure it is unlocked
+        /// throws IOException if image is not callable
+        /// </summary>
+        /// <param name="source">The <see cref="string"/> pointing to the source image</param>
+        /// <param name="destination">The <see cref="string"/> pointing to it's destination</param>
+        public void MoveFileTo(string source, string destination)
+        {
+            MovingFile = true;
+            try
+            {
+                // In the end "finalDestination" will contain the final destination,
+                // which can be different from the one given.
+                string finalDestination = "";
+                // Only run, if there is an existing file, that has been given back.
+                if (File.Exists(source))
+                {
+                    // Making sure the file doesn't already exist at the destination
+                    if (!File.Exists(destination))
+                    {
+                        // signal that the file is moving
+                        filesMoving.Add(source, destination);
+                        // Actual moving operation
+                        File.Move(source, destination);
+                        // Remember the new location of the image
+                        finalDestination = destination;
+                    }
+                    else
+                    {
+                        // Show the user a message box and ask him, if he wants to replace the image,
+                        // rename it, or don't do anything.
+                        System.Windows.Forms.DialogResult dialogResult = System.Windows.Forms.MessageBox.Show(
+                            "The image does already exist in the selected folder." +
+                            " Do you want to replace it?\n\n" +
+                            "*No creates a new File for the image at the destination.", "Replace image?",
+                            System.Windows.Forms.MessageBoxButtons.YesNoCancel,
+                            System.Windows.Forms.MessageBoxIcon.Question);
+
+                        // If the user wants to replace the image
+                        if (dialogResult == System.Windows.Forms.DialogResult.Yes)
+                        {
+                            // signal that the file is moving
+                            filesMoving.Add(source, destination);
+
+                            // Delete the existing file and replace it
+                            File.Delete(destination);
+                            File.Move(source, destination);
+
+                            // Remember the new location of the image
+                            finalDestination = destination;
+                        }
+                        else if (dialogResult == System.Windows.Forms.DialogResult.No)
+                        {
+                            // Stores the number for the later renamed image (e.g. "image(i=2).jpg
+                            int i = 0;
+
+                            // Stores the path of the new destination name of the image to move.
+                            string newDestinationName;
+
+                            // increments i as long as it has to, so that the image to move
+                            // can be moved with a name that doesn't exist yet.
+                            while (File.Exists(ImageFolderManagerHelpers.GetPathWithNumber(destination, i)))
+                            {
+                                i++;
+                                // Sets the path to the new path (for example: "image(2).jpg")
+                                newDestinationName = ImageFolderManagerHelpers.GetPathWithNumber(destination, i);
+                            }
+
+                            // Sets the path to the new path (for example: "image(2).jpg")
+                            newDestinationName = ImageFolderManagerHelpers.GetPathWithNumber(destination, i);
+
+                            // signal that the file is moving
+                            filesMoving.Add(source, newDestinationName);
+
+                            // Move the file
+                            File.Move(source, newDestinationName);
+
+                            // Remember the new location of the image
+                            finalDestination = newDestinationName;
+                        }
+                    }
+                    
+                    // Append the new location to the the current path for possible
+                    // future retrievement and reversion.
+                    RememberNewPathToImage(finalDestination);
+                }
+            }
+            // When access fails...
+            catch (IOException ex)
+            {
+                // Show the user a message box explaining why.
+                System.Windows.Forms.MessageBox.Show($"Could not move file. Error:\n\n{ex.Message}",
+                    "Error", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+            }
+
+            MovingFile = false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void MoveFileWithoutRemembering(string source, string destination)
+        {
+            filesMoving.Add(source, destination);
+            File.Move(source, destination);
+        }
+
+        /// <summary>
+        /// Renames the given file and disables raising revents because of that.
+        /// </summary>
+        /// <param name="path">The path to the file to be renamed.</param>
+        /// <param name="newName">the name of the file to be renamed.</param>
+        public void RenameFile(string path, string newName)
+        {
+            // tell the imageSelectorQuery to not raise rename events.
+            RenamingFile = true;
+
+            // ensure the file exists
+            if (!File.Exists(path))
+            {
+                throw new ArgumentException($"{path} does not exist.", "path");
+            }
+            // ensure the new name is not an directory.
+            if (newName.Contains("\\") || newName.Contains("/"))
+            {
+                throw new ArgumentException($"{newName} contains an directory seperation char.", "newName");
+            }
+            // remame the file.
+            File.Move(path, Path.Combine(Path.GetDirectoryName(path), newName));
+
+            // tell the imageSelectorQuery to start raising rename events again.
+            RenamingFile = false;
+        }
+
+        /// <summary>
+        /// Gets whether an given path is currently moving or not.
+        /// </summary>
+        /// <param name="path">The path to be checked is moving.</param>
+        /// <returns>Whether the path is moving or not.</returns>
+        public async Task<bool> IsPathMovingAsync(string path)
+        {
+            bool pathMoving = false;
+
+            await Task.Run(() =>
+            {
+                // get every path moving and compare
+                Parallel.ForEach(filesMoving, (pair) =>
+                {
+                    string source = pair.Key;
+                    string destination = pair.Value;
+
+                    if (path == source || path == destination)
+                    {
+                        pathMoving = true;
+                    }
+                });
+            });
+            
+            return pathMoving;
+        }
+
+        /// <summary>
+        /// Removes an file given from the <see cref="filesMoving"/> based on key and value.
+        /// </summary>
+        /// <param name="path">the path to the file to be removed from <see cref="filesMoving"/>.</param>
+        private void RemovePathFromMovingFiles(string path)
+        {
+            foreach (var item in filesMoving.Where(kvp => kvp.Value == path || kvp.Key == path).ToList())
+            {
+                filesMoving.Remove(item.Key);
+            }
         }
         #endregion
 
 
-        
+
 
         #region Event Handlers
         /// <summary>
@@ -516,8 +630,9 @@ namespace Image_sort.Logic
                 }
             }
 
-            // raises the FolderChanged event
-            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+            if (!MovingFile)
+                // raises the FolderChanged event
+                FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
         }
 
         /// <summary>
@@ -525,66 +640,26 @@ namespace Image_sort.Logic
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        protected virtual void OnFileCreated(object sender, FileSystemEventArgs e)
+        protected async virtual void OnFileCreated(object sender, FileSystemEventArgs e)
         {
-            if (e.ChangeType == WatcherChangeTypes.Created)
+            bool createdImageIsMoving = await IsPathMovingAsync(e.FullPath);
+
+            if (!MovingFile && !createdImageIsMoving && e.ChangeType == WatcherChangeTypes.Created)
             {
                 // check if the created file is supported, and if it is, add it to the imagePathPool.
                 if (e.FullPath.ToLower().EndsWithEither(SupportedFileTypes))
                 {
                     imagePathPool.Add(e.FullPath);
+
+                    // raises the FolderChanged event
+                    FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
                 }
             }
-
-            // raises the FolderChanged event
-            FolderChanged(this, new FolderChangedEventArgs(e.FullPath));
+            else if (createdImageIsMoving)
+            {
+                RemovePathFromMovingFiles(e.FullPath);
+            }
         }
         #endregion
-    }
-
-    /// <summary>
-    /// Contains helpers used in the <see cref="ImageSelectorQuery"/> class.
-    /// </summary>
-    static class ImageSelectoreQueryHelpers
-    {
-        /// <summary>
-        /// Determines whether a <see cref="string"/> ends with one of the <see cref="string"/>s given in an 
-        /// <see cref="Array"/> of <see cref="string"/>s.
-        /// </summary>
-        /// <param name="source"></param>
-        /// <param name="endings"></param>
-        /// <returns></returns>
-        public static bool EndsWithEither(this string source, string[] endings)
-        {
-            bool endsWithOne = false;
-            foreach (string ending in endings)
-            {
-                if (source.EndsWith(ending))
-                {
-                    endsWithOne = true;
-                }
-            }
-            return endsWithOne;
-        }
-    }
-
-    /// <summary>
-    /// Contains info about the type of change.
-    /// </summary>
-    public class FolderChangedEventArgs : EventArgs
-    {
-        /// <summary>
-        /// Contains the path to the changed file.
-        /// </summary>
-        public string ChangedFileFullPath { get; private set; }
-
-        /// <summary>
-        /// Initialises an new instance of <see cref="FolderChangedEventArgs"/>.
-        /// </summary>
-        /// <param name="changedFilePath">The full path to the changed file.</param>
-        public FolderChangedEventArgs(string changedFilePath) : base()
-        {
-            ChangedFileFullPath = changedFilePath;
-        }
     }
 }

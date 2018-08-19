@@ -66,18 +66,16 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EventHandlerTypes.cs" />
+    <Compile Include="FolderChangedEventArgs.cs" />
     <Compile Include="FolderSelector.cs" />
-    <Compile Include="ImageSelectorQuery.cs" />
+    <Compile Include="IImageManager.cs" />
+    <Compile Include="ImageFolderManager.cs" />
+    <Compile Include="ImageFolderManagerHelpers.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".gitignore" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Image sort.UI.Dialogs\Image sort.UI.Dialogs.csproj">
-      <Project>{3afab814-e713-4175-a071-fd69ab70b67d}</Project>
-      <Name>Image sort.UI.Dialogs</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

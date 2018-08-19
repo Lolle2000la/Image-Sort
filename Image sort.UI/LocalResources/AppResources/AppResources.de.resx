@@ -256,4 +256,10 @@ Der Fehlercode ist: {errcode}</value>
   <data name="ExceptionMoreInfo" xml:space="preserve">
     <value>Mehr Informationen: {message}</value>
   </data>
+  <data name="CreateNewFolder" xml:space="preserve">
+    <value>Neuen Ordner erstellen</value>
+  </data>
+  <data name="CreateNewFolderMessage" xml:space="preserve">
+    <value>Wie soll der Ordner heißen?</value>
+  </data>
 </root>

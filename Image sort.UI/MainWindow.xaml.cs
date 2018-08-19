@@ -37,7 +37,7 @@ namespace Image_sort.UI
         /// is managing the folder selecting and getting the <see cref="Image"/>s
         /// in that folder.
         /// </summary>
-        private FolderSelector folderSelector = new FolderSelector(Properties.Settings.Default.MaxHorizontalResolution);
+        private IImageManager imageManager = new ImageFolderManager(Properties.Settings.Default.MaxHorizontalResolution);
 
         /// <summary>
         /// Contains a <see cref="List"/> of <see cref="string"/>'s 
@@ -63,7 +63,7 @@ namespace Image_sort.UI
             {
                 Properties.Settings.Default.MaxHorizontalResolution = value;
                 Properties.Settings.Default.Save();
-                folderSelector.SetResolution(Properties.Settings.Default.MaxHorizontalResolution);
+                imageManager.SetResolution(Properties.Settings.Default.MaxHorizontalResolution);
             }
         }
 
@@ -105,7 +105,7 @@ namespace Image_sort.UI
         {
             get
             {
-                (int progress, int max) = folderSelector.GetCurrentProgress();
+                (int progress, int max) = imageManager.GetCurrentProgress();
                 return max;
             }
         }
@@ -117,11 +117,11 @@ namespace Image_sort.UI
         {
             get
             {
-                return folderSelector.CurrentIndex;
+                return imageManager.CurrentIndex;
             }
             set
             {
-                folderSelector.CurrentIndex = value;
+                imageManager.CurrentIndex = value;
                 SetValue(CurrentIndexProperty, value);
             }
         }
@@ -139,6 +139,11 @@ namespace Image_sort.UI
         /// keeps track of whether the slider progress was changed.
         /// </summary>
         private bool SliderValueChanged = false;
+
+        /// <summary>
+        /// This keeps track of how many dialogs are open.
+        /// </summary>
+        protected int DialogsOpen { get; private set; } = 0;
         #endregion
 
 
@@ -198,7 +203,7 @@ namespace Image_sort.UI
 
             // Set the resolution to the saved one.
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
-            folderSelector.SetResolution(MaxHorizontalResolution);
+            imageManager.SetResolution(MaxHorizontalResolution);
 
             // Fill in the requiered instance, needed for event bubbling.
             FoldersStack.MainWindowParent = this;
@@ -227,17 +232,17 @@ namespace Image_sort.UI
             };
 
             // called when an folder was changed.
-            folderSelector.FolderChanged += async (o, e) =>
+            imageManager.FolderChanged += async (o, e) =>
             {
                 // sets the current index back before loading the "next"
-                folderSelector.CurrentIndex--;
+                imageManager.CurrentIndex--;
 
                 //// set the preview image to nothing
                 //PreviewImage.Source = null;
                 // get the next image
-                BitmapImage buffer = await folderSelector.GetNextImage();
+                BitmapImage buffer = await imageManager.GetNextImage();
                 // get the next path of the next image
-                string path = folderSelector.GetImagePath();
+                string path = imageManager.GetImagePath();
 
                 // if the buffer is not null, load the image
                 if (buffer != null)
@@ -262,7 +267,7 @@ namespace Image_sort.UI
                 }
 
                 loadImageProgressSlider = false;
-                Dispatcher.Invoke(() => ProgressSlider.Value = folderSelector.CurrentIndex - 1);
+                Dispatcher.Invoke(() => ProgressSlider.Value = imageManager.CurrentIndex - 1);
             };
         }
         #endregion
@@ -378,7 +383,7 @@ namespace Image_sort.UI
             DisableAllControls();
 
             // if the folder could not be selected, redo the thing
-            if (folderSelector.SelectAsync(folder) == false)
+            if (!imageManager.SetCurrentFolder(folder))
             {
                 // Only enable opening another one
                 SelectFolderButton.IsEnabled = true;
@@ -388,8 +393,14 @@ namespace Image_sort.UI
             // otherwise load the image and enable the controls, if there is an image
             else
             {
+                // Show the current folder in the title bar
+#if (!DEMO)
+                Title = $"Image sort - {imageManager.CurrentFolder}";
+#else
+                Title = $"Image sort - {Path.GetFileName(imageManager.CurrentFolder)}";
+#endif
                 // Get the next image
-                BitmapImage buffer = await folderSelector.GetNextImage();
+                BitmapImage buffer = await imageManager.GetNextImage();
 
                 // if one was given back, load it (also enable controls)
                 if (buffer != null)
@@ -607,19 +618,28 @@ namespace Image_sort.UI
         /// <summary>
         /// Lets the user create a new folder
         /// </summary>
-        private void NewFolder()
+        private async void NewFolder()
         {
             // Only runs when it's usable
             if (NewFolderButton.IsEnabled)
             {
+                // signal that at least one dialog is open.
+                DialogsOpen++;
                 // gets the name of the folder the user wants
-                string folderName = InputBox.Show("What name should the folder have", "Create new Folder", "");
+                string folderName = await this.ShowInputAsync(AppResources.CreateNewFolder,
+                                                        AppResources.CreateNewFolderMessage,
+                                                        new MetroDialogSettings() {
+                                                            AffirmativeButtonText = AppResources.Yes,
+                                                            NegativeButtonText = AppResources.No,
+                                                            DefaultText = AppResources.NewFolder
+                                                        });
+                // signal that at least one dialog is not open anymore.
+                DialogsOpen--;
                 // Makes sure the user inputted something
-                if (folderName != "")
+                if (folderName != null)
                 {
                     // Create the actual directory
-                    Directory.CreateDirectory(folderSelector.GetCurrentFolderPath() + @"\"
-                        + folderName);
+                    Directory.CreateDirectory(Path.Combine(imageManager.CurrentFolder, folderName));
 
                     // Create and add the item to the FoldersStack
                     ListBoxItem folder = new ListBoxItem() {
@@ -632,7 +652,7 @@ namespace Image_sort.UI
                     FoldersStack.Items.Add(folder);
 
                     // Add the whole path to the collection of folders
-                    folders.Add(folderSelector.GetCurrentFolderPath() + @"\" + folderName);
+                    folders.Add(Path.Combine(imageManager.CurrentFolder, folderName));
                 }
             }
         }
@@ -650,7 +670,7 @@ namespace Image_sort.UI
             // if an image was given, fill in the information (meta-data)
             if (image != null)
             {
-                string pathToImage = folderSelector.GetImagePath();
+                string pathToImage = imageManager.GetImagePath();
 
                 FileNameInfoLabel.Text = $"{AppResources.Name}:";
                 FileNameInfo.Text = Path.GetFileNameWithoutExtension(pathToImage);
@@ -672,7 +692,7 @@ namespace Image_sort.UI
                 ProgressSlider.Maximum = MaxImages;
 
                 // Show Progress
-                (int current, int max) = folderSelector.GetCurrentProgress();
+                (int current, int max) = imageManager.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"{AppResources.Progress}: {current}/{max}";
             }
             // if that is not the case, remove the old information.
@@ -687,7 +707,7 @@ namespace Image_sort.UI
                 FileSizeInfo.Text = "";
 
                 // Show progress
-                (int current, int max) = folderSelector.GetCurrentProgress();
+                (int current, int max) = imageManager.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"Progress: {current}/{max}";
 
                 OpenInExplorerLink.NavigateUri = null;
@@ -712,19 +732,19 @@ namespace Image_sort.UI
         public void AddFoldersToFoldersStack()
         {
             // Show folders to which it can be moved
-            if (Directory.Exists(folderSelector.GetCurrentFolderPath()))
+            if (Directory.Exists(imageManager.CurrentFolder))
             {
                 // Clear all the items out of the list
                 FoldersStack.Items.Clear();
 
                 // Get every directory in the folder
-                folders = Directory.EnumerateDirectories(folderSelector.GetCurrentFolderPath())
+                folders = Directory.EnumerateDirectories(imageManager.CurrentFolder)
                                    .ToList();
 
                 // only add the .. when there is another parent folder.
-                if (Path.GetPathRoot(folderSelector.GetCurrentFolderPath()) != folderSelector.GetCurrentFolderPath())
+                if (Path.GetPathRoot(imageManager.CurrentFolder) != imageManager.CurrentFolder)
                 {
-                    folders.Insert(0, folderSelector.GetCurrentFolderPath() + @"\..");
+                    folders.Insert(0, imageManager.CurrentFolder + @"\..");
                 }
 
                 //ListBoxItem folderUpwards = new ListBoxItem()
@@ -876,9 +896,9 @@ namespace Image_sort.UI
                 //// set the preview image to nothing
                 //PreviewImage.Source = null;
                 // get the next image
-                BitmapImage buffer = await folderSelector.GetNextImage();
+                BitmapImage buffer = await imageManager.GetNextImage();
                 // get the next path of the next image
-                string path = folderSelector.GetImagePath();
+                string path = imageManager.GetImagePath();
 
                 // if the buffer is not null, load the image
                 if (buffer != null)
@@ -893,7 +913,7 @@ namespace Image_sort.UI
                 }
 
                 loadImageProgressSlider = false;
-                ProgressSlider.Value = folderSelector.CurrentIndex - 1;
+                ProgressSlider.Value = imageManager.CurrentIndex - 1;
             }
         }
 
@@ -909,9 +929,9 @@ namespace Image_sort.UI
                     //// set the preview image to nothing
                     //PreviewImage.Source = null;
                     // get the next path of the next image
-                    string path = folderSelector.GetImagePath();
+                    string path = imageManager.GetImagePath();
                     // get the next image
-                    BitmapImage buffer = await folderSelector.GetNextImage();
+                    BitmapImage buffer = await imageManager.GetNextImage();
 
 
                     // if the buffer is not null, load the image
@@ -927,12 +947,12 @@ namespace Image_sort.UI
                     }
 
                     // Move the file
-                    folderSelector.MoveFileTo(path,
+                    imageManager.MoveFileTo(path,
                         folders.ElementAt(FoldersStack.SelectedIndex) + "\\" +
                         System.IO.Path.GetFileName(path));
 
                     loadImageProgressSlider = false;
-                    ProgressSlider.Value = folderSelector.CurrentIndex - 1;
+                    ProgressSlider.Value = imageManager.CurrentIndex - 1;
                 }
             }
             else
@@ -944,7 +964,7 @@ namespace Image_sort.UI
 
         public async void DoRename()
         {
-            string currentImagePath = folderSelector.GetImagePath();
+            string currentImagePath = imageManager.GetImagePath();
             string newImageName = FileNameInfo.Text;
             string fileExtension = Path.GetExtension(currentImagePath);
 
@@ -963,11 +983,11 @@ namespace Image_sort.UI
             {
                 if (Path.GetFileNameWithoutExtension(currentImagePath) != newImageName)
                     // rename the file.
-                    folderSelector.RenameFile(currentImagePath, $"{newImageName}{fileExtension}");
+                    imageManager.RenameFile(currentImagePath, $"{newImageName}{fileExtension}");
             }
             catch (Exception ex)
             {
-                await this.ShowMessageAsync(AppResources.CouldNotRenameFile.Replace("{file}", Path.GetFileName(folderSelector.GetImagePath())),
+                await this.ShowMessageAsync(AppResources.CouldNotRenameFile.Replace("{file}", Path.GetFileName(imageManager.GetImagePath())),
                     AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
             }
         }
@@ -977,7 +997,7 @@ namespace Image_sort.UI
             if (DeleteImageButton.IsEnabled == true)
             {
                 // get the current image to use it later.
-                string currentImage = folderSelector.GetImagePath();
+                string currentImage = imageManager.GetImagePath();
 
                 try
                 {
@@ -989,9 +1009,9 @@ namespace Image_sort.UI
                         //// set the preview image to nothing
                         //PreviewImage.Source = null;
                         // get the next image
-                        BitmapImage buffer = await folderSelector.GetNextImage();
+                        BitmapImage buffer = await imageManager.GetNextImage();
                         // get the next path of the next image
-                        string path = folderSelector.GetImagePath();
+                        string path = imageManager.GetImagePath();
 
                         // if the buffer is not null, load the image
                         if (buffer != null)
@@ -1006,7 +1026,7 @@ namespace Image_sort.UI
                         }
 
                         loadImageProgressSlider = false;
-                        ProgressSlider.Value = folderSelector.CurrentIndex - 1;
+                        ProgressSlider.Value = imageManager.CurrentIndex - 1;
                     }
                 }
                 catch (System.ComponentModel.Win32Exception ex)
@@ -1026,16 +1046,16 @@ namespace Image_sort.UI
         public async void GoBack()
         {
             // Actually go back in time!!!
-            folderSelector.GoBackImages();
+            imageManager.GoBackImages();
 
             // Get the next image.
-            LoadImage(await folderSelector.GetNextImage());
+            LoadImage(await imageManager.GetNextImage());
 
             // Enable the controls again.
             EnableControls();
 
             loadImageProgressSlider = false;
-            ProgressSlider.Value = folderSelector.CurrentIndex - 1;
+            ProgressSlider.Value = imageManager.CurrentIndex - 1;
         }
 
         /// <summary>
@@ -1046,9 +1066,9 @@ namespace Image_sort.UI
             CurrentIndex = (int) ProgressSlider.Value;
             SkipFileButton.IsEnabled = true;
             // get the next image
-            BitmapImage buffer = await folderSelector.GetNextImage();
+            BitmapImage buffer = await imageManager.GetNextImage();
             // get the next path of the next image
-            string path = folderSelector.GetImagePath();
+            string path = imageManager.GetImagePath();
 
             // if the buffer is not null, load the image
             if (buffer != null)
@@ -1546,7 +1566,7 @@ namespace Image_sort.UI
         private void OpenInExplorer_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             if (OpenInExplorerLinkHost.Visibility == Visibility.Visible)
-                OpenImageInFileExplorer(folderSelector.GetImagePath());
+                OpenImageInFileExplorer(imageManager.GetImagePath());
         }
 
         /// <summary>
@@ -1556,13 +1576,17 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            // prevents entering a folder when a rename is initiated.
-            if (FileNameInfo.IsFocused)
+            // prevent accidental entering.
+            if (DialogsOpen <= 0)
             {
-                DoRename();
+                // prevents entering a folder when a rename is initiated.
+                if (FileNameInfo.IsFocused)
+                {
+                    DoRename();
+                }
+                else if (IsAnyFolderVisible && !ResolutionBox.Focusable)
+                    EnterFolder();
             }
-            else if (IsAnyFolderVisible && !ResolutionBox.Focusable)
-                EnterFolder();
         }
 
         /// <summary>
@@ -1575,7 +1599,7 @@ namespace Image_sort.UI
             if (IsAnyFolderVisible)
             {
                 // only go upwards when there is another parent folder.
-                if (Path.GetPathRoot(folderSelector.GetCurrentFolderPath()) != folderSelector.GetCurrentFolderPath())
+                if (Path.GetPathRoot(imageManager.CurrentFolder) != imageManager.CurrentFolder)
                 {
                     // select the top folder (..) and enter it, results in an upwards traversal in folders.
                     FoldersStack.SelectedIndex = 0;
@@ -1740,14 +1764,23 @@ namespace Image_sort.UI
                                         dlg.NegativeButton.Click += (s, e1) =>
                                         {
                                             this.HideMetroDialogAsync(dlg);
+                                            // signal that at least one dialog is not open anymore.
+                                            DialogsOpen--;
+
                                             input.WriteLine(UpdaterConstants.Negative);
                                         };
                                         // When the positive button was clicked, then consent was given.
                                         dlg.PositiveButton.Click += (s, e1) =>
                                         {
                                             this.HideMetroDialogAsync(dlg);
+                                            // signal that at least one dialog is not open anymore.
+                                            DialogsOpen--;
+
                                             input.WriteLine(UpdaterConstants.Positive);
                                         };
+
+                                        // signal that at least one dialog is open.
+                                        DialogsOpen++;
                                         // show the dialog.
                                         await this.ShowMetroDialogAsync(dlg);
                                     });
@@ -1938,7 +1971,7 @@ namespace Image_sort.UI
             var dataObj = new System.Windows.DataObject();
             dataObj.SetImage((BitmapImage) PreviewImage.Source);
             dataObj.SetFileDropList(
-                new System.Collections.Specialized.StringCollection() { folderSelector.GetImagePath() });
+                new System.Collections.Specialized.StringCollection() { imageManager.GetImagePath() });
             DragDrop.DoDragDrop(PreviewImage, dataObj, System.Windows.DragDropEffects.All);
         }
 
