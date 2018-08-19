@@ -137,9 +137,49 @@ namespace Image_sort.UI.LocalResources.AppResources {
         /// <summary>
         ///   Looks up a localized string similar to Delete.
         /// </summary>
+        public static string Delete {
+            get {
+                return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete Folder.
+        /// </summary>
+        public static string DeleteFolder {
+            get {
+                return ResourceManager.GetString("DeleteFolder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Do you really want to delete the folder {folder}? 
+        ///
+        ///If possible, it will be moved to the recycle bin, but if it can&apos;t (for example because it&apos;s an OneDrive folder) it will not be reversable.
+        ///
+        ///Note: Use Tab to cycle through the answers..
+        /// </summary>
+        public static string DeleteFolderConfirmation {
+            get {
+                return ResourceManager.GetString("DeleteFolderConfirmation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Delete.
+        /// </summary>
         public static string DeleteImage {
             get {
                 return ResourceManager.GetString("DeleteImage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Don&apos;t delete.
+        /// </summary>
+        public static string DontDelete {
+            get {
+                return ResourceManager.GetString("DontDelete", resourceCulture);
             }
         }
         

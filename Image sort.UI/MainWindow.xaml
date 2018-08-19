@@ -29,6 +29,7 @@
         <CommandBinding Command="local:Command.HelpCommand" Executed="Help_Executed"/>
         <CommandBinding Command="local:Command.DeleteCommand" Executed="DeleteCommand_Executed" />
         <CommandBinding Command="local:Command.RenameCommand" Executed="RenameCommand_Executed" />
+        <CommandBinding Command="local:Command.DeleteFolderCommand" Executed="DeleteFolderCommand_Executed" />
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -46,6 +47,7 @@
         <KeyBinding Command="local:Command.ToggleSearchCommand" Modifiers="Ctrl" Key="S"/>
         <KeyBinding Command="local:Command.HelpCommand" Key="F1"/>
         <KeyBinding Command="local:Command.DeleteCommand" Key="Delete" />
+        <KeyBinding Command="local:Command.DeleteFolderCommand" Key="Delete" Modifiers="Ctrl" />
         <KeyBinding Command="local:Command.RenameCommand" Key="R" Modifiers="Ctrl" />
     </Window.InputBindings>
 
@@ -94,15 +96,19 @@
                         x:Name="SelectFolderButton" 
                         ToolTip="{x:Static tooltip:ToolTips.SelectFolderToolTip}"
                         Command="local:Command.SelectFolderCommand"/>
-                <!-- Click="SelectFolderButton_Click" -->
-                <Button Content="{x:Static res:AppResources.NewFolder}" IsEnabled="False" Focusable="False"
-                        x:Name="NewFolderButton" Command="local:Command.CreateFolderCommand"
-                        ToolTip="{x:Static tooltip:ToolTips.NewFolderToolTip}"/>
                 <!-- Click="NewFolderButton_Click" -->
                 <Button Content="{x:Static res:AppResources.EnterFolder}" IsEnabled="False" Focusable="False"
                         x:Name="EnterFolderButton" Command="local:Command.EnterFolderCommand"
                         ToolTip="{x:Static tooltip:ToolTips.EnterFolderToolTip}"/>
                 <!-- Click="EnterFolderButton_Click" -->
+                <!-- Click="SelectFolderButton_Click" -->
+                <Button Content="{x:Static res:AppResources.NewFolder}" IsEnabled="False" Focusable="False"
+                        x:Name="NewFolderButton" Command="local:Command.CreateFolderCommand"
+                        ToolTip="{x:Static tooltip:ToolTips.NewFolderToolTip}"/>
+                <!-- Click="SelectFolderButton_Click" -->
+                <Button Content="{x:Static res:AppResources.DeleteFolder}" IsEnabled="False" Focusable="False"
+                        x:Name="DeleteFolderButton" Command="local:Command.DeleteFolderCommand"
+                        ToolTip="{x:Static tooltip:ToolTips.DeleteFolderTip}"/>
             </ToolBar>
             <!-- Contains everything for image management -->
             <ToolBar Focusable="False">

@@ -570,6 +570,7 @@ namespace Image_sort.UI
                 AddFoldersToFoldersStack();
             }
         }
+
         /// <summary>
         /// Loads the folder at the path given, and then adds the folders in that folder
         /// to the selection in the <see cref="FoldersStack"/>
@@ -655,6 +656,52 @@ namespace Image_sort.UI
                     folders.Add(Path.Combine(imageManager.CurrentFolder, folderName));
                 }
             }
+        }
+
+        private async void DeleteFolder()
+        {
+            if ((imageManager.CurrentFolder.Length > 3 && FoldersStack.SelectedIndex > 1)
+                || (imageManager.CurrentFolder.Length <= 3))
+                if (DeleteFolderButton.IsEnabled == true)
+                {
+                    // get the current image to use it later.
+                    string currentFolder = Path.Combine(imageManager.CurrentFolder,
+                        ((ListBoxItem) FoldersStack.SelectedItem).Content.ToString());
+
+                    try
+                    {
+                        DialogsOpen++;
+                        if (await this.ShowMessageAsync(AppResources.DeleteFolder,
+                                                        AppResources.DeleteFolderConfirmation.Replace("{folder}", currentFolder),
+                                                        MessageDialogStyle.AffirmativeAndNegative,
+                                                        new MetroDialogSettings() {
+                                                            AffirmativeButtonText = AppResources.Delete,
+                                                            NegativeButtonText = AppResources.DontDelete
+                                                        })
+                            == MessageDialogResult.Affirmative)
+                            // send image to the recycle bin
+                            if (FileOperationApiWrapper.Send(currentFolder,
+                                FileOperationApiWrapper.FileOperationFlags.FOF_ALLOWUNDO
+                                | FileOperationApiWrapper.FileOperationFlags.FOF_NOCONFIRMATION))
+                            {
+                                int currentIndex = FoldersStack.SelectedIndex;
+                                // remove an folder
+                                folders.RemoveAt(currentIndex);
+                                FoldersStack.SelectedIndex--;
+                                FoldersStack.Items.RemoveAt(currentIndex);
+                            }
+                        DialogsOpen--;
+                    }
+                    catch (System.ComponentModel.Win32Exception ex)
+                    {
+                        await this.ShowMessageAsync(
+                                   AppResources.CouldNotDeleteFile.Replace("{filename}", currentFolder),
+                                   AppResources.CouldNotDeleteFileMessage.Replace("{filename}", currentFolder)
+                                                                         .Replace("{errcode}", ex.NativeErrorCode.ToString())
+                                   );
+                        DialogsOpen--;
+                    }
+                }
         }
         #endregion
 
@@ -839,6 +886,10 @@ namespace Image_sort.UI
             EnterFolderButton.IsEnabled = true;
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
+            if (FoldersStack.Items.Count > 1)
+            {
+                DeleteFolderButton.IsEnabled = true;
+            }
         }
 
         /// <summary>
@@ -851,6 +902,7 @@ namespace Image_sort.UI
             NewFolderButton.IsEnabled = false;
             GoBackButton.IsEnabled = false;
             DeleteImageButton.IsEnabled = false;
+            DeleteFolderButton.IsEnabled = false;
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
@@ -867,6 +919,10 @@ namespace Image_sort.UI
             ResolutionBox.IsEnabled = true;
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
+            if (FoldersStack.Items.Count > 1)
+            {
+                DeleteFolderButton.IsEnabled = true;
+            }
         }
 
         /// <summary>
@@ -882,6 +938,7 @@ namespace Image_sort.UI
             ResolutionBox.IsEnabled = false;
             GoBackButton.IsEnabled = false;
             DeleteImageButton.IsEnabled = false;
+            DeleteFolderButton.IsEnabled = false;
         }
         #endregion
 
@@ -1476,7 +1533,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void GoBack_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (GoBackButton.IsEnabled)
+            if (DialogsOpen <= 0 && GoBackButton.IsEnabled)
                 GoBack();
         }
 
@@ -1528,7 +1585,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void MoveImage_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (MoveFolderButton.IsEnabled && !SearchEnabled)
+            if (DialogsOpen <= 0 && MoveFolderButton.IsEnabled && !SearchEnabled)
             {
                 DoMove();
             }
@@ -1541,7 +1598,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void SkipImage_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (SkipFileButton.IsEnabled && !SearchEnabled)
+            if (DialogsOpen <= 0 && SkipFileButton.IsEnabled && !SearchEnabled)
             {
                 DoSkip();
             }
@@ -1565,7 +1622,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void OpenInExplorer_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (OpenInExplorerLinkHost.Visibility == Visibility.Visible)
+            if (DialogsOpen <= 0 && OpenInExplorerLinkHost.Visibility == Visibility.Visible)
                 OpenImageInFileExplorer(imageManager.GetImagePath());
         }
 
@@ -1596,7 +1653,7 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void GoUpwards_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (IsAnyFolderVisible)
+            if (DialogsOpen <= 0 && IsAnyFolderVisible)
             {
                 // only go upwards when there is another parent folder.
                 if (Path.GetPathRoot(imageManager.CurrentFolder) != imageManager.CurrentFolder)
@@ -1654,6 +1711,16 @@ namespace Image_sort.UI
                 FileNameInfo.Focus();
                 FileNameInfo.CaretIndex = FileNameInfo.Text.Length;
             }
+        }
+
+        /// <summary>
+        /// Called, when the user wants to rename the current image.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DeleteFolderCommand_Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            DeleteFolder();
         }
         #endregion
 
@@ -2110,6 +2177,11 @@ namespace Image_sort.UI
         /// Focuses the <see cref="MainWindow.FileNameInfo"/> box to enable renaming when executed.
         /// </summary>
         public static RoutedCommand RenameCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Deletes the currently selected folder when executed.
+        /// </summary>
+        public static RoutedCommand DeleteFolderCommand = new RoutedCommand();
     }
     #endregion
 }

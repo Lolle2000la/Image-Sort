@@ -61,6 +61,17 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Deletes the currently selected folder and moves it to the trash bin if possible.
+        ///
+        ///Shortcut: ctrl+delete.
+        /// </summary>
+        public static string DeleteFolderTip {
+            get {
+                return ResourceManager.GetString("DeleteFolderTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Moves the current image to the recycle bin.
         ///
         ///Note: This cannot be reverted in-app. You must revert an deletion from inside the recycle bin yourself..

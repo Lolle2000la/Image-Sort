@@ -260,4 +260,20 @@ The error code is: {errcode}</value>
   <data name="CreateNewFolderMessage" xml:space="preserve">
     <value>What name should the folder have?</value>
   </data>
+  <data name="DeleteFolder" xml:space="preserve">
+    <value>Delete Folder</value>
+  </data>
+  <data name="DeleteFolderConfirmation" xml:space="preserve">
+    <value>Do you really want to delete the folder {folder}? 
+
+If possible, it will be moved to the recycle bin, but if it can't (for example because it's an OneDrive folder) it will not be reversable.
+
+Note: Use Tab to cycle through the answers.</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="DontDelete" xml:space="preserve">
+    <value>Don't delete</value>
+  </data>
 </root>

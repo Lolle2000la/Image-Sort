@@ -262,4 +262,20 @@ Der Fehlercode ist: {errcode}</value>
   <data name="CreateNewFolderMessage" xml:space="preserve">
     <value>Wie soll der Ordner heißen?</value>
   </data>
+  <data name="DeleteFolder" xml:space="preserve">
+    <value>Ordner löschen</value>
+  </data>
+  <data name="DeleteFolderConfirmation" xml:space="preserve">
+    <value>Möchten sie den Ordner {folder} wirklich verschieben? 
+
+Wenn möglich wird der Ordner in den Papierkorb verschoben, aber wenn dies nicht möglich ist (z.B. weil der Ordner ein OneDrive Ordner ist), dann ist dieser Vorgang nicht umkehrbar.
+
+Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Löschen</value>
+  </data>
+  <data name="DontDelete" xml:space="preserve">
+    <value>Nicht löschen</value>
+  </data>
 </root>
