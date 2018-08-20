@@ -61,7 +61,7 @@ namespace Image_sort.UI.LocalResources.Help {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/docs/help.md?raw=true.
+        ///   Looks up a localized string similar to https://github.com/Lolle2000la/Image-Sort/raw/master/docs/help.md.
         /// </summary>
         internal static string HelpUrl {
             get {

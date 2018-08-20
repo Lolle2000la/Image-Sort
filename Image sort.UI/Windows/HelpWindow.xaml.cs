@@ -101,7 +101,7 @@ namespace Image_sort.UI
                     using (WebClient wc = new WebClient())
                     {
                         // download markdown from github and convert the line endings.
-                        string downloadedMarkdown = Encoding.UTF8.GetString(wc.DownloadData(webHelpUrl)).Replace("\n", Environment.NewLine);
+                        string downloadedMarkdown = Encoding.UTF8.GetString(wc.DownloadData(webHelpUrl));
 
                         // if something was returned, then 
                         if (downloadedMarkdown != "")
