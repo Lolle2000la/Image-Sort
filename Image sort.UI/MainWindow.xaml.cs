@@ -658,6 +658,9 @@ namespace Image_sort.UI
             }
         }
 
+        /// <summary>
+        /// Asks the user if he wants to delete the current folder.
+        /// </summary>
         private async void DeleteFolder()
         {
             if ((imageManager.CurrentFolder.Length > 3 && FoldersStack.SelectedIndex > 1)
@@ -1019,6 +1022,9 @@ namespace Image_sort.UI
             }
         }
 
+        /// <summary>
+        /// Renames the image to the content of the <see cref="FileNameInfo"/>.
+        /// </summary>
         public async void DoRename()
         {
             string currentImagePath = imageManager.GetImagePath();
@@ -1049,6 +1055,9 @@ namespace Image_sort.UI
             }
         }
 
+        /// <summary>
+        /// Asks the user if he wants to move the current image to the trash bin.
+        /// </summary>
         public async void DoDelete()
         {
             if (DeleteImageButton.IsEnabled == true)
