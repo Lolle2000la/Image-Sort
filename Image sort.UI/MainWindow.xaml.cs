@@ -889,6 +889,7 @@ namespace Image_sort.UI
             EnterFolderButton.IsEnabled = true;
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
+            RenameImageButton.IsEnabled = true;
             if (FoldersStack.Items.Count > 1)
             {
                 DeleteFolderButton.IsEnabled = true;
@@ -906,6 +907,7 @@ namespace Image_sort.UI
             GoBackButton.IsEnabled = false;
             DeleteImageButton.IsEnabled = false;
             DeleteFolderButton.IsEnabled = false;
+            RenameImageButton.IsEnabled = false;
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
@@ -922,6 +924,7 @@ namespace Image_sort.UI
             ResolutionBox.IsEnabled = true;
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
+            RenameImageButton.IsEnabled = true;
             if (FoldersStack.Items.Count > 1)
             {
                 DeleteFolderButton.IsEnabled = true;
@@ -942,6 +945,7 @@ namespace Image_sort.UI
             GoBackButton.IsEnabled = false;
             DeleteImageButton.IsEnabled = false;
             DeleteFolderButton.IsEnabled = false;
+            RenameImageButton.IsEnabled = false;
         }
         #endregion
 

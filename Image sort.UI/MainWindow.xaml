@@ -119,10 +119,13 @@
                 <Button Content="{x:Static res:AppResources.Move}" IsEnabled="False" Focusable="False"
                     x:Name="MoveFolderButton" Command="local:Command.MoveImageCommand"
                     ToolTip="{x:Static tooltip:ToolTips.MoveToolTip}"/>
+                <!-- Click="MoveFolderButton_Click" -->
                 <Button Content="{x:Static res:AppResources.DeleteImage}" IsEnabled="False" Focusable="False"
                     x:Name="DeleteImageButton" Command="local:Command.DeleteCommand"
                     ToolTip="{x:Static tooltip:ToolTips.DeleteImageTip}"/>
-                <!-- Click="MoveFolderButton_Click" -->
+                <Button Content="{x:Static res:AppResources.Rename}" IsEnabled="False" Focusable="False"
+                    x:Name="RenameImageButton" Command="local:Command.RenameCommand"
+                    ToolTip="{x:Static tooltip:ToolTips.FileNameAndRenameTip}"/>
                 <Button Content="{x:Static res:AppResources.GoBack}" IsEnabled="False" Focusable="False"
                     x:Name="GoBackButton" Command="local:Command.GoBackCommand"
                     ToolTip="Goes back one image you skipped, if possible. Shortcut: ctrl + left arrow key"/>
