@@ -1,4 +1,4 @@
-﻿ # Getting started
+﻿# Getting started
  
 To get started, just follow this tour though the app:
 1. Select a folder, by pressing the "Select Folder" Button,
