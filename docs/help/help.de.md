@@ -1,4 +1,5 @@
 # Erste Schritte
+
 Um einen Einstieg in Image Sort zu erhalten, folgen Sie dieser Tour durch alle Funktionen:
 
 1. Wählen Sie einen Ordner aus, indem Sie den "Ordner auswählen" Knopf drücken,
