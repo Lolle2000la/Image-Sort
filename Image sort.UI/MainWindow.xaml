@@ -170,7 +170,8 @@
         <!--IsReadOnly="True"-->
 
         <!-- For better UX -->
-        <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" Width="5" Focusable="False"/>
+        <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" Width="5" Focusable="False"
+                      Background="{DynamicResource ResourceKey=GrayBrush6}"/>
 
         <!-- Image loading the image to sort as a preview -->
         <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="3"
@@ -178,7 +179,8 @@
                MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
                TouchDown="PreviewImage_TouchDown" StylusDown="PreviewImage_StylusDown"></Image>
 
-        <Grid Grid.Row="4" Grid.Column="1" Background="#BFFFFFFF">
+        <Grid Grid.Row="4" Grid.Column="1">
+            <Rectangle Fill="{DynamicResource ResourceKey=WhiteBrush}" Opacity="0.75"/>
             <Grid Margin="10">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>

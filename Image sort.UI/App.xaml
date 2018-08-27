@@ -21,6 +21,22 @@
                 <Setter Property="FontSize" Value="42" />
                 <Setter Property="Foreground" Value="#ff000000" />
                 <Setter Property="FontWeight" Value="Bold" />
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
+            </Style>
+            <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdigwpf:Styles.Heading2StyleKey}">
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
+            </Style>
+            <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdigwpf:Styles.Heading3StyleKey}">
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
+            </Style>
+            <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdigwpf:Styles.Heading4StyleKey}">
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
+            </Style>
+            <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdigwpf:Styles.Heading5StyleKey}">
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
+            </Style>
+            <Style TargetType="{x:Type Paragraph}" x:Key="{x:Static markdigwpf:Styles.Heading6StyleKey}">
+                <Setter Property="Foreground" Value="{DynamicResource ResourceKey=TextBrush}"/>
             </Style>
         </ResourceDictionary>
     </Application.Resources>
