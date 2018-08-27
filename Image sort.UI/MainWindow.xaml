@@ -146,9 +146,10 @@
         <!-- StackPanel containing all the buttons with the folders to choose -->
         <local:ListBoxScroll x:Name="FoldersStack" Grid.Column="0" Grid.Row="2" Grid.RowSpan="2" Focusable="False"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled" Margin="0,0,5,0"
-                             ScrollViewer.PanningMode="VerticalOnly" KeyDown="FoldersStack_KeyDown">
+                             ScrollViewer.PanningMode="VerticalOnly" KeyDown="FoldersStack_KeyDown"
+                             Style="{StaticResource ResourceKey=MetroListBox}">
             <ListBox.ItemContainerStyle>
-                <Style TargetType="ListBoxItem">
+                <Style TargetType="ListBoxItem" BasedOn="{StaticResource ResourceKey=MetroListBoxItem}">
                     <Setter Property="AllowDrop" Value="true" />
                     <EventSetter Event="DragEnter" Handler="ListBoxItem_DragEnter"/>
                     <EventSetter Event="Drop" Handler="ListBoxItem_Drop"/>
@@ -163,7 +164,9 @@
         <TextBox x:Name="SearchBarBox" Grid.Row="1" Grid.Column="0" Focusable="False"
                  Margin="0,0,5,0" IsReadOnlyCaretVisible="True" 
                  TextChanged="SearchBarBox_TextChanged" Visibility="Collapsed"
-                 PreviewKeyDown="FoldersStack_KeyDown"/>
+                 PreviewKeyDown="FoldersStack_KeyDown" 
+                 Controls:TextBoxHelper.ClearTextButton="True"
+                 Controls:TextBoxHelper.Watermark="{x:Static res:AppResources.Search}"/>
         <!--IsReadOnly="True"-->
 
         <!-- For better UX -->
