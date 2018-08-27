@@ -135,6 +135,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dark Mode.
+        /// </summary>
+        public static string DarkMode {
+            get {
+                return ResourceManager.GetString("DarkMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Delete.
         /// </summary>
         public static string Delete {

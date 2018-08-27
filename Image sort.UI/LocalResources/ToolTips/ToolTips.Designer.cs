@@ -61,6 +61,15 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enables or disables the dark mode..
+        /// </summary>
+        public static string DarkModeTooltip {
+            get {
+                return ResourceManager.GetString("DarkModeTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Deletes the currently selected folder and moves it to the trash bin if possible.
         ///
         ///Shortcut: ctrl+delete.

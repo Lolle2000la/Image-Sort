@@ -279,4 +279,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="Rename" xml:space="preserve">
     <value>Rename</value>
   </data>
+  <data name="DarkMode" xml:space="preserve">
+    <value>Dark Mode</value>
+  </data>
 </root>

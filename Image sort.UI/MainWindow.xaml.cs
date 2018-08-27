@@ -17,6 +17,8 @@ using MahApps.Metro.Controls.Dialogs;
 using Image_sort.Communication;
 using System.Text;
 using Image_sort.UI.Classes;
+using MahApps.Metro;
+using System.Windows.Controls.Primitives;
 
 namespace Image_sort.UI
 {
@@ -947,6 +949,28 @@ namespace Image_sort.UI
             DeleteFolderButton.IsEnabled = false;
             RenameImageButton.IsEnabled = false;
         }
+
+        /// <summary>
+        /// Gets or sets whether the dark mode is supported
+        /// </summary>
+        public bool DarkMode
+        {
+            get => Properties.Settings.Default.DarkModeEnabled;
+            set
+            {
+                // save the setting
+                Properties.Settings.Default.DarkModeEnabled = value;
+                Properties.Settings.Default.Save();
+
+                // change the theme
+                ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
+                    ThemeManager.GetAccent("Amber"),
+                    ThemeManager.GetAppTheme(value ? "BaseDark" : "BaseLight"));
+
+                // reflect the value on the button.
+                DarkModeButton.IsChecked = value;
+            }
+        }
         #endregion
 
         #region Image-Management
@@ -1793,6 +1817,9 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // set the theme.
+            DarkMode = Properties.Settings.Default.DarkModeEnabled;
+
             helpWindow = new HelpWindow();
 
             // register visiblity changed handler, to reflect changes in
@@ -2113,6 +2140,19 @@ namespace Image_sort.UI
 
                 // If it isn't an folder, then just stop.
                 AllowDrop = false;
+            }
+        }
+
+        /// <summary>
+        /// sets the dark mode to the value selected.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void DarkModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (DarkModeButton.IsChecked.HasValue)
+            {
+                DarkMode = DarkModeButton.IsChecked.Value;
             }
         }
         #endregion
