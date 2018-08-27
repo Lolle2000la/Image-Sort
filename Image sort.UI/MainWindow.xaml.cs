@@ -1794,6 +1794,11 @@ namespace Image_sort.UI
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
             helpWindow = new HelpWindow();
+
+            // register visiblity changed handler, to reflect changes in
+            // helpWindow's visibility on the help toggle button.
+            helpWindow.IsVisibleChanged += (o, e1) => 
+                    HelpButton.IsChecked = ((Window) o).Visibility == Visibility.Visible;
 #if !DEBUG_HELP
             if (Properties.Settings.Default.FirstRun)
             {
