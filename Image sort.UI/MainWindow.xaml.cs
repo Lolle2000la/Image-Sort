@@ -1122,27 +1122,42 @@ namespace Image_sort.UI
             string newImageName = FileNameInfo.Text;
             string fileExtension = Path.GetExtension(currentImagePath);
 
-            // remove focus, taken from decasteljaus anwer at https://stackoverflow.com/questions/2914495/wpf-how-to-programmatically-remove-focus-from-a-textbox
-            // Move to a parent that can take focus
-            FrameworkElement parent = (FrameworkElement) FileNameInfo.Parent;
-            while (parent != null && parent is IInputElement && !((IInputElement) parent).Focusable)
+            Action loseFocus = () =>
             {
-                parent = (FrameworkElement) parent.Parent;
-            }
+                // remove focus, taken from decasteljaus anwer at https://stackoverflow.com/questions/2914495/wpf-how-to-programmatically-remove-focus-from-a-textbox
+                // Move to a parent that can take focus
+                FrameworkElement parent = (FrameworkElement) FileNameInfo.Parent;
+                while (parent != null && parent is IInputElement && !((IInputElement) parent).Focusable)
+                {
+                    parent = (FrameworkElement) parent.Parent;
+                }
 
-            DependencyObject scope = FocusManager.GetFocusScope(FileNameInfo);
-            FocusManager.SetFocusedElement(scope, parent as IInputElement);
+                DependencyObject scope = FocusManager.GetFocusScope(FileNameInfo);
+                FocusManager.SetFocusedElement(scope, parent as IInputElement);
+            };
 
-            try
+            if (newImageName != "")
             {
-                if (Path.GetFileNameWithoutExtension(currentImagePath) != newImageName)
-                    // rename the file.
-                    imageManager.RenameFile(currentImagePath, $"{newImageName}{fileExtension}");
+                // lose focus
+                loseFocus.Invoke();
+
+                try
+                {
+                    if (Path.GetFileNameWithoutExtension(currentImagePath) != newImageName)
+                        // rename the file.
+                        imageManager.RenameFile(currentImagePath, $"{newImageName}{fileExtension}");
+                }
+                catch (Exception ex)
+                {
+                    await this.ShowMessageAsync(AppResources.CouldNotRenameFile.Replace("{file}", Path.GetFileName(imageManager.GetImagePath())),
+                        AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
+                }
             }
-            catch (Exception ex)
+            else
             {
-                await this.ShowMessageAsync(AppResources.CouldNotRenameFile.Replace("{file}", Path.GetFileName(imageManager.GetImagePath())),
-                    AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
+                // lose focus
+                loseFocus.Invoke();
+                FileNameInfo.Text = Path.GetFileNameWithoutExtension(currentImagePath);
             }
         }
 
