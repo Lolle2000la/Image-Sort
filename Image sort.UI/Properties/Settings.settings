@@ -15,7 +15,7 @@
       <Value Profile="(Default)">350</Value>
     </Setting>
     <Setting Name="Width" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">680</Value>
+      <Value Profile="(Default)">740</Value>
     </Setting>
     <Setting Name="Maximized" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>

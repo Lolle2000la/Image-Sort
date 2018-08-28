@@ -73,7 +73,7 @@ namespace Image_sort.UI.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("680")]
+        [global::System.Configuration.DefaultSettingValueAttribute("740")]
         public double Width {
             get {
                 return ((double)(this["Width"]));
