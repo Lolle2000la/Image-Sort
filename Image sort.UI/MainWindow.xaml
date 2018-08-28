@@ -174,7 +174,7 @@
 
         <!-- For better UX -->
         <GridSplitter Grid.Column="0" Grid.Row="1" Grid.RowSpan="3" Width="5" Focusable="False"
-                      Background="{DynamicResource ResourceKey=GrayBrush6}"/>
+                      Background="{DynamicResource ResourceKey=GrayBrush6}" Name="FolderImageSeperator"/>
 
         <!-- Image loading the image to sort as a preview -->
         <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="3"

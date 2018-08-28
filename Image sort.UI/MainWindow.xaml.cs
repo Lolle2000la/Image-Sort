@@ -19,6 +19,7 @@ using System.Text;
 using Image_sort.UI.Classes;
 using MahApps.Metro;
 using System.Windows.Controls.Primitives;
+using System.Windows.Media;
 
 namespace Image_sort.UI
 {
@@ -969,6 +970,9 @@ namespace Image_sort.UI
 
                 // reflect the value on the button.
                 DarkModeButton.IsChecked = value;
+
+                // apply theme to seperator, as it isn't applied automatically.
+                FolderImageSeperator.Background = value ? (Brush)FindResource("GrayBrush2") : (Brush)FindResource("GrayBrush6");
             }
         }
         #endregion
