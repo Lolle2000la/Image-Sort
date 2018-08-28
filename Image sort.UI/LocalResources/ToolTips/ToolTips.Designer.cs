@@ -238,5 +238,14 @@ namespace Image_sort.UI.LocalResources.ToolTips {
                 return ResourceManager.GetString("SkipToolTip", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts the colors of the app to look more consistent with the system..
+        /// </summary>
+        public static string UseNativeAccentColorTip {
+            get {
+                return ResourceManager.GetString("UseNativeAccentColorTip", resourceCulture);
+            }
+        }
     }
 }

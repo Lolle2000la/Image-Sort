@@ -154,5 +154,17 @@ namespace Image_sort.UI.Properties {
                 this["DarkModeEnabled"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseNativeAccentColor {
+            get {
+                return ((bool)(this["UseNativeAccentColor"]));
+            }
+            set {
+                this["UseNativeAccentColor"] = value;
+            }
+        }
     }
 }

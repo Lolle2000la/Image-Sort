@@ -203,4 +203,7 @@ Schnellzugriff: F2</value>
 
 Schnellzugriff: linke Pfeiltaste</value>
   </data>
+  <data name="UseNativeAccentColorTip" xml:space="preserve">
+    <value>Passt die Farben der Anwendung an, um konsistenter mit dem System auszusehen.</value>
+  </data>
 </root>

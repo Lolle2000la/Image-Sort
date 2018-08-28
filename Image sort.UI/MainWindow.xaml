@@ -60,6 +60,9 @@
             <ToggleButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True" Focusable="False"
                     x:Name="DarkModeButton" Click="DarkModeButton_Click" IsChecked="False"
                     ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
+            <ToggleButton Content="{x:Static res:AppResources.UseNativeAccentColor}" IsEnabled="True" Focusable="False"
+                    x:Name="NativeAccentColorsButton" IsChecked="{Binding Path=UseNativeColor}"
+                    ToolTip="{x:Static tooltip:ToolTips.UseNativeAccentColorTip}"/>
             <ToggleButton x:Name="HelpButton" Content="{x:Static res:AppResources.Help}" Focusable="False"
                           Click="HelpButton_Click"/>
             <Button Content="{x:Static res:AppResources.Feedback}" x:Name="FeedbackButton" Click="FeedbackButton_Click">

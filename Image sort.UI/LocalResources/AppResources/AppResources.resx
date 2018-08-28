@@ -282,4 +282,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="DarkMode" xml:space="preserve">
     <value>Dark Mode</value>
   </data>
+  <data name="UseNativeAccentColor" xml:space="preserve">
+    <value>System Accent Color</value>
+  </data>
 </root>

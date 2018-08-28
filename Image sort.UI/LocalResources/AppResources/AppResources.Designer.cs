@@ -459,6 +459,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to System Accent Color.
+        /// </summary>
+        public static string UseNativeAccentColor {
+            get {
+                return ResourceManager.GetString("UseNativeAccentColor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Which folder needs sorting?.
         /// </summary>
         public static string WhichFolderQuestion {

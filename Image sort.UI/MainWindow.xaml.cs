@@ -965,16 +965,75 @@ namespace Image_sort.UI
 
                 // change the theme
                 ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
-                    ThemeManager.GetAccent("Amber"),
+                    ThemeManager.DetectAppStyle().Item2,
                     ThemeManager.GetAppTheme(value ? "BaseDark" : "BaseLight"));
 
                 // reflect the value on the button.
                 DarkModeButton.IsChecked = value;
 
                 // apply theme to seperator, as it isn't applied automatically.
-                FolderImageSeperator.Background = value ? (Brush)FindResource("GrayBrush2") : (Brush)FindResource("GrayBrush6");
+                FolderImageSeperator.Background = value ? (Brush) FindResource("GrayBrush2") : (Brush) FindResource("GrayBrush6");
             }
         }
+
+        /// <summary>
+        /// Gets or sets the theme color of the app
+        /// </summary>
+        public static Color AccentColor
+        {
+            get => (Color) ThemeManager.DetectAppStyle().Item2.Resources["AccentBaseColor"];
+            set
+            {
+                // create a new app style based on that color.
+                ThemeManagerHelper.CreateAppStyleBy(value, true);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the native accent color is used.
+        /// </summary>
+        public bool UseNativeColor
+        {
+            get { return (bool) GetValue(UseNativeColorProperty); }
+            set { SetValue(UseNativeColorProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for UseNativeColor.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty UseNativeColorProperty =
+            DependencyProperty.Register("UseNativeColor", typeof(bool), typeof(MainWindow), new PropertyMetadata(false, 
+                (DependencyObject dp, DependencyPropertyChangedEventArgs e) =>
+                {
+                    // create a new accent based on the system accent color
+                    if ((bool) e.NewValue)
+                    {
+                        try
+                        {
+                            // get theme from window
+                            AccentColor =  NativeHelpers.GetWindowColorizationColor(false);
+                        }
+                        catch
+                        {
+                            var curStyle = ThemeManager.DetectAppStyle();
+                            // fall back
+                            ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
+                                ThemeManager.GetAccent("Amber"),
+                                curStyle.Item1);
+                        }
+                    }
+                    // reset the theme to the Amber accent color.
+                    else
+                        // use the default color.
+                        ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
+                                                    ThemeManager.GetAccent("Amber"),
+                                                    ThemeManager.DetectAppStyle().Item1);
+
+                    // save the setting.
+                    Properties.Settings.Default.UseNativeAccentColor = (bool) e.NewValue;
+                    Properties.Settings.Default.Save();
+                }));
+
+
+
         #endregion
 
         #region Image-Management
@@ -1821,19 +1880,28 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private async void MetroWindow_Loaded(object sender, RoutedEventArgs e)
         {
+            // set the datacontext to self.
+            DataContext = this;
+
             // set the theme.
             DarkMode = Properties.Settings.Default.DarkModeEnabled;
+            UseNativeColor = Properties.Settings.Default.UseNativeAccentColor;
 
             helpWindow = new HelpWindow();
 
             // register visiblity changed handler, to reflect changes in
             // helpWindow's visibility on the help toggle button.
-            helpWindow.IsVisibleChanged += (o, e1) => 
+            helpWindow.IsVisibleChanged += (o, e1) =>
                     HelpButton.IsChecked = ((Window) o).Visibility == Visibility.Visible;
 #if !DEBUG_HELP
             if (Properties.Settings.Default.FirstRun)
             {
 #endif
+#if IS_UWP
+                // on UWP use the accent color by default.
+                UseNativeColor = true;
+#endif
+
                 // Open the help window
                 helpWindow.Show();
                 Properties.Settings.Default.FirstRun = false;
@@ -2159,10 +2227,10 @@ namespace Image_sort.UI
                 DarkMode = DarkModeButton.IsChecked.Value;
             }
         }
-        #endregion
+#endregion
     }
 
-    #region Commands
+#region Commands
     public static class Command
     {
         /// <summary>
@@ -2245,5 +2313,5 @@ namespace Image_sort.UI
         /// </summary>
         public static RoutedCommand DeleteFolderCommand = new RoutedCommand();
     }
-    #endregion
+#endregion
 }

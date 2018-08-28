@@ -284,4 +284,7 @@ Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value
   <data name="DarkMode" xml:space="preserve">
     <value>Dunkler Modus</value>
   </data>
+  <data name="UseNativeAccentColor" xml:space="preserve">
+    <value>System Akzent Farbe</value>
+  </data>
 </root>

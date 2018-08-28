@@ -103,6 +103,8 @@
     </ApplicationDefinition>
     <Compile Include="Classes\FileOperationApiWrapper.cs" />
     <Compile Include="Classes\ListBoxScroll.cs" />
+    <Compile Include="Classes\NativeHelpers.cs" />
+    <Compile Include="Classes\ThemeManagerHelper.cs" />
     <Compile Include="LocalResources\AppResources\AppResources.Designer.cs">
       <DependentUpon>AppResources.resx</DependentUpon>
       <AutoGen>True</AutoGen>

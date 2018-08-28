@@ -199,4 +199,7 @@ Shortcut: F2</value>
 
 Shortcut: left arrow key</value>
   </data>
+  <data name="UseNativeAccentColorTip" xml:space="preserve">
+    <value>Adjusts the colors of the app to look more consistent with the system.</value>
+  </data>
 </root>
