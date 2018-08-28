@@ -98,7 +98,7 @@ namespace Image_sort.UI.Classes
         {
             try
             {
-                var fs = new SHFILEOPSTRUCT {
+                SHFILEOPSTRUCT fs = new SHFILEOPSTRUCT {
                     wFunc = FileOperationType.FO_DELETE,
                     pFrom = path + '\0' + '\0',
                     fFlags = FileOperationFlags.FOF_ALLOWUNDO | flags
@@ -135,7 +135,7 @@ namespace Image_sort.UI.Classes
         {
             try
             {
-                var fs = new SHFILEOPSTRUCT {
+                SHFILEOPSTRUCT fs = new SHFILEOPSTRUCT {
                     wFunc = FileOperationType.FO_DELETE,
                     pFrom = path + '\0' + '\0',
                     fFlags = flags

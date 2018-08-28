@@ -956,7 +956,11 @@ namespace Image_sort.UI
         /// </summary>
         public bool DarkMode
         {
-            get => Properties.Settings.Default.DarkModeEnabled;
+            get
+            {
+                return Properties.Settings.Default.DarkModeEnabled;
+            }
+
             set
             {
                 // save the setting
@@ -981,7 +985,11 @@ namespace Image_sort.UI
         /// </summary>
         public static Color AccentColor
         {
-            get => (Color) ThemeManager.DetectAppStyle().Item2.Resources["AccentBaseColor"];
+            get
+            {
+                return (Color) ThemeManager.DetectAppStyle().Item2.Resources["AccentBaseColor"];
+            }
+
             set
             {
                 // create a new app style based on that color.
@@ -1013,7 +1021,7 @@ namespace Image_sort.UI
                         }
                         catch
                         {
-                            var curStyle = ThemeManager.DetectAppStyle();
+                            Tuple<AppTheme, Accent> curStyle = ThemeManager.DetectAppStyle();
                             // fall back
                             ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
                                 ThemeManager.GetAccent("Amber"),
@@ -1122,7 +1130,7 @@ namespace Image_sort.UI
             string newImageName = FileNameInfo.Text;
             string fileExtension = Path.GetExtension(currentImagePath);
 
-            Action loseFocus = () =>
+            void loseFocus()
             {
                 // remove focus, taken from decasteljaus anwer at https://stackoverflow.com/questions/2914495/wpf-how-to-programmatically-remove-focus-from-a-textbox
                 // Move to a parent that can take focus
@@ -1134,12 +1142,12 @@ namespace Image_sort.UI
 
                 DependencyObject scope = FocusManager.GetFocusScope(FileNameInfo);
                 FocusManager.SetFocusedElement(scope, parent as IInputElement);
-            };
+            }
 
             if (newImageName != "")
             {
                 // lose focus
-                loseFocus.Invoke();
+                loseFocus();
 
                 try
                 {
@@ -1156,7 +1164,7 @@ namespace Image_sort.UI
             else
             {
                 // lose focus
-                loseFocus.Invoke();
+                loseFocus();
                 FileNameInfo.Text = Path.GetFileNameWithoutExtension(currentImagePath);
             }
         }
@@ -1545,7 +1553,7 @@ namespace Image_sort.UI
                 foreach (char charItem in e.Text)
                 {
                     // if it isn't a number, set he handled value to true to prevent input
-                    if (!Char.IsNumber(charItem))
+                    if (!char.IsNumber(charItem))
                     {
                         e.Handled = true;
                     }
@@ -1954,7 +1962,7 @@ namespace Image_sort.UI
                                     await Dispatcher.InvokeAsync(async () =>
                                     {
                                         // Create a new UpdateDialog to ask for user consent.
-                                        var dlg = new UpdateDialog() {
+                                        UpdateDialog dlg = new UpdateDialog() {
                                             ChangelogMarkdown = $"# {title}{Environment.NewLine}{changelog}",
                                             Version = version,
                                             Title = AppResources.UpdateConsentQuestion
@@ -2167,7 +2175,7 @@ namespace Image_sort.UI
         private void InitializePreviewImageDrag()
         {
             // Create a new DataObject for dragging and set the Data
-            var dataObj = new System.Windows.DataObject();
+            System.Windows.DataObject dataObj = new System.Windows.DataObject();
             dataObj.SetImage((BitmapImage) PreviewImage.Source);
             dataObj.SetFileDropList(
                 new System.Collections.Specialized.StringCollection() { imageManager.GetImagePath() });

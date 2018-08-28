@@ -28,7 +28,7 @@ namespace Image_sort.UI.Classes
         {
             // create a runtime accent resource dictionary
 
-            var resourceDictionary = new ResourceDictionary();
+            ResourceDictionary resourceDictionary = new ResourceDictionary();
 
             resourceDictionary.Add("HighlightColor", color);
             resourceDictionary.Add("AccentBaseColor", color);
@@ -76,9 +76,9 @@ namespace Image_sort.UI.Classes
 
             // applying theme to MahApps
 
-            var resDictName = string.Format("ApplicationAccent_{0}.xaml", color.ToString().Replace("#", string.Empty));
-            var fileName = Path.Combine(Path.GetTempPath(), resDictName);
-            using (var writer = System.Xml.XmlWriter.Create(fileName, new System.Xml.XmlWriterSettings { Indent = true }))
+            string resDictName = string.Format("ApplicationAccent_{0}.xaml", color.ToString().Replace("#", string.Empty));
+            string fileName = Path.Combine(Path.GetTempPath(), resDictName);
+            using (System.Xml.XmlWriter writer = System.Xml.XmlWriter.Create(fileName, new System.Xml.XmlWriterSettings { Indent = true }))
             {
                 System.Windows.Markup.XamlWriter.Save(resourceDictionary, writer);
                 writer.Close();
@@ -86,12 +86,12 @@ namespace Image_sort.UI.Classes
 
             resourceDictionary = new ResourceDictionary() { Source = new Uri(fileName, UriKind.Absolute) };
 
-            var newAccent = new Accent { Name = resDictName, Resources = resourceDictionary };
+            Accent newAccent = new Accent { Name = resDictName, Resources = resourceDictionary };
             ThemeManager.AddAccent(newAccent.Name, newAccent.Resources.Source);
 
             if (changeImmediately)
             {
-                var application = Application.Current;
+                Application application = Application.Current;
                 //var applicationTheme = ThemeManager.AppThemes.First(x => string.Equals(x.Name, "BaseLight"));
                 // detect current application theme
                 Tuple<AppTheme, Accent> applicationTheme = ThemeManager.DetectAppStyle(application);
@@ -111,14 +111,14 @@ namespace Image_sort.UI.Classes
         private static Color IdealTextColor(Color color)
         {
             const int nThreshold = 105;
-            var bgDelta = System.Convert.ToInt32((color.R * 0.299) + (color.G * 0.587) + (color.B * 0.114));
-            var foreColor = (255 - bgDelta < nThreshold) ? Colors.Black : Colors.White;
+            int bgDelta = System.Convert.ToInt32((color.R * 0.299) + (color.G * 0.587) + (color.B * 0.114));
+            Color foreColor = (255 - bgDelta < nThreshold) ? Colors.Black : Colors.White;
             return foreColor;
         }
 
         private static SolidColorBrush GetSolidColorBrush(Color color, double opacity = 1d)
         {
-            var brush = new SolidColorBrush(color) { Opacity = opacity };
+            SolidColorBrush brush = new SolidColorBrush(color) { Opacity = opacity };
             brush.Freeze();
             return brush;
         }
