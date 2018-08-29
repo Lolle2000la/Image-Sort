@@ -434,21 +434,23 @@ namespace Image_sort.UI
         /// </summary>
         private async void SelectFolder()
         {
-            // Creates a dialog for the folder to sort
-            FolderBrowserDialog folderBrowser = new FolderBrowserDialog() {
-                Description = AppResources.WhichFolderQuestion,
-                ShowNewFolderButton = true
+            // dialog used to ask for the folder to be sorted.
+            // uses the native Vista folderbrowser when possible.
+            FolderSelect.FolderSelectDialog folderBrowser = new FolderSelect.FolderSelectDialog() {
+                Title = AppResources.WhichFolderQuestion
             };
 
             // Shows it and does things if it works out
-            if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            if (folderBrowser.ShowDialog())
             {
+                string selectedPath = folderBrowser.FileName;
+
                 // Disable all user input to prevent unwanted behavior
                 DisableAllControls();
 
                 // if the folder could not be selected, ask the user if he wants to retry.
                 // Also clean-up and give the user only the ability to select another folder.
-                if (await SelectAndLoadFolder(folderBrowser.SelectedPath) == false)
+                if (await SelectAndLoadFolder(selectedPath) == false)
                 {
                     // Clean-Up
                     FoldersStack.Items.Clear();
