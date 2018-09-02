@@ -61,7 +61,7 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Enables or disables the dark mode..
+        ///   Looks up a localized string similar to Enables the dark mode. Easier on the eyes at night..
         /// </summary>
         public static string DarkModeTooltip {
             get {
@@ -154,6 +154,15 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Enables the light mode. On by default..
+        /// </summary>
+        public static string LightModeTip {
+            get {
+                return ResourceManager.GetString("LightModeTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Moves the image to the selected folder. 
         ///
         ///Shortcut: right arrow key.
@@ -196,9 +205,7 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Gives you the option to change the horizontal resolution, that the images should get loaded with.
-        ///
-        ///Shortcut: F4.
+        ///   Looks up a localized string similar to Gives you the option to change the horizontal resolution, that the images should get loaded with..
         /// </summary>
         public static string ResolutionBoxToolTip {
             get {
@@ -229,6 +236,18 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Opens the settings. The settings allow for deeper customisation.
+        ///Just press it and look what&apos;s inside.
+        ///
+        ///Shortcut: F4.
+        /// </summary>
+        public static string SettingsTip {
+            get {
+                return ResourceManager.GetString("SettingsTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Skips the current image.
         ///
         ///Shortcut: left arrow key.
@@ -236,6 +255,15 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         public static string SkipToolTip {
             get {
                 return ResourceManager.GetString("SkipToolTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The default color: &quot;Amber&quot; (yellow) .
+        /// </summary>
+        public static string UseDefaultColorTip {
+            get {
+                return ResourceManager.GetString("UseDefaultColorTip", resourceCulture);
             }
         }
         

@@ -285,4 +285,16 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="UseNativeAccentColor" xml:space="preserve">
     <value>System Accent Color</value>
   </data>
+  <data name="Default" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="LightMode" xml:space="preserve">
+    <value>Light Mode</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="AdvancedSettings" xml:space="preserve">
+    <value>Advanced Settings</value>
+  </data>
 </root>

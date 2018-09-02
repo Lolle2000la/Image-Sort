@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="DarkModeTooltip" xml:space="preserve">
-    <value>Enables or disables the dark mode.</value>
+    <value>Enables the dark mode. Easier on the eyes at night.</value>
   </data>
   <data name="DeleteFolderTip" xml:space="preserve">
     <value>Deletes the currently selected folder and moves it to the trash bin if possible.
@@ -158,6 +158,9 @@ Shortcut: ctrl + left arrow key</value>
   <data name="LaunchesWindowsStore" xml:space="preserve">
     <value>Pressing this button will launch the windows store review page. Due to incompatibilities, feedback hub currently cannot be used for giving feedback. You have to give feedback through a review and update the review, when there was an improvement.</value>
   </data>
+  <data name="LightModeTip" xml:space="preserve">
+    <value>Enables the light mode. On by default.</value>
+  </data>
   <data name="MoveToolTip" xml:space="preserve">
     <value>Moves the image to the selected folder. 
 
@@ -178,9 +181,7 @@ Shortcut: F5</value>
     <value>Sets the currently selected image.</value>
   </data>
   <data name="ResolutionBoxToolTip" xml:space="preserve">
-    <value>Gives you the option to change the horizontal resolution, that the images should get loaded with.
-
-Shortcut: F4</value>
+    <value>Gives you the option to change the horizontal resolution, that the images should get loaded with.</value>
   </data>
   <data name="SearchToolTip" xml:space="preserve">
     <value>Shows and hides the search box.
@@ -194,10 +195,19 @@ Shortcut: ctrl+s</value>
 Shortcut: F2</value>
     <comment>Used for the Select Folder Button</comment>
   </data>
+  <data name="SettingsTip" xml:space="preserve">
+    <value>Opens the settings. The settings allow for deeper customisation.
+Just press it and look what's inside.
+
+Shortcut: F4</value>
+  </data>
   <data name="SkipToolTip" xml:space="preserve">
     <value>Skips the current image.
 
 Shortcut: left arrow key</value>
+  </data>
+  <data name="UseDefaultColorTip" xml:space="preserve">
+    <value>The default color: "Amber" (yellow) </value>
   </data>
   <data name="UseNativeAccentColorTip" xml:space="preserve">
     <value>Adjusts the colors of the app to look more consistent with the system.</value>

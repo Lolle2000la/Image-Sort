@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="DarkModeTooltip" xml:space="preserve">
-    <value>Aktiviert oder deaktiviert den dunklen modus.</value>
+    <value>Aktiviert den Dunklen Modus. Einfacher für die Augen bei Nacht.</value>
   </data>
   <data name="DeleteFolderTip" xml:space="preserve">
     <value>Löscht den aktuell ausgewählten Ordner und verschiebt ihn in den Papierkorb wenn möglich.
@@ -162,6 +162,9 @@ Feedback Hub momentan dafür nicht benutzt werden. Sie müssen
 eine Review hinterlassen mit ihrem Feedback, und diese 
 gegebenenfalls überarbeiten, wenn sich etwas geändert hat.</value>
   </data>
+  <data name="LightModeTip" xml:space="preserve">
+    <value>Aktiviert den Hellen Modus. Standardmäßig aktiviert.</value>
+  </data>
   <data name="MoveToolTip" xml:space="preserve">
     <value>Verschiebt das Bild in den ausgewählten Ordner. 
 
@@ -182,9 +185,7 @@ Schnellzugriff: F5</value>
     <value>Setzt das momentan gewählte Bild.</value>
   </data>
   <data name="ResolutionBoxToolTip" xml:space="preserve">
-    <value>Ermöglicht es, die horizontale Auflösung, mit der die Bilder geladen werden, zu ändern. Niedriger = schnellere Ladezeiten, Höher = mehr Qualität.
-
-Schnellzugriff: F4</value>
+    <value>Ermöglicht es, die horizontale Auflösung, mit der die Bilder geladen werden, zu ändern. Niedriger = schnellere Ladezeiten, Höher = mehr Qualität.</value>
   </data>
   <data name="SearchToolTip" xml:space="preserve">
     <value>Zeigt oder versteckt die Suchbox.
@@ -198,10 +199,17 @@ Schnellzugriff: strg+s</value>
 Schnellzugriff: F2</value>
     <comment>Used for the Select Folder Button</comment>
   </data>
+  <data name="SettingsTip" xml:space="preserve">
+    <value>Öffnet die Einstellungen. Diese erlauben für mehr Anpassungsmöglichkeiten. Öffnen Sie sie einfach mal.
+Schnellzugriff: F4</value>
+  </data>
   <data name="SkipToolTip" xml:space="preserve">
     <value>Überspringt das aktuelle Bild.
 
 Schnellzugriff: linke Pfeiltaste</value>
+  </data>
+  <data name="UseDefaultColorTip" xml:space="preserve">
+    <value>Die Standardakzentfarbe: "Amber" (gelb) </value>
   </data>
   <data name="UseNativeAccentColorTip" xml:space="preserve">
     <value>Passt die Farben der Anwendung an, um konsistenter mit dem System auszusehen.</value>

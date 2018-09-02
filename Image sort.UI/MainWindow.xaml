@@ -21,7 +21,7 @@
         <CommandBinding Command="local:Command.MoveDownCommand" Executed="MoveDown_Executed"/>
         <CommandBinding Command="local:Command.MoveImageCommand" Executed="MoveImage_Executed"/>
         <CommandBinding Command="local:Command.SkipImageCommand" Executed="SkipImage_Executed"/>
-        <CommandBinding Command="local:Command.FocusResolutionBoxCommand" Executed="FocusResolutionBox_Executed"/>
+        <CommandBinding Command="local:Command.OpenSettingsCommand" Executed="FocusResolutionBox_Executed"/>
         <CommandBinding Command="local:Command.OpenInExplorerCommand" Executed="OpenInExplorer_Executed"/>
         <CommandBinding Command="local:Command.EnterFolderCommand" Executed="EnterFolder_Executed"/>
         <CommandBinding Command="local:Command.GoUpwardsCommand" Executed="GoUpwards_Executed"/>
@@ -40,7 +40,7 @@
         <KeyBinding Command="local:Command.MoveDownCommand" Key="Down"/>
         <KeyBinding Command="local:Command.MoveImageCommand" Key="Right"/>
         <KeyBinding Command="local:Command.SkipImageCommand" Key="Left"/>
-        <KeyBinding Command="local:Command.FocusResolutionBoxCommand" Key="F4"/>
+        <KeyBinding Command="local:Command.OpenSettingsCommand" Key="F4"/>
         <KeyBinding Command="local:Command.OpenInExplorerCommand" Key="F5"/>
         <KeyBinding Command="local:Command.EnterFolderCommand" Key="Enter"/>
         <KeyBinding Command="local:Command.GoUpwardsCommand" Key="Esc"/>
@@ -51,18 +51,57 @@
         <KeyBinding Command="local:Command.RenameCommand" Key="R" Modifiers="Ctrl" />
     </Window.InputBindings>
 
+    <Controls:MetroWindow.Flyouts>
+        <Controls:FlyoutsControl>
+            <Controls:Flyout Name="SettingsFlyout" Header="Settings" Position="Right" 
+                             Width="auto" MinWidth="335">
+                <ScrollViewer>
+                    <StackPanel Margin="15 15 0 15">
+                        <TextBlock FontSize="24" Text="Accent Color"/>
+                        <RadioButton Content="{x:Static res:AppResources.Default}" Margin="5"
+                                IsEnabled="True" GroupName="AccentColor"
+                                ToolTip="{x:Static tooltip:ToolTips.UseDefaultColorTip}"/>
+                        <RadioButton Content="{x:Static res:AppResources.UseNativeAccentColor}" Margin="5"
+                                IsEnabled="True" GroupName="AccentColor"
+                                x:Name="NativeAccentColorsButton" IsChecked="{Binding Path=UseNativeColor}"
+                                ToolTip="{x:Static tooltip:ToolTips.UseNativeAccentColorTip}"/>
+                        <Separator Margin="0 5"/>
+                        <TextBlock FontSize="24" Text="Theme"/>
+                        <RadioButton Content="{x:Static res:AppResources.LightMode}" IsEnabled="True" Margin="5"
+                                 Click="DarkModeButton_Click" IsChecked="False"
+                                 ToolTip="{x:Static tooltip:ToolTips.LightModeTip}"/>
+                        <RadioButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True"
+                                 Margin="5" x:Name="DarkModeButton" 
+                                 Click="DarkModeButton_Click" IsChecked="False"
+                                 ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
+                        <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 10 0 5">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
+                                    <!-- Text Box for setting the resolution -->
+                                    <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
+                                         MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyDown="ResolutionBox_KeyDown"
+                                         MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus"
+                                         ToolTip="{x:Static tooltip:ToolTips.ResolutionBoxToolTip}">
+                                    </TextBox>
+                                </StackPanel>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </Controls:Flyout>
+        </Controls:FlyoutsControl>
+    </Controls:MetroWindow.Flyouts>
+
     <!-- Buttons seen in the right of the window -->
     <Controls:MetroWindow.RightWindowCommands>
         <Controls:WindowCommands>
             <ToggleButton x:Name="EnableSearchButton" Content="{x:Static res:AppResources.Search}" Focusable="False"
                               Click="EnableSearchButton_Click" IsChecked="False" ToolTip="{x:Static tooltip:ToolTips.SearchToolTip}">
             </ToggleButton>
-            <ToggleButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True" Focusable="False"
-                    x:Name="DarkModeButton" Click="DarkModeButton_Click" IsChecked="False"
-                    ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
-            <ToggleButton Content="{x:Static res:AppResources.UseNativeAccentColor}" IsEnabled="True" Focusable="False"
-                    x:Name="NativeAccentColorsButton" IsChecked="{Binding Path=UseNativeColor}"
-                    ToolTip="{x:Static tooltip:ToolTips.UseNativeAccentColorTip}"/>
+            <ToggleButton Content="{x:Static res:AppResources.Settings}" IsEnabled="True" Focusable="False"
+                    x:Name="SettingsButton" IsChecked="{Binding Path=IsOpen,ElementName=SettingsFlyout}"
+                    ToolTip="{x:Static tooltip:ToolTips.SettingsTip}"/>
             <ToggleButton x:Name="HelpButton" Content="{x:Static res:AppResources.Help}" Focusable="False"
                           Click="HelpButton_Click"/>
             <Button Content="{x:Static res:AppResources.Feedback}" x:Name="FeedbackButton" Click="FeedbackButton_Click">
@@ -136,16 +175,6 @@
                     x:Name="GoBackButton" Command="local:Command.GoBackCommand"
                     ToolTip="{x:Static tooltip:ToolTips.GoBackToolTip}"/>
                 <!-- Click="GoBackButton_Click" -->
-            </ToolBar>
-            <!-- Contains everything around settings -->
-            <ToolBar Focusable="False">
-                <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
-                <!-- Text Box for setting the resolution -->
-                <TextBox x:Name="ResolutionBox" PreviewTextInput="ResolutionBox_PreviewTextInput"
-                         MinWidth="50" MaxWidth="150" TextAlignment="Center" KeyDown="ResolutionBox_KeyDown"
-                         Focusable="False" MouseDown="ResolutionBox_MouseDown" LostFocus="ResolutionBox_LostFocus"
-                         ToolTip="{x:Static tooltip:ToolTips.ResolutionBoxToolTip}">
-                </TextBox>
             </ToolBar>
         </ToolBarTray>
 

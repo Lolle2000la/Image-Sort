@@ -287,4 +287,16 @@ Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value
   <data name="UseNativeAccentColor" xml:space="preserve">
     <value>System Akzent Farbe</value>
   </data>
+  <data name="Default" xml:space="preserve">
+    <value>Standard</value>
+  </data>
+  <data name="LightMode" xml:space="preserve">
+    <value>Heller Modus</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="AdvancedSettings" xml:space="preserve">
+    <value>Erweiterte Einstellungen</value>
+  </data>
 </root>

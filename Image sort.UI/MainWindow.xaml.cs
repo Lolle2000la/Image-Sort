@@ -1579,8 +1579,7 @@ namespace Image_sort.UI
                     ResolutionBox.Text = 20.ToString();
                 }
 
-                // Unuse the resolution box
-                UnuseResolutionBox();
+                SettingsFlyout.Focus();
                 // and set the resolution to the max resolution
                 MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
 
@@ -1611,9 +1610,7 @@ namespace Image_sort.UI
             {
                 ResolutionBox.Text = 20.ToString();
             }
-
-            // Unuse the resolution box
-            UnuseResolutionBox();
+            
             // and set the resolution to the max resolution
             MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
         }
@@ -1730,14 +1727,13 @@ namespace Image_sort.UI
         }
 
         /// <summary>
-        /// Executed when the <see cref="Command.FocusResolutionBoxCommand"/> is executed.
+        /// Executed when the <see cref="Command.OpenSettingsCommand"/> is executed.
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void FocusResolutionBox_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            if (ResolutionBox.IsEnabled)
-                UseResolutionBox();
+            SettingsFlyout.IsOpen = !SettingsFlyout.IsOpen;
         }
 
         /// <summary>
@@ -2291,7 +2287,7 @@ namespace Image_sort.UI
         /// <summary>
         /// Focuses the resolution box, when executed.
         /// </summary>
-        public static RoutedCommand FocusResolutionBoxCommand = new RoutedCommand();
+        public static RoutedCommand OpenSettingsCommand = new RoutedCommand();
 
         /// <summary>
         /// Opens the current image in explorer, when executed.
