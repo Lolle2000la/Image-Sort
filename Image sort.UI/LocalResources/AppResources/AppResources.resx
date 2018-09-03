@@ -297,4 +297,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="AdvancedSettings" xml:space="preserve">
     <value>Advanced Settings</value>
   </data>
+  <data name="Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
 </root>

@@ -299,4 +299,7 @@ Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value
   <data name="AdvancedSettings" xml:space="preserve">
     <value>Erweiterte Einstellungen</value>
   </data>
+  <data name="Appearance" xml:space="preserve">
+    <value>Erscheinungsbild</value>
+  </data>
 </root>

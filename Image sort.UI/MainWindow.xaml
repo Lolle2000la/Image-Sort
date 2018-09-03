@@ -62,25 +62,29 @@
                              Width="auto" MinWidth="335">
                 <ScrollViewer>
                     <StackPanel Margin="15 15 0 15">
-                        <TextBlock FontSize="24" Text="Accent Color"/>
-                        <RadioButton Content="{x:Static res:AppResources.Default}" Margin="5"
+                        <Expander Header="{x:Static res:AppResources.Appearance}" Margin="0 5">
+                            <StackPanel>
+                                <TextBlock FontSize="24" Text="Accent Color"/>
+                                <RadioButton Content="{x:Static res:AppResources.Default}" Margin="5"
                                 IsEnabled="True" GroupName="AccentColor"
                                 IsChecked="{Binding UseNativeColor,Converter={StaticResource InverseBoolConverter}}"
                                 ToolTip="{x:Static tooltip:ToolTips.UseDefaultColorTip}"/>
-                        <RadioButton Content="{x:Static res:AppResources.UseNativeAccentColor}" Margin="5"
+                                <RadioButton Content="{x:Static res:AppResources.UseNativeAccentColor}" Margin="5"
                                 IsEnabled="True" GroupName="AccentColor"
                                 x:Name="NativeAccentColorsButton" IsChecked="{Binding Path=UseNativeColor}"
                                 ToolTip="{x:Static tooltip:ToolTips.UseNativeAccentColorTip}"/>
-                        <Separator Margin="0 5"/>
-                        <TextBlock FontSize="24" Text="Theme"/>
-                        <RadioButton Content="{x:Static res:AppResources.LightMode}" IsEnabled="True" Margin="5"
+                                <Separator Margin="0 5"/>
+                                <TextBlock FontSize="24" Text="Theme"/>
+                                <RadioButton Content="{x:Static res:AppResources.LightMode}" IsEnabled="True" Margin="5"
                                      IsChecked="{Binding DarkMode,Converter={StaticResource InverseBoolConverter}}"
                                      ToolTip="{x:Static tooltip:ToolTips.LightModeTip}"/>
-                        <RadioButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True"
+                                <RadioButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True"
                                      Margin="5" x:Name="DarkModeButton" 
                                      IsChecked="{Binding DarkMode}"
                                      ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
-                        <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 10 0 5">
+                            </StackPanel>
+                        </Expander>
+                        <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 5">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
