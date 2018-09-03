@@ -1935,8 +1935,32 @@ namespace Image_sort.UI
 
                 // Open the help window
                 helpWindow.Show();
+
+                // the next run isn't a first run anymore
                 Properties.Settings.Default.FirstRun = false;
                 Properties.Settings.Default.Save();
+
+                // calculate the ideal resolution to load images with.
+                int biggestHorizontalRes = 0;
+
+                // take the biggest usable resolution from the biggest
+                // screen for the setting to load images.
+                foreach (var screen in Screen.AllScreens)
+                {
+                    int usableScreenWidth = screen.WorkingArea.Width;
+                    if (usableScreenWidth > biggestHorizontalRes)
+                    {
+                        biggestHorizontalRes = usableScreenWidth;
+                    }
+                }
+
+                // apply the resolution if it is relistic.
+                // (360p screen is the smallest resolution i've ever seen
+                // a screen with this musn't run on the game boy)
+                if (biggestHorizontalRes > 359)
+                {
+                    MaxHorizontalResolution = biggestHorizontalRes;
+                }
 #if !DEBUG_HELP
             }
 #endif
