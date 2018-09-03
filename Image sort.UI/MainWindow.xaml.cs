@@ -954,32 +954,42 @@ namespace Image_sort.UI
         }
 
         /// <summary>
-        /// Gets or sets whether the dark mode is supported
+        /// Gets or sets whether the dark mode is enabled.
         /// </summary>
         public bool DarkMode
         {
-            get
-            {
-                return Properties.Settings.Default.DarkModeEnabled;
-            }
+            get { return (bool) GetValue(DarkModeProperty); }
+            set { SetValue(DarkModeProperty, value); }
+        }
 
-            set
-            {
-                // save the setting
-                Properties.Settings.Default.DarkModeEnabled = value;
-                Properties.Settings.Default.Save();
+        // Using a DependencyProperty as the backing store for DarkMode.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty DarkModeProperty =
+            DependencyProperty.Register("DarkMode", typeof(bool), typeof(MainWindow), 
+                new PropertyMetadata(false, OnDarkModeChanged));
 
-                // change the theme
-                ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
-                    ThemeManager.DetectAppStyle().Item2,
-                    ThemeManager.GetAppTheme(value ? "BaseDark" : "BaseLight"));
+        /// <summary>
+        /// Handles changes in the <see cref="DarkModeProperty"/>.
+        /// </summary>
+        /// <param name="dp"></param>
+        /// <param name="e"></param>
+        public static void OnDarkModeChanged (DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        {
+            bool value = (bool) e.NewValue;
+            MainWindow window = (MainWindow) dp;
 
-                // reflect the value on the button.
-                DarkModeButton.IsChecked = value;
+            // save the setting
+            Properties.Settings.Default.DarkModeEnabled = value;
+            Properties.Settings.Default.Save();
 
-                // apply theme to seperator, as it isn't applied automatically.
-                FolderImageSeperator.Background = value ? (Brush) FindResource("GrayBrush2") : (Brush) FindResource("GrayBrush6");
-            }
+            // change the theme
+            ThemeManager.ChangeAppStyle(System.Windows.Application.Current,
+                ThemeManager.DetectAppStyle().Item2,
+                ThemeManager.GetAppTheme(value ? "BaseDark" : "BaseLight"));
+
+            // apply theme to seperator, as it isn't applied automatically.
+            window.FolderImageSeperator.Background = value ? 
+                (Brush) window.FindResource("GrayBrush2") : 
+                (Brush) window.FindResource("GrayBrush6");
         }
 
         /// <summary>
@@ -2233,19 +2243,6 @@ namespace Image_sort.UI
 
                 // If it isn't an folder, then just stop.
                 AllowDrop = false;
-            }
-        }
-
-        /// <summary>
-        /// sets the dark mode to the value selected.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void DarkModeButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (DarkModeButton.IsChecked.HasValue)
-            {
-                DarkMode = DarkModeButton.IsChecked.Value;
             }
         }
 #endregion

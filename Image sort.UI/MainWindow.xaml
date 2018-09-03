@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Image_sort.UI"
+        xmlns:classes="clr-namespace:Image_sort.UI.Classes"
         xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"   
         xmlns:res="clr-namespace:Image_sort.UI.LocalResources.AppResources"
         xmlns:tooltip="clr-namespace:Image_sort.UI.LocalResources.ToolTips"
@@ -51,6 +52,10 @@
         <KeyBinding Command="local:Command.RenameCommand" Key="R" Modifiers="Ctrl" />
     </Window.InputBindings>
 
+    <Window.Resources>
+        <classes:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+    </Window.Resources>
+
     <Controls:MetroWindow.Flyouts>
         <Controls:FlyoutsControl>
             <Controls:Flyout Name="SettingsFlyout" Header="Settings" Position="Right" 
@@ -60,6 +65,7 @@
                         <TextBlock FontSize="24" Text="Accent Color"/>
                         <RadioButton Content="{x:Static res:AppResources.Default}" Margin="5"
                                 IsEnabled="True" GroupName="AccentColor"
+                                IsChecked="{Binding UseNativeColor,Converter={StaticResource InverseBoolConverter}}"
                                 ToolTip="{x:Static tooltip:ToolTips.UseDefaultColorTip}"/>
                         <RadioButton Content="{x:Static res:AppResources.UseNativeAccentColor}" Margin="5"
                                 IsEnabled="True" GroupName="AccentColor"
@@ -68,12 +74,12 @@
                         <Separator Margin="0 5"/>
                         <TextBlock FontSize="24" Text="Theme"/>
                         <RadioButton Content="{x:Static res:AppResources.LightMode}" IsEnabled="True" Margin="5"
-                                 Click="DarkModeButton_Click" IsChecked="False"
-                                 ToolTip="{x:Static tooltip:ToolTips.LightModeTip}"/>
+                                     IsChecked="{Binding DarkMode,Converter={StaticResource InverseBoolConverter}}"
+                                     ToolTip="{x:Static tooltip:ToolTips.LightModeTip}"/>
                         <RadioButton Content="{x:Static res:AppResources.DarkMode}" IsEnabled="True"
-                                 Margin="5" x:Name="DarkModeButton" 
-                                 Click="DarkModeButton_Click" IsChecked="False"
-                                 ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
+                                     Margin="5" x:Name="DarkModeButton" 
+                                     IsChecked="{Binding DarkMode}"
+                                     ToolTip="{x:Static tooltip:ToolTips.DarkModeTooltip}"/>
                         <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 10 0 5">
                             <StackPanel>
                                 <StackPanel Orientation="Horizontal">

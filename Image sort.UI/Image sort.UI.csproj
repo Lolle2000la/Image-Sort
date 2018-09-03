@@ -113,6 +113,7 @@
     <Compile Include="Classes\FileOperationApiWrapper.cs" />
     <Compile Include="Classes\FolderSelectDialog\FolderSelectDialog.cs" />
     <Compile Include="Classes\FolderSelectDialog\Reflector.cs" />
+    <Compile Include="Classes\InverseBooleanConverter.cs" />
     <Compile Include="Classes\ListBoxScroll.cs" />
     <Compile Include="Classes\NativeHelpers.cs" />
     <Compile Include="Classes\ThemeManagerHelper.cs" />
