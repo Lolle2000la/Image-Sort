@@ -57,7 +57,7 @@
     <AppxBundlePlatforms>neutral</AppxBundlePlatforms>
     <AppInstallerUpdateFrequency>1</AppInstallerUpdateFrequency>
     <AppInstallerCheckForUpdateFrequency>OnApplicationRun</AppInstallerCheckForUpdateFrequency>
-    <PackageCertificateThumbprint>78AD3A00E9A766B4A43E73FE45C85C32C8617720</PackageCertificateThumbprint>
+    <PackageCertificateThumbprint>E08781862383C7D774B8726AAAC13CFBADE8D683</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <AppxBundle>Always</AppxBundle>
