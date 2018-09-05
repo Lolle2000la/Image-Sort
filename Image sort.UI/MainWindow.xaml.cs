@@ -1765,14 +1765,14 @@ namespace Image_sort.UI
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             // prevent accidental entering.
-            if (DialogsOpen <= 0)
+            if (!(DialogsOpen > 1))
             {
                 // prevents entering a folder when a rename is initiated.
                 if (FileNameInfo.IsFocused)
                 {
                     DoRename();
                 }
-                else if (IsAnyFolderVisible && !ResolutionBox.Focusable)
+                else if (IsAnyFolderVisible)
                     EnterFolder();
             }
         }
