@@ -1,5 +1,5 @@
 ﻿using Image_sort.Logic;
-using Image_sort.UI.Dialogs;
+//using Image_sort.UI.Dialogs;
 using MahApps.Metro.Controls;
 using System;
 using System.Collections.Generic;
@@ -334,48 +334,48 @@ namespace Image_sort.UI
         #endregion
 
         #region Folder-Navigation/Loading
-        /// <summary>
-        /// Lets the user select a resolution for the loaded images
-        /// </summary>
-        public void SetResolution()
-        {
-            string response = InputBox.Show("Please set the horizontal resolution.\n\n\n" +
-                "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
-                "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
-                "Will be applied on next loading.",
-                "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
-            // Stores the resolution selected by the user
-            /* Gets the resolution by the user via an input box, returns a bool whether 
-            he inputted a number or not*/
-            bool result = int.TryParse(response, out int resolution);
-            // If he did, continue
-            if (result)
-            {
-                // if the resolution is higher 0, then save it in the settings file
-                if (resolution > 0)
-                {
-                    MaxHorizontalResolution = resolution;
-                }
-                // otherwise, revert to default 
-                else
-                {
-                    MaxHorizontalResolution = 1000;
-                }
-            }
-            // If the response is "" or "default, revert to default
-            else if (response == "default")
-            {
-                MaxHorizontalResolution = 1000;
-            }
-            // If nothing was given back, then don't change anything
-            else if (response == "")
-            {
-                // Clear so that nothing happens
-            }
-            // If the user did not input valid numbers, than repeat
-            else
-                SetResolution();
-        }
+        ///// <summary>
+        ///// Lets the user select a resolution for the loaded images
+        ///// </summary>
+        //public void SetResolution()
+        //{
+        //    string response = InputBox.Show("Please set the horizontal resolution.\n\n\n" +
+        //        "Note: Everything equal or smaller to 0, as well as writing \"default\" reverts the resolution to default (1000),\n" +
+        //        "Note: The higher the resolution, the higher the loading times and RAM usage\n\n" +
+        //        "Will be applied on next loading.",
+        //        "Resolution", Properties.Settings.Default.MaxHorizontalResolution.ToString(), -1, -1);
+        //    // Stores the resolution selected by the user
+        //    /* Gets the resolution by the user via an input box, returns a bool whether 
+        //    he inputted a number or not*/
+        //    bool result = int.TryParse(response, out int resolution);
+        //    // If he did, continue
+        //    if (result)
+        //    {
+        //        // if the resolution is higher 0, then save it in the settings file
+        //        if (resolution > 0)
+        //        {
+        //            MaxHorizontalResolution = resolution;
+        //        }
+        //        // otherwise, revert to default 
+        //        else
+        //        {
+        //            MaxHorizontalResolution = 1000;
+        //        }
+        //    }
+        //    // If the response is "" or "default, revert to default
+        //    else if (response == "default")
+        //    {
+        //        MaxHorizontalResolution = 1000;
+        //    }
+        //    // If nothing was given back, then don't change anything
+        //    else if (response == "")
+        //    {
+        //        // Clear so that nothing happens
+        //    }
+        //    // If the user did not input valid numbers, than repeat
+        //    else
+        //        SetResolution();
+        //}
 
         /// <summary>
         /// Selects and loads a folder
