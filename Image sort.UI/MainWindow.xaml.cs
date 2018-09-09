@@ -64,6 +64,7 @@ namespace Image_sort.UI
             }
             set
             {
+                ResolutionBox.Text = value.ToString();
                 Properties.Settings.Default.MaxHorizontalResolution = value;
                 Properties.Settings.Default.Save();
                 imageManager.SetResolution(Properties.Settings.Default.MaxHorizontalResolution);
