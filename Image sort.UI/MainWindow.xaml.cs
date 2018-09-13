@@ -20,6 +20,7 @@ using Image_sort.UI.Classes;
 using MahApps.Metro;
 using System.Windows.Controls.Primitives;
 using System.Windows.Media;
+using Image_sort.UI.Components;
 
 namespace Image_sort.UI
 {
@@ -817,10 +818,13 @@ namespace Image_sort.UI
                     if (Directory.Exists(folder))
                     {
                         // add it for choice with the content of it's file name
-                        ListBoxItem listBoxItem
-                            = new ListBoxItem {
-                                Content = System.IO.Path.GetFileName(folder),
+                        ThumbnailedListBoxItem listBoxItem
+                            = new ThumbnailedListBoxItem {
+                                File = Path.GetFullPath(folder)
                             };
+
+                        if (folder.EndsWith(@"\.."))
+                            listBoxItem.DisplayName = $"..\\{listBoxItem.DisplayName}";
 
                         // Make it possible to enter the folder by double clicking it
                         listBoxItem.MouseDoubleClick += FolderStackItem_DoubleClick;
@@ -1309,13 +1313,13 @@ namespace Image_sort.UI
         private void SearchBarBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             // Get all items from the ListBox
-            foreach (ListBoxItem foldersStackItem in FoldersStack.Items)
+            foreach (ThumbnailedListBoxItem foldersStackItem in FoldersStack.Items)
             {
                 // If the text of the search box it is not "" and alphabetic/numeric
                 if (SearchBarBox.Text != "")
                 {
                     // and if the item currently looped through doesn't contain the text of the search box
-                    if (!foldersStackItem.Content.ToString().ToLower().Contains(SearchBarBox.Text.ToLower()))
+                    if (!foldersStackItem.DisplayName.ToString().ToLower().Contains(SearchBarBox.Text.ToLower()))
                         // Make it invisible
                         foldersStackItem.Visibility = Visibility.Collapsed;
                     else

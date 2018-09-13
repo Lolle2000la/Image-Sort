@@ -110,13 +110,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Classes\BitmapHelper.cs" />
     <Compile Include="Classes\FileOperationApiWrapper.cs" />
     <Compile Include="Classes\FolderSelectDialog\FolderSelectDialog.cs" />
     <Compile Include="Classes\FolderSelectDialog\Reflector.cs" />
     <Compile Include="Classes\InverseBooleanConverter.cs" />
     <Compile Include="Classes\ListBoxScroll.cs" />
     <Compile Include="Classes\NativeHelpers.cs" />
+    <Compile Include="Classes\ShellFileLoader.cs" />
     <Compile Include="Classes\ThemeManagerHelper.cs" />
+    <Compile Include="Components\ThumbnailedListBoxItem.xaml.cs">
+      <DependentUpon>ThumbnailedListBoxItem.xaml</DependentUpon>
+    </Compile>
     <Compile Include="LocalResources\AppResources\AppResources.Designer.cs">
       <DependentUpon>AppResources.resx</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -162,6 +167,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ToolTips.resx</DependentUpon>
     </Compile>
+    <Page Include="Components\ThumbnailedListBoxItem.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="UpdateDialog.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
