@@ -93,7 +93,7 @@ namespace Image_sort.UI.Classes
             SHFILEINFO info = new SHFILEINFO();
             // get the file info from the windows apu
             SHGetFileInfo(path, FILE_ATTRIBUTE_DIRECTORY,
-                ref info, (uint) Marshal.SizeOf(info), ShellGetFileInfoFlags.Icon);
+                ref info, (uint) Marshal.SizeOf(info), ShellGetFileInfoFlags.Icon | ShellGetFileInfoFlags.SmallIcon);
 
             // save it into a bitmap
             Bitmap thumbnail = ((Icon) Icon.FromHandle(info.hIcon).Clone()).ToBitmap();
