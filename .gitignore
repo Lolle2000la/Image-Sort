@@ -359,3 +359,5 @@ Version.cpp
 "Image sort screenshots/*"
 
 Image_sort.uwp/
+*.diagsession
+*.vsps

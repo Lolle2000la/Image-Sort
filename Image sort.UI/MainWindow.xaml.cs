@@ -436,6 +436,11 @@ namespace Image_sort.UI
         /// </summary>
         private async void SelectFolder()
         {
+            await Dispatcher.InvokeAsync(() =>
+            {
+
+            });
+
             // dialog used to ask for the folder to be sorted.
             // uses the native Vista folderbrowser when possible.
             FolderSelect.FolderSelectDialog folderBrowser = new FolderSelect.FolderSelectDialog() {
