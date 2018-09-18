@@ -521,7 +521,7 @@ namespace Image_sort.UI
         {
 
             // If there are folders in the list (meaning in the folder) then do 
-            if (folders != null)
+            if (folders?.Count > 0)
             {
                 string folderToEnter = Path.GetFullPath(folders[FoldersStack.SelectedIndex]);
                 if (Directory.Exists(folderToEnter))
@@ -651,21 +651,44 @@ namespace Image_sort.UI
                 // Makes sure the user inputted something
                 if (folderName != null)
                 {
-                    // Create the actual directory
-                    Directory.CreateDirectory(Path.Combine(imageManager.CurrentFolder, folderName));
+                    // save where the folder will be created.
+                    string folderPath = Path.Combine(imageManager.CurrentFolder, folderName);
 
-                    // Create and add the item to the FoldersStack
-                    ListBoxItem folder = new ListBoxItem() {
-                        Content = folderName,
-                    };
+                    try
+                    {
+                        // Create the actual directory
+                        Directory.CreateDirectory(folderPath);
 
-                    // Make it possible to enter the folder by double clicking it
-                    folder.MouseDoubleClick += FolderStackItem_DoubleClick;
+                        // Create and add the item to the FoldersStack
+                        ThumbnailedListBoxItem folder = new ThumbnailedListBoxItem() {
+                            File = folderPath,
+                        };
 
-                    FoldersStack.Items.Add(folder);
+                        // Make it possible to enter the folder by double clicking it
+                        folder.MouseDoubleClick += FolderStackItem_DoubleClick;
 
-                    // Add the whole path to the collection of folders
-                    folders.Add(Path.Combine(imageManager.CurrentFolder, folderName));
+                        FoldersStack.Items.Add(folder);
+
+                        // Add the whole path to the collection of folders
+                        folders.Add(folderPath);
+                    }
+                    catch (Exception ex)
+                    {
+                        // remove the item before it can do damage
+                        ListBoxItem lastItem = FoldersStack.Items[FoldersStack.Items.Count] as ListBoxItem;
+                        if (lastItem is ThumbnailedListBoxItem
+                            && (lastItem as ThumbnailedListBoxItem).File == folderPath)
+                        {
+                            FoldersStack.Items.Remove(lastItem);
+                        }
+
+                        // remove unnecessary folders
+                        folders.RemoveAll(s => s == folderPath);
+                        
+                        await this.ShowMessageAsync(AppResources.UpdaterErrorOccured,
+                            AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
+                    }
+
                 }
             }
         }
@@ -675,13 +698,13 @@ namespace Image_sort.UI
         /// </summary>
         private async void DeleteFolder()
         {
-            if ((imageManager.CurrentFolder.Length > 3 && FoldersStack.SelectedIndex > 1)
+            if ((imageManager.CurrentFolder.Length > 3 && FoldersStack.SelectedIndex > 0)
                 || (imageManager.CurrentFolder.Length <= 3))
                 if (DeleteFolderButton.IsEnabled == true)
                 {
                     // get the current image to use it later.
                     string currentFolder = Path.Combine(imageManager.CurrentFolder,
-                        ((ListBoxItem) FoldersStack.SelectedItem).Content.ToString());
+                        folders[FoldersStack.SelectedIndex]);
 
                     try
                     {
@@ -905,7 +928,7 @@ namespace Image_sort.UI
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
             RenameImageButton.IsEnabled = true;
-            if (FoldersStack.Items.Count > 1)
+            if (FoldersStack.Items.Count > 0)
             {
                 DeleteFolderButton.IsEnabled = true;
             }
@@ -923,6 +946,10 @@ namespace Image_sort.UI
             DeleteImageButton.IsEnabled = false;
             DeleteFolderButton.IsEnabled = false;
             RenameImageButton.IsEnabled = false;
+            if (Directory.Exists(imageManager.CurrentFolder))
+            {
+                NewFolderButton.IsEnabled = true;
+            }
             // Don't need to disable EnterFolderButton, because there will always be folders to enter
         }
 
@@ -940,7 +967,7 @@ namespace Image_sort.UI
             GoBackButton.IsEnabled = true;
             DeleteImageButton.IsEnabled = true;
             RenameImageButton.IsEnabled = true;
-            if (FoldersStack.Items.Count > 1)
+            if (FoldersStack.Items.Count > 0)
             {
                 DeleteFolderButton.IsEnabled = true;
             }
@@ -974,7 +1001,7 @@ namespace Image_sort.UI
 
         // Using a DependencyProperty as the backing store for DarkMode.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty DarkModeProperty =
-            DependencyProperty.Register("DarkMode", typeof(bool), typeof(MainWindow), 
+            DependencyProperty.Register("DarkMode", typeof(bool), typeof(MainWindow),
                 new PropertyMetadata(false, OnDarkModeChanged));
 
         /// <summary>
@@ -982,7 +1009,7 @@ namespace Image_sort.UI
         /// </summary>
         /// <param name="dp"></param>
         /// <param name="e"></param>
-        public static void OnDarkModeChanged (DependencyObject dp, DependencyPropertyChangedEventArgs e)
+        public static void OnDarkModeChanged(DependencyObject dp, DependencyPropertyChangedEventArgs e)
         {
             bool value = (bool) e.NewValue;
             MainWindow window = (MainWindow) dp;
@@ -997,8 +1024,8 @@ namespace Image_sort.UI
                 ThemeManager.GetAppTheme(value ? "BaseDark" : "BaseLight"));
 
             // apply theme to seperator, as it isn't applied automatically.
-            window.FolderImageSeperator.Background = value ? 
-                (Brush) window.FindResource("GrayBrush2") : 
+            window.FolderImageSeperator.Background = value ?
+                (Brush) window.FindResource("GrayBrush2") :
                 (Brush) window.FindResource("GrayBrush6");
         }
 
@@ -1030,7 +1057,7 @@ namespace Image_sort.UI
 
         // Using a DependencyProperty as the backing store for UseNativeColor.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty UseNativeColorProperty =
-            DependencyProperty.Register("UseNativeColor", typeof(bool), typeof(MainWindow), new PropertyMetadata(false, 
+            DependencyProperty.Register("UseNativeColor", typeof(bool), typeof(MainWindow), new PropertyMetadata(false,
                 (DependencyObject dp, DependencyPropertyChangedEventArgs e) =>
                 {
                     // create a new accent based on the system accent color
@@ -1039,7 +1066,7 @@ namespace Image_sort.UI
                         try
                         {
                             // get theme from window
-                            AccentColor =  NativeHelpers.GetWindowColorizationColor(false);
+                            AccentColor = NativeHelpers.GetWindowColorizationColor(false);
                         }
                         catch
                         {
@@ -1630,7 +1657,7 @@ namespace Image_sort.UI
             {
                 ResolutionBox.Text = 20.ToString();
             }
-            
+
             // and set the resolution to the max resolution
             MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
         }
@@ -1775,7 +1802,7 @@ namespace Image_sort.UI
         private void EnterFolder_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             // prevent accidental entering.
-            if (!(DialogsOpen > 1))
+            if (DialogsOpen < 1)
             {
                 // prevents entering a folder when a rename is initiated.
                 if (FileNameInfo.IsFocused)
@@ -2279,10 +2306,10 @@ namespace Image_sort.UI
                 AllowDrop = false;
             }
         }
-#endregion
+        #endregion
     }
 
-#region Commands
+    #region Commands
     public static class Command
     {
         /// <summary>
@@ -2365,5 +2392,5 @@ namespace Image_sort.UI
         /// </summary>
         public static RoutedCommand DeleteFolderCommand = new RoutedCommand();
     }
-#endregion
+    #endregion
 }
