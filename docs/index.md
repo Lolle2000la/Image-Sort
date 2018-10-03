@@ -40,7 +40,7 @@ Read the [Privacy Policy](privacy_policy.md) page for details on what data we co
 If you want to contribute, you should fork this repository, make your changes and then make a pull request.
 
 ## Requirements
-* .NET Framework 4.7.1 or higher
+* .NET Framework 4.7.2 or higher
 * Windows 7 service pack 1 of higher
 
 ## Build-Requirements
