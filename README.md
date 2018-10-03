@@ -26,7 +26,7 @@ Sorts your image at high speed
 Read the [Privacy Policy](https://imagesort.org/privacy_policy.html) page for details on what data we collect.
 
 ## Requirements
-* .NET Framework 4.7.1
+* .NET Framework 4.7.2
 * Windows 7 Sevice Pack 1 or higher
 
 ## Build-Prerequisites
