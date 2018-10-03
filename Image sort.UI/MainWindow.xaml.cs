@@ -799,6 +799,8 @@ namespace Image_sort.UI
                 // Collapse link again to prevent accidental clicking.
                 OpenInExplorerLinkHost.Visibility = Visibility.Collapsed;
             }
+
+            GC.Collect();
         }
 
         /// <summary>
@@ -1985,9 +1987,9 @@ namespace Image_sort.UI
                 foreach (var screen in Screen.AllScreens)
                 {
                     int usableScreenWidth = screen.WorkingArea.Width;
-                    if (usableScreenWidth > biggestHorizontalRes)
+                    if (usableScreenWidth / 2 > biggestHorizontalRes)
                     {
-                        biggestHorizontalRes = usableScreenWidth;
+                        biggestHorizontalRes = usableScreenWidth / 2;
                     }
                 }
 
