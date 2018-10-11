@@ -1654,14 +1654,17 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void ResolutionBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            // If the resolution set is under 20, set it to 20
-            if (!(int.Parse(ResolutionBox.Text) > 20))
+            if (int.TryParse(ResolutionBox.Text, out int res))
             {
-                ResolutionBox.Text = 20.ToString();
-            }
+                // If the resolution set is under 20, set it to 20
+                if (!(res > 20))
+                {
+                    ResolutionBox.Text = 20.ToString();
+                }
 
-            // and set the resolution to the max resolution
-            MaxHorizontalResolution = int.Parse(ResolutionBox.Text);
+                // and set the resolution to the max resolution
+                MaxHorizontalResolution = res;
+            }
         }
 
         /// <summary>
@@ -1987,9 +1990,9 @@ namespace Image_sort.UI
                 foreach (var screen in Screen.AllScreens)
                 {
                     int usableScreenWidth = screen.WorkingArea.Width;
-                    if (usableScreenWidth / 2 > biggestHorizontalRes)
+                    if (usableScreenWidth / 3 > biggestHorizontalRes)
                     {
-                        biggestHorizontalRes = usableScreenWidth / 2;
+                        biggestHorizontalRes = usableScreenWidth / 3;
                     }
                 }
 
