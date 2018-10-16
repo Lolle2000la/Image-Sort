@@ -2207,6 +2207,10 @@ namespace Image_sort.UI
         }
 
         /// <summary>
+        /// Used for key-repeat emulation
+        /// </summary>
+        DateTime lastCall;
+        /// <summary>
         /// Handler used to prevent unwanted key-repitition.
         /// </summary>
         /// <param name="sender"></param>
@@ -2222,10 +2226,22 @@ namespace Image_sort.UI
                     // and the focused control is not an textbox (where such behaviour is wished)
                     if (!typeof(System.Windows.Controls.TextBox).IsAssignableFrom(Keyboard.FocusedElement.GetType()))
                     {
+                        DateTime newCall = DateTime.Now;
+
+                        if (newCall.Subtract(lastCall).Milliseconds >= 250)
+                        {
+                            lastCall = newCall;
+                            return;
+                        }
+
                         // prevent repeat
                         e.Handled = true;
                     }
                 }
+            }
+            else
+            {
+                lastCall = DateTime.Now;
             }
         }
 
