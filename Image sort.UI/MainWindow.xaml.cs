@@ -149,6 +149,20 @@ namespace Image_sort.UI
         /// This keeps track of how many dialogs are open.
         /// </summary>
         protected int DialogsOpen { get; private set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the last used folder. Defaults to the user "Pictures" folder.
+        /// </summary>
+        protected string LastSelectedFolder
+        {
+            get => Properties.Settings.Default.LastSelectedFolder != "" && Directory.Exists(Properties.Settings.Default.LastSelectedFolder)
+                    ? Properties.Settings.Default.LastSelectedFolder : Environment.GetFolderPath(Environment.SpecialFolder.MyPictures);
+            set
+            {
+                Properties.Settings.Default.LastSelectedFolder = value;
+                Properties.Settings.Default.Save();
+            }
+        }
         #endregion
 
 
@@ -444,13 +458,15 @@ namespace Image_sort.UI
             // dialog used to ask for the folder to be sorted.
             // uses the native Vista folderbrowser when possible.
             FolderSelect.FolderSelectDialog folderBrowser = new FolderSelect.FolderSelectDialog() {
-                Title = AppResources.WhichFolderQuestion
+                Title = AppResources.WhichFolderQuestion,
+                InitialDirectory = LastSelectedFolder
             };
 
             // Shows it and does things if it works out
             if (folderBrowser.ShowDialog())
             {
                 string selectedPath = folderBrowser.FileName;
+                LastSelectedFolder = selectedPath;
 
                 // Disable all user input to prevent unwanted behavior
                 DisableAllControls();
@@ -684,7 +700,7 @@ namespace Image_sort.UI
 
                         // remove unnecessary folders
                         folders.RemoveAll(s => s == folderPath);
-                        
+
                         await this.ShowMessageAsync(AppResources.UpdaterErrorOccured,
                             AppResources.ExceptionMoreInfo.Replace("{message}", ex.Message));
                     }
