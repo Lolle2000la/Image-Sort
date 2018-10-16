@@ -220,7 +220,7 @@
 
         <!-- Image loading the image to sort as a preview -->
         <Image x:Name="PreviewImage" Grid.Row="1" Grid.RowSpan="3"
-               Grid.Column="1" Margin="0,0,5,0" Focusable="False"
+               Grid.Column="1" Focusable="False"
                MouseLeftButtonDown="PreviewImage_MouseLeftButtonDown"
                TouchDown="PreviewImage_TouchDown" StylusDown="PreviewImage_StylusDown"></Image>
 
