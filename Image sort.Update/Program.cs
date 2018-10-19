@@ -303,10 +303,14 @@ namespace Image_sort.Update
                         // Set the target path for it in User %AppData%
                         string target = Path.Combine(Environment.GetFolderPath
                             (Environment.SpecialFolder.ApplicationData), @"\setup.msi");
+
+                        // The location the update is supposed to be installed into.
+                        string currentInstallDir = AppDomain.CurrentDomain.BaseDirectory;
+
                         // Download the installer
                         wc.DownloadFile(url, target);
                         // Run it and wait for it to exit
-                        Process.Start(target, "/passive");
+                        Process.Start("msiexec", $"/i \"{target}\" TARGETDIR=\"{currentInstallDir}\" /passive");
 
                         // Save installer location
                         LastInstallerPath = target;
