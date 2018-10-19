@@ -300,4 +300,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>Show in Windows Explorer Context Menu (requires admin rights)</value>
+  </data>
 </root>

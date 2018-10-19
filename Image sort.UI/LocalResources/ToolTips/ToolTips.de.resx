@@ -214,4 +214,9 @@ Schnellzugriff: linke Pfeiltaste</value>
   <data name="UseNativeAccentColorTip" xml:space="preserve">
     <value>Passt die Farben der Anwendung an, um konsistenter mit dem System auszusehen.</value>
   </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>Ermöglicht das Öffnen eines Ordners in Image sort direkt vom Kontext-Menu des Windows-Explorers.
+
+Benötigt Administratoren-Rechte.</value>
+  </data>
 </root>

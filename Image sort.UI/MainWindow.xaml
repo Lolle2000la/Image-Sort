@@ -86,6 +86,11 @@
                         </Expander>
                         <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 5">
                             <StackPanel>
+                                <CheckBox Content="{x:Static res:AppResources.ShowInExplorerContextMenu}" IsEnabled="True"
+                                     Margin="5" x:Name="ShowInExplorerBox"
+                                     Checked="OnShowInExplorerIsCheckedChanged"
+                                     Unchecked="OnShowInExplorerIsCheckedChanged"
+                                     ToolTip="{x:Static tooltip:ToolTips.ShowInExplorerContextMenu}"/>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
                                     <!-- Text Box for setting the resolution -->

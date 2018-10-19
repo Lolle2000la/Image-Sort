@@ -18,9 +18,9 @@ using Image_sort.Communication;
 using System.Text;
 using Image_sort.UI.Classes;
 using MahApps.Metro;
-using System.Windows.Controls.Primitives;
 using System.Windows.Media;
 using Image_sort.UI.Components;
+using Microsoft.Win32;
 
 namespace Image_sort.UI
 {
@@ -219,6 +219,9 @@ namespace Image_sort.UI
                 WindowState = WindowState.Maximized;
             }
 #endif
+
+            // get whether the option to enable opening Image Sort from the explorer context menu is enabled.
+            ShowInExplorerBox.IsChecked = ShowInExplorerContextMenu;
 
             // Set the resolution to the saved one.
             ResolutionBox.Text = MaxHorizontalResolution.ToString();
@@ -1045,6 +1048,46 @@ namespace Image_sort.UI
             window.FolderImageSeperator.Background = value ?
                 (Brush) window.FindResource("GrayBrush2") :
                 (Brush) window.FindResource("GrayBrush6");
+        }
+
+        /// <summary>
+        /// Gets or sets whether "Sort with Image Sort" is shown in the context menu
+        /// for folders in the explorer.
+        /// </summary>
+        public bool ShowInExplorerContextMenu
+        {
+            get
+            {
+                string baseKeyPath = "Directory\\shell\\ImageSort";
+                return Registry.ClassesRoot.OpenSubKey(baseKeyPath) != null;
+            }
+            set
+            {
+                string baseKeyPath = "Directory\\shell\\ImageSort";
+                var key = Registry.ClassesRoot.OpenSubKey(baseKeyPath);
+
+                if (value != ShowInExplorerContextMenu)
+                {
+                    try
+                    {
+                        // Starts the process to apply the registry key change, as it requires admin rights.
+                        new Process() {
+                            StartInfo = new ProcessStartInfo() {
+                                FileName = AppDomain.CurrentDomain.BaseDirectory
+                                                + @"\Image sort.AdminModeHelper.exe",
+                                Arguments = $"SHOWINCONTEXTMENU={key != null}",
+                                UseShellExecute = true,
+                                Verb = "runas"
+                            }
+                        }.Start();
+                        ShowInExplorerBox.IsChecked = value;
+                    }
+                    catch
+                    {
+                        ShowInExplorerBox.IsChecked = !value;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -2210,6 +2253,7 @@ namespace Image_sort.UI
         /// Used for key-repeat emulation
         /// </summary>
         DateTime lastCall;
+
         /// <summary>
         /// Handler used to prevent unwanted key-repitition.
         /// </summary>
@@ -2342,6 +2386,17 @@ namespace Image_sort.UI
                 // If it isn't an folder, then just stop.
                 AllowDrop = false;
             }
+        }
+
+        /// <summary>
+        /// Changes the <see cref="ShowInExplorerContextMenu"/> based on the <see cref="sender"/>s 
+        /// IsChecked property.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnShowInExplorerIsCheckedChanged(object sender, RoutedEventArgs e)
+        {
+            ShowInExplorerContextMenu = (bool)(sender as System.Windows.Controls.CheckBox).IsChecked;
         }
         #endregion
     }

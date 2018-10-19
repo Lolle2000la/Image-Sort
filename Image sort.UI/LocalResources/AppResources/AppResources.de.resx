@@ -302,4 +302,7 @@ Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value
   <data name="Appearance" xml:space="preserve">
     <value>Erscheinungsbild</value>
   </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>Im Windows Explorer Kontext-Menü anzeigen (benötigt Administratoren-Rechte)</value>
+  </data>
 </root>

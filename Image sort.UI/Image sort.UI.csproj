@@ -272,6 +272,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Image sort.AdminModeHelper\Image sort.AdminModeHelper.csproj">
+      <Project>{54f4c4d0-f8c4-4fac-a901-4482e271d4e1}</Project>
+      <Name>Image sort.AdminModeHelper</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Image sort.Communication\Image sort.Communication.csproj">
       <Project>{a753abec-7e6b-4cf5-bae3-fb53fcad2195}</Project>
       <Name>Image sort.Communication</Name>

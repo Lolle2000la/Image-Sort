@@ -248,6 +248,17 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When enabled you can open a folder in Image sort directly via the context menu.
+        ///
+        ///Requires administrator-rights to toggle.
+        /// </summary>
+        public static string ShowInExplorerContextMenu {
+            get {
+                return ResourceManager.GetString("ShowInExplorerContextMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Skips the current image.
         ///
         ///Shortcut: left arrow key.

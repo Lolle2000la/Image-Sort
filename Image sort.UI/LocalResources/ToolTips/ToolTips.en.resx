@@ -212,4 +212,9 @@ Shortcut: left arrow key</value>
   <data name="UseNativeAccentColorTip" xml:space="preserve">
     <value>Adjusts the colors of the app to look more consistent with the system.</value>
   </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>When enabled you can open a folder in Image sort directly via the context menu.
+
+Requires administrator-rights to toggle</value>
+  </data>
 </root>

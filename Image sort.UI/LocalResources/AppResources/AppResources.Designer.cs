@@ -422,6 +422,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Show in Windows Explorer Context Menu (requires admin rights).
+        /// </summary>
+        public static string ShowInExplorerContextMenu {
+            get {
+                return ResourceManager.GetString("ShowInExplorerContextMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Size.
         /// </summary>
         public static string Size {
@@ -440,7 +449,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won&apos;t take long. We won&apos;t ask You again soon either way. This survey gives me information about which systems and operating systems (32/64 bit) to support in the future..
+        ///   Looks up a localized string similar to I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won&apos;t take long. We won&apos;t ask You again soon either way. This survey gives me information about which systems and operating systems (f.e. 32/64 bit) to support in the future..
         /// </summary>
         public static string SystemInfoSurveyMessage {
             get {
