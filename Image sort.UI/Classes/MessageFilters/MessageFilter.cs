@@ -10,7 +10,7 @@ namespace Image_sort.UI.Classes.MessageFilters
 {
     class MessageFilter<TMessageParam>
     {
-        private Action<TMessageParam> messageHandler = null;
+        private readonly Action<TMessageParam> messageHandler = null;
 
         /// <summary>
         /// Constructs a new instance of the message filter.

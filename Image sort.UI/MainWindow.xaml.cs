@@ -21,6 +21,7 @@ using MahApps.Metro;
 using System.Windows.Media;
 using Image_sort.UI.Components;
 using Microsoft.Win32;
+using Image_sort.UI.Classes.MessageFilters;
 
 namespace Image_sort.UI
 {
@@ -2018,6 +2019,15 @@ namespace Image_sort.UI
             // set the theme.
             DarkMode = Properties.Settings.Default.DarkModeEnabled;
             UseNativeColor = Properties.Settings.Default.UseNativeAccentColor;
+
+            // refreshes the accent color in-app, when it changes in windows (and UseNativeAccentColor is true)
+            new ColorizationMessageFilter(color =>
+            {
+                if (UseNativeColor)
+                {
+                    AccentColor = color;
+                }
+            });
 
             helpWindow = new HelpWindow();
 

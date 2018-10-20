@@ -8,8 +8,20 @@ using System.Windows.Media;
 
 namespace Image_sort.UI.Classes.MessageFilters
 {
+    /// <summary>
+    /// Filters the win32 messages for messages regarding accent color changes.
+    /// </summary>
     class ColorizationMessageFilter : MessageFilter<Color>
     {
+        public ColorizationMessageFilter() : base()
+        {
+
+        }
+
+        public ColorizationMessageFilter(Action<Color> messageHandler) : base(messageHandler)
+        {
+
+        }
 
         /// <summary>
         /// Message-code for changing colorization.
@@ -20,11 +32,11 @@ namespace Image_sort.UI.Classes.MessageFilters
         {
             if (msg.message == WM_DWMCOLORIZATIONCOLORCHANGED)
             {
-                int wParam = msg.wParam.ToInt32();
+                int wParam = Environment.Is64BitProcess ? (int)msg.wParam.ToInt64() : msg.wParam.ToInt32();
                 RaiseActionWith(Color.FromArgb(255,
-                    (byte) (wParam >> 16),
-                    (byte) (wParam >> 8),
-                    (byte) wParam));
+                    (byte) (unchecked(wParam >> 16)),
+                    (byte) (unchecked(wParam >> 8)),
+                    (byte) unchecked(wParam)));
                 handled = true;
             }
 
