@@ -43,7 +43,8 @@ namespace Image_sort.UI.Classes.MessageFilters
             LogMessage(msg, handled);
         }
 
-        [Conditional("DEBUG")]
+        [Conditional("LOG_ALL")]
+        [Conditional("LOG_MESSAGES")]
         private void LogMessage(MSG msg, bool handled)
         {
             Debug.WriteLine($"Message {msg.message} raised with lParam={msg.lParam} and wParam={msg.wParam}; Handled={handled}");
