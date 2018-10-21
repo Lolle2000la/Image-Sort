@@ -213,7 +213,7 @@ Shortcut: left arrow key</value>
     <value>Adjusts the colors of the app to look more consistent with the system.</value>
   </data>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
-    <value>When enabled you can open a folder in Image sort directly via the context menu.
+    <value>When enabled you can open a folder in Image sort directly from the context menu in Windows Explorer.
 
 Requires administrator-rights to toggle</value>
   </data>

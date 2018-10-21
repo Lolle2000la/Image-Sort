@@ -248,7 +248,7 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to When enabled you can open a folder in Image sort directly via the context menu.
+        ///   Looks up a localized string similar to When enabled you can open a folder in Image sort directly from the context menu in Windows Explorer.
         ///
         ///Requires administrator-rights to toggle.
         /// </summary>
