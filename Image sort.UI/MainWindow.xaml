@@ -8,6 +8,7 @@
         xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"   
         xmlns:res="clr-namespace:Image_sort.UI.LocalResources.AppResources"
         xmlns:tooltip="clr-namespace:Image_sort.UI.LocalResources.ToolTips"
+        xmlns:comp="clr-namespace:Image_sort.UI.Components"
         mc:Ignorable="d"
         Title="Image sort" Height="350" Width="740" AllowDrop="True"
         MinWidth="250" MinHeight="250" PreviewKeyDown="MetroWindow_PreviewKeyDown"
@@ -86,11 +87,16 @@
                         </Expander>
                         <Expander Header="{x:Static res:AppResources.AdvancedSettings}" Margin="0 5">
                             <StackPanel>
-                                <CheckBox Content="{x:Static res:AppResources.ShowInExplorerContextMenu}" IsEnabled="True"
+                                <CheckBox IsEnabled="True"
                                      Margin="5" x:Name="ShowInExplorerBox"
                                      Checked="OnShowInExplorerIsCheckedChanged"
                                      Unchecked="OnShowInExplorerIsCheckedChanged"
-                                     ToolTip="{x:Static tooltip:ToolTips.ShowInExplorerContextMenu}"/>
+                                     ToolTip="{x:Static tooltip:ToolTips.ShowInExplorerContextMenu}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{x:Static res:AppResources.ShowInExplorerContextMenu}"/>
+                                        <comp:AdminShieldIcon/>
+                                    </StackPanel>
+                                </CheckBox>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Margin="5" Text="{x:Static res:AppResources.HorizontalResolution}"/>
                                     <!-- Text Box for setting the resolution -->

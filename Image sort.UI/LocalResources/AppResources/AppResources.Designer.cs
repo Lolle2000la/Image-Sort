@@ -422,7 +422,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Show in Windows Explorer Context Menu (requires admin rights).
+        ///   Looks up a localized string similar to Show in Windows Explorer Context Menu.
         /// </summary>
         public static string ShowInExplorerContextMenu {
             get {

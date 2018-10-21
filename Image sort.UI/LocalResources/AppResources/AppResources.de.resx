@@ -303,6 +303,6 @@ Hinweis: Nutzen sie die Tab-Taste um zwischen den Antworten umzuschalten.</value
     <value>Erscheinungsbild</value>
   </data>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
-    <value>Im Windows Explorer Kontext-Menü anzeigen (benötigt Administratoren-Rechte)</value>
+    <value>Im Windows Explorer Kontext-Menü anzeigen</value>
   </data>
 </root>

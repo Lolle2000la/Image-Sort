@@ -124,6 +124,9 @@
     <Compile Include="Classes\NativeHelpers.cs" />
     <Compile Include="Classes\ShellFileLoader.cs" />
     <Compile Include="Classes\ThemeManagerHelper.cs" />
+    <Compile Include="Components\AdminShieldIcon.xaml.cs">
+      <DependentUpon>AdminShieldIcon.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Components\ThumbnailedListBoxItem.xaml.cs">
       <DependentUpon>ThumbnailedListBoxItem.xaml</DependentUpon>
     </Compile>
@@ -172,6 +175,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>ToolTips.resx</DependentUpon>
     </Compile>
+    <Page Include="Components\AdminShieldIcon.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Components\ThumbnailedListBoxItem.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
