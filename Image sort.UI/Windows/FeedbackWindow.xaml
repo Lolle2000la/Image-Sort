@@ -18,7 +18,8 @@
                     Content="{x:Static res:AppResources.OpenInBrowser}"/>
         </mahapps:WindowCommands>
     </mahapps:MetroWindow.RightWindowCommands>
-    <web:WebViewCompatible Source="https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform">
+    <web:WebViewCompatible Source="https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform"
+                           NavigationCompleted="OnNavigationCompleted">
         
     </web:WebViewCompatible>
 </mahapps:MetroWindow>

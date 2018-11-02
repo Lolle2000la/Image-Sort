@@ -23,6 +23,8 @@ namespace Image_sort.UI.Windows
     /// </summary>
     public partial class FeedbackWindow : MetroWindow
     {
+        public string FormUrl { get; } = "https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform";
+
         public FeedbackWindow()
         {
             InitializeComponent();
@@ -30,11 +32,15 @@ namespace Image_sort.UI.Windows
 
         private void OnOpenInBrowserClicked(object sender, RoutedEventArgs e)
         {
-            string url = "https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform";
-
-            Process.Start(url);
+            Process.Start(FormUrl);
 
             Close();
+        }
+
+        private void OnNavigationCompleted(object sender, Microsoft.Toolkit.Win32.UI.Controls.Interop.WinRT.WebViewControlNavigationCompletedEventArgs e)
+        {
+            if (e.Uri.OriginalString.EndsWith("/formResponse"))
+                Close();
         }
     }
 }
