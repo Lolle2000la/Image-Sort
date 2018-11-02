@@ -103,7 +103,7 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Opens the Feedback page in the web browser.
+        ///   Looks up a localized string similar to Opens the Feedback page in a new window.
         ///Your feedback will be heard!.
         /// </summary>
         public static string FeedbackToolTip {

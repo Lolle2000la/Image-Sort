@@ -303,4 +303,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
     <value>Show in Windows Explorer Context Menu</value>
   </data>
+  <data name="OpenInBrowser" xml:space="preserve">
+    <value>Open in browser</value>
+  </data>
 </root>

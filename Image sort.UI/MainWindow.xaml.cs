@@ -2256,7 +2256,8 @@ namespace Image_sort.UI
             //#else
             //            System.Diagnostics.Process.Start("ms-windows-store://review/?productid=9PGDK9WN8HG6");
             //#endif
-            Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform?usp=sf_link");
+            //Process.Start("https://docs.google.com/forms/d/e/1FAIpQLSeRLmo5uw0ZTqrgFAYqVE5Wyfthh_BeSCCG19FYmhADwiSRcw/viewform?usp=sf_link");
+            new Windows.FeedbackWindow().Show();
         }
 
         /// <summary>

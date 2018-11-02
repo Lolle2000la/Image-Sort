@@ -136,8 +136,9 @@ Merke: Dies kann nicht innerhalb von der App rückgängig gemacht werden. Sie m�
 Schnellzugriff: Enter</value>
   </data>
   <data name="FeedbackToolTip" xml:space="preserve">
-    <value>Öffnet die Feeback Seite im Web Browser.
-Ihr Feedback wird gehört und angenommen.</value>
+    <value>Öffnet die Feeback Seite in einem neuen Fenster.
+Ihr Feedback wird gehört und angenommen.
+(Die Fragen sind auf Englisch, Sie können ihre Antworten aber gerne auf Deutsch formulieren)</value>
     <comment>Used for the Feedback button</comment>
   </data>
   <data name="FileNameAndRenameTip" xml:space="preserve">

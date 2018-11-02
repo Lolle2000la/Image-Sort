@@ -136,7 +136,7 @@ Note: This cannot be reverted in-app. You must revert an deletion from inside th
 Shortcut: Enter</value>
   </data>
   <data name="FeedbackToolTip" xml:space="preserve">
-    <value>Opens the Feedback page in the web browser.
+    <value>Opens the Feedback page in a new window.
 Your feedback will be heard!</value>
     <comment>Used for the Feedback button</comment>
   </data>
