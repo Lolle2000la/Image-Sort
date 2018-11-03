@@ -467,6 +467,15 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Touch-friendly Mode.
+        /// </summary>
+        public static string TouchFriendlyMode {
+            get {
+                return ResourceManager.GetString("TouchFriendlyMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?.
         /// </summary>
         public static string UpdateConsentQuestion {

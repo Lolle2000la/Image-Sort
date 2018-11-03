@@ -220,4 +220,9 @@ Schnellzugriff: linke Pfeiltaste</value>
 
 Benötigt Administratoren-Rechte.</value>
   </data>
+  <data name="TouchFriendlyModeTip" xml:space="preserve">
+    <value>Aktiviert den Berührungsfreundlichen Modus (nein, mir ist keine bessere Übersetzung eingefallen).
+Vergrößert das Fenster um weniger Präzision von Nutzern mit einem Touchscreen abzuverlangen.
+Wird aktiviert, wenn der Windows 10 Tabletmodus angeschaltet wird.</value>
+  </data>
 </root>

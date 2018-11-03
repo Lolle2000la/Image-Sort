@@ -270,6 +270,17 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Activates the touch-friendly mode.
+        ///Enlarges the window to require less precision when using the app with a touchscreen.
+        ///Gets activated, when the Windows 10 Tablet Mode is enabled..
+        /// </summary>
+        public static string TouchFriendlyModeTip {
+            get {
+                return ResourceManager.GetString("TouchFriendlyModeTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The default color: &quot;Amber&quot; (yellow) .
         /// </summary>
         public static string UseDefaultColorTip {

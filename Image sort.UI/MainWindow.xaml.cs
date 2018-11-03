@@ -1151,8 +1151,27 @@ namespace Image_sort.UI
                     Properties.Settings.Default.Save();
                 }));
 
+        /// <summary>
+        /// Gets or sets whether touch-friendly mode is enabled.
+        /// Scales the window up to make the UI bigger by 25%.
+        /// </summary>
+        public bool TouchFriendlyMode
+        {
+            get { return (bool) GetValue(TouchFriendlyModeProperty); }
+            set { SetValue(TouchFriendlyModeProperty, value); }
+        }
 
+        // Using a DependencyProperty as the backing store for TabletMode.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty TouchFriendlyModeProperty =
+            DependencyProperty.Register("TouchFriendlyMode", typeof(bool), typeof(MainWindow), 
+                new PropertyMetadata(false, OnTouchFriendlyModeChanged));
 
+        private static void OnTouchFriendlyModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var window = d as MainWindow;
+            // make the content bigger on tablet mode for better touch usability.
+            window.LayoutTransform = ((bool) e.NewValue) ? new ScaleTransform(1.25, 1.25) : new ScaleTransform(1, 1);
+        }
         #endregion
 
         #region Image-Management
@@ -2019,6 +2038,17 @@ namespace Image_sort.UI
             // set the theme.
             DarkMode = Properties.Settings.Default.DarkModeEnabled;
             UseNativeColor = Properties.Settings.Default.UseNativeAccentColor;
+
+            // make sure touch-friendly mode gets enabled at start, when 
+            // tablet mode is enabled in Windows.
+            if (TabletModeMessageFilter.TabletMode)
+                TouchFriendlyMode = true;
+
+            // changes the layout scaling based on the tablet mode
+            new TabletModeMessageFilter(enabled =>
+            {
+                TouchFriendlyMode = enabled;
+            });
 
             // refreshes the accent color in-app, when it changes in windows (and UseNativeAccentColor is true)
             new ColorizationMessageFilter(color =>

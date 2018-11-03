@@ -120,6 +120,10 @@
             <ToggleButton x:Name="EnableSearchButton" Content="{x:Static res:AppResources.Search}" Focusable="False"
                               Click="EnableSearchButton_Click" IsChecked="False" ToolTip="{x:Static tooltip:ToolTips.SearchToolTip}">
             </ToggleButton>
+            <ToggleButton Focusable="False"
+                          Content="{x:Static res:AppResources.TouchFriendlyMode}"
+                          ToolTip="{x:Static tooltip:ToolTips.TouchFriendlyModeTip}"
+                          IsChecked="{Binding TouchFriendlyMode, Mode=TwoWay}"/>
             <ToggleButton Content="{x:Static res:AppResources.Settings}" IsEnabled="True" Focusable="False"
                     x:Name="SettingsButton" IsChecked="{Binding Path=IsOpen,ElementName=SettingsFlyout}"
                     ToolTip="{x:Static tooltip:ToolTips.SettingsTip}"/>

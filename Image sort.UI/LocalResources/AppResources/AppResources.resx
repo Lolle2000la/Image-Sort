@@ -306,4 +306,7 @@ Note: Use Tab to cycle through the answers.</value>
   <data name="OpenInBrowser" xml:space="preserve">
     <value>Open in browser</value>
   </data>
+  <data name="TouchFriendlyMode" xml:space="preserve">
+    <value>Touch-friendly Mode</value>
+  </data>
 </root>

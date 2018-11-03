@@ -217,4 +217,9 @@ Shortcut: left arrow key</value>
 
 Requires administrator-rights to toggle</value>
   </data>
+  <data name="TouchFriendlyModeTip" xml:space="preserve">
+    <value>Activates the touch-friendly mode.
+Enlarges the window to require less precision when using the app with a touchscreen.
+Gets activated, when the Windows 10 Tablet Mode is enabled.</value>
+  </data>
 </root>
