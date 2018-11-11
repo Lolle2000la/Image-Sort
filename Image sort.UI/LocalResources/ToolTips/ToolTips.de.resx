@@ -216,9 +216,7 @@ Schnellzugriff: linke Pfeiltaste</value>
     <value>Passt die Farben der Anwendung an, um konsistenter mit dem System auszusehen.</value>
   </data>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
-    <value>Ermöglicht das Öffnen eines Ordners in Image sort direkt vom Kontext-Menu des Windows-Explorers.
-
-Benötigt Administratoren-Rechte.</value>
+    <value>Ermöglicht das Öffnen eines Ordners in Image sort direkt vom Kontext-Menu des Windows-Explorers.</value>
   </data>
   <data name="TouchFriendlyModeTip" xml:space="preserve">
     <value>Aktiviert den Berührungsfreundlichen Modus (nein, mir ist keine bessere Übersetzung eingefallen).

@@ -1065,28 +1065,42 @@ namespace Image_sort.UI
         {
             get
             {
-                string baseKeyPath = "Directory\\shell\\ImageSort";
-                return Registry.ClassesRoot.OpenSubKey(baseKeyPath) != null;
+                string baseKeyPath = @"Software\Classes\Directory\shell\ImageSort";
+                return Registry.CurrentUser.OpenSubKey(baseKeyPath) != null;
             }
             set
             {
-                string baseKeyPath = "Directory\\shell\\ImageSort";
-                var key = Registry.ClassesRoot.OpenSubKey(baseKeyPath);
+                string baseKeyPath = @"Software\Classes\Directory\shell\ImageSort";
+                var key = Registry.CurrentUser.OpenSubKey(baseKeyPath);
 
                 if (value != ShowInExplorerContextMenu)
                 {
                     try
                     {
-                        // Starts the process to apply the registry key change, as it requires admin rights.
-                        new Process() {
-                            StartInfo = new ProcessStartInfo() {
-                                FileName = AppDomain.CurrentDomain.BaseDirectory
-                                                + @"\Image sort.AdminModeHelper.exe",
-                                Arguments = $"SHOWINCONTEXTMENU={key != null}",
-                                UseShellExecute = true,
-                                Verb = "runas"
+                        string pathToExe = Path.Combine(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "Image sort.UI.exe");
+                        if (!value && key != null)
+                        {
+
+                            try
+                            {
+                                // removes the item from the context menu
+                                Registry.CurrentUser.DeleteSubKeyTree(baseKeyPath);
                             }
-                        }.Start();
+                            catch (Exception) { }
+
+                        }
+                        else if (value && key == null)
+                        {
+                            try
+                            {
+                                // adds the item to the context menu
+                                key = Registry.CurrentUser.CreateSubKey(baseKeyPath);
+                                key.SetValue("", "Sort with Image Sort");
+                                key.SetValue("Icon", $"\"{pathToExe}\"");
+                                key.CreateSubKey("command").SetValue("", $"\"{pathToExe}\" -f \"%L\"");
+                            }
+                            catch (Exception) { }
+                        }
                         ShowInExplorerBox.IsChecked = value;
                     }
                     catch
@@ -2459,7 +2473,7 @@ namespace Image_sort.UI
         }
 
         /// <summary>
-        /// Changes the <see cref="ShowInExplorerContextMenu"/> based on the <see cref="sender"/>s 
+        /// Changes the <see cref="ShowInExplorerContextMenu"/> based on the <see cref="sender"/>s
         /// IsChecked property.
         /// </summary>
         /// <param name="sender"></param>

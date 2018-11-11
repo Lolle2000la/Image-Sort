@@ -98,7 +98,6 @@
                                      ToolTip="{x:Static tooltip:ToolTips.ShowInExplorerContextMenu}">
                                     <StackPanel Orientation="Horizontal" Height="18">
                                         <TextBlock Text="{x:Static res:AppResources.ShowInExplorerContextMenu}"/>
-                                        <comp:AdminShieldIcon/>
                                     </StackPanel>
                                 </CheckBox>
                                 <StackPanel Orientation="Horizontal">
