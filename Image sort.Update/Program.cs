@@ -96,7 +96,7 @@ namespace Image_sort.Update
                                 InitUpdating(newRelease);
                             }
                         });
-                        // check the whole time if any instance of Image sort is still running.
+                        // check the whole time if any instance of Image Sort is still running.
                         while (checkForRunningInstances)
                         {
                             if (Process.GetProcessesByName("Image sort.UI").Length == 0)
@@ -179,7 +179,8 @@ namespace Image_sort.Update
                 {
                     // Elevate process
                     ProcessStartInfo info = new ProcessStartInfo(AppDomain.CurrentDomain.BaseDirectory +
-                        @"Image sort.Update.exe") {
+                        @"Image sort.Update.exe")
+                    {
                         UseShellExecute = true,
                         Verb = "runas"
                     };
@@ -237,7 +238,7 @@ namespace Image_sort.Update
         /// Downloads the registry from the GitHub server
         /// </summary>
         /// <returns>Returns it a as a string in JSON form</returns>
-        [Obsolete("Image sort just downloads the latest release from GitHub in the future. \r\n" +
+        [Obsolete("Image Sort just downloads the latest release from GitHub in the future. \r\n" +
             "Please use GetLatestReleaseInfo()", true)]
         public static string GetUpdateRegistry()
         {

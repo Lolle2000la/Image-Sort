@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Image sort Updater")]
-[assembly: AssemblyDescription("Updates Image sort when allowed to")]
+[assembly: AssemblyTitle("Image Sort Updater")]
+[assembly: AssemblyDescription("Updates Image Sort when allowed to")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Lolle2000la")]
-[assembly: AssemblyProduct("Image sort Updater")]
+[assembly: AssemblyProduct("Image Sort Updater")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

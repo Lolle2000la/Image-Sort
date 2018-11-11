@@ -418,9 +418,9 @@ namespace Image_sort.UI
             {
                 // Show the current folder in the title bar
 #if (!DEMO)
-                Title = $"Image sort - {imageManager.CurrentFolder}";
+                Title = $"Image Sort - {imageManager.CurrentFolder}";
 #else
-                Title = $"Image sort - {Path.GetFileName(imageManager.CurrentFolder)}";
+                Title = $"Image Sort - {Path.GetFileName(imageManager.CurrentFolder)}";
 #endif
                 // Get the next image
                 BitmapImage buffer = await imageManager.GetNextImage();

@@ -138,9 +138,9 @@
     <value>Update available</value>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>A new version of Image sort is available. Do you want to update?
+    <value>A new version of Image Sort is available. Do you want to update?
 
-* This will close all open instances "Image sort". Please finish all tasks beforehand.</value>
+* This will close all open instances "Image Sort". Please finish all tasks beforehand.</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdateServerDidNotRespondWithUrl" xml:space="preserve">

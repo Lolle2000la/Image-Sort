@@ -200,7 +200,7 @@ Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
     <comment>Image management</comment>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>Eine neue Version von Image sort ist verfügbar. Wollen sie auf die neue Version updaten?</value>
+    <value>Eine neue Version von Image Sort ist verfügbar. Wollen sie auf die neue Version updaten?</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdaterErrorOccured" xml:space="preserve">
@@ -211,7 +211,7 @@ Bitte warten Sie bis {TIME} damit sich Ihr Limit zurücksetzt.</value>
 Nachricht oder Status Code:</value>
   </data>
   <data name="UpdateWillCloseAppMessage" xml:space="preserve">
-    <value>Dies wird alle offenen Fenster von "Image sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
+    <value>Dies wird alle offenen Fenster von "Image Sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
   </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Welcher Ordner benötigt eine Sortierung?</value>
@@ -231,7 +231,7 @@ Nachricht oder Status Code:</value>
     <comment>English: "Can You help me?". Use when appropiate</comment>
   </data>
   <data name="SystemInfoSurveyMessage" xml:space="preserve">
-    <value>Ich muss mehr über den Computer wissen, auf dem Sie Image sort benutzen. Könnten Sie schnell 3 kurze Fragen beantworten? Es wird nicht lange dauern. Wir werden Sie so oder so bald nicht mehr fragen. Diese Umfrage gibt mir Aufschluss, welche Systeme (32/64 bit) und Betriebssysteme ich in der Zukunft unterstützen sollte.
+    <value>Ich muss mehr über den Computer wissen, auf dem Sie Image Sort benutzen. Könnten Sie schnell 3 kurze Fragen beantworten? Es wird nicht lange dauern. Wir werden Sie so oder so bald nicht mehr fragen. Diese Umfrage gibt mir Aufschluss, welche Systeme (32/64 bit) und Betriebssysteme ich in der Zukunft unterstützen sollte.
 
 Hinweis: Die Umfrage ist auf Englisch</value>
     <comment>Used to ask the user to answer a survey</comment>

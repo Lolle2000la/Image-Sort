@@ -7,11 +7,11 @@ using System.Windows;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Image sort")]
+[assembly: AssemblyTitle("Image Sort")]
 [assembly: AssemblyDescription("An app for sorting Your folders")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Lolle2000la")]
-[assembly: AssemblyProduct("Image sort.UI")]
+[assembly: AssemblyProduct("Image Sort")]
 [assembly: AssemblyCopyright("Copyright ©  2018")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

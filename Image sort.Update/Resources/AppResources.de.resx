@@ -138,13 +138,13 @@
     <value>Update verfügbar</value>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>Eine neue Version von Image sort ist verfügbar. Wollen sie auf die neue Version updaten?
+    <value>Eine neue Version von Image Sort ist verfügbar. Wollen sie auf die neue Version updaten?
 
-* Dies wird alle offenen Fenster von "Image sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
+* Dies wird alle offenen Fenster von "Image Sort" schließen. Bitte schließen sie all ihre Arbeit vorher ab.</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdateServerDidNotRespondWithUrl" xml:space="preserve">
-    <value>Der Update-Server hat keine valide URL zurückgegeben!Bitte laden sie sich die nueste Version von Image sort von GitHub herunter.</value>
+    <value>Der Update-Server hat keine valide URL zurückgegeben!Bitte laden sie sich die nueste Version von Image Sort von GitHub herunter.</value>
     <comment>Tells the user, that the server did not respond with an valid, usable url.</comment>
   </data>
   <data name="Warning" xml:space="preserve">

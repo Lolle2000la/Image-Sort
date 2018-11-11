@@ -115,9 +115,9 @@ namespace Image_sort.Update.Resources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?
+        ///   Looks up a localized string similar to A new version of Image Sort is available. Do you want to update?
         ///
-        ///* This will close all open instances &quot;Image sort&quot;. Please finish all tasks beforehand..
+        ///* This will close all open instances &quot;Image Sort&quot;. Please finish all tasks beforehand..
         /// </summary>
         internal static string UpdateConsentQuestion {
             get {

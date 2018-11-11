@@ -200,7 +200,7 @@ Please wait till {TIME} for your rate limit to reset.</value>
     <comment>Image management</comment>
   </data>
   <data name="UpdateConsentQuestion" xml:space="preserve">
-    <value>A new version of Image sort is available. Do you want to update?</value>
+    <value>A new version of Image Sort is available. Do you want to update?</value>
     <comment>Question that asks for user consent on updating.</comment>
   </data>
   <data name="UpdaterErrorOccured" xml:space="preserve">
@@ -211,7 +211,7 @@ Please wait till {TIME} for your rate limit to reset.</value>
 Message or status code:</value>
   </data>
   <data name="UpdateWillCloseAppMessage" xml:space="preserve">
-    <value>This will close all open instances of "Image sort". Please finish all tasks beforehand.</value>
+    <value>This will close all open instances of "Image Sort". Please finish all tasks beforehand.</value>
   </data>
   <data name="WhichFolderQuestion" xml:space="preserve">
     <value>Which folder needs sorting?</value>
@@ -231,7 +231,7 @@ Message or status code:</value>
     <comment>English: "Can You help me?". Use when appropiate</comment>
   </data>
   <data name="SystemInfoSurveyMessage" xml:space="preserve">
-    <value>I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won't take long. We won't ask You again soon either way. This survey gives me information about which systems and operating systems (f.e. 32/64 bit) to support in the future.</value>
+    <value>I need to know more about the system You are running Image Sort on. Can You quickly answer 3 short questions? It won't take long. We won't ask You again soon either way. This survey gives me information about which systems and operating systems (f.e. 32/64 bit) to support in the future.</value>
     <comment>Used to ask the user to answer a survey</comment>
   </data>
   <data name="ItsImportant" xml:space="preserve">

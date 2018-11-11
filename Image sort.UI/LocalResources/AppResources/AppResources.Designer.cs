@@ -458,7 +458,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to I need to know more about the system You are running Image sort on. Can You quickly answer 3 short questions? It won&apos;t take long. We won&apos;t ask You again soon either way. This survey gives me information about which systems and operating systems (f.e. 32/64 bit) to support in the future..
+        ///   Looks up a localized string similar to I need to know more about the system You are running Image Sort on. Can You quickly answer 3 short questions? It won&apos;t take long. We won&apos;t ask You again soon either way. This survey gives me information about which systems and operating systems (f.e. 32/64 bit) to support in the future..
         /// </summary>
         public static string SystemInfoSurveyMessage {
             get {
@@ -476,7 +476,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to A new version of Image sort is available. Do you want to update?.
+        ///   Looks up a localized string similar to A new version of Image Sort is available. Do you want to update?.
         /// </summary>
         public static string UpdateConsentQuestion {
             get {
@@ -522,7 +522,7 @@ namespace Image_sort.UI.LocalResources.AppResources {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to This will close all open instances of &quot;Image sort&quot;. Please finish all tasks beforehand..
+        ///   Looks up a localized string similar to This will close all open instances of &quot;Image Sort&quot;. Please finish all tasks beforehand..
         /// </summary>
         public static string UpdateWillCloseAppMessage {
             get {
