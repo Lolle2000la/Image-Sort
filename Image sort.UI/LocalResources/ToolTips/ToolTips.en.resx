@@ -222,4 +222,8 @@ Requires administrator-rights to toggle</value>
 Enlarges the window to require less precision when using the app with a touchscreen.
 Gets activated, when the Windows 10 Tablet Mode is enabled.</value>
   </data>
+  <data name="RotateImageTip" xml:space="preserve">
+    <value>Rotates the image by the degree written in the button.
+Press the ','-key to rotate the image by -90° and the '.'-key to rotate it by +90°.</value>
+  </data>
 </root>

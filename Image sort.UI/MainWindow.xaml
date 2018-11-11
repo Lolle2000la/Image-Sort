@@ -32,6 +32,8 @@
         <CommandBinding Command="local:Command.DeleteCommand" Executed="DeleteCommand_Executed" />
         <CommandBinding Command="local:Command.RenameCommand" Executed="RenameCommand_Executed" />
         <CommandBinding Command="local:Command.DeleteFolderCommand" Executed="DeleteFolderCommand_Executed" />
+        <CommandBinding Command="local:Command.RotateImageMinus90Command" Executed="OnRotateImageMinus90Executed" />
+        <CommandBinding Command="local:Command.RotateImagePlus90Command" Executed="OnRotateImagePlus90Executed"/>
     </Window.CommandBindings>
 
     <Window.InputBindings>
@@ -51,6 +53,8 @@
         <KeyBinding Command="local:Command.DeleteCommand" Key="Delete" />
         <KeyBinding Command="local:Command.DeleteFolderCommand" Key="Delete" Modifiers="Ctrl" />
         <KeyBinding Command="local:Command.RenameCommand" Key="R" Modifiers="Ctrl" />
+        <KeyBinding Command="local:Command.RotateImageMinus90Command" Key="OemComma" />
+        <KeyBinding Command="local:Command.RotateImagePlus90Command" Key="OemPeriod" />
     </Window.InputBindings>
 
     <Window.Resources>
@@ -277,6 +281,21 @@
                             ValueChanged="ProgressSlider_ValueChanged"
                             Margin="0,5,0,0"
                             ToolTip="{x:Static tooltip:ToolTips.ProgressSliderToolTip}"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal"
+                            Name="RotateImageButtons"
+                            Visibility="Collapsed"
+                            Grid.Column="1" Grid.Row="0"
+                            ToolTip="{x:Static tooltip:ToolTips.RotateImageTip}">
+                    <Button Content="-180°" BorderBrush="{x:Null}" Focusable="False"
+                            Background="{x:Null}" Click="OnRotateButtonClicked"/>
+                    <Button Content="-90°" BorderBrush="{x:Null}" Focusable="False"
+                            Background="{x:Null}" Click="OnRotateButtonClicked"/>
+                    <Button Content="+90°" BorderBrush="{x:Null}" Focusable="False"
+                            Background="{x:Null}" Click="OnRotateButtonClicked"/>
+                    <Button Content="+180°" BorderBrush="{x:Null}" Focusable="False"
+                            Background="{x:Null}" Click="OnRotateButtonClicked"/>
                 </StackPanel>
 
                 <TextBlock Name="ProgressIndicatorText" Margin="10,0,0,1" Grid.Column="1" Grid.Row="1"/>

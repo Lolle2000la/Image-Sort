@@ -1,27 +1,27 @@
-﻿using Image_sort.Logic;
-//using Image_sort.UI.Dialogs;
-using MahApps.Metro.Controls;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using Image_sort.UI.LocalResources.AppResources;
-using System.Diagnostics;
-using MahApps.Metro.Controls.Dialogs;
-using Image_sort.Communication;
-using System.Text;
-using Image_sort.UI.Classes;
-using MahApps.Metro;
 using System.Windows.Media;
-using Image_sort.UI.Components;
-using Microsoft.Win32;
+using System.Windows.Media.Imaging;
+using Image_sort.Communication;
+using Image_sort.Logic;
+using Image_sort.UI.Classes;
 using Image_sort.UI.Classes.MessageFilters;
+using Image_sort.UI.Components;
+using Image_sort.UI.LocalResources.AppResources;
+using MahApps.Metro;
+//using Image_sort.UI.Dialogs;
+using MahApps.Metro.Controls;
+using MahApps.Metro.Controls.Dialogs;
+using Microsoft.Win32;
 
 namespace Image_sort.UI
 {
@@ -48,7 +48,7 @@ namespace Image_sort.UI
         /// Contains a <see cref="List"/> of <see cref="string"/>'s 
         /// being the paths of the folders inside the currently selected folder.
         /// </summary>
-        List<string> folders;
+        private List<string> folders;
 
         /// <summary>
         /// Used to prevent image loading when the ProgressSliders value has changed.
@@ -76,7 +76,7 @@ namespace Image_sort.UI
         /// <summary>
         /// Arguments given by the user/caller
         /// </summary>
-        Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
+        private Dictionary<string, string> ArgsGiven = new Dictionary<string, string>();
 
         private bool searchEnabled = false;
 
@@ -796,6 +796,9 @@ namespace Image_sort.UI
                 ProgressSlider.Visibility = Visibility.Visible;
                 ProgressSlider.Maximum = MaxImages;
 
+                // Show the rotate image buttons
+                RotateImageButtons.Visibility = Visibility.Visible;
+
                 // Show Progress
                 (int current, int max) = imageManager.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"{AppResources.Progress}: {current}/{max}";
@@ -814,6 +817,9 @@ namespace Image_sort.UI
                 // Show progress
                 (int current, int max) = imageManager.GetCurrentProgress();
                 ProgressIndicatorText.Text = $"Progress: {current}/{max}";
+
+                // Hide the rotate image buttons
+                RotateImageButtons.Visibility = Visibility.Collapsed;
 
                 OpenInExplorerLink.NavigateUri = null;
                 // Collapse link again to prevent accidental clicking.
@@ -1163,7 +1169,7 @@ namespace Image_sort.UI
 
         // Using a DependencyProperty as the backing store for TabletMode.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty TouchFriendlyModeProperty =
-            DependencyProperty.Register("TouchFriendlyMode", typeof(bool), typeof(MainWindow), 
+            DependencyProperty.Register("TouchFriendlyMode", typeof(bool), typeof(MainWindow),
                 new PropertyMetadata(false, OnTouchFriendlyModeChanged));
 
         private static void OnTouchFriendlyModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -1390,6 +1396,29 @@ namespace Image_sort.UI
                 LoadImage(null);
                 DisableControls();
                 GoBackButton.IsEnabled = true;
+            }
+        }
+
+        /// <summary>
+        /// Rotates the <see cref="PreviewImage"/> by the given amount.
+        /// </summary>
+        /// <param name="amount">The amount by which the <see cref="PreviewImage"/> should get rotated.</param>
+        public void RotateImage(double amount)
+        {
+            var existingTransform = PreviewImage.LayoutTransform as RotateTransform;
+            if (existingTransform == null)
+            {
+                PreviewImage.LayoutTransform = new RotateTransform(amount);
+            }
+            else
+            {
+                // ensure the angle being in the range of 0 < angle < 360
+                if (existingTransform.Angle + amount > 360)
+                    PreviewImage.LayoutTransform = new RotateTransform(existingTransform.Angle + amount - 360);
+                else if (existingTransform.Angle + amount < -360)
+                    PreviewImage.LayoutTransform = new RotateTransform(existingTransform.Angle + amount - 360);
+                else
+                    PreviewImage.LayoutTransform = new RotateTransform(existingTransform.Angle + amount);
             }
         }
         #endregion
@@ -2293,7 +2322,7 @@ namespace Image_sort.UI
         /// <summary>
         /// Used for key-repeat emulation
         /// </summary>
-        DateTime lastCall;
+        private DateTime lastCall;
 
         /// <summary>
         /// Handler used to prevent unwanted key-repitition.
@@ -2437,7 +2466,35 @@ namespace Image_sort.UI
         /// <param name="e"></param>
         private void OnShowInExplorerIsCheckedChanged(object sender, RoutedEventArgs e)
         {
-            ShowInExplorerContextMenu = (bool)(sender as System.Windows.Controls.CheckBox).IsChecked;
+            ShowInExplorerContextMenu = (bool) (sender as System.Windows.Controls.CheckBox).IsChecked;
+        }
+
+        /// <summary>
+        /// Called when one of the rotate buttons was clicked.
+        /// Use the name to identify by how much to rotate.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void OnRotateButtonClicked(object sender, RoutedEventArgs e)
+        {
+            var name = (sender as System.Windows.Controls.Button).Content as string;
+            // f.e. -90° -> -90 
+            if (int.TryParse(name.Substring(0, name.Length - 1), out int amount))
+            {
+                RotateImage(amount);
+            }
+        }
+
+        private void OnRotateImageMinus90Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (!SearchEnabled && DialogsOpen == 0)
+                RotateImage(-90);
+        }
+
+        private void OnRotateImagePlus90Executed(object sender, ExecutedRoutedEventArgs e)
+        {
+            if (!SearchEnabled && DialogsOpen == 0)
+                RotateImage(90);
         }
         #endregion
     }
@@ -2524,6 +2581,16 @@ namespace Image_sort.UI
         /// Deletes the currently selected folder when executed.
         /// </summary>
         public static RoutedCommand DeleteFolderCommand = new RoutedCommand();
+
+        /// <summary>
+        /// Rotates the current image by -90 degrees when executed.
+        /// </summary>
+        public static RoutedCommand RotateImageMinus90Command = new RoutedCommand();
+
+        /// <summary>
+        /// Rotates the current image by +90 degrees when executed.
+        /// </summary>
+        public static RoutedCommand RotateImagePlus90Command = new RoutedCommand();
     }
     #endregion
 }

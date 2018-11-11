@@ -225,4 +225,8 @@ Benötigt Administratoren-Rechte.</value>
 Vergrößert das Fenster um weniger Präzision von Nutzern mit einem Touchscreen abzuverlangen.
 Wird aktiviert, wenn der Windows 10 Tabletmodus angeschaltet wird.</value>
   </data>
+  <data name="RotateImageTip" xml:space="preserve">
+    <value>Dreht das Bild um so viel Grad um, wie in den jeweiligen Knöpfen steht.
+Drücken sie die ','-Taste, um das Bild um -90° zu drehen, und die '.'-Taste, um das Bild um +90° zu drehen.</value>
+  </data>
 </root>

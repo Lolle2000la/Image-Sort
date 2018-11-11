@@ -214,6 +214,16 @@ namespace Image_sort.UI.LocalResources.ToolTips {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Rotates the image by the degree written in the button.
+        ///Press the &apos;,&apos;-key to rotate the image by -90° and the &apos;.&apos;-key to rotate it by +90°..
+        /// </summary>
+        public static string RotateImageTip {
+            get {
+                return ResourceManager.GetString("RotateImageTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Shows and hides the search box.
         ///
         ///Shortcut: ctrl+s.
