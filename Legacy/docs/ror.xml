@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:ror="http://rorweb.com/0.1/" >
+<channel>
+  <title>ROR Sitemap for https://imagesort.org/</title>
+  <link>https://imagesort.org/</link>
+
+<item>
+     <link>https://imagesort.org/</link>
+     <title>Image Sort - a free app for sorting your folders | Image Sort helps you sort your big and messy folders. Itâs tiny too, just about 3 megabytes.</title>
+     <description>Image Sort helps you sort your big and messy folders. Itâs tiny too, just about 3 megabytes.</description>
+     <ror:updatePeriod></ror:updatePeriod>
+     <ror:sortOrder>0</ror:sortOrder>
+     <ror:resourceOf>sitemap</ror:resourceOf>
+</item>
+<item>
+     <link>https://imagesort.org/help.html</link>
+     <title>Getting started | Image Sort - a free app for sorting your folders</title>
+     <description>Image Sort helps you sort your big and messy folders. Itâs tiny too, just about 3 megabytes.</description>
+     <ror:updatePeriod></ror:updatePeriod>
+     <ror:sortOrder>1</ror:sortOrder>
+     <ror:resourceOf>sitemap</ror:resourceOf>
+</item>
+<item>
+     <link>https://imagesort.org/privacy_policy.html</link>
+     <title>Privacy Policy | Image Sort - a free app for sorting your folders</title>
+     <description>Image Sort helps you sort your big and messy folders. Itâs tiny too, just about 3 megabytes.</description>
+     <ror:updatePeriod></ror:updatePeriod>
+     <ror:sortOrder>1</ror:sortOrder>
+     <ror:resourceOf>sitemap</ror:resourceOf>
+</item>
+</channel>
+</rss>
+  
