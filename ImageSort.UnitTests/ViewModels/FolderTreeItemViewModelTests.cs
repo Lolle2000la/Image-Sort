@@ -33,6 +33,8 @@ namespace ImageSort.UnitTests.ViewModels
 
             var folderTreeItem = new FolderTreeItemViewModel(path, fsMock.Object);
 
+            folderTreeItem.IsExpanded = true;
+
             var obtainedPaths = folderTreeItem.Children;
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
