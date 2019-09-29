@@ -28,9 +28,10 @@ namespace ImageSort.UnitTests.ViewModels
         [Fact(DisplayName = "The currently loaded folder can be changed.")]
         public void CurrentFolderCanBeChanged()
         {
-            var foldersVM = new FoldersViewModel();
-
-            foldersVM.CurrentFolder = CreateMock(MockPath);
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = CreateMock(MockPath)
+            };
 
             Assert.Equal(MockPath, foldersVM.CurrentFolder.Path);
         }

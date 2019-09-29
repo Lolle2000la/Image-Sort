@@ -18,8 +18,6 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _path, value);
         }
 
-        private readonly IFileSystem fileSystem;
-
         private bool _isExpanded = false;
         public bool IsExpanded
         {
@@ -32,8 +30,6 @@ namespace ImageSort.ViewModels
 
         public FolderTreeItemViewModel(IFileSystem fileSystem)
         {
-            this.fileSystem = fileSystem;
-
             _children = this
                 .WhenAnyValue(x => x.IsExpanded)
                 .Where(b => b)
