@@ -70,5 +70,24 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.DoesNotContain(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
         }
+
+        [Fact(DisplayName = "Can pin the selected folder.")]
+        public void CanPinSelected()
+        {
+            const string mockPathToPin = @"C:\SomeOtherPath\";
+
+            var mockToPin = CreateMock(mockPathToPin);
+
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = CreateMock(MockPath),
+                Selected = mockToPin
+            };
+
+            foldersVM.PinSelected.Execute();
+
+            Assert.Contains(mockPathToPin, foldersVM.PinnedFolders
+                .Select(f => f.Path));
+        }
     }
 }
