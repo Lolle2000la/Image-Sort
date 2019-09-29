@@ -91,5 +91,46 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.Contains(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
         }
+
+        [Fact(DisplayName = "Can unpin the selected folder.")]
+        public async void CanUnpinSelected()
+        {
+            const string mockPathToPin = @"C:\SomeOtherPath\";
+
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = CreateMock(MockPath)
+            };
+
+            foldersVM.SelectFolder.RegisterHandler(interaction =>
+            {
+                interaction.SetOutput(mockPathToPin);
+            });
+
+            await foldersVM.Pin.Execute();
+
+            foldersVM.Selected = foldersVM.PinnedFolders
+                .Where(pf => pf.Path == mockPathToPin)
+                .First();
+
+            await foldersVM.UnpinSelected.Execute();
+
+            Assert.DoesNotContain(mockPathToPin, foldersVM.PinnedFolders
+                .Select(f => f.Path));
+        }
+
+        [Fact(DisplayName = "Only unpins if pinned in the first place.")]
+        public async void OnlyUnpinsIfPinned()
+        {
+            var mockItem = CreateMock(MockPath);
+
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = mockItem,
+                Selected = mockItem
+            };
+
+            Assert.False(await foldersVM.UnpinSelected.CanExecute.FirstAsync());
+        }
     }
 }
