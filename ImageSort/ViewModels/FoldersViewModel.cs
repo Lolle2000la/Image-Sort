@@ -1,8 +1,6 @@
 ﻿using ReactiveUI;
-using System;
 using System.Collections.Generic;
 using System.Reactive;
-using System.Text;
 
 namespace ImageSort.ViewModels
 {
@@ -30,6 +28,6 @@ namespace ImageSort.ViewModels
         }
 
         public ReactiveCommand<string, Unit> PinFolder { get; }
-        public ReactiveCommand<Unit, Unit> RemoveSelected { get; }
+        public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
     }
 }
