@@ -43,6 +43,7 @@ namespace ImageSort.ViewModels
         {
             var pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
+                .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _pinnedFolders)
                 .Subscribe();
 
