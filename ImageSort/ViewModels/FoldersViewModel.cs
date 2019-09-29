@@ -1,6 +1,7 @@
 ﻿using ReactiveUI;
 using System;
 using System.Collections.Generic;
+using System.Reactive;
 using System.Text;
 
 namespace ImageSort.ViewModels
@@ -20,5 +21,15 @@ namespace ImageSort.ViewModels
             get => _pinnedFolders;
             set => this.RaiseAndSetIfChanged(ref _pinnedFolders, value);
         }
+
+        private FolderTreeItemViewModel _selected;
+        public FolderTreeItemViewModel Selected
+        {
+            get => _selected;
+            set => this.RaiseAndSetIfChanged(ref _selected, value);
+        }
+
+        public ReactiveCommand<string, Unit> PinFolder { get; }
+        public ReactiveCommand<Unit, Unit> RemoveSelected { get; }
     }
 }
