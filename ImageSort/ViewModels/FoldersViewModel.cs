@@ -27,7 +27,8 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selected, value);
         }
 
-        public ReactiveCommand<string, Unit> PinFolder { get; }
+        public ReactiveCommand<string, Unit> Pin { get; }
+        public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
     }
 }
