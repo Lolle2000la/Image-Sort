@@ -1,4 +1,5 @@
-﻿using ImageSort.FileSystem;
+﻿using DynamicData;
+using ImageSort.FileSystem;
 using ReactiveUI;
 using Splat;
 using System;
@@ -17,7 +18,9 @@ namespace ImageSort.ViewModels
             get => _currentFolder;
             set => this.RaiseAndSetIfChanged(ref _currentFolder, value);
         }
-        public ObservableCollection<FolderTreeItemViewModel> PinnedFolders { get; } = new ObservableCollection<FolderTreeItemViewModel>();
+
+        private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _pinnedFolders;
+        public ReadOnlyObservableCollection<FolderTreeItemViewModel> PinnedFolders => _pinnedFolders;
 
         private FolderTreeItemViewModel _selected;
         public FolderTreeItemViewModel Selected
@@ -38,12 +41,20 @@ namespace ImageSort.ViewModels
 
         public FoldersViewModel()
         {
+            var pinnedFolders = new SourceList<FolderTreeItemViewModel>();
+            pinnedFolders.Connect()
+                .Bind(out _pinnedFolders)
+                .Subscribe();
+
             Pin = ReactiveCommand.Create(() => 
             {
                 SelectFolder.Handle(Unit.Default)
-                    .Subscribe(folder => PinnedFolders.Add(
+                    .Subscribe(folder => pinnedFolders.Add(
                         new FolderTreeItemViewModel(
-                            Locator.Current.GetService<IFileSystem>())));
+                            Locator.Current.GetService<IFileSystem>())
+                        { 
+                            Path = folder
+                        }));
             });
         }
     }

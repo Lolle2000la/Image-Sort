@@ -51,8 +51,6 @@ namespace ImageSort.UnitTests.ViewModels
 
             foldersVM.Pin.Execute().ToTask().Wait();
 
-            Assert.NotNull(foldersVM.PinnedFolders);
-
             Assert.Contains(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
         }
