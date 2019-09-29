@@ -47,27 +47,41 @@ namespace ImageSort.ViewModels
                 .Bind(out _pinnedFolders)
                 .Subscribe();
 
-            Pin = ReactiveCommand.Create(() => 
+            Pin = ReactiveCommand.CreateFromTask(async () => 
             {
-                SelectFolder.Handle(Unit.Default)
-                    .Subscribe(folder => pinnedFolders.Add(
+                try
+                {
+                    var folderToPin = await SelectFolder.Handle(Unit.Default);
+
+                    pinnedFolders.Add(
                         new FolderTreeItemViewModel(
                             Locator.Current.GetService<IFileSystem>())
-                        { 
-                            Path = folder
-                        }),
-                        _ => { });
+                        {
+                            Path = folderToPin
+                        });
+                }
+                // an exception is ignored, because it only means that the 
+                // user has canceled the dialog.
+                catch { }
             });
 
             var canPinSelectedExecute = this
                 .WhenAnyValue(vm => vm.Selected)
-                .Select(s => 
-                { return s != null; });
+                .Select(s => s != null);
 
             PinSelected = ReactiveCommand.Create(() =>
             {
                 pinnedFolders.Add(Selected);
             }, canPinSelectedExecute);
+
+            var canUnpinSelectedExecute = this
+                .WhenAnyValue(vm => vm.Selected)
+                .Select(s => s != null && s != CurrentFolder);
+
+            UnpinSelected = ReactiveCommand.Create(() =>
+            {
+                pinnedFolders.Remove(Selected);
+            }, canUnpinSelectedExecute);
         }
     }
 }
