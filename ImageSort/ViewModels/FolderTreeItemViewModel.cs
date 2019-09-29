@@ -11,7 +11,12 @@ namespace ImageSort.ViewModels
 {
     public class FolderTreeItemViewModel : ReactiveObject
     {
-        public string Path { get; }
+        private string _path;
+        public string Path
+        {
+            get => _path;
+            set => this.RaiseAndSetIfChanged(ref _path, value);
+        }
 
         private readonly IFileSystem fileSystem;
 
@@ -25,21 +30,17 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _children;
         public IEnumerable<FolderTreeItemViewModel> Children => _children.Value;
 
-        public FolderTreeItemViewModel(string path, IFileSystem fileSystem)
+        public FolderTreeItemViewModel(IFileSystem fileSystem)
         {
-            Path = path;
             this.fileSystem = fileSystem;
 
             _children = this
                 .WhenAnyValue(x => x.IsExpanded)
                 .Where(b => b)
                 .Take(1)
-                .CombineLatest(
-                    Observable.Return(Path),
-                    (_, p) => p)
                 .Select(p => fileSystem
-                    .GetSubFolders(p)
-                    .Select(folder => new FolderTreeItemViewModel(folder, fileSystem)))
+                    .GetSubFolders(_path)
+                    .Select(folder => new FolderTreeItemViewModel(fileSystem) { Path = folder }))
                 .ToProperty(this, x => x.Children);
         }
     }

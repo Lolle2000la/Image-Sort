@@ -17,7 +17,7 @@ namespace ImageSort.UnitTests.ViewModels
         {
             const string path = @"C:\current folder";
 
-            var resultingPaths = new ReadOnlyCollection<string>(
+            var resultingPaths =
                 new[]
                 {
                     @"\folder 1",
@@ -25,13 +25,16 @@ namespace ImageSort.UnitTests.ViewModels
                     @"\folder 3"
                 }
                 .Select(sub => path + sub) // make the (mock) subfolders absolute paths.
-                .ToArray());
+                .ToArray();
 
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths);
 
-            var folderTreeItem = new FolderTreeItemViewModel(path, fsMock.Object);
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object) 
+            { 
+                Path = path
+            };
 
             folderTreeItem.IsExpanded = true;
 
@@ -39,7 +42,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
 
-            Assert.Equal(resultingPaths, obtainedPaths.Select(vm => vm.Path));
+            Assert.Equal(resultingPaths, obtainedPaths.Select(vm => vm.Path).ToArray());
         }
     }
 }
