@@ -1,4 +1,5 @@
-﻿using ReactiveUI;
+﻿using ImageSort.DependencyManagement;
+using ReactiveUI;
 using Splat;
 using System;
 using System.Collections.Generic;
@@ -19,6 +20,7 @@ namespace ImageSort.WPF
         public App()
         {
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetCallingAssembly());
+            Locator.CurrentMutable.RegisterManditoryDependencies();
         }
     }
 }
