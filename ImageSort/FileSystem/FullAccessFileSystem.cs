@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ImageSort.FileSystem
 {
-    public class FileSystem : IFileSystem
+    public class FullAccessFileSystem : IFileSystem
     {
         public IReadOnlyCollection<string> GetSubFolders(string path) => new ReadOnlyCollection<string>(Directory.GetDirectories(path));
     }
