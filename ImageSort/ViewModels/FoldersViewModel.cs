@@ -55,8 +55,19 @@ namespace ImageSort.ViewModels
                             Locator.Current.GetService<IFileSystem>())
                         { 
                             Path = folder
-                        }));
+                        }),
+                        _ => { });
             });
+
+            var canPinSelectedExecute = this
+                .WhenAnyValue(vm => vm.Selected)
+                .Select(s => 
+                { return s != null; });
+
+            PinSelected = ReactiveCommand.Create(() =>
+            {
+                pinnedFolders.Add(Selected);
+            }, canPinSelectedExecute);
         }
     }
 }

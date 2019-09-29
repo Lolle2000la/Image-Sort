@@ -4,6 +4,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
 using System.Text;
 using Xunit;
@@ -35,7 +36,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can prompt user to pin folders.")]
-        public void CanPinFolders()
+        public async void CanPinFolders()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -49,14 +50,14 @@ namespace ImageSort.UnitTests.ViewModels
                 interaction.SetOutput(mockPathToPin);
             });
 
-            foldersVM.Pin.Execute().ToTask().Wait();
+            await foldersVM.Pin.Execute();
 
             Assert.Contains(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
         }
 
         [Fact(DisplayName = "Handles user canceling gracefully.")]
-        public void HandlesCancelingGracefully()
+        public async void HandlesCancelingGracefully()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -65,14 +66,14 @@ namespace ImageSort.UnitTests.ViewModels
                 CurrentFolder = CreateMock(MockPath)
             };
 
-            foldersVM.Pin.Execute();
+            await foldersVM.Pin.Execute();
 
             Assert.DoesNotContain(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
         }
 
         [Fact(DisplayName = "Can pin the selected folder.")]
-        public void CanPinSelected()
+        public async void CanPinSelected()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -80,11 +81,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             var foldersVM = new FoldersViewModel
             {
-                CurrentFolder = CreateMock(MockPath),
-                Selected = mockToPin
+                CurrentFolder = CreateMock(MockPath)
             };
 
-            foldersVM.PinSelected.Execute();
+            foldersVM.Selected = mockToPin;
+
+            await foldersVM.PinSelected.Execute();
 
             Assert.Contains(mockPathToPin, foldersVM.PinnedFolders
                 .Select(f => f.Path));
