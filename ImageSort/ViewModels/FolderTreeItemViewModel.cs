@@ -1,5 +1,6 @@
 ﻿using ImageSort.FileSystem;
 using ReactiveUI;
+using Splat;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,8 +29,10 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _children;
         public IEnumerable<FolderTreeItemViewModel> Children => _children.Value;
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null)
         {
+            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+
             _children = this
                 .WhenAnyValue(x => x.IsExpanded)
                 .Where(b => b)
