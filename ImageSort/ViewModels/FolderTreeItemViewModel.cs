@@ -26,6 +26,9 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
         }
 
+        private readonly ObservableAsPropertyHelper<bool> _isExpandable;
+        public bool IsExpandable => _isExpandable.Value;
+
         private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _children;
         public IEnumerable<FolderTreeItemViewModel> Children => _children.Value;
 
@@ -49,6 +52,20 @@ namespace ImageSort.ViewModels
                     { return null; }
                 })
                 .ToProperty(this, x => x.Children);
+
+            // make sure the folder can only be expanded when it's possible.
+            _isExpandable = this.WhenAnyValue(vm => vm.Path)
+                .SubscribeOn(RxApp.TaskpoolScheduler)
+                .Select(path =>
+                {
+                    try
+                    {
+                        return !fileSystem.IsFolderEmpty(path);
+                    }
+                    catch { return false; }
+                })
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .ToProperty(this, vm => vm.IsExpandable);
         }
     }
 }
