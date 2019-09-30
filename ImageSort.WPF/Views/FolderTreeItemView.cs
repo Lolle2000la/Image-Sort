@@ -20,41 +20,60 @@ namespace ImageSort.WPF.Views
     /// <summary>
     /// Interaction logic for FolderTreeItemView.xaml
     /// </summary>
-    public partial class FolderTreeItemView : ReactiveUserControl<FolderTreeItemViewModel>
+    public partial class FolderTreeItemView : TreeViewItem, IViewFor<FolderTreeItemViewModel>
     {
-        public FolderTreeItemView()
-        {
-            InitializeComponent();
+        public static readonly DependencyProperty ViewModelProperty = DependencyProperty
+            .Register(nameof(ViewModel), typeof(FolderTreeItemViewModel), typeof(FolderTreeItemView));
 
-            Current.Items.Add("");
+        public FolderTreeItemView() : base()
+        {
+            Items.Add("");
+
+            Expanded += Current_Expanded;
 
             this.WhenActivated(disposableRegistration =>
             {
                 this.OneWayBind(ViewModel,
                     vm => vm.Path,
-                    view => view.Current.Header)
+                    view => view.Header)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
                     vm => vm.IsExpanded,
-                    view => view.Current.IsExpanded)
+                    view => view.IsExpanded)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
                     vm => vm.Children,
-                    view => view.Current.ItemsSource)
+                    view => view.ItemsSource)
                     .DisposeWith(disposableRegistration);
             });
         }
-
         private void Current_Expanded(object sender, RoutedEventArgs e)
         {
-            if (Current.Items.Count == 1 && Current.Items[0] is string)
+            if (Items.Count == 1 && Items[0] is string)
             {
-                Current.Items.Clear();
+                Items.Clear();
 
                 ViewModel.IsExpanded = true;
             }
+        }
+
+
+        public FolderTreeItemViewModel ViewModel 
+        { 
+            get => (FolderTreeItemViewModel)GetValue(ViewModelProperty);
+            set => SetValue(ViewModelProperty, value);
+        }
+        object IViewFor.ViewModel 
+        { 
+            get => ViewModel;
+            set => ViewModel = (FolderTreeItemViewModel)value;
+        }
+
+        ~FolderTreeItemView()
+        {
+            Expanded -= Current_Expanded;
         }
     }
 }
