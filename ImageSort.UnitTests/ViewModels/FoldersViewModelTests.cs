@@ -133,5 +133,36 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.False(await foldersVM.UnpinSelected.CanExecute.FirstAsync());
         }
+
+        [Fact(DisplayName = "Concatenates the current folder and the pinned folders correctly.")]
+        public async void ConcatenatesFoldersCorrectly()
+        {
+            var currentFolder = CreateMock(MockPath);
+
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = currentFolder
+            };
+
+            var mockFolders = new[]
+            {
+                @"C:\SomeOtherPath1\",
+                @"C:\SomeOtherPath2\",
+                @"C:\SomeOtherPath3\"
+            };
+
+            foreach (var mockFolder in mockFolders)
+            {
+                foldersVM.SelectFolder.RegisterHandler(interaction =>
+                {
+                    interaction.SetOutput(mockFolder);
+                });
+
+                await foldersVM.Pin.Execute();
+            }
+
+            Assert.Equal(new[] { currentFolder.Path }.Concat(mockFolders),
+                foldersVM.AllFoldersTracked.Select(f => f.Path));
+        }
     }
 }

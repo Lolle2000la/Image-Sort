@@ -5,6 +5,7 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 
@@ -21,6 +22,9 @@ namespace ImageSort.ViewModels
 
         private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _pinnedFolders;
         public ReadOnlyObservableCollection<FolderTreeItemViewModel> PinnedFolders => _pinnedFolders;
+
+        private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _allFoldersTracked;
+        public IEnumerable<FolderTreeItemViewModel> AllFoldersTracked => _allFoldersTracked.Value;
 
         private FolderTreeItemViewModel _selected;
         public FolderTreeItemViewModel Selected
@@ -46,6 +50,10 @@ namespace ImageSort.ViewModels
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _pinnedFolders)
                 .Subscribe();
+
+            _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder, vm => vm.PinnedFolders)
+                .Select(folders => new[] { folders.Item1 }.Concat(folders.Item2))
+                .ToProperty(this, vm => vm.AllFoldersTracked);
 
             Pin = ReactiveCommand.CreateFromTask(async () => 
             {
