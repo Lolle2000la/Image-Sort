@@ -37,9 +37,17 @@ namespace ImageSort.ViewModels
                 .WhenAnyValue(x => x.IsExpanded)
                 .Where(b => b)
                 .Take(1)
-                .Select(p => fileSystem
-                    .GetSubFolders(_path)
-                    .Select(folder => new FolderTreeItemViewModel(fileSystem) { Path = folder }))
+                .Select(p =>
+                {
+                    try
+                    {
+                        return fileSystem
+                            .GetSubFolders(_path)
+                            .Select(folder => new FolderTreeItemViewModel(fileSystem) { Path = folder });
+                    }
+                    catch (UnauthorizedAccessException)
+                    { return null; }
+                })
                 .ToProperty(this, x => x.Children);
         }
     }

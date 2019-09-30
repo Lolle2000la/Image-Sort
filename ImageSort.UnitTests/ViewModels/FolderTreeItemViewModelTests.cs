@@ -44,5 +44,26 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(resultingPaths, obtainedPaths.Select(vm => vm.Path).ToArray());
         }
+
+        [Fact(DisplayName = "Handles an tried access to an unauthorized file (UnauthorizedAccessException) gracefully.")]
+        public void HandlesUnauthorizedAccessExceptionGracefully()
+        {
+            const string pathToUnauthorisedFolder = @"C:\UnauthorizedFolder";
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(pathToUnauthorisedFolder)).Throws(new UnauthorizedAccessException());
+
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+            {
+                Path = pathToUnauthorisedFolder
+            };
+
+            folderTreeItem.IsExpanded = true;
+
+            fsMock.Verify(fs => fs.GetSubFolders(pathToUnauthorisedFolder));
+
+            Assert.Null(folderTreeItem.Children);
+        }
     }
 }
