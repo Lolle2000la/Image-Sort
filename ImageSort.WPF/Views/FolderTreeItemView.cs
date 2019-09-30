@@ -27,12 +27,13 @@ namespace ImageSort.WPF.Views
 
         public FolderTreeItemView() : base()
         {
-            Items.Add("");
-
             Expanded += Current_Expanded;
 
             this.WhenActivated(disposableRegistration =>
             {
+                if (ViewModel.IsExpandable)
+                    Items.Add("");
+
                 this.OneWayBind(ViewModel,
                     vm => vm.Path,
                     view => view.Header)
