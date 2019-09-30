@@ -5,6 +5,7 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -51,9 +52,14 @@ namespace ImageSort.ViewModels
                 .Bind(out _pinnedFolders)
                 .Subscribe();
 
-            _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder, vm => vm.PinnedFolders)
+            _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder)
+                .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
                 .Select(folders => new[] { folders.Item1 }.Concat(folders.Item2))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
+
+            // make the above query work
+            pinnedFolders.Add(null);
+            pinnedFolders.RemoveAt(0);
 
             Pin = ReactiveCommand.CreateFromTask(async () => 
             {
@@ -62,8 +68,7 @@ namespace ImageSort.ViewModels
                     var folderToPin = await SelectFolder.Handle(Unit.Default);
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(
-                            Locator.Current.GetService<IFileSystem>())
+                        new FolderTreeItemViewModel()
                         {
                             Path = folderToPin
                         });
