@@ -3,6 +3,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -25,6 +26,8 @@ namespace ImageSort.WPF.Views
         {
             InitializeComponent();
 
+            Current.Items.Add("");
+
             this.WhenActivated(disposableRegistration =>
             {
                 this.OneWayBind(ViewModel,
@@ -42,6 +45,16 @@ namespace ImageSort.WPF.Views
                     view => view.Current.ItemsSource)
                     .DisposeWith(disposableRegistration);
             });
+        }
+
+        private void Current_Expanded(object sender, RoutedEventArgs e)
+        {
+            if (Current.Items.Count == 1 && Current.Items[0] is string)
+            {
+                Current.Items.Clear();
+
+                ViewModel.IsExpanded = true;
+            }
         }
     }
 }
