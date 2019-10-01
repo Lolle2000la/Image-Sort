@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text;
 
@@ -32,9 +33,10 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _children;
         public IEnumerable<FolderTreeItemViewModel> Children => _children.Value;
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+            backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
 
             _children = this
                 .WhenAnyValue(x => x.IsExpanded)
@@ -55,14 +57,15 @@ namespace ImageSort.ViewModels
 
             // make sure the folder can only be expanded when it's possible.
             _isExpandable = this.WhenAnyValue(vm => vm.Path)
-                .SubscribeOn(RxApp.TaskpoolScheduler)
+                .SubscribeOn(backgroundScheduler)
                 .Select(path =>
                 {
                     try
                     {
                         return !fileSystem.IsFolderEmpty(path);
                     }
-                    catch { return false; }
+                    catch 
+                    { return false; }
                 })
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .ToProperty(this, vm => vm.IsExpandable);
