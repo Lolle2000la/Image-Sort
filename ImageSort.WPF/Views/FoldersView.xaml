@@ -20,7 +20,14 @@
             <Button x:Name="PinSelected" Content="Pin selected"/>
             <Button x:Name="Unpin" Content="Unpin"/>
         </WrapPanel>
-        
-        <TreeView x:Name="Folders" Grid.Row="1"/>
+
+        <TreeView x:Name="Folders" Grid.Row="1" SelectedItemChanged="Folders_SelectedItemChanged">
+            <!--<TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type local:FolderTreeItemView}">
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                </Style>
+            </TreeView.ItemContainerStyle>-->
+        </TreeView>
+
     </Grid>
 </reactiveui:ReactiveUserControl>
