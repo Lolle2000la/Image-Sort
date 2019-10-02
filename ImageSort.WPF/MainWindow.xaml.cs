@@ -1,6 +1,9 @@
-﻿using System;
+﻿using ImageSort.ViewModels;
+using ReactiveUI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -18,11 +21,30 @@ namespace ImageSort.WPF
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : ReactiveWindow<MainViewModel>
     {
         public MainWindow()
         {
             InitializeComponent();
+            ViewModel = new MainViewModel()
+            {
+                Folders = new FoldersViewModel()
+                {
+                    CurrentFolder = new FolderTreeItemViewModel()
+                    {
+                        // will be replaced with the default path or something
+                        Path = @"C:\"
+                    }
+                }
+            };
+
+            this.WhenActivated(disposableRegistration =>
+            {
+                this.Bind(ViewModel,
+                    vm => vm.Folders,
+                    view => view.Folders.ViewModel)
+                    .DisposeWith(disposableRegistration);
+            });
         }
     }
 }

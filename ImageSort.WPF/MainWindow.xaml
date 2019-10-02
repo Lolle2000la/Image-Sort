@@ -1,12 +1,16 @@
-﻿<Window x:Class="ImageSort.WPF.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:ImageSort.WPF"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+﻿<rxui:ReactiveWindow x:Class="ImageSort.WPF.MainWindow"
+                     x:TypeArguments="vm:MainViewModel"
+                     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                     xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
+                     xmlns:views="clr-namespace:ImageSort.WPF.Views"
+                     xmlns:rxui="http://reactiveui.net"
+                     xmlns:local="clr-namespace:ImageSort.WPF"
+                     mc:Ignorable="d"
+                     Title="MainWindow" Height="450" Width="800">
     <Grid>
-
+        <views:FoldersView x:Name="Folders"/>
     </Grid>
-</Window>
+</rxui:ReactiveWindow>
