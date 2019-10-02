@@ -7,16 +7,14 @@ namespace ImageSort.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        public string _currentDirectory;
-        public string CurrentDirectory
+        private FoldersViewModel _foldersViewModel;
+        public FoldersViewModel Folders
         {
-            get => _currentDirectory;
-            set => this.RaiseAndSetIfChanged(ref _currentDirectory, value);
+            get => _foldersViewModel;
+            set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
         }
 
         private readonly ObservableAsPropertyHelper<ImagesViewModel> _images;
         public ImagesViewModel Images;
-
-        
     }
 }
