@@ -54,7 +54,7 @@ namespace ImageSort.ViewModels
 
             _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder)
                 .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
-                .Select(folders => new[] { folders.Item1 }.Concat(folders.Item2))
+                .Select(folders => new[] { folders.c }.Concat(folders.Items))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
 
             // make the above query work
