@@ -32,37 +32,37 @@ namespace ImageSort.WPF.Views
 
             this.WhenActivated(disposableRegistration =>
             {
-            Expanded += Current_Expanded;
+                Expanded += Current_Expanded;
 
-            if (ViewModel.IsExpandable)
-                Items.Add("");
+                if (ViewModel.IsExpandable)
+                    Items.Add("");
 
-            this.OneWayBind(ViewModel,
-                vm => vm.Path,
-                view => view.Header)
-                .DisposeWith(disposableRegistration);
+                this.OneWayBind(ViewModel,
+                    vm => vm.Path,
+                    view => view.Header)
+                    .DisposeWith(disposableRegistration);
 
-            this.OneWayBind(ViewModel,
-                vm => vm.IsExpanded,
-                view => view.IsExpanded)
-                .DisposeWith(disposableRegistration);
+                this.OneWayBind(ViewModel,
+                    vm => vm.IsExpanded,
+                    view => view.IsExpanded)
+                    .DisposeWith(disposableRegistration);
 
-            //this.OneWayBind(ViewModel,
-            //    vm => vm.Children,
-            //    view => view.ItemsSource)
-            //    .DisposeWith(disposableRegistration);
+                //this.OneWayBind(ViewModel,
+                //    vm => vm.Children,
+                //    view => view.ItemsSource)
+                //    .DisposeWith(disposableRegistration);
 
-            ViewModel.WhenAnyValue(x => x.Children)
-                .Where(folders => folders != null)
-                .Select(subfolders => subfolders.Select(folder => new FolderTreeItemView() { ViewModel = folder }))
-                .Subscribe(subfolders => 
-                {
-                    Items.Clear();
+                ViewModel.WhenAnyValue(x => x.Children)
+                    .Where(folders => folders != null)
+                    .Select(subfolders => subfolders.Select(folder => new FolderTreeItemView() { ViewModel = folder }))
+                    .Subscribe(subfolders => 
+                    {
+                        Items.Clear();
 
-                    foreach (var subfolder in subfolders)
-                        Items.Add(subfolder);
+                        foreach (var subfolder in subfolders)
+                            Items.Add(subfolder);
+                    });
                 });
-            });
         }
 
         private void Current_Expanded(object sender, RoutedEventArgs e)
