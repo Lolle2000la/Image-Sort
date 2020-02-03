@@ -31,7 +31,6 @@ namespace ImageSort.UnitTests.ViewModels
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths);
-            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(resultingPaths);
 
             var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) 
             { 

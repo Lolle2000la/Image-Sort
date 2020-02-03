@@ -41,13 +41,19 @@ namespace ImageSort.ViewModels
                 .ToProperty(this, x => x.FolderName);
 
             _children = this.WhenAnyValue(x => x.Path)
+                            .ObserveOn(backgroundScheduler)
                             .Where(p => p != null)
                             .Select(p =>
                             {
                                 try
                                 {
-                                    return fileSystem
-                                        .GetSubFolders(p)
+                                    var subFolders = fileSystem
+                                        .GetSubFolders(p);
+
+                                    if (subFolders != null)
+                                    {
+                                        return subFolders
+                                        .Where(f => f != null)
                                         .Select(folder =>
                                         {
                                             try
@@ -57,10 +63,11 @@ namespace ImageSort.ViewModels
                                             catch (UnauthorizedAccessException ex) { return null; }
                                         })
                                         .Where(f => f != null);
+                                    }
+                                    else return null;
                                 }
                                 catch (UnauthorizedAccessException ex) { return null; }
                             })
-                            .ObserveOn(backgroundScheduler)
                             .ToProperty(this, x => x.Children);
         }
     }
