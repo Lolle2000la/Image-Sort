@@ -52,7 +52,7 @@ namespace ImageSort.ViewModels
                                         {
                                             try
                                             {
-                                                return new FolderTreeItemViewModel(fileSystem) { Path = folder };
+                                                return new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = folder };
                                             }
                                             catch (UnauthorizedAccessException ex) { return null; }
                                         })
@@ -60,6 +60,7 @@ namespace ImageSort.ViewModels
                                 }
                                 catch (UnauthorizedAccessException ex) { return null; }
                             })
+                            .ObserveOn(backgroundScheduler)
                             .ToProperty(this, x => x.Children);
         }
     }
