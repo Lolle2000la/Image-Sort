@@ -80,7 +80,7 @@ namespace ImageSort.ViewModels
 
             var canPinSelectedExecute = this
                 .WhenAnyValue(vm => vm.Selected)
-                .Select(s => s != null);
+                .Select(s => s != null && !AllFoldersTracked.Contains(s));
 
             PinSelected = ReactiveCommand.Create(() =>
             {
@@ -89,7 +89,7 @@ namespace ImageSort.ViewModels
 
             var canUnpinSelectedExecute = this
                 .WhenAnyValue(vm => vm.Selected)
-                .Select(s => s != null && s != CurrentFolder);
+                .Select(s => s != null && s != CurrentFolder && AllFoldersTracked.Contains(s));
 
             UnpinSelected = ReactiveCommand.Create(() =>
             {
