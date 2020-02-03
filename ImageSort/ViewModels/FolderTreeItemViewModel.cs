@@ -60,13 +60,13 @@ namespace ImageSort.ViewModels
                                             {
                                                 return new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = folder };
                                             }
-                                            catch (UnauthorizedAccessException ex) { return null; }
+                                            catch (UnauthorizedAccessException) { return null; }
                                         })
                                         .Where(f => f != null);
                                     }
                                     else return null;
                                 }
-                                catch (UnauthorizedAccessException ex) { return null; }
+                                catch (UnauthorizedAccessException) { return null; }
                             })
                             .ToProperty(this, x => x.Children);
         }
