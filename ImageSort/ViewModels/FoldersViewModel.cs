@@ -44,7 +44,7 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
 
-        public FoldersViewModel()
+        public FoldersViewModel(IFileSystem fileSystem = null)
         {
             var pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
@@ -68,7 +68,7 @@ namespace ImageSort.ViewModels
                     var folderToPin = await SelectFolder.Handle(Unit.Default);
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel()
+                        new FolderTreeItemViewModel(fileSystem)
                         {
                             Path = folderToPin
                         });
