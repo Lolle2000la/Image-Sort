@@ -32,7 +32,12 @@ namespace ImageSort.ViewModels
             backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
 
             _folderName = this.WhenAnyValue(x => x.Path)
-                .Select(p => System.IO.Path.GetFileName(p))
+                .Select(p => 
+                {
+                    var path = System.IO.Path.GetFileName(p);
+
+                    return path == "" ? p : path; // on a disk path (e.g. C:\, Path.GetFileName() returns an empty string
+                })
                 .ToProperty(this, x => x.FolderName);
 
             _children = this.WhenAnyValue(x => x.Path)
