@@ -52,5 +52,13 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
         }
+
+        [Fact(DisplayName = "Changes the path in the image view model to the current path when necessary")]
+        public async Task ChangesThePathInImageViewModel()
+        {
+            await mainVM.OpenCurrentlySelectedFolder.Execute();
+
+            Assert.Equal(@"C:\folder", mainVM.Images.CurrentFolder);
+        }
     }
 }
