@@ -38,5 +38,19 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(@"C:\folder", mainVM.Folders.CurrentFolder.Path);
         }
+
+        [Fact(DisplayName = "Does not open the currently selected folder if there is none or it is the current one.")]
+        public async Task DoesNotOpenCurrentlySelectedFolderWhenItDoesntMakeSense()
+        {
+            Assert.True(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync()); // just to make sure the state is correct beforehand.
+
+            mainVM.Folders.Selected = null;
+
+            Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
+
+            mainVM.Folders.Selected = mainVM.Folders.CurrentFolder;
+
+            Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
+        }
     }
 }
