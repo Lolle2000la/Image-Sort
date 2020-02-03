@@ -39,24 +39,15 @@ namespace ImageSort.WPF.Views
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
-                //this.OneWayBind(ViewModel,
-                //    vm => vm.AllFoldersTracked,
-                //    view => view.Folders.ItemsSource)
-                //    .DisposeWith(disposableRegistration);
+                this.OneWayBind(ViewModel,
+                    vm => vm.AllFoldersTracked,
+                    view => view.Folders.ItemsSource)
+                    .DisposeWith(disposableRegistration);
 
-                //this.Bind(ViewModel,
-                //    vm => vm.Selected,
-                //    view => view.Folders.SelectedItem)
-                //    .DisposeWith(disposableRegistration);
-
-                ViewModel.WhenAnyValue(x => x.AllFoldersTracked)
-                    .Subscribe(folders =>
-                    {
-                        Folders.Items.Clear();
-
-                        foreach (var folder in folders)
-                            Folders.Items.Add(new FolderTreeItemView() { ViewModel = folder });
-                    });
+                this.Bind(ViewModel,
+                    vm => vm.Selected,
+                    view => view.Folders.SelectedItem)
+                    .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
                     vm => vm.Pin,
@@ -73,15 +64,6 @@ namespace ImageSort.WPF.Views
                     view => view.Unpin)
                     .DisposeWith(disposableRegistration);
             });
-        }
-
-        /// <summary>
-        /// This keeps track of the selected folder, as every other way of binding the SelectedItem property is unwieldy.
-        /// </summary>
-        private void Folders_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-        {
-            var selected = (e.NewValue as FolderTreeItemView)?.ViewModel;
-            if (selected != null) ViewModel.Selected = selected;
         }
     }
 }

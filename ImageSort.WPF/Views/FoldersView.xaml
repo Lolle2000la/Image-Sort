@@ -21,12 +21,12 @@
             <Button x:Name="Unpin" Content="Unpin"/>
         </WrapPanel>
 
-        <TreeView x:Name="Folders" Grid.Row="1" SelectedItemChanged="Folders_SelectedItemChanged">
-            <!--<TreeView.ItemContainerStyle>
-                <Style TargetType="{x:Type local:FolderTreeItemView}">
-                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
-                </Style>
-            </TreeView.ItemContainerStyle>-->
+        <TreeView x:Name="Folders" Grid.Row="1">
+            <TreeView.ItemTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}" ItemsSource="{Binding Children}">
+                    <TextBlock Text="{Binding FolderName}"/>
+                </HierarchicalDataTemplate>
+            </TreeView.ItemTemplate>
         </TreeView>
 
     </Grid>
