@@ -12,5 +12,7 @@ namespace ImageSort.FileSystem
         public bool IsFolderEmpty(string path) => !Directory.EnumerateDirectories(path).Any();
 
         public IReadOnlyCollection<string> GetSubFolders(string path) => new ReadOnlyCollection<string>(Directory.GetDirectories(path));
+
+        public IReadOnlyCollection<string> GetFiles(string folder) => new ReadOnlyCollection<string>(Directory.GetFiles(folder));
     }
 }

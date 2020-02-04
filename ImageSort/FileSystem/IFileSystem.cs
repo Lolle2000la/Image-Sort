@@ -8,6 +8,8 @@ namespace ImageSort.FileSystem
     {
         IReadOnlyCollection<string> GetSubFolders(string path);
 
+        IReadOnlyCollection<string> GetFiles(string folder);
+
         bool IsFolderEmpty(string path);
     }
 }
