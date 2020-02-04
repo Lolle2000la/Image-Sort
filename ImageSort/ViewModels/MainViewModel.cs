@@ -18,8 +18,12 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> OpenCurrentlySelectedFolder { get; }
 
-        private readonly ObservableAsPropertyHelper<ImagesViewModel> _images;
-        public ImagesViewModel Images;
+        private ImagesViewModel _images;
+        public ImagesViewModel Images 
+        {
+            get => _images;
+            set => this.RaiseAndSetIfChanged(ref _images, value);
+        }
 
         public MainViewModel()
         {
