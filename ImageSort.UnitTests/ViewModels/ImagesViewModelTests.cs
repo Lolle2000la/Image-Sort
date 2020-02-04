@@ -37,5 +37,31 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(expectedFiles, imagesVM.Images);
         }
+
+        [Fact(DisplayName = "Selected image is accessible by index and gives out the correct path.")]
+        public void SelectedImageWorksCorrectly()
+        {
+            const string basePath = @"C:\";
+            var allFiles = new[] { "image.png", "some.gif" }
+                .Select(f => basePath + f);
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetFiles(basePath))
+                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+
+            var imagesVM = new ImagesViewModel(fsMock.Object)
+            {
+                CurrentFolder = basePath
+            };
+
+            imagesVM.SelectedIndex = 1;
+
+            Assert.Equal(allFiles.ElementAt(1), imagesVM.SelectedImage);
+
+            imagesVM.SelectedIndex = 0;
+
+            Assert.Equal(allFiles.ElementAt(0), imagesVM.SelectedImage);
+        }
     }
 }

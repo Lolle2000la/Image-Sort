@@ -29,7 +29,7 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selectedIndex, value);
         }
 
-        private readonly ObservableAsPropertyHelper<string> _selectedImage;
+        private ObservableAsPropertyHelper<string> _selectedImage;
         public string SelectedImage => _selectedImage.Value; 
 
         public ImagesViewModel(IFileSystem fileSystem = null)
@@ -44,10 +44,15 @@ namespace ImageSort.ViewModels
                                           ".png", ".jpg", ".gif", ".bmp", ".tiff", ".tif", ".ico")))
                 .ToProperty(this, x => x.Images);
 
-            _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
-                .Where(_ => Images != null) // when the first value tickles in (0) Images is null, resulting in a NullArgumentException.
-                .Select(i => Images.ElementAt(i))
-                .ToProperty(this, x => x.SelectedImage);
+            this.WhenAnyValue(x => x.Images)
+                .Where(i => i != null)
+                .Take(1)
+                .Subscribe(_ =>
+                {
+                    _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
+                        .Select(i => Images.ElementAt(i))
+                        .ToProperty(this, x => x.SelectedImage);
+                });
         }
     }
 }
