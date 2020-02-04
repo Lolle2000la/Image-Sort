@@ -27,12 +27,17 @@ namespace ImageSort.ViewModels
 
         public MainViewModel()
         {
-            this.WhenAnyValue(x => x.Folders.CurrentFolder)
-                .Where(f => f != null)
-                .Select(f => f.Path)
-                .Subscribe(f => 
+            this.WhenAnyValue(x => x.Images)
+                .Where(i => i != null)
+                .Subscribe(i =>
                 {
-                    Images.CurrentFolder = f;
+                    this.WhenAnyValue(x => x.Folders.CurrentFolder)
+                        .Where(f => f != null)
+                        .Select(f => f.Path)
+                        .Subscribe(f =>
+                        {
+                            i.CurrentFolder = f;
+                        });
                 });
 
             var canOpenCurrentlySelectedFolder = this.WhenAnyValue(x => x.Folders)
