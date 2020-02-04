@@ -22,23 +22,32 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<IEnumerable<string>> _images;
         public IEnumerable<string> Images => _images.Value;
 
-        private string _currentImage;
-        public string CurrentImage
+        private int _selectedIndex;
+        public int SelectedIndex
         {
-            get => _currentImage;
-            set => this.RaiseAndSetIfChanged(ref _currentImage, value);
+            get => _selectedIndex;
+            set => this.RaiseAndSetIfChanged(ref _selectedIndex, value);
         }
+
+        private readonly ObservableAsPropertyHelper<string> _selectedImage;
+        public string SelectedImage => _selectedImage.Value; 
 
         public ImagesViewModel(IFileSystem fileSystem = null)
         {
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
 
             _images = this.WhenAnyValue(x => x.CurrentFolder)
+                .Where(f => f != null)
                 .Select(f => fileSystem.GetFiles(f)
                                       .Where(s => s.EndsWithAny(
                                           StringComparison.OrdinalIgnoreCase,
                                           ".png", ".jpg", ".gif", ".bmp", ".tiff", ".tif", ".ico")))
                 .ToProperty(this, x => x.Images);
+
+            _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
+                .Where(_ => Images != null) // when the first value tickles in (0) Images is null, resulting in a NullArgumentException.
+                .Select(i => Images.ElementAt(i))
+                .ToProperty(this, x => x.SelectedImage);
         }
     }
 }
