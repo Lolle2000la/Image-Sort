@@ -22,12 +22,15 @@ namespace ImageSort.UnitTests.ViewModels
 
             mainVM = new MainViewModel()
             {
+                Images = new ImagesViewModel()
+                {
+                    CurrentFolder = @"C:\"
+                },
                 Folders = new FoldersViewModel(fsMock.Object)
                 {
                     CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = @"C:\" },
                     Selected = new FolderTreeItemViewModel(fsMock.Object) { Path = @"C:\folder" }
-                },
-                Images = new ImagesViewModel()
+                }
             };
         }
 

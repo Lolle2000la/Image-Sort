@@ -23,6 +23,14 @@ namespace ImageSort.ViewModels
 
         public MainViewModel()
         {
+            this.WhenAnyValue(x => x.Folders.CurrentFolder)
+                .Where(f => f != null)
+                .Select(f => f.Path)
+                .Subscribe(f => 
+                {
+                    Images.CurrentFolder = f;
+                });
+
             var canOpenCurrentlySelectedFolder = this.WhenAnyValue(x => x.Folders)
                 .Where(f => f != null)
                 .SelectMany(f => f.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => new { Selected = s, CurrentFolder = c }))
