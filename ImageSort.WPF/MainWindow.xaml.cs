@@ -44,6 +44,11 @@ namespace ImageSort.WPF
                     vm => vm.Folders,
                     view => view.Folders.ViewModel)
                     .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.OpenCurrentlySelectedFolder,
+                    view => view.OpenSelectedFolder)
+                    .DisposeWith(disposableRegistration);
             });
         }
     }

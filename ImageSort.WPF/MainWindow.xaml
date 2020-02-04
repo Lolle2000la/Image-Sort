@@ -11,6 +11,16 @@
                      mc:Ignorable="d"
                      Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
         <views:FoldersView x:Name="Folders"/>
+
+        <StackPanel Grid.Column="1">
+            <Button Content="Open selected folder" x:Name="OpenSelectedFolder"/>
+        </StackPanel>
     </Grid>
 </rxui:ReactiveWindow>
