@@ -20,9 +20,11 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] { @"C:\folder" });
 
+            fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(new[] { @"c:\img.png" });
+
             mainVM = new MainViewModel()
             {
-                Images = new ImagesViewModel()
+                Images = new ImagesViewModel(fsMock.Object)
                 {
                     CurrentFolder = @"C:\"
                 },
