@@ -2,14 +2,18 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ReactiveUI" Version="10.3.1" />
-    <PackageReference Include="ReactiveUI.Events.WPF" Version="10.3.1" />
-    <PackageReference Include="ReactiveUI.WPF" Version="10.3.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="ReactiveUI" Version="11.1.23" />
+    <PackageReference Include="ReactiveUI.Events.WPF" Version="11.1.23" />
+    <PackageReference Include="ReactiveUI.WPF" Version="11.1.23" />
   </ItemGroup>
 
   <ItemGroup>
