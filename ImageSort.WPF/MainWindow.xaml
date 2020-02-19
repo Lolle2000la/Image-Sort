@@ -22,5 +22,7 @@
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
             <Button Content="Open selected folder" x:Name="OpenSelectedFolder"/>
         </StackPanel>
+
+        <views:ImagesView x:Name="Images" Grid.Column="2"/>
     </Grid>
 </rxui:ReactiveWindow>

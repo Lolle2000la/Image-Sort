@@ -33,9 +33,10 @@ namespace ImageSort.WPF
                     CurrentFolder = new FolderTreeItemViewModel()
                     {
                         // will be replaced with the default path or something
-                        Path = @"C:\"
+                        Path = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
                     }
-                }
+                },
+                Images = new ImagesViewModel()
             };
 
             this.WhenActivated(disposableRegistration =>
@@ -48,6 +49,11 @@ namespace ImageSort.WPF
                 this.BindCommand(ViewModel,
                     vm => vm.OpenCurrentlySelectedFolder,
                     view => view.OpenSelectedFolder)
+                    .DisposeWith(disposableRegistration);
+
+                this.Bind(ViewModel,
+                    vm => vm.Images,
+                    view => view.Images.ViewModel)
                     .DisposeWith(disposableRegistration);
             });
         }
