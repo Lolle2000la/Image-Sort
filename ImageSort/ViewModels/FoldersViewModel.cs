@@ -75,7 +75,7 @@ namespace ImageSort.ViewModels
                 }
                 // an exception is ignored, because it only means that the 
                 // user has canceled the dialog.
-                catch { }
+                catch (UnhandledInteractionException<Unit, string>) { }
             });
 
             var canPinSelectedExecute = this
