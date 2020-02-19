@@ -6,9 +6,9 @@ namespace ImageSort.FileSystem
 {
     public interface IFileSystem
     {
-        IReadOnlyCollection<string> GetSubFolders(string path);
+        IEnumerable<string> GetSubFolders(string path);
 
-        IReadOnlyCollection<string> GetFiles(string folder);
+        IEnumerable<string> GetFiles(string folder);
 
         bool IsFolderEmpty(string path);
     }

@@ -9,10 +9,10 @@ namespace ImageSort.FileSystem
 {
     public class FullAccessFileSystem : IFileSystem
     {
-        public bool IsFolderEmpty(string path) => !Directory.EnumerateDirectories(path).Any();
+        public bool IsFolderEmpty(string path) => !Directory.EnumerateDirectories(path, "*", SearchOption.TopDirectoryOnly).Any();
 
-        public IReadOnlyCollection<string> GetSubFolders(string path) => new ReadOnlyCollection<string>(Directory.GetDirectories(path));
+        public IEnumerable<string> GetSubFolders(string path) => Directory.EnumerateDirectories(path, "*", SearchOption.TopDirectoryOnly);
 
-        public IReadOnlyCollection<string> GetFiles(string folder) => new ReadOnlyCollection<string>(Directory.GetFiles(folder));
+        public IEnumerable<string> GetFiles(string folder) => Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly);
     }
 }
