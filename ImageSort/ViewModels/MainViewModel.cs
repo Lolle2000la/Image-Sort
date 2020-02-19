@@ -16,6 +16,9 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
         }
 
+        public Interaction<Unit, string> PickFolder { get; }
+
+        public ReactiveCommand<Unit, Unit> OpenFolder { get; }
         public ReactiveCommand<Unit, Unit> OpenCurrentlySelectedFolder { get; }
 
         private ImagesViewModel _images;
@@ -50,6 +53,15 @@ namespace ImageSort.ViewModels
             {
                 Folders.CurrentFolder = Folders.Selected;
             }, canOpenCurrentlySelectedFolder);
+
+            OpenFolder = ReactiveCommand.CreateFromTask(async () =>
+            {
+                try
+                {
+                    Folders.CurrentFolder = new FolderTreeItemViewModel() { Path = await PickFolder.Handle(Unit.Default) };
+                }
+                catch (UnhandledInteractionException<Unit, string>) { }
+            });
         }
     }
 }
