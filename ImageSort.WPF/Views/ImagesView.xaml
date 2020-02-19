@@ -6,7 +6,6 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
-                                xmlns:s="clr-namespace:System;assembly=mscorlib"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 mc:Ignorable="d" 
@@ -21,7 +20,7 @@
 
         <ListBox x:Name="Images" Grid.Row="1">
             <ListBox.ItemTemplate>
-                <DataTemplate DataType="{x:Type s:String}">
+                <DataTemplate>
                     <Grid Height="100" Width="120">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
