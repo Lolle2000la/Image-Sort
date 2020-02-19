@@ -65,5 +65,24 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(@"C:\folder", mainVM.Images.CurrentFolder);
         }
+
+        [Fact(DisplayName = "Properly selects the folder picked by the user when requested")]
+        public async Task ProperlySelectsPickedFolder()
+        {
+            var requestsUserInput = false;
+
+            mainVM.PickFolder.RegisterHandler(ic => 
+            {
+                requestsUserInput = true;
+
+                ic.SetOutput(@"C:\SomeFolder");
+            });
+
+            await mainVM.OpenFolder.Execute();
+
+            Assert.True(requestsUserInput);
+
+            Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
+        }
     }
 }
