@@ -6,6 +6,7 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
+                                xmlns:s="clr-namespace:System;assembly=mscorlib"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 mc:Ignorable="d" 
@@ -18,21 +19,27 @@
 
         <Image x:Name="SelectedImage"/>
 
-        <!--<ListBox x:Name="Images">
+        <ListBox x:Name="Images" Grid.Row="1">
             <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid Height="400" Width="500">
+                <DataTemplate DataType="{x:Type s:String}">
+                    <Grid Height="100" Width="120">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
 
-                        <Image Source="{Binding SelectedImage}"/>
+                        <Image Source="{Binding}"/>
 
-                        <TextBlock Text="{Binding SelectedImage}" Grid.Row="1"/>
+                        <TextBlock Text="{Binding}" Grid.Row="1"/>
                     </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-        </ListBox>-->
+
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal"></StackPanel>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+        </ListBox>
     </Grid>
 </reactiveui:ReactiveUserControl>

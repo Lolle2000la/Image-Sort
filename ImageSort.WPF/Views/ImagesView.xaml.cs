@@ -34,10 +34,15 @@ namespace ImageSort.WPF.Views
                     p => new BitmapImage(new Uri(p)))
                     .DisposeWith(disposableRegistration);
 
-                //this.OneWayBind(ViewModel,
-                //    vm => vm.Images,
-                //    view => view.Images.ItemsSource)
-                //    .DisposeWith(disposableRegistration);
+                this.OneWayBind(ViewModel,
+                    vm => vm.Images,
+                    view => view.Images.ItemsSource)
+                    .DisposeWith(disposableRegistration);
+
+                this.Bind(ViewModel,
+                    vm => vm.SelectedIndex,
+                    view => view.Images.SelectedIndex)
+                    .DisposeWith(disposableRegistration);
             });
         }
     }
