@@ -16,7 +16,7 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
         }
 
-        public Interaction<Unit, string> PickFolder { get; }
+        public Interaction<Unit, string> PickFolder { get; } = new Interaction<Unit, string>();
 
         public ReactiveCommand<Unit, Unit> OpenFolder { get; }
         public ReactiveCommand<Unit, Unit> OpenCurrentlySelectedFolder { get; }
