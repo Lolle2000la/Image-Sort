@@ -50,6 +50,7 @@ namespace ImageSort.ViewModels
                 .Subscribe(_ =>
                 {
                     _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
+                        .Where(i => Images.Any())
                         .Select(i => Images.ElementAt(i))
                         .ToProperty(this, x => x.SelectedImage);
                 });
