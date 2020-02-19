@@ -13,6 +13,24 @@
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <converters:PathToFilenameConverter x:Key="PathToFilenameConverter"/>
+
+        <DataTemplate x:Key="ImageEntry">
+            <Grid Height="100" Width="120">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto"/>
+                </Grid.RowDefinitions>
+
+                <Image>
+                    <Image.Source>
+                        <BitmapImage DecodePixelWidth="120"
+                                             UriSource="{Binding}"/>
+                    </Image.Source>
+                </Image>
+
+                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1"/>
+            </Grid>
+        </DataTemplate>
     </UserControl.Resources>
     
     <Grid>
@@ -23,27 +41,7 @@
 
         <Image x:Name="SelectedImage"/>
 
-        <ListBox x:Name="Images" Grid.Row="1">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid Height="100" Width="120">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="auto"/>
-                        </Grid.RowDefinitions>
-
-                        <Image>
-                            <Image.Source>
-                                <BitmapImage DecodePixelWidth="120"
-                                             UriSource="{Binding}"/>
-                            </Image.Source>
-                        </Image>
-
-                        <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1"/>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-
+        <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
