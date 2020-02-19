@@ -20,6 +20,7 @@
         <views:FoldersView x:Name="Folders"/>
 
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
+            <Button Content="Open folder" x:Name="OpenFolder"/>
             <Button Content="Open selected folder" x:Name="OpenSelectedFolder"/>
         </StackPanel>
 

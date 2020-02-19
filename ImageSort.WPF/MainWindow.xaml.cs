@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -46,15 +47,31 @@ namespace ImageSort.WPF
                     view => view.Folders.ViewModel)
                     .DisposeWith(disposableRegistration);
 
+                this.Bind(ViewModel,
+                    vm => vm.Images,
+                    view => view.Images.ViewModel)
+                    .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.OpenFolder,
+                    view => view.OpenFolder)
+                    .DisposeWith(disposableRegistration);
+
                 this.BindCommand(ViewModel,
                     vm => vm.OpenCurrentlySelectedFolder,
                     view => view.OpenSelectedFolder)
                     .DisposeWith(disposableRegistration);
 
-                this.Bind(ViewModel,
-                    vm => vm.Images,
-                    view => view.Images.ViewModel)
-                    .DisposeWith(disposableRegistration);
+                ViewModel.PickFolder.RegisterHandler(ic =>
+                {
+                    var folderBrowser = new FolderBrowserDialog()
+                    {
+                        ShowNewFolderButton = true
+                    };
+
+                    if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                        ic.SetOutput(folderBrowser.SelectedPath);
+                });
             });
         }
     }
