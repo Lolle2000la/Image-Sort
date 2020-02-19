@@ -30,7 +30,7 @@ namespace ImageSort.ViewModels
         }
 
         private ObservableAsPropertyHelper<string> _selectedImage;
-        public string SelectedImage => _selectedImage.Value; 
+        public string SelectedImage => _selectedImage.Value;
 
         public ImagesViewModel(IFileSystem fileSystem = null)
         {
@@ -57,7 +57,13 @@ namespace ImageSort.ViewModels
                 });
 
             this.WhenAnyValue(x => x.Images)
-                .Subscribe(_ => SelectedIndex = 0);
+                .Subscribe(_ => 
+                {
+                    // necessary to notice the update
+                    if (SelectedIndex == 0) SelectedIndex = -1;
+
+                    SelectedIndex = 0;
+                });
         }
     }
 }
