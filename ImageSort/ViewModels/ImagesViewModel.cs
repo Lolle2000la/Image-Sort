@@ -45,7 +45,7 @@ namespace ImageSort.ViewModels
                 .ToProperty(this, x => x.Images);
 
             this.WhenAnyValue(x => x.Images)
-                .Where(i => i != null)
+                .Where(i => i != null && i.Any())
                 .Take(1)
                 .Subscribe(_ =>
                 {
