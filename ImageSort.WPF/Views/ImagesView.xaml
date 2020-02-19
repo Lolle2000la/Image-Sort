@@ -28,7 +28,12 @@
                             <RowDefinition Height="auto"/>
                         </Grid.RowDefinitions>
 
-                        <Image Source="{Binding}"/>
+                        <Image>
+                            <Image.Source>
+                                <BitmapImage DecodePixelWidth="120"
+                                             UriSource="{Binding}"/>
+                            </Image.Source>
+                        </Image>
 
                         <TextBlock Text="{Binding}" Grid.Row="1"/>
                     </Grid>
