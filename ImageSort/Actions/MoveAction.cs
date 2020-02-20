@@ -27,17 +27,17 @@ namespace ImageSort.Actions
             toFolder = Path.GetFullPath(toFolder);
 
             oldDestination = file;
-            newDestination = Path.Combine(toFolder, file);
+            newDestination = Path.Combine(toFolder, Path.GetFileName(file));
         }
 
         public void Act()
         {
-            throw new NotImplementedException();
+            fileSystem.Move(oldDestination, newDestination);
         }
 
         public void Revert()
         {
-            throw new NotImplementedException();
+            fileSystem.Move(newDestination, oldDestination);
         }
     }
 }
