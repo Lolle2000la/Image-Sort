@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace ImageSort.FileSystem
@@ -11,5 +12,9 @@ namespace ImageSort.FileSystem
         IEnumerable<string> GetFiles(string folder);
 
         bool IsFolderEmpty(string path);
+
+        bool FileExists(string path) => File.Exists(path);
+
+        bool DirectoryExists(string path) => Directory.Exists(path);
     }
 }
