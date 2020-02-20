@@ -37,5 +37,25 @@ namespace ImageSort.UnitTests.Actions
 
             fsMock.Verify(fs => fs.Move(newPath, oldPath));
         }
+
+        [Fact(DisplayName = "Handles file or directory not existing correctly.")]
+        public void HandlesFileOrDirectoryNotExisting()
+        {
+            const string existingDirectory = @"C:\SomeRealDirectory";
+            const string existingFile = @"C:\SomeRealFile.tif";
+            const string fakeDirectory = @"C:\DirectoryThatDoesntExist";
+            const string fakeFile = @"C:\SomeFakeFile.gif";
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.DirectoryExists(existingDirectory)).Returns(true);
+            fsMock.Setup(fs => fs.FileExists(existingFile)).Returns(true);
+            fsMock.Setup(fs => fs.DirectoryExists(fakeDirectory)).Returns(false);
+            fsMock.Setup(fs => fs.FileExists(fakeFile)).Returns(false);
+
+            Assert.Throws<ArgumentException>("file", () => new MoveAction(fakeFile, existingDirectory, fsMock.Object));
+
+            Assert.Throws<ArgumentException>("toFolder", () => new MoveAction(existingFile, fakeDirectory, fsMock.Object));
+        }
     }
 }
