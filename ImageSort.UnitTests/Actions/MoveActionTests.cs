@@ -10,12 +10,15 @@ namespace ImageSort.UnitTests.Actions
 {
     public class MoveActionTests
     {
-        [Fact(DisplayName = "File gets moved correctly.")]
+        [Fact(DisplayName = "File gets moved correctly and caller gets notified of change.")]
         public void FileGetsMovedCorrectly()
         {
             const string oldPath = @"C:\SomeFile.png";
             const string newFolder = @"C:\SomeOtherFolder\SomeOtherFolderAsWell\";
             const string newPath = newFolder + "SomeFile.png";
+
+            bool notifedOfAction = false;
+            bool notifiedOfReversion = false;
 
             var fsMock = new Mock<IFileSystem>();
 
@@ -24,7 +27,9 @@ namespace ImageSort.UnitTests.Actions
             fsMock.Setup(fs => fs.FileExists(oldPath)).Returns(true);
             fsMock.Setup(fs => fs.DirectoryExists(newFolder)).Returns(true);
 
-            var moveAction = new MoveAction(oldPath, newFolder, fsMock.Object);
+            var moveAction = new MoveAction(oldPath, newFolder, fsMock.Object, 
+                (f,t) => notifedOfAction = true,
+                (f,t) => notifiedOfReversion = true);
 
             fsMock.Verify(fs => fs.FileExists(oldPath));
             fsMock.Verify(fs => fs.DirectoryExists(newFolder));
@@ -36,6 +41,9 @@ namespace ImageSort.UnitTests.Actions
             moveAction.Revert();
 
             fsMock.Verify(fs => fs.Move(newPath, oldPath));
+
+            Assert.True(notifedOfAction, "The caller should be notified when an action acts.");
+            Assert.True(notifiedOfReversion, "The caller should be notified when an action is reverted.");
         }
 
         [Fact(DisplayName = "Handles file or directory not existing correctly.")]
