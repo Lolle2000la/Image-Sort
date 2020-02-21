@@ -6,6 +6,9 @@ using System.Text;
 
 namespace ImageSort.Actions
 {
+    /// <summary>
+    /// Deletes a file. Only a file, not a directory.
+    /// </summary>
     public class DeleteAction : IReversibleAction
     {
         private readonly string oldPath;
