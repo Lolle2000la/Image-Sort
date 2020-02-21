@@ -35,7 +35,7 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> OpenFolder { get; }
         public ReactiveCommand<Unit, Unit> OpenCurrentlySelectedFolder { get; }
 
-        
+        public ReactiveCommand<Unit, Unit> MoveImageToFolder { get; }
 
         public MainViewModel()
         {
