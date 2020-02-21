@@ -24,10 +24,8 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
 
-        public ActionsViewModel(IScheduler scheduler = null)
+        public ActionsViewModel()
         {
-            scheduler = scheduler ?? RxApp.MainThreadScheduler;
-
             Execute = ReactiveCommand.Create<IReversibleAction>(action =>
             {
                 action.Act();
