@@ -26,6 +26,8 @@ namespace ImageSort.Actions
             this.recycleBin = recycleBin;
         }
 
+        public string ActionType => $"Delete {Path.GetFileName(oldPath)}";
+
         public void Act()
         {
             if (deletedFile == null) deletedFile = recycleBin.Send(oldPath);

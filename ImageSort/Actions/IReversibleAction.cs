@@ -8,5 +8,7 @@ namespace ImageSort.Actions
     {
         void Act();
         void Revert();
+
+        string ActionType { get; }
     }
 }

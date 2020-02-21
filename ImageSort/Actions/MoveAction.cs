@@ -36,6 +36,8 @@ namespace ImageSort.Actions
             newDestination = Path.Combine(toFolder, Path.GetFileName(file));
         }
 
+        public string ActionType => $"Move {Path.GetFileName(oldDestination)} to {Path.GetDirectoryName(newDestination)}";
+
         public void Act()
         {
             fileSystem.Move(oldDestination, newDestination);
