@@ -20,8 +20,8 @@ namespace ImageSort.Actions
             if (file == null) throw new ArgumentNullException(nameof(file));
             if (toFolder == null) throw new ArgumentNullException(nameof(toFolder));
             if (fileSystem == null) throw new ArgumentNullException(nameof(fileSystem));
-            if (!fileSystem.FileExists(file)) throw new ArgumentException("The file to move should exist.", nameof(file));
-            if (!fileSystem.DirectoryExists(toFolder)) throw new ArgumentException("The folder to move to should exist.", nameof(toFolder));
+            if (!fileSystem.FileExists(file)) throw new FileNotFoundException(null, file);
+            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException($"The directory \"{toFolder}\" does not exist.");
 
             this.fileSystem = fileSystem;
 
