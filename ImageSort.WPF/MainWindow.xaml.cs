@@ -37,7 +37,8 @@ namespace ImageSort.WPF
                         Path = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
                     }
                 },
-                Images = new ImagesViewModel()
+                Images = new ImagesViewModel(),
+                Actions = new ActionsViewModel()
             };
 
             this.WhenActivated(disposableRegistration =>
