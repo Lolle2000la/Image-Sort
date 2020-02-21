@@ -16,6 +16,13 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
         }
 
+        private ActionsViewModel actions;
+        public ActionsViewModel Actions
+        {
+            get => actions;
+            set => this.RaiseAndSetIfChanged(ref actions, value);
+        }
+
         public Interaction<Unit, string> PickFolder { get; } = new Interaction<Unit, string>();
 
         public ReactiveCommand<Unit, Unit> OpenFolder { get; }
