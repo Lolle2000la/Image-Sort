@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using ImageSort.Actions;
 using ImageSort.FileSystem;
@@ -61,9 +62,9 @@ namespace ImageSort.UnitTests.Actions
             fsMock.Setup(fs => fs.DirectoryExists(fakeDirectory)).Returns(false);
             fsMock.Setup(fs => fs.FileExists(fakeFile)).Returns(false);
 
-            Assert.Throws<ArgumentException>("file", () => new MoveAction(fakeFile, existingDirectory, fsMock.Object));
+            Assert.Throws<FileNotFoundException>(() => new MoveAction(fakeFile, existingDirectory, fsMock.Object));
 
-            Assert.Throws<ArgumentException>("toFolder", () => new MoveAction(existingFile, fakeDirectory, fsMock.Object));
+            Assert.Throws<DirectoryNotFoundException>(() => new MoveAction(existingFile, fakeDirectory, fsMock.Object));
         }
     }
 }
