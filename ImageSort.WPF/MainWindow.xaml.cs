@@ -38,6 +38,9 @@ namespace ImageSort.WPF
                     }
                 },
                 Images = new ImagesViewModel()
+                {
+                    Actions = new ActionsViewModel()
+                }
             };
 
             this.WhenActivated(disposableRegistration =>
