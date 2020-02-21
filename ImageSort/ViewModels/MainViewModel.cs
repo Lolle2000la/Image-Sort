@@ -9,13 +9,6 @@ namespace ImageSort.ViewModels
 {
     public class MainViewModel : ReactiveObject
     {
-        private FoldersViewModel _foldersViewModel;
-        public FoldersViewModel Folders
-        {
-            get => _foldersViewModel;
-            set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
-        }
-
         private ActionsViewModel actions;
         public ActionsViewModel Actions
         {
@@ -23,17 +16,26 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref actions, value);
         }
 
+        private FoldersViewModel _foldersViewModel;
+        public FoldersViewModel Folders
+        {
+            get => _foldersViewModel;
+            set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
+        }
+
+        private ImagesViewModel _images;
+        public ImagesViewModel Images
+        {
+            get => _images;
+            set => this.RaiseAndSetIfChanged(ref _images, value);
+        }
+
         public Interaction<Unit, string> PickFolder { get; } = new Interaction<Unit, string>();
 
         public ReactiveCommand<Unit, Unit> OpenFolder { get; }
         public ReactiveCommand<Unit, Unit> OpenCurrentlySelectedFolder { get; }
 
-        private ImagesViewModel _images;
-        public ImagesViewModel Images 
-        {
-            get => _images;
-            set => this.RaiseAndSetIfChanged(ref _images, value);
-        }
+        
 
         public MainViewModel()
         {
