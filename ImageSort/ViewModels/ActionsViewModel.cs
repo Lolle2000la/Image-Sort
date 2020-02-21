@@ -3,14 +3,16 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Text;
 
 namespace ImageSort.ViewModels
 {
     public class ActionsViewModel : ReactiveObject
     {
-        private readonly Stack<IReversibleAction> done;
-        private readonly Stack<IReversibleAction> undone;
+        private readonly Stack<IReversibleAction> done = new Stack<IReversibleAction>();
+        private readonly Stack<IReversibleAction> undone = new Stack<IReversibleAction>();
 
         private readonly ObservableAsPropertyHelper<string> lastDone;
         public string LastDone => lastDone.Value;
@@ -22,9 +24,58 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
 
-        public ActionsViewModel()
+        public ActionsViewModel(IScheduler scheduler = null)
         {
-            throw new NotImplementedException();
+            scheduler = scheduler ?? RxApp.MainThreadScheduler;
+
+            Execute = ReactiveCommand.Create<IReversibleAction>(action =>
+            {
+                action.Act();
+
+                done.Push(action);
+
+                undone.Clear();
+            });
+
+            Undo = ReactiveCommand.Create(() =>
+            {
+                if (done.TryPop(out var action))
+                {
+                    action.Revert();
+
+                    undone.Push(action);
+                }
+            });
+
+            Redo = ReactiveCommand.Create(() =>
+            {
+                if (undone.TryPop(out var action))
+                {
+                    action.Act();
+
+                    done.Push(action);
+                }
+            });
+
+            var historyChanges = Execute.Merge(Undo).Merge(Redo);
+
+            lastDone = historyChanges
+                .Select(_ =>
+                {
+                    if (done.TryPeek(out var action)) return action.DisplayName;
+
+                    return null;
+                })
+                .ToProperty(this, vm => vm.LastDone);
+
+            lastUndone = historyChanges
+                .Select(_ =>
+                {
+                    if (undone.TryPeek(out var action)) return action.DisplayName;
+
+                    return null;
+                })
+                .ToProperty(this, vm => vm.LastUndone);
         }
     }
 }
