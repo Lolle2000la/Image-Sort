@@ -31,7 +31,7 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                     vm => vm.SelectedImage,
                     view => view.SelectedImage.Source,
-                    p => new BitmapImage(new Uri(p)))
+                    p => new BitmapImage(new Uri(p)) { CacheOption = BitmapCacheOption.OnLoad })
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
