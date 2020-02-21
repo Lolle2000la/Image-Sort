@@ -77,6 +77,11 @@ namespace ImageSort.ViewModels
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
 
+            var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
+                .Where(fi => fi.Folders != null && fi.Images != null)
+                .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected)
+                .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (i, s) => i != null && s != null));
+
             MoveImageToFolder = ReactiveCommand.CreateFromTask(async () =>
             {
                 var moveAction = new MoveAction(Images.SelectedImage, Folders.Selected.Path, fileSystem);
@@ -84,7 +89,7 @@ namespace ImageSort.ViewModels
                 moveAction.Act();
 
                 await Actions.Execute.Execute(moveAction);
-            });
+            }, canMoveImageToFolderExecute);
         }
     }
 }
