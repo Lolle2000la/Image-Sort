@@ -18,15 +18,11 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> lastUndone;
         public string LastUndone => lastUndone.Value;
 
+        public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
 
         public ActionsViewModel()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Execute(IReversibleAction action)
         {
             throw new NotImplementedException();
         }
