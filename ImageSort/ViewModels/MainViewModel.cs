@@ -1,4 +1,6 @@
-﻿using ReactiveUI;
+﻿using ImageSort.FileSystem;
+using ReactiveUI;
+using Splat;
 using System;
 using System.Collections.Generic;
 using System.Reactive;
@@ -37,8 +39,10 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> MoveImageToFolder { get; }
 
-        public MainViewModel()
+        public MainViewModel(IFileSystem fileSystem = null)
         {
+            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+
             this.WhenAnyValue(x => x.Images)
                 .Where(i => i != null)
                 .Subscribe(i =>
@@ -67,7 +71,7 @@ namespace ImageSort.ViewModels
             {
                 try
                 {
-                    Folders.CurrentFolder = new FolderTreeItemViewModel() { Path = await PickFolder.Handle(Unit.Default) };
+                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem) { Path = await PickFolder.Handle(Unit.Default) };
                 }
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
