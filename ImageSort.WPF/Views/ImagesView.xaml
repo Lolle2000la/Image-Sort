@@ -6,6 +6,7 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
+                                xmlns:System="clr-namespace:System;assembly=mscorlib"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
@@ -14,7 +15,7 @@
     <UserControl.Resources>
         <converters:PathToFilenameConverter x:Key="PathToFilenameConverter"/>
 
-        <DataTemplate x:Key="ImageEntry">
+        <DataTemplate x:Key="ImageEntry" DataType="{x:Type System:String}">
             <Grid Height="100" Width="120">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*"/>
