@@ -5,6 +5,7 @@ using ImageSort.FileSystem;
 using ImageSort.Actions;
 using Xunit;
 using Moq;
+using System.IO;
 
 namespace ImageSort.UnitTests.Actions
 {
@@ -36,6 +37,22 @@ namespace ImageSort.UnitTests.Actions
             deleteAction.Revert();
 
             fileRestorerMock.Verify(fr => fr.Dispose());
+        }
+
+        [Fact(DisplayName = "Throws when the file to delete does not exist")]
+        public void ThrowsWhenTheFileDoesNotExist()
+        {
+            const string fileThatDoesntExist = @"C:\Fictional File.fake";
+
+            var fsMock = new Mock<IFileSystem>();
+            var recycleBinMock = new Mock<IRecycleBin>();
+            var fileRestorerMock = new Mock<IDisposable>();
+
+            fsMock.Setup(fs => fs.FileExists(fileThatDoesntExist)).Returns(false).Verifiable();
+
+            Assert.Throws<FileNotFoundException>(() => new DeleteAction(fileThatDoesntExist, fsMock.Object, recycleBinMock.Object));
+
+            fsMock.Verify(fs => fs.FileExists(fileThatDoesntExist));
         }
     }
 }
