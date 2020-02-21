@@ -31,10 +31,14 @@ namespace ImageSort.UnitTests.ViewModels
 
             await actionsVM.Undo.Execute();
 
+            await Task.Delay(1); // without this the variables do not get updated for some reason.
+
             Assert.Equal(actionDisplayName, actionsVM.LastUndone);
             Assert.NotEqual(actionDisplayName, actionsVM.LastDone);
 
             await actionsVM.Redo.Execute();
+
+            await Task.Delay(1); // without this the variables do not get updated for some reason.
 
             Assert.Equal(actionDisplayName, actionsVM.LastDone);
             Assert.NotEqual(actionDisplayName, actionsVM.LastUndone);
