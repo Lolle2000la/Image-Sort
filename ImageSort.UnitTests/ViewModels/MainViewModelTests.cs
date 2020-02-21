@@ -3,6 +3,8 @@ using ImageSort.ViewModels;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -83,6 +85,46 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.True(requestsUserInput);
 
             Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
+        }
+
+        [Fact(DisplayName = "Can move images to a folder and registers that action")]
+        public async Task CanMoveImages()
+        {
+            const string currentDirectory = @"C:\Some Folder With Pictures";
+            const string image = currentDirectory + @"\some image.png";
+            const string newDirectory = @"C:\Some other folder";
+            const string moveDestination = newDirectory + @"\some image.png";
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
+            fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
+            fsMock.Setup(fs => fs.DirectoryExists(newDirectory)).Returns(true);
+
+            fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] { image });
+
+            fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
+
+            var otherMainVM = new MainViewModel(fsMock.Object)
+            {
+                Actions = new ActionsViewModel(),
+                Images = new ImagesViewModel(fsMock.Object),
+                Folders = new FoldersViewModel(fsMock.Object) { CurrentFolder = new FolderTreeItemViewModel() { Path = currentDirectory } }
+            };
+
+            otherMainVM.Images.SelectedIndex = 0;
+
+            otherMainVM.Folders.SelectFolder.RegisterHandler(ic => ic.SetOutput(newDirectory));
+
+            await otherMainVM.Folders.Pin.Execute();
+
+            otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
+
+            await otherMainVM.MoveImageToFolder.Execute();
+
+            Assert.Equal($"Move {Path.GetFileName(image)} to {Path.GetDirectoryName(moveDestination)}", otherMainVM.Actions.LastDone);
+
+            fsMock.Verify(fs => fs.Move(image, moveDestination));
         }
     }
 }
