@@ -10,7 +10,6 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
-                                xmlns:view="clr-namespace:ImageSort.WPF.Views"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -37,16 +36,13 @@
     
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
-        <view:ActionsView x:Name="Actions"/>
+        <Image x:Name="SelectedImage" Grid.Row="0"/>
 
-        <Image x:Name="SelectedImage" Grid.Row="1"/>
-
-        <ListBox x:Name="Images" Grid.Row="2" ItemTemplate="{StaticResource ImageEntry}">
+        <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>

@@ -43,11 +43,6 @@ namespace ImageSort.WPF.Views
                     vm => vm.SelectedIndex,
                     view => view.Images.SelectedIndex)
                     .DisposeWith(disposableRegistration);
-
-                this.OneWayBind(ViewModel,
-                    vm => vm.Actions,
-                    view => view.Actions.ViewModel)
-                    .DisposeWith(disposableRegistration);
             });
         }
     }

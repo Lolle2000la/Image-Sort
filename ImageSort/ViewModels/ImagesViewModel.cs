@@ -12,13 +12,6 @@ namespace ImageSort.ViewModels
 {
     public class ImagesViewModel : ReactiveObject
     {
-        private ActionsViewModel actions;
-        public ActionsViewModel Actions
-        {
-            get => actions;
-            set => this.RaiseAndSetIfChanged(ref actions, value);
-        }
-
         private string _currentPath;
         public string CurrentFolder
         {
