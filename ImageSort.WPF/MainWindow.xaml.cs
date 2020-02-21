@@ -68,6 +68,11 @@ namespace ImageSort.WPF
                     view => view.OpenSelectedFolder)
                     .DisposeWith(disposableRegistration);
 
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveImageToFolder,
+                    view => view.Move)
+                    .DisposeWith(disposableRegistration);
+
                 ViewModel.PickFolder.RegisterHandler(ic =>
                 {
                     var folderBrowser = new FolderBrowserDialog()
