@@ -9,8 +9,8 @@ namespace ImageSort.Actions
     public class DeleteAction : IReversibleAction
     {
         private readonly string oldPath;
-        private readonly IFileSystem fileSystem;
         private readonly IRecycleBin recycleBin;
+        private IDisposable deletedFile;
 
         public DeleteAction(string path, IFileSystem fileSystem, IRecycleBin recycleBin)
         {
@@ -20,18 +20,19 @@ namespace ImageSort.Actions
             if (!fileSystem.FileExists(path)) throw new FileNotFoundException(null, path);
 
             oldPath = path;
-            this.fileSystem = fileSystem;
             this.recycleBin = recycleBin;
         }
 
         public void Act()
         {
-            throw new NotImplementedException();
+            if (deletedFile == null) deletedFile = recycleBin.Send(oldPath);
         }
 
         public void Revert()
         {
-            throw new NotImplementedException();
+            deletedFile?.Dispose();
+
+            deletedFile = null;
         }
     }
 }
