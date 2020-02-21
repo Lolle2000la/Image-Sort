@@ -53,6 +53,11 @@ namespace ImageSort.WPF
                     view => view.Images.ViewModel)
                     .DisposeWith(disposableRegistration);
 
+                this.OneWayBind(ViewModel,
+                    vm => vm.Actions,
+                    view => view.Actions.ViewModel)
+                    .DisposeWith(disposableRegistration);
+
                 this.BindCommand(ViewModel,
                     vm => vm.OpenFolder,
                     view => view.OpenFolder)
