@@ -86,8 +86,6 @@ namespace ImageSort.ViewModels
             {
                 var moveAction = new MoveAction(Images.SelectedImage, Folders.Selected.Path, fileSystem);
 
-                moveAction.Act();
-
                 await Actions.Execute.Execute(moveAction);
             }, canMoveImageToFolderExecute);
         }

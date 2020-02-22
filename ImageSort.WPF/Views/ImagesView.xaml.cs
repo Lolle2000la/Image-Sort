@@ -31,7 +31,7 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                     vm => vm.SelectedImage,
                     view => view.SelectedImage.Source,
-                    p => new BitmapImage(new Uri(p)) { CacheOption = BitmapCacheOption.OnLoad })
+                    PathToImage)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
@@ -44,6 +44,18 @@ namespace ImageSort.WPF.Views
                     view => view.Images.SelectedIndex)
                     .DisposeWith(disposableRegistration);
             });
+        }
+
+        public BitmapImage PathToImage(string path)
+        {
+            var bitmapImage = new BitmapImage();
+
+            bitmapImage.BeginInit();
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.UriSource = new Uri(path);
+            bitmapImage.EndInit();
+
+            return bitmapImage;
         }
     }
 }

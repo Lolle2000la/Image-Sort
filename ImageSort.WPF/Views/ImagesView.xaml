@@ -25,7 +25,8 @@
                 <Image>
                     <Image.Source>
                         <BitmapImage DecodePixelWidth="120"
-                                             UriSource="{Binding}"/>
+                                     CacheOption="OnLoad"
+                                     UriSource="{Binding}"/>
                     </Image.Source>
                 </Image>
 
