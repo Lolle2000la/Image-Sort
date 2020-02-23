@@ -88,7 +88,7 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
         }
 
-        [Fact(DisplayName = "Can move images to a folder and registers that action")]
+        [Fact(DisplayName = "Can move images to a folder and registers that action, removing the image from the images viewmodel in the process.")]
         public async Task CanMoveImages()
         {
             const string currentDirectory = @"C:\Some Folder With Pictures";
@@ -124,6 +124,8 @@ namespace ImageSort.UnitTests.ViewModels
             await otherMainVM.MoveImageToFolder.Execute();
 
             Assert.Equal($"Move {Path.GetFileName(image)} to {Path.GetDirectoryName(moveDestination)}", otherMainVM.Actions.LastDone);
+
+            Assert.Empty(otherMainVM.Images.Images);
 
             fsMock.Verify(fs => fs.Move(image, moveDestination));
         }
