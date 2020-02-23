@@ -62,12 +62,12 @@ namespace ImageSort.ViewModels
 
             
             _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
-                .Where(i => Images.Any())
+                .Where(i => images.Items.Any())
                 .Where(i => i >= 0)
-                .Select(i => Images.ElementAt(i))
+                .Select(i => images.Items.ElementAt(i))
                 .ToProperty(this, x => x.SelectedImage);
 
-            this.WhenAnyValue(x => x.Images)
+            images.Connect()
                 .Subscribe(_ => 
                 {
                     // necessary to notice the update
