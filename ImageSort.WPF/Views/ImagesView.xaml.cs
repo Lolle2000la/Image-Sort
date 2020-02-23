@@ -46,7 +46,7 @@ namespace ImageSort.WPF.Views
             });
         }
 
-        public BitmapImage PathToImage(string path)
+        private static BitmapImage PathToImage(string path)
         {
             if (path == null) return null; 
 
