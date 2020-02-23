@@ -79,7 +79,7 @@ namespace ImageSort.ViewModels
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
 
-            var canMoveOrDeleteImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
+            var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
                 .Where(fi => fi.Folders != null && fi.Images != null)
                 .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
                     .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
@@ -95,7 +95,12 @@ namespace ImageSort.ViewModels
 
                 if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
                 else if (Images.Images.Any()) Images.SelectedIndex = 0;
-            }, canMoveOrDeleteImageToFolderExecute);
+            }, canMoveImageToFolderExecute);
+
+            var canDeleteImageExecute = this.WhenAnyValue(x => x.Images)
+                .Where(i => i != null)
+                .SelectMany(i => i.WhenAnyValue(x => x.SelectedImage))
+                .Select(i => !string.IsNullOrEmpty(i));
 
             DeleteImage = ReactiveCommand.CreateFromTask(async () =>
             {
@@ -108,7 +113,7 @@ namespace ImageSort.ViewModels
 
                 if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
                 else if (Images.Images.Any()) Images.SelectedIndex = 0;
-            }, canMoveOrDeleteImageToFolderExecute);
+            }, canDeleteImageExecute);
         }
     }
 }
