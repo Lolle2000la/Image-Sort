@@ -109,7 +109,7 @@ namespace ImageSort.UnitTests.ViewModels
             {
                 Actions = new ActionsViewModel(),
                 Images = new ImagesViewModel(fsMock.Object),
-                Folders = new FoldersViewModel(fsMock.Object) { CurrentFolder = new FolderTreeItemViewModel() { Path = currentDirectory } }
+                Folders = new FoldersViewModel(fsMock.Object) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } }
             };
 
             otherMainVM.Images.SelectedIndex = 0;
