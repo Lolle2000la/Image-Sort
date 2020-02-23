@@ -44,7 +44,6 @@ namespace ImageSort.ViewModels
             images = new SourceList<string>();
 
             images.Connect()
-                .Sort(SortExpressionComparer<string>.Ascending(p => p))
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _images)
                 .Subscribe();
