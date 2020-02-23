@@ -3,7 +3,6 @@ using Shell32;
 using System;
 using System.IO;
 using System.Reactive.Disposables;
-using System.Linq;
 
 namespace ImageSort.WPF.FileSystem
 {

@@ -1,12 +1,8 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.ViewModels;
 using Moq;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Threading.Tasks;
-using System.Text;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels

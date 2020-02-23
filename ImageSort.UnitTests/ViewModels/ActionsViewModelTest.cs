@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using ImageSort.ViewModels;
+﻿using ImageSort.ViewModels;
 using ImageSort.Actions;
 using Xunit;
 using Moq;
