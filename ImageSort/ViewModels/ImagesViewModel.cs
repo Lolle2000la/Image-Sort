@@ -22,6 +22,8 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _currentPath, value);
         }
 
+        private readonly SourceList<string> images;
+
         private readonly ReadOnlyObservableCollection<string> _images;
         public ReadOnlyObservableCollection<string> Images => _images;
 
@@ -39,7 +41,7 @@ namespace ImageSort.ViewModels
         {
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
 
-            var images = new SourceList<string>();
+            images = new SourceList<string>();
 
             images.Connect()
                 .Sort(SortExpressionComparer<string>.Ascending(p => p))
@@ -75,6 +77,11 @@ namespace ImageSort.ViewModels
 
                     SelectedIndex = 0;
                 });
+        }
+
+        ~ImagesViewModel()
+        {
+            images.Dispose();
         }
     }
 }
