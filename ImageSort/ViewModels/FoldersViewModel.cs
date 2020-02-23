@@ -22,6 +22,8 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _currentFolder, value);
         }
 
+        private readonly SourceList<FolderTreeItemViewModel> pinnedFolders;
+
         private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _pinnedFolders;
         public ReadOnlyObservableCollection<FolderTreeItemViewModel> PinnedFolders => _pinnedFolders;
 
@@ -50,7 +52,7 @@ namespace ImageSort.ViewModels
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
             backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
 
-            var pinnedFolders = new SourceList<FolderTreeItemViewModel>();
+            pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _pinnedFolders)
@@ -99,6 +101,11 @@ namespace ImageSort.ViewModels
             {
                 pinnedFolders.Remove(Selected);
             }, canUnpinSelectedExecute);
+        }
+
+        ~FoldersViewModel()
+        {
+            pinnedFolders.Dispose();
         }
     }
 }
