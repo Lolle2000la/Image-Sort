@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace ImageSort.ViewModels
@@ -44,8 +45,11 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
 
-        public FoldersViewModel(IFileSystem fileSystem = null)
+        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
+            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+            backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
+
             var pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
                 .ObserveOn(RxApp.MainThreadScheduler)
@@ -68,7 +72,7 @@ namespace ImageSort.ViewModels
                     var folderToPin = await SelectFolder.Handle(Unit.Default);
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem)
+                        new FolderTreeItemViewModel(fileSystem, backgroundScheduler)
                         {
                             Path = folderToPin
                         });
