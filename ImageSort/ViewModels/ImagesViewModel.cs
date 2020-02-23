@@ -34,7 +34,7 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selectedIndex, value);
         }
 
-        private ObservableAsPropertyHelper<string> _selectedImage;
+        private readonly ObservableAsPropertyHelper<string> _selectedImage;
         public string SelectedImage => _selectedImage.Value;
 
         public ImagesViewModel(IFileSystem fileSystem = null)
