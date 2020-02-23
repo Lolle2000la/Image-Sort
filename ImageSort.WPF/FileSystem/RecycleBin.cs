@@ -1,6 +1,7 @@
 ﻿using ImageSort.FileSystem;
 using System;
 using System.IO;
+using System.Reactive.Disposables;
 
 namespace ImageSort.WPF.FileSystem
 {
@@ -22,6 +23,11 @@ namespace ImageSort.WPF.FileSystem
 
             if (!success) throw new IOException($"Could not delete {Path.GetFileName(path)}");
 
+            return Disposable.Create(path, RestoreFileFromRecycleBin);
+        }
+
+        private void RestoreFileFromRecycleBin(string obj)
+        {
             throw new NotImplementedException();
         }
     }
