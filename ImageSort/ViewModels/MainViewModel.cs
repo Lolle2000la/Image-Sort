@@ -84,7 +84,8 @@ namespace ImageSort.ViewModels
 
             MoveImageToFolder = ReactiveCommand.CreateFromTask(async () =>
             {
-                var moveAction = new MoveAction(Images.SelectedImage, Folders.Selected.Path, fileSystem);
+                var moveAction = new MoveAction(Images.SelectedImage, Folders.Selected.Path, fileSystem,
+                    (o, n) => Images.RemoveImage(o), (n, o) => Images.InsertImage(o));
 
                 await Actions.Execute.Execute(moveAction);
             }, canMoveImageToFolderExecute);
