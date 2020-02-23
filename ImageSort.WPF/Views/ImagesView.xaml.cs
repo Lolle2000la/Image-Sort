@@ -48,6 +48,8 @@ namespace ImageSort.WPF.Views
 
         public BitmapImage PathToImage(string path)
         {
+            if (path == null) return null; 
+
             var bitmapImage = new BitmapImage();
 
             bitmapImage.BeginInit();
