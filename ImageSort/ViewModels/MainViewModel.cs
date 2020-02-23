@@ -79,8 +79,8 @@ namespace ImageSort.ViewModels
 
             var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
                 .Where(fi => fi.Folders != null && fi.Images != null)
-                .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected)
-                .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (i, s) => i != null && s != null));
+                .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
+                    .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
 
             MoveImageToFolder = ReactiveCommand.CreateFromTask(async () =>
             {
