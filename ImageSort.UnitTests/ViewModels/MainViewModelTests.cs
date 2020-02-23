@@ -1,6 +1,7 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.ViewModels;
 using Moq;
+using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -108,8 +109,8 @@ namespace ImageSort.UnitTests.ViewModels
             var otherMainVM = new MainViewModel(fsMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Images = new ImagesViewModel(fsMock.Object),
-                Folders = new FoldersViewModel(fsMock.Object) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } }
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) { Path = currentDirectory } },
+                Images = new ImagesViewModel(fsMock.Object)
             };
 
             otherMainVM.Images.SelectedIndex = 0;
