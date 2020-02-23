@@ -3,10 +3,9 @@ using ImageSort.FileSystem;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Text;
 
 namespace ImageSort.ViewModels
 {
@@ -87,7 +86,13 @@ namespace ImageSort.ViewModels
                 var moveAction = new MoveAction(Images.SelectedImage, Folders.Selected.Path, fileSystem,
                     (o, n) => Images.RemoveImage(o), (n, o) => Images.InsertImage(o));
 
+                var oldIndex = Images.SelectedIndex;
+
                 await Actions.Execute.Execute(moveAction);
+
+                if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
+
+                if (Images.Images.Any()) Images.SelectedIndex = 0;
             }, canMoveImageToFolderExecute);
         }
     }
