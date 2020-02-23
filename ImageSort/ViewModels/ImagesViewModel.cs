@@ -79,6 +79,16 @@ namespace ImageSort.ViewModels
                 });
         }
 
+        public void RemoveImage(string image)
+        {
+            images.Remove(image);
+        }
+
+        public void InsertImage(string image)
+        {
+            images.Add(image);
+        }
+
         ~ImagesViewModel()
         {
             images.Dispose();
