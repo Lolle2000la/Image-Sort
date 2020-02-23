@@ -29,11 +29,14 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
 
             <Button x:Name="Move" Content="Move" Grid.Row="0"/>
 
             <views:ImagesView x:Name="Images" Grid.Row="1"/>
+
+            <Button x:Name="Delete" Content="Delete" Grid.Row="2"/>
         </Grid>
     </Grid>
 </rxui:ReactiveWindow>
