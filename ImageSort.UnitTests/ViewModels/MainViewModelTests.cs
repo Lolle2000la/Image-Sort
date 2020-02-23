@@ -129,5 +129,46 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Verify(fs => fs.Move(image, moveDestination));
         }
+
+        [Fact(DisplayName = "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
+        public async Task CanDeleteImages()
+        {
+            const string currentDirectory = @"C:\Some Folder With Pictures";
+            const string image = currentDirectory + @"\some image.png";
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
+            fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
+
+            fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] { image });
+
+            var restorerMock = new Mock<IDisposable>();
+
+            restorerMock.Setup(r => r.Dispose()).Verifiable();
+            
+            var rbMock = new Mock<IRecycleBin>();
+
+            rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
+
+            var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object)
+            {
+                Actions = new ActionsViewModel(),
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) { Path = currentDirectory } },
+                Images = new ImagesViewModel(fsMock.Object)
+            };
+
+            otherMainVM.Images.SelectedIndex = 0;
+
+            await otherMainVM.DeleteImage.Execute();
+
+            Assert.Equal($"Delete {Path.GetFileName(image)}", otherMainVM.Actions.LastDone);
+
+            Assert.Empty(otherMainVM.Images.Images);
+
+            await otherMainVM.Actions.Undo.Execute();
+
+            restorerMock.Verify(r => r.Dispose());
+        }
     }
 }
