@@ -39,9 +39,12 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> MoveImageToFolder { get; }
 
-        public MainViewModel(IFileSystem fileSystem = null)
+        public ReactiveCommand<Unit, Unit> DeleteImage { get; }
+
+        public MainViewModel(IFileSystem fileSystem = null, IRecycleBin recycleBin = null)
         {
-            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+            fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            recycleBin ??= Locator.Current.GetService<IRecycleBin>();
 
             this.WhenAnyValue(x => x.Images)
                 .Where(i => i != null)
@@ -76,7 +79,7 @@ namespace ImageSort.ViewModels
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
 
-            var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
+            var canMoveOrDeleteImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
                 .Where(fi => fi.Folders != null && fi.Images != null)
                 .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
                     .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
@@ -91,9 +94,21 @@ namespace ImageSort.ViewModels
                 await Actions.Execute.Execute(moveAction);
 
                 if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
+                else if (Images.Images.Any()) Images.SelectedIndex = 0;
+            }, canMoveOrDeleteImageToFolderExecute);
 
-                if (Images.Images.Any()) Images.SelectedIndex = 0;
-            }, canMoveImageToFolderExecute);
+            DeleteImage = ReactiveCommand.CreateFromTask(async () =>
+            {
+                var deleteAction = new DeleteAction(Images.SelectedImage, fileSystem, recycleBin,
+                    o => Images.RemoveImage(o), o => Images.InsertImage(o));
+
+                var oldIndex = Images.SelectedIndex;
+
+                await Actions.Execute.Execute(deleteAction);
+
+                if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
+                else if (Images.Images.Any()) Images.SelectedIndex = 0;
+            }, canMoveOrDeleteImageToFolderExecute);
         }
     }
 }
