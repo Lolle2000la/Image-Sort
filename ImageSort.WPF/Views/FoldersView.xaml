@@ -7,8 +7,13 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
+                                xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <converters:PathToFolderIconConverter x:Key="PathToFolderIconConverter"/>
+    </UserControl.Resources>
+    
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
@@ -24,7 +29,10 @@
         <TreeView x:Name="Folders" Grid.Row="1">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}" ItemsSource="{Binding Children}">
-                    <TextBlock Text="{Binding FolderName}"/>
+                    <StackPanel Orientation="Horizontal" Margin="3">
+                        <Image Source="{Binding Path, Converter={StaticResource PathToFolderIconConverter}}" Margin="0 0 5 0"/>
+                        <TextBlock Text="{Binding FolderName}"/>
+                    </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

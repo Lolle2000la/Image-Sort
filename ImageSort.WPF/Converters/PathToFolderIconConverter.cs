@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Image_sort.UI.Classes;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -15,7 +16,9 @@ namespace ImageSort.WPF.Converters
 
             if (value is string path)
             {
-                if (Directory.Exists(path)) throw new DirectoryNotFoundException();
+                if (!Directory.Exists(path)) throw new DirectoryNotFoundException();
+
+                return ShellFileLoader.GetThumbnailFromShellForWpf(path);
             }
 
             throw new ArgumentException("Value should be a string.", nameof(value));

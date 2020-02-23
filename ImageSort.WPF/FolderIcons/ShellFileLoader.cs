@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
 
 namespace Image_sort.UI.Classes
 {
@@ -104,9 +109,22 @@ namespace Image_sort.UI.Classes
             return thumbnail;
         }
 
-        public static async Task<Bitmap> GetThumbnailFromShellAsync (string path)
+        public static BitmapImage GetThumbnailFromShellForWpf (string path)
         {
-            return await Task.Run(() => GetThumbnailFromShell(path));
+            var thumbnail = GetThumbnailFromShell(path);
+
+            using var memory = new MemoryStream();
+
+            thumbnail.Save(memory, ImageFormat.Png);
+            memory.Position = 0;
+
+            var bitmapImage = new BitmapImage();
+            bitmapImage.BeginInit();
+            bitmapImage.StreamSource = memory;
+            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+            bitmapImage.EndInit();
+
+            return bitmapImage;
         }
     }
 }
