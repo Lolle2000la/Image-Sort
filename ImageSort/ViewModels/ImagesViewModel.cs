@@ -1,9 +1,12 @@
-﻿using ImageSort.FileSystem;
+﻿using DynamicData;
+using DynamicData.Binding;
+using ImageSort.FileSystem;
 using ImageSort.Helpers;
 using ReactiveUI;
 using Splat;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
@@ -19,8 +22,8 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _currentPath, value);
         }
 
-        private readonly ObservableAsPropertyHelper<IEnumerable<string>> _images;
-        public IEnumerable<string> Images => _images.Value;
+        private readonly ReadOnlyObservableCollection<string> _images;
+        public ReadOnlyObservableCollection<string> Images => _images;
 
         private int _selectedIndex;
         public int SelectedIndex
@@ -36,25 +39,33 @@ namespace ImageSort.ViewModels
         {
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
 
-            _images = this.WhenAnyValue(x => x.CurrentFolder)
+            var images = new SourceList<string>();
+
+            images.Connect()
+                .Sort(SortExpressionComparer<string>.Ascending(p => p))
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Bind(out _images)
+                .Subscribe();
+
+            this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => f != null)
                 .Select(f => fileSystem.GetFiles(f)
                                       .Where(s => s.EndsWithAny(
                                           StringComparison.OrdinalIgnoreCase,
                                           ".png", ".jpg", ".gif", ".bmp", ".tiff", ".tif", ".ico")))
-                .ToProperty(this, x => x.Images);
-
-            this.WhenAnyValue(x => x.Images)
-                .Where(i => i != null && i.Any())
-                .Take(1)
-                .Subscribe(_ =>
+                .Subscribe(i=> 
                 {
-                    _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
-                        .Where(i => Images.Any())
-                        .Where(i => i >= 0)
-                        .Select(i => Images.ElementAt(i))
-                        .ToProperty(this, x => x.SelectedImage);
+                    images.Clear();
+
+                    images.AddRange(i);
                 });
+
+            
+            _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
+                .Where(i => Images.Any())
+                .Where(i => i >= 0)
+                .Select(i => Images.ElementAt(i))
+                .ToProperty(this, x => x.SelectedImage);
 
             this.WhenAnyValue(x => x.Images)
                 .Subscribe(_ => 
