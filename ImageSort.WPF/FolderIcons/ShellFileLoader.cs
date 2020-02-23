@@ -11,7 +11,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 
-namespace Image_sort.UI.Classes
+namespace ImageSort.WPF.FolderIcons
 {
     static class ShellFileLoader
     {

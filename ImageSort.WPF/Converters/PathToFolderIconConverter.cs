@@ -1,9 +1,7 @@
-﻿using Image_sort.UI.Classes;
+﻿using ImageSort.WPF.FolderIcons;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Text;
 using System.Windows.Data;
 
 namespace ImageSort.WPF.Converters
