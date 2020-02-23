@@ -1,13 +1,9 @@
 ﻿using ImageSort.DependencyManagement;
+using ImageSort.FileSystem;
+using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using Splat;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows;
 
 namespace ImageSort.WPF
@@ -21,6 +17,7 @@ namespace ImageSort.WPF
         {
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetCallingAssembly());
             Locator.CurrentMutable.RegisterManditoryDependencies();
+            Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
         }
     }
 }
