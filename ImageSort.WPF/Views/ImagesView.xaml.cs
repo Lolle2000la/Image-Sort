@@ -1,7 +1,10 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
 namespace ImageSort.WPF.Views
@@ -31,6 +34,17 @@ namespace ImageSort.WPF.Views
                 this.Bind(ViewModel,
                     vm => vm.SelectedIndex,
                     view => view.Images.SelectedIndex)
+                    .DisposeWith(disposableRegistration);
+
+                ViewModel.GoLeft
+                    .Merge(ViewModel.GoRight)
+                    .Subscribe(_ => 
+                    { 
+                        if (Images.ItemContainerGenerator.ContainerFromItem(Images.SelectedItem) is ListBoxItem item)
+                        {
+                            item.Focus();
+                        } 
+                    })
                     .DisposeWith(disposableRegistration);
             });
         }
