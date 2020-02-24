@@ -43,7 +43,7 @@
 
         <Image x:Name="SelectedImage" Grid.Row="0"/>
 
-        <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" SelectionChanged="OnSelectedImageChanged">
+        <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}">
             <ListBox.ItemsPanel>
                 <ItemsPanelTemplate>
                     <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
