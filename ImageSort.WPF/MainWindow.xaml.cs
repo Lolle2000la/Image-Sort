@@ -94,43 +94,44 @@ namespace ImageSort.WPF
                   var reservedKeysPressed = this.Events().PreviewKeyDown
                       .Where(_ => interceptReservedKeys)
                       .Where(_ => !(Keyboard.FocusedElement is TextBox))
-                      .Where(k => reservedKeys.Contains(k.Key));
+                      .Where(k => reservedKeys.Contains(k.Key))
+                      .Do(k => k.Handled = true)
+                      .Select(k => k.Key);
 
-                  reservedKeysPressed.Subscribe(k => k.Handled = true)
-                      .DisposeWith(disposableRegistration);
-
-                  reservedKeysPressed.Where(k => k.Key == Key.Left)
+                  // bind arrow keys
+                  reservedKeysPressed.Where(k => k == Key.Left)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.Images.GoLeft)
                       .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k.Key == Key.Right)
+                  reservedKeysPressed.Where(k => k == Key.Right)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.Images.GoRight)
                       .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k.Key == Key.Up)
+                  reservedKeysPressed.Where(k => k == Key.Up)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.MoveImageToFolder)
                       .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k.Key == Key.Down)
+                  reservedKeysPressed.Where(k => k == Key.Down)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.DeleteImage)
                       .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k.Key == Key.Q)
+                  // bind Q and E to undo and redo
+                  reservedKeysPressed.Where(k => k == Key.Q)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.Actions.Undo)
                       .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k.Key == Key.E)
+                  reservedKeysPressed.Where(k => k == Key.E)
                       .Select(_ => Unit.Default)
                       .InvokeCommand(ViewModel.Actions.Redo)
                       .DisposeWith(disposableRegistration);
 
+                  // bind WASD to traversing the folders
                   reservedKeysPressed
-                      .Select(k => k.Key)
                       .Where(k => k == Key.W || k == Key.A || k == Key.S || k == Key.D)
                       .Select(k => k switch
                       {
