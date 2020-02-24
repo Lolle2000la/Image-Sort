@@ -36,6 +36,16 @@ namespace ImageSort.WPF.Views
                     view => view.Images.SelectedIndex)
                     .DisposeWith(disposableRegistration);
 
+                this.BindCommand(ViewModel,
+                    vm => vm.GoLeft,
+                    view => view.GoLeft)
+                    .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.GoRight,
+                    view => view.GoRight)
+                    .DisposeWith(disposableRegistration);
+
                 ViewModel.GoLeft
                     .Merge(ViewModel.GoRight)
                     .Subscribe(_ => 
