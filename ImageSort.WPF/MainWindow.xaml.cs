@@ -1,8 +1,12 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Forms;
+using System.Windows.Input;
 
 namespace ImageSort.WPF
 {
@@ -75,6 +79,19 @@ namespace ImageSort.WPF
                     if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
+
+                var arrowKeys = this.Events().PreviewKeyDown
+                    .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down);
+
+                arrowKeys.Where(k => k.Key == Key.Left)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Images.GoLeft);
+
+                arrowKeys.Subscribe(k => k.Handled = true);
+
+                arrowKeys.Where(k => k.Key == Key.Right)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Images.GoRight);
             });
         }
     }
