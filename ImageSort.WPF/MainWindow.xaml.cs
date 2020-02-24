@@ -160,7 +160,14 @@ namespace ImageSort.WPF
                   // bind 'p' and 'u' to pin and unpin
                   reservedKeysPressed.Where(k => k == Key.P)
                     .Select(_ => Unit.Default)
+                    .Where(_ => !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
                     .InvokeCommand(ViewModel.Folders.Pin)
+                    .DisposeWith(disposableRegistration);
+
+                  reservedKeysPressed.Where(k => k == Key.P)
+                    .Select(_ => Unit.Default)
+                    .Where(_ => Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                    .InvokeCommand(ViewModel.Folders.PinSelected)
                     .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k == Key.U)
