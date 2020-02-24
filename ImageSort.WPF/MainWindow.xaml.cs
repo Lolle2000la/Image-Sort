@@ -89,7 +89,7 @@ namespace ImageSort.WPF
                     Key.Left, Key.Right, Key.Up, Key.Down, // image traversal, moving and deletion
                     Key.W, Key.A, Key.S, Key.D, // tree traversal
                     Key.Q, Key.E, // undo and redo
-                    Key.R, Key.Enter // open a new folder (second one opens the selected one)
+                    Key.O, Key.Enter // open a new folder (second one opens the selected one)
                   };
 
                   var reservedKeysPressed = this.Events().PreviewKeyDown
@@ -146,7 +146,7 @@ namespace ImageSort.WPF
                       .DisposeWith(disposableRegistration);
 
                   // bind enter and 'r' to opening a new folder
-                  reservedKeysPressed.Where(k => k == Key.R)
+                  reservedKeysPressed.Where(k => k == Key.O)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.OpenFolder)
                     .DisposeWith(disposableRegistration);
