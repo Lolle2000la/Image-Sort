@@ -52,7 +52,7 @@
 
             <Button x:Name="GoLeft" Content="←" ToolTip="Move image selection left (left arrow key)"/>
 
-            <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1">
+            <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1" SelectionChanged="OnSelectedImageChanged">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
