@@ -54,9 +54,9 @@ namespace ImageSort.ViewModels
             images = new SourceList<string>();
 
             images.Connect()
-                .Sort(SortExpressionComparer<string>.Ascending(p => p))
                 .Filter(this.WhenAnyValue(x => x.SearchTerm)
                     .Select<string, Func<string, bool>>(t => p => t == null || p.Contains(t, StringComparison.OrdinalIgnoreCase)))
+                .Sort(SortExpressionComparer<string>.Ascending(p => p))
                 .Bind(out _images)
                 .Subscribe();
 
