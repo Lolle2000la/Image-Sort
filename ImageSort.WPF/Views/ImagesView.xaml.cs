@@ -48,5 +48,11 @@ namespace ImageSort.WPF.Views
 
             return bitmapImage;
         }
+
+        private void OnSelectedImageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count > 0)
+                Images.ScrollIntoView(e.AddedItems[0]);
+        }
     }
 }
