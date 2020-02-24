@@ -59,7 +59,8 @@ namespace ImageSort.WPF.Views
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)
                     .Select(_ => Unit.Default)
-                    .Subscribe(_ => SelectCurrentFolder());
+                    .Subscribe(_ => SelectCurrentFolder())
+                    .DisposeWith(disposableRegistration);
             });
         }
 

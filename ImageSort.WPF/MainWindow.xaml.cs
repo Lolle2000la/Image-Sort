@@ -81,7 +81,8 @@ namespace ImageSort.WPF
 
                       if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                           ic.SetOutput(folderBrowser.SelectedPath);
-                  });
+                  })
+                  .DisposeWith(disposableRegistration); ;
 
                   var reservedKeys = new[]
                   {
@@ -95,31 +96,38 @@ namespace ImageSort.WPF
                       .Where(_ => !(Keyboard.FocusedElement is TextBox))
                       .Where(k => reservedKeys.Contains(k.Key));
 
-                  reservedKeysPressed.Subscribe(k => k.Handled = true);
+                  reservedKeysPressed.Subscribe(k => k.Handled = true)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.Left)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Images.GoLeft);
+                      .InvokeCommand(ViewModel.Images.GoLeft)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.Right)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Images.GoRight);
+                      .InvokeCommand(ViewModel.Images.GoRight)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.Up)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.MoveImageToFolder);
+                      .InvokeCommand(ViewModel.MoveImageToFolder)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.Down)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.DeleteImage);
+                      .InvokeCommand(ViewModel.DeleteImage)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.Q)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Actions.Undo);
+                      .InvokeCommand(ViewModel.Actions.Undo)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed.Where(k => k.Key == Key.E)
                       .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Actions.Redo);
+                      .InvokeCommand(ViewModel.Actions.Redo)
+                      .DisposeWith(disposableRegistration);
 
                   reservedKeysPressed
                       .Select(k => k.Key)
@@ -132,7 +140,8 @@ namespace ImageSort.WPF
                           Key.D => Key.Right,
                           Key other => other
                       })
-                      .Subscribe(FireKeyEventOnFoldersTree);
+                      .Subscribe(FireKeyEventOnFoldersTree)
+                      .DisposeWith(disposableRegistration);
               });
         }
 
