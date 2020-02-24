@@ -1,6 +1,7 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -80,10 +81,15 @@ namespace ImageSort.WPF
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
+                var reservedKeys = new[]
+                {
+                    Key.Left, Key.Right, Key.Up, Key.Down,
+                    Key.Q, Key.E
+                };
+
                 var reservedKeysPressed = this.Events().PreviewKeyDown
                     .Where(_ => !(Keyboard.FocusedElement is TextBox))
-                    .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down
-                        || k.Key == Key.Q || k.Key == Key.E);
+                    .Where(k => reservedKeys.Contains(k.Key));
 
                 reservedKeysPressed.Subscribe(k => k.Handled = true);
 
