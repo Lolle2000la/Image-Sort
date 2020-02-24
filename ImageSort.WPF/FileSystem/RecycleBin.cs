@@ -43,7 +43,7 @@ namespace ImageSort.WPF.FileSystem
 
                 if (path == Path.Combine(filePath, fileName))
                 {
-                    DoVerb(item, "ESTORE");
+                    Restore(item);
                     return;
                 }
             }
@@ -51,7 +51,7 @@ namespace ImageSort.WPF.FileSystem
             throw new FileNotFoundException(null, path);
         }
 
-        private void DoVerb(FolderItem item, string verb)
+        private void Restore(FolderItem item)
         {
             var itemVerbs = item.Verbs();
 
