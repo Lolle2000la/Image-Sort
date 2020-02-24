@@ -84,11 +84,11 @@ namespace ImageSort.WPF
                     .Where(_ => !(Keyboard.FocusedElement is TextBox))
                     .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down);
 
+                arrowKeys.Subscribe(k => k.Handled = true);
+
                 arrowKeys.Where(k => k.Key == Key.Left)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoLeft);
-
-                arrowKeys.Subscribe(k => k.Handled = true);
 
                 arrowKeys.Where(k => k.Key == Key.Right)
                     .Select(_ => Unit.Default)
