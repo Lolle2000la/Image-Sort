@@ -88,7 +88,8 @@ namespace ImageSort.WPF
                   {
                     Key.Left, Key.Right, Key.Up, Key.Down,
                     Key.Q, Key.E,
-                    Key.W, Key.A, Key.S, Key.D
+                    Key.W, Key.A, Key.S, Key.D,
+                    Key.Enter
                   };
 
                   var reservedKeysPressed = this.Events().PreviewKeyDown
@@ -143,6 +144,12 @@ namespace ImageSort.WPF
                       })
                       .Subscribe(FireKeyEventOnFoldersTree)
                       .DisposeWith(disposableRegistration);
+
+                  // bind enter
+                  reservedKeysPressed.Where(k => k == Key.Enter)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.OpenCurrentlySelectedFolder)
+                    .DisposeWith(disposableRegistration);
               });
         }
 

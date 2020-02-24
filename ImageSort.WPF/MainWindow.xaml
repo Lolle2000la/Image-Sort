@@ -21,7 +21,7 @@
 
         <StackPanel Grid.Column="1" VerticalAlignment="Center">
             <Button Content="Open folder" x:Name="OpenFolder"/>
-            <Button Content="Open selected folder" x:Name="OpenSelectedFolder"/>
+            <Button Content="Open selected folder (Enter)" x:Name="OpenSelectedFolder"/>
             <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
         </StackPanel>
 
