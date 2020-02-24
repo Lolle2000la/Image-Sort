@@ -93,7 +93,8 @@ namespace ImageSort.WPF
                     Key.W, Key.A, Key.S, Key.D, // tree traversal
                     Key.Q, Key.E, // undo and redo
                     Key.O, Key.Enter, // open a new folder (second one opens the selected one)
-                    Key.P, Key.U // Pin and unpin folders
+                    Key.P, Key.U, // Pin and unpin folders
+                    Key.I // Focus images search box
                   };
 
                   var reservedKeysPressed = this.Events().PreviewKeyDown
@@ -176,6 +177,12 @@ namespace ImageSort.WPF
                   reservedKeysPressed.Where(k => k == Key.U)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Folders.UnpinSelected)
+                    .DisposeWith(disposableRegistration);
+
+                  // bind 'i' to focusing the images search box
+                  reservedKeysPressed.Where(k => k == Key.I)
+                    .Select(_ => Unit.Default)
+                    .Subscribe(_ => Images.SearchTerm.Focus())
                     .DisposeWith(disposableRegistration);
               });
         }

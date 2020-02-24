@@ -59,7 +59,7 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="Search images..."/>
+                <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="Search images... (Shortcut: I, Escape to leave)"/>
 
                 <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1" SelectionChanged="OnSelectedImageChanged">
                     <ListBox.ItemsPanel>
