@@ -79,13 +79,13 @@ namespace ImageSort.ViewModels
                     SelectedIndex = 0;
                 });
 
-            var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex)
+            var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
                 .Select(i => 0 < i);
 
             GoLeft = ReactiveCommand.Create(() => {
                 SelectedIndex--; }, canGoLeft);
 
-            var canGoRight = this.WhenAnyValue(x => x.SelectedIndex)
+            var canGoRight = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
                 .Select(i => i < Images.Count - 1);
 
             GoRight = ReactiveCommand.Create(() => { 
