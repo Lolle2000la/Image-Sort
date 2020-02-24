@@ -81,6 +81,7 @@ namespace ImageSort.WPF
                 });
 
                 var arrowKeys = this.Events().PreviewKeyDown
+                    .Where(_ => !(Keyboard.FocusedElement is TextBox))
                     .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down);
 
                 arrowKeys.Where(k => k.Key == Key.Left)
