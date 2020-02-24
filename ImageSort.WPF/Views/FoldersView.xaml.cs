@@ -1,6 +1,7 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
 using System.Reactive.Disposables;
+using System.Windows.Controls;
 using System.Windows.Forms;
 
 namespace ImageSort.WPF.Views
@@ -52,6 +53,17 @@ namespace ImageSort.WPF.Views
                     view => view.Unpin)
                     .DisposeWith(disposableRegistration);
             });
+        }
+
+        private void Folders_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+        {
+            if (Folders.Items.Count <= 0) return;
+
+            if (Folders.ItemContainerGenerator.ContainerFromItem(Folders.Items[0])
+                is TreeViewItem tvi)
+            {
+                tvi.IsSelected = true;
+            }
         }
     }
 }

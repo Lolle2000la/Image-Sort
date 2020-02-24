@@ -26,7 +26,7 @@
             <Button x:Name="Unpin" Content="Unpin"/>
         </WrapPanel>
 
-        <TreeView x:Name="Folders" Grid.Row="1">
+        <TreeView x:Name="Folders" Grid.Row="1" SizeChanged="Folders_SizeChanged">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}" ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Margin="3">
