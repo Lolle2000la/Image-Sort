@@ -1,4 +1,5 @@
-﻿using ImageSort.ViewModels;
+﻿using AdonisUI.Controls;
+using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace ImageSort.WPF
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : ReactiveWindow<MainViewModel>
+    public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
     {
         private bool interceptReservedKeys = true;
 
@@ -194,6 +195,21 @@ namespace ImageSort.WPF
             { RoutedEvent = routedEvent });
 
             interceptReservedKeys = true;
+        }
+
+        public static readonly DependencyProperty ViewModelProperty = DependencyProperty
+            .Register(nameof(ViewModel), typeof(MainViewModel), typeof(MainWindow), new PropertyMetadata(null));
+
+        public MainViewModel ViewModel
+        {
+            get => (MainViewModel)GetValue(ViewModelProperty);
+            set => SetValue(ViewModelProperty, value);
+        }
+
+        object IViewFor.ViewModel
+        {
+            get => ViewModel;
+            set => ViewModel = (MainViewModel)value;
         }
     }
 }
