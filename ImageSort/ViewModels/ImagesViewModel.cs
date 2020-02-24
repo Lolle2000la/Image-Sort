@@ -74,7 +74,7 @@ namespace ImageSort.ViewModels
                     // necessary to notice the update
                     if (SelectedIndex == 0) SelectedIndex = -1;
 
-                    SelectedIndex = 0;
+                    if (SelectedIndex < 0) SelectedIndex = 0;
                 });
 
             var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
