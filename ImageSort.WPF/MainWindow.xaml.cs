@@ -197,6 +197,7 @@ namespace ImageSort.WPF
             interceptReservedKeys = true;
         }
 
+        #region IViewFor implementation
         public static readonly DependencyProperty ViewModelProperty = DependencyProperty
             .Register(nameof(ViewModel), typeof(MainViewModel), typeof(MainWindow), new PropertyMetadata(null));
 
@@ -211,5 +212,6 @@ namespace ImageSort.WPF
             get => ViewModel;
             set => ViewModel = (MainViewModel)value;
         }
+        #endregion
     }
 }
