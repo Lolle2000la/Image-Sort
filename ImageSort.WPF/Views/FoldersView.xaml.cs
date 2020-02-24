@@ -1,6 +1,9 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
+using System;
+using System.Reactive;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Windows.Controls;
 using System.Windows.Forms;
 
@@ -52,10 +55,15 @@ namespace ImageSort.WPF.Views
                     vm => vm.UnpinSelected,
                     view => view.Unpin)
                     .DisposeWith(disposableRegistration);
+
+                ViewModel.WhenAnyValue(x => x.CurrentFolder)
+                    .Where(c => c != null)
+                    .Select(_ => Unit.Default)
+                    .Subscribe(_ => SelectCurrentFolder());
             });
         }
 
-        private void Folders_SizeChanged(object sender, System.Windows.SizeChangedEventArgs e)
+        private void SelectCurrentFolder()
         {
             if (Folders.Items.Count <= 0) return;
 
@@ -63,6 +71,7 @@ namespace ImageSort.WPF.Views
                 is TreeViewItem tvi)
             {
                 tvi.IsSelected = true;
+                tvi.Focus();
             }
         }
     }
