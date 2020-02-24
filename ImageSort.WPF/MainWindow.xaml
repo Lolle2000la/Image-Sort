@@ -23,6 +23,10 @@
             <Button Content="Open folder (O)" x:Name="OpenFolder"/>
             <Button Content="Open selected folder (Enter)" x:Name="OpenSelectedFolder"/>
             <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
+            
+            <Separator/>
+
+            <ToggleButton Content="Dark Mode" Click="OnToggleDarkMode"/>
         </StackPanel>
 
         <Grid Grid.Column="2">

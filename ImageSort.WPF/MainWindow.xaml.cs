@@ -1,4 +1,5 @@
-﻿using AdonisUI.Controls;
+﻿using AdonisUI;
+using AdonisUI.Controls;
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
@@ -7,7 +8,8 @@ using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
-using System.Windows.Forms;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 
 namespace ImageSort.WPF
@@ -75,7 +77,7 @@ namespace ImageSort.WPF
 
                   ViewModel.PickFolder.RegisterHandler(ic =>
                   {
-                      var folderBrowser = new FolderBrowserDialog()
+                      var folderBrowser = new System.Windows.Forms.FolderBrowserDialog()
                       {
                           ShowNewFolderButton = true
                       };
@@ -195,6 +197,11 @@ namespace ImageSort.WPF
             { RoutedEvent = routedEvent });
 
             interceptReservedKeys = true;
+        }
+
+        private void OnToggleDarkMode(object sender, RoutedEventArgs e)
+        {
+            ResourceLocator.SetColorScheme(Application.Current.Resources, (sender as ToggleButton)?.IsChecked == false ? ResourceLocator.LightColorScheme : ResourceLocator.DarkColorScheme);
         }
 
         #region IViewFor implementation
