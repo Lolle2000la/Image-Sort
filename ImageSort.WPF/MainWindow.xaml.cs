@@ -145,14 +145,12 @@ namespace ImageSort.WPF
 
             target.Focus();
 
-            target.RaiseEvent(
-              new System.Windows.Input.KeyEventArgs(
+            InputManager.Current.ProcessInput(new System.Windows.Input.KeyEventArgs(
                 Keyboard.PrimaryDevice,
                 PresentationSource.FromVisual(target),
                 0,
                 key)
-              { RoutedEvent = routedEvent }
-            );
+            { RoutedEvent = routedEvent });
 
             interceptReservedKeys = true;
         }
