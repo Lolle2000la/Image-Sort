@@ -1,4 +1,5 @@
 ﻿using DynamicData;
+using DynamicData.Binding;
 using ImageSort.FileSystem;
 using ImageSort.Helpers;
 using ReactiveUI;
@@ -46,7 +47,7 @@ namespace ImageSort.ViewModels
             images = new SourceList<string>();
 
             images.Connect()
-                .ObserveOn(RxApp.MainThreadScheduler)
+                .Sort(SortExpressionComparer<string>.Ascending(p => p))
                 .Bind(out _images)
                 .Subscribe();
 
@@ -65,7 +66,7 @@ namespace ImageSort.ViewModels
 
             
             _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
-                .Select(i => images.Items.ElementAtOrDefault(i))
+                .Select(i => Images.ElementAtOrDefault(i))
                 .ToProperty(this, x => x.SelectedImage);
 
             images.Connect()
