@@ -36,6 +36,11 @@ namespace ImageSort.WPF.Views
                     view => view.Images.SelectedIndex)
                     .DisposeWith(disposableRegistration);
 
+                this.Bind(ViewModel,
+                    vm => vm.SearchTerm,
+                    view => view.SearchTerm.Text)
+                    .DisposeWith(disposableRegistration);
+
                 this.BindCommand(ViewModel,
                     vm => vm.GoLeft,
                     view => view.GoLeft)

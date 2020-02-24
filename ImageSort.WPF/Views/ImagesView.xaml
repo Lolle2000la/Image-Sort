@@ -10,6 +10,7 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
+                                xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -52,14 +53,23 @@
 
             <Button x:Name="GoLeft" Content="←" ToolTip="Move image selection left (left arrow key)"/>
 
-            <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1" SelectionChanged="OnSelectedImageChanged">
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-            </ListBox>
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
+                <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="Search images..."/>
+
+                <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1" SelectionChanged="OnSelectedImageChanged">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                </ListBox>
+            </Grid>
+            
             <Button x:Name="GoRight" Content="→" ToolTip="Move image selection right (right arrow key)" Grid.Column="2"/>
         </Grid>
     </Grid>
