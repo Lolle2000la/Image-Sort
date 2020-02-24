@@ -62,10 +62,6 @@ namespace ImageSort.ViewModels
                 .Select(folders => new[] { folders.c }.Concat(folders.Items))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
 
-            // make the above query work
-            pinnedFolders.Add(null);
-            pinnedFolders.RemoveAt(0);
-
             Pin = ReactiveCommand.CreateFromTask(async () => 
             {
                 try
@@ -83,23 +79,25 @@ namespace ImageSort.ViewModels
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
 
-            var canPinSelectedExecute = this
-                .WhenAnyValue(vm => vm.Selected)
-                .Select(s => s != null && !AllFoldersTracked.Contains(s));
+            var canPinSelectedExecute = this.WhenAnyValue(x => x.Selected, x => x.PinnedFolders.Count, (s, _) => s)
+                .Select(s => s != null && !PinnedFolders.Contains(s));
 
             PinSelected = ReactiveCommand.Create(() =>
             {
                 pinnedFolders.Add(Selected);
             }, canPinSelectedExecute);
 
-            var canUnpinSelectedExecute = this
-                .WhenAnyValue(vm => vm.Selected)
-                .Select(s => s != null && s != CurrentFolder && AllFoldersTracked.Contains(s));
+            var canUnpinSelectedExecute = this.WhenAnyValue(vm => vm.Selected, x => x.PinnedFolders.Count, (s, _) => s)
+                .Select(s => s != null && PinnedFolders.Contains(s));
 
             UnpinSelected = ReactiveCommand.Create(() =>
             {
                 pinnedFolders.Remove(Selected);
             }, canUnpinSelectedExecute);
+
+            // make many above queries work
+            pinnedFolders.Add(null);
+            pinnedFolders.RemoveAt(0);
         }
 
         ~FoldersViewModel()
