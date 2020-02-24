@@ -91,5 +91,29 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(allFiles, imagesVM.Images);
         }
+
+        [Fact(DisplayName = "Search filter works")]
+        public void SearchFilterWorks()
+        {
+            const string basePath = @"C:\";
+            var allFiles = new[] { "image.png", "some.gif" }
+                .Select(f => basePath + f);
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetFiles(basePath))
+                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+
+            var imagesVM = new ImagesViewModel(fsMock.Object)
+            {
+                CurrentFolder = basePath
+            };
+
+            imagesVM.SearchTerm = "image";
+
+            Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
+
+            Assert.Contains(allFiles.First(), imagesVM.Images);
+        }
     }
 }
