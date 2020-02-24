@@ -93,6 +93,14 @@ namespace ImageSort.WPF
                 arrowKeys.Where(k => k.Key == Key.Right)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoRight);
+
+                arrowKeys.Where(k => k.Key == Key.Up)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.MoveImageToFolder);
+
+                arrowKeys.Where(k => k.Key == Key.Down)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.DeleteImage);
             });
         }
     }
