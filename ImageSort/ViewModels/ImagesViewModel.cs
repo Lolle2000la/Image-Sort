@@ -37,6 +37,13 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> _selectedImage;
         public string SelectedImage => _selectedImage.Value;
 
+        private string _searchTerm;
+        public string SearchTerm
+        {
+            get => _searchTerm;
+            set => this.RaiseAndSetIfChanged(ref _searchTerm, value);
+        }
+
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
 
@@ -48,6 +55,8 @@ namespace ImageSort.ViewModels
 
             images.Connect()
                 .Sort(SortExpressionComparer<string>.Ascending(p => p))
+                .Filter(this.WhenAnyValue(x => x.SearchTerm)
+                    .Select<string, Func<string, bool>>(t => p => t == null || p.Contains(t, StringComparison.OrdinalIgnoreCase)))
                 .Bind(out _images)
                 .Subscribe();
 
