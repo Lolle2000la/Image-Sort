@@ -10,7 +10,7 @@
                                 mc:Ignorable="d" 
                                 d:DesignWidth="800">
     <StackPanel Orientation="Horizontal">
-        <Button x:Name="Undo" Content="Undo" Padding="5"/>
-        <Button x:Name="Redo" Content="Redo" Padding="5"/>
+        <Button x:Name="Undo" Content="Undo (Q)" Padding="5"/>
+        <Button x:Name="Redo" Content="Redo (E)" Padding="5"/>
     </StackPanel>
 </reactiveui:ReactiveUserControl>
