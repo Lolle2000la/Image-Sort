@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
 
 namespace ImageSort.ViewModels
@@ -34,6 +35,9 @@ namespace ImageSort.ViewModels
 
         private readonly ObservableAsPropertyHelper<string> _selectedImage;
         public string SelectedImage => _selectedImage.Value;
+
+        public ReactiveCommand<Unit, Unit> GoLeft { get; }
+        public ReactiveCommand<Unit, Unit> GoRight { get; }
 
         public ImagesViewModel(IFileSystem fileSystem = null)
         {
@@ -74,6 +78,18 @@ namespace ImageSort.ViewModels
 
                     SelectedIndex = 0;
                 });
+
+            var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex)
+                .Select(i => 0 < i);
+
+            GoLeft = ReactiveCommand.Create(() => {
+                SelectedIndex--; }, canGoLeft);
+
+            var canGoRight = this.WhenAnyValue(x => x.SelectedIndex)
+                .Select(i => i < Images.Count - 1);
+
+            GoRight = ReactiveCommand.Create(() => { 
+                SelectedIndex++; }, canGoRight);
         }
 
         public void RemoveImage(string image)
