@@ -80,27 +80,36 @@ namespace ImageSort.WPF
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
-                var arrowKeys = this.Events().PreviewKeyDown
+                var reservedKeysPressed = this.Events().PreviewKeyDown
                     .Where(_ => !(Keyboard.FocusedElement is TextBox))
-                    .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down);
+                    .Where(k => k.Key == Key.Left || k.Key == Key.Right || k.Key == Key.Up || k.Key == Key.Down
+                        || k.Key == Key.Q || k.Key == Key.E);
 
-                arrowKeys.Subscribe(k => k.Handled = true);
+                reservedKeysPressed.Subscribe(k => k.Handled = true);
 
-                arrowKeys.Where(k => k.Key == Key.Left)
+                reservedKeysPressed.Where(k => k.Key == Key.Left)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoLeft);
 
-                arrowKeys.Where(k => k.Key == Key.Right)
+                reservedKeysPressed.Where(k => k.Key == Key.Right)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoRight);
 
-                arrowKeys.Where(k => k.Key == Key.Up)
+                reservedKeysPressed.Where(k => k.Key == Key.Up)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.MoveImageToFolder);
 
-                arrowKeys.Where(k => k.Key == Key.Down)
+                reservedKeysPressed.Where(k => k.Key == Key.Down)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.DeleteImage);
+
+                reservedKeysPressed.Where(k => k.Key == Key.Q)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Actions.Undo);
+
+                reservedKeysPressed.Where(k => k.Key == Key.E)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Actions.Redo);
             });
         }
     }
