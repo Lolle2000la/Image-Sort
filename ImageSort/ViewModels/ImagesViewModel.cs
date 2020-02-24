@@ -65,9 +65,7 @@ namespace ImageSort.ViewModels
 
             
             _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
-                .Where(i => images.Items.Any())
-                .Where(i => i >= 0)
-                .Select(i => images.Items.ElementAt(i))
+                .Select(i => images.Items.ElementAtOrDefault(i))
                 .ToProperty(this, x => x.SelectedImage);
 
             images.Connect()
