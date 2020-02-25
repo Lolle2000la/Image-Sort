@@ -24,16 +24,6 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _children;
         public IEnumerable<FolderTreeItemViewModel> Children => _children.Value;
 
-        private string _searchTerm;
-        public string SearchTerm
-        {
-            get => _searchTerm;
-            set => this.RaiseAndSetIfChanged(ref _searchTerm, value);
-        }
-
-        private readonly ObservableAsPropertyHelper<bool> _isVisible;
-        public bool IsVisible => _isVisible.Value;
-
         public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
             fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
@@ -77,10 +67,6 @@ namespace ImageSort.ViewModels
                                 catch (UnauthorizedAccessException) { return null; }
                             })
                             .ToProperty(this, x => x.Children);
-
-            _isVisible = this.WhenAnyValue(x => x.SearchTerm)
-                .Select(s => string.IsNullOrEmpty(s) || FolderName.Contains(s, StringComparison.OrdinalIgnoreCase))
-                .ToProperty(this, x => x.IsVisible);
         }
     }
 }
