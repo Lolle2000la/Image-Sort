@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-	<Product Id="*" Name="Image Sort" Language="1033" Version="1.0.0.0" Manufacturer="Lolle2000la" UpgradeCode="89fb2dc9-f60b-4a6a-93fb-3aba2eee9d82">
+  <?ifdef env.APPVEYOR ?>
+    <?include GitVersion_WixVersion.wxi ?>
+  <?else ?>
+    <?define AssemblySemFileVer="1.28.0.0" ?>
+  <?endif ?>
+
+  <Product Id="*" Name="Image Sort" Language="1033" Version="$(var.AssemblySemFileVer)" Manufacturer="Lolle2000la" UpgradeCode="89fb2dc9-f60b-4a6a-93fb-3aba2eee9d82">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Description="Image Sort installer"
              Manufacturer="Lolle2000la"/>
 
