@@ -31,5 +31,9 @@
       <HintPath>Interop.Shell32.dll</HintPath>
     </Reference>
   </ItemGroup>
+   
+   <PropertyGroup>
+     <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
+   </PropertyGroup>
 
 </Project>

@@ -1,0 +1,15 @@
+image: Visual Studio 2019
+configuration: Release
+platform: Any CPU
+
+install:
+  - choco install gitversion.portable -pre -y
+
+before_build:
+  - nuget restore
+  - ps: gitversion /l console /output buildserver /updateAssemblyInfo
+
+build:
+  project: Image-Sort.sln
+  parallel: true
+  verbosity: minimal
