@@ -36,6 +36,13 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selected, value);
         }
 
+        private string _seachTerm;
+        public string SearchTerm
+        {
+            get => _seachTerm;
+            set => this.RaiseAndSetIfChanged(ref _seachTerm, value);
+        }
+
         /// <summary>
         /// Should prompt the user to select a folder.
         /// </summary>
@@ -61,6 +68,18 @@ namespace ImageSort.ViewModels
                 .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
                 .Select(folders => new[] { folders.c }.Concat(folders.Items))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
+
+            this.WhenAnyValue(x => x.SearchTerm, x => x.AllFoldersTracked, (s, a) => (s, a))
+                .Where(si => si.a != null)
+                .Select(si => si.s)
+                .Subscribe(s =>
+                {
+                    foreach (var folder in AllFoldersTracked)
+                    {
+                        if (folder != null)
+                            AddSearchTermToFolders(s, folder);
+                    }
+                });
 
             Pin = ReactiveCommand.CreateFromTask(async () => 
             {
@@ -98,6 +117,20 @@ namespace ImageSort.ViewModels
             // make many above queries work
             pinnedFolders.Add(null);
             pinnedFolders.RemoveAt(0);
+        }
+
+        private void AddSearchTermToFolders(string searchTerm, FolderTreeItemViewModel item)
+        {
+            item.SearchTerm = searchTerm;
+
+            if (item.Children != null)
+            {
+                foreach (var child in item.Children)
+                {
+                    if (child != null)
+                        AddSearchTermToFolders(searchTerm, child);
+                }
+            }
         }
 
         ~FoldersViewModel()
