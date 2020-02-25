@@ -9,8 +9,13 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignWidth="800">
-    <StackPanel Orientation="Horizontal">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
         <Button x:Name="Undo" Content="Undo (Q)" Padding="5"/>
-        <Button x:Name="Redo" Content="Redo (E)" Padding="5"/>
-    </StackPanel>
+        <Button x:Name="Redo" Content="Redo (E)" Padding="5" Grid.Column="1"/>
+    </Grid>
 </reactiveui:ReactiveUserControl>
