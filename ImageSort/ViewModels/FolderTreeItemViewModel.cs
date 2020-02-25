@@ -26,8 +26,8 @@ namespace ImageSort.ViewModels
 
         public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
-            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
-            backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
+            fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
             _folderName = this.WhenAnyValue(x => x.Path)
                 .Select(p => 

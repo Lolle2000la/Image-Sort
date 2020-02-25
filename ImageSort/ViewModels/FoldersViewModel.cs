@@ -48,8 +48,8 @@ namespace ImageSort.ViewModels
 
         public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
-            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
-            backgroundScheduler = backgroundScheduler ?? RxApp.TaskpoolScheduler;
+            fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
             pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()

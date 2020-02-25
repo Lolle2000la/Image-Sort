@@ -49,7 +49,7 @@ namespace ImageSort.ViewModels
 
         public ImagesViewModel(IFileSystem fileSystem = null)
         {
-            fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
+            fileSystem ??= Locator.Current.GetService<IFileSystem>();
 
             images = new SourceList<string>();
 
