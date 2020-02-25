@@ -15,7 +15,7 @@
 	<Fragment>
 		<Directory Id="TARGETDIR" Name="SourceDir">
 			<Directory Id="ProgramFilesFolder">
-				<Directory Id="INSTALLFOLDER" Name="ImageSort.WindowsSetup" />
+				<Directory Id="INSTALLFOLDER" Name="Image Sort" />
 			</Directory>
 		</Directory>
 	</Fragment>
