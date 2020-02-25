@@ -55,5 +55,34 @@ namespace ImageSort.UnitTests.ViewModels
                 Path = pathToUnauthorisedFolder
             };
         }
+
+        [Fact(DisplayName = "Correctly changes visibility when a search term is input")]
+        public void CorrectlyChangesVisibilityForSearchTerm()
+        {
+            const string folder = @"C:\folder";
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(folder)).Returns(Array.Empty<string>());
+
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+            {
+                Path = folder
+            };
+
+            Assert.True(folderTreeItem.IsVisible);
+
+            folderTreeItem.SearchTerm = "no";
+
+            Assert.False(folderTreeItem.IsVisible);
+
+            folderTreeItem.SearchTerm = "fol";
+
+            Assert.True(folderTreeItem.IsVisible);
+
+            folderTreeItem.SearchTerm = null;
+
+            Assert.True(folderTreeItem.IsVisible);
+        }
     }
 }
