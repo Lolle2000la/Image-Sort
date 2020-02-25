@@ -34,7 +34,7 @@ namespace ImageSort.ViewModels
                 {
                     var path = System.IO.Path.GetFileName(p);
 
-                    return path == "" ? p : path; // on a disk path (e.g. C:\, Path.GetFileName() returns an empty string
+                    return string.IsNullOrEmpty(path) ? p : path; // on a disk path (e.g. C:\, Path.GetFileName() returns an empty string
                 })
                 .ToProperty(this, x => x.FolderName);
 

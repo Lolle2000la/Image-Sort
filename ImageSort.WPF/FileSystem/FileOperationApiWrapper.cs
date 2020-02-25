@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace ImageSort.WPF.FileSystem
 {
-    public class FileOperationApiWrapper
+    public static class FileOperationApiWrapper
     {
         /// <summary>
         /// Possible flags for the SHFileOperation method.
