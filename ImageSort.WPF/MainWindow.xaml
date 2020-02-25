@@ -15,12 +15,15 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="auto"/>
+            <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
         <views:FoldersView x:Name="Folders"/>
 
-        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="{adonisUi:Space 1}">
+        <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}"/>
+
+        <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="{adonisUi:Space 0, 1, 1, 1}">
             <Button Content="Open folder (O)" x:Name="OpenFolder"/>
             <Button Content="Open selected folder (Enter)" x:Name="OpenSelectedFolder"/>
 
@@ -33,7 +36,7 @@
             <ToggleButton Content="Dark Mode" Click="OnToggleDarkMode"/>
         </StackPanel>
 
-        <Grid Grid.Column="2">
+        <Grid Grid.Column="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="*"/>
