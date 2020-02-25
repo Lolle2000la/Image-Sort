@@ -3,10 +3,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <Platform Condition=" '$(Platform)' == 'Any CPU' ">x86</Platform>
     <ProductVersion>3.10</ProductVersion>
     <ProjectGuid>e23b5421-90af-437c-a2b1-73efd57283ea</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
-    <OutputName>ImageSort.WindowsSetup</OutputName>
+    <OutputName>ImageSort.$(Platform)</OutputName>
     <OutputType>Package</OutputType>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -15,6 +16,15 @@
     <DefineConstants>Debug</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
+    <DefineConstants>Debug</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
@@ -40,7 +50,7 @@
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
       <IsDotnetSDKProject>True</IsDotnetSDKProject>
       <TargetFrameworkIdentifier>netcoreapp3.1</TargetFrameworkIdentifier>
-      <Runtime>win-x64</Runtime>
+      <Runtime>win-$(Platform)</Runtime>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(WixTargetsPath)" Condition=" '$(WixTargetsPath)' != '' " />
@@ -63,17 +73,17 @@
       <LinkerBindInputPaths Include="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" />
     </ItemGroup>
     <HeatDirectory
-    DirectoryRefId="INSTALLFOLDER"
-    OutputFile="obj\$(Configuration)\%(ProjectReference.Name).wxs"
-    Directory="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish"
-    ComponentGroupName="SourceComponentGroup"
-    ToolPath="$(WixToolPath)"
-    AutogenerateGuids="true"
-    SuppressCom="True"
-    SuppressRegistry="True"
+      DirectoryRefId="INSTALLFOLDER"
+      OutputFile="obj\$(Configuration)\%(ProjectReference.Name).wxs"
+      Directory="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish"
+      ComponentGroupName="SourceComponentGroup"
+      ToolPath="$(WixToolPath)"
+      AutogenerateGuids="true"
+      SuppressCom="True"
+      SuppressRegistry="True"
       SuppressFragments="true"
       SuppressRootDirectory="true"
-    Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'"/>
+      Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'"/>
     <ItemGroup>
       <Compile Include="obj\$(Configuration)\%(ProjectReference.Name).wxs" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
     </ItemGroup>
