@@ -39,6 +39,7 @@
       <Component Id="LicenseComponent" Guid="9B1F604F-1FA3-43BF-9EB0-E71565ADE974">
         <File Id="LicenseRtf" Name="License.rtf" Source="License.rtf" KeyPath="yes"/>
       </Component>
+      <ComponentGroupRef Id="SourceComponentGroup" />
     </ComponentGroup>
   </Fragment>
 </Wix>
