@@ -15,5 +15,9 @@
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+   
+   <PropertyGroup>
+     <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
+   </PropertyGroup>
 
 </Project>
