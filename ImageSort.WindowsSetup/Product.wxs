@@ -73,7 +73,7 @@
           <RegistryValue Type="expandable" Value="Open with Image Sort" KeyPath="yes"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
           <RegistryKey Key="command">
-            <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe] "%L""'/>
           </RegistryKey>
         </RegistryKey>
         <RegistryKey Root="HKCU"
@@ -81,7 +81,7 @@
           <RegistryValue Type="expandable" Value="Open with Image Sort"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
           <RegistryKey Key="command">
-            <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe] "%L""'/>
           </RegistryKey>
         </RegistryKey>
         <RegistryKey Root="HKCU"
@@ -89,7 +89,7 @@
           <RegistryValue Type="expandable" Value="Open with Image Sort"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
           <RegistryKey Key="command">
-            <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe]" "%L"'/>
           </RegistryKey>
         </RegistryKey>
       </Component>
