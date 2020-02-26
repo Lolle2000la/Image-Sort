@@ -10,7 +10,7 @@
     <?define win64Flag = "yes" ?>
     <?define ProgramFilesFolder="ProgramFiles64Folder"?>
     <?ifdef env.APPVEYOR ?>
-      <?define PlatformSpecialFolder="x64\?>
+      <?define PlatformSpecialFolder="x64\"?>
     <?else ?>
       <?define PlatformSpecialFolder=""?>
     <?endif ?>
@@ -18,7 +18,7 @@
     <?define win64Flag = "no" ?>
     <?define ProgramFilesFolder="ProgramFilesFolder"?>
     <?ifdef env.APPVEYOR ?>
-      <?define PlatformSpecialFolder="x86\?>
+      <?define PlatformSpecialFolder="x86\"?>
     <?else ?>
       <?define PlatformSpecialFolder=""?>
     <?endif ?>
