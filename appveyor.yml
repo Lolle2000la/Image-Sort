@@ -10,6 +10,9 @@ before_build:
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
 
 build:
-  project: Image-Sort.sln
-  parallel: true
-  verbosity: minimal
+  - project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
+    parallel: true
+    verbosity: minimal
+  - project: ImageSort.WPF\ImageSort.WPF.csproj
+    parallel: true
+    verbosity: minimal
