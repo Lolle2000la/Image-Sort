@@ -1,10 +1,6 @@
 image: Visual Studio 2019
 configuration: Release
 
-platform:
-- x86
-- x64
-
 install:
   - choco install gitversion.portable -pre -y
 
