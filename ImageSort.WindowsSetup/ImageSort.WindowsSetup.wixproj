@@ -73,6 +73,7 @@
   </PropertyGroup>
   <Target Name="BeforeBuild">
     <Exec WorkingDirectory="%(ProjectReference.RootDir)%(ProjectReference.Directory)" Command="dotnet publish -c $(Configuration) -f %(ProjectReference.TargetFrameworkIdentifier) -r %(ProjectReference.Runtime)" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
+    <Exec WorkingDirectory="$(ProjectDir)" Command="uuidgen"/>
     <ItemGroup>
       <LinkerBindInputPaths Include="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(SpecialFolderPath)$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" />
     </ItemGroup>
