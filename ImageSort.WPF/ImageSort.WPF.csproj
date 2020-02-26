@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <PublishTrimmed>true</PublishTrimmed>
+    <AssemblyName>Image Sort</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
