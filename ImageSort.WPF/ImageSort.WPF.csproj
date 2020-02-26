@@ -35,6 +35,7 @@
    
    <PropertyGroup>
      <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
+     <ApplicationIcon>Icons\Image Sort.ico</ApplicationIcon>
    </PropertyGroup>
 
 </Project>
