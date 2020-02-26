@@ -1,9 +1,7 @@
 image: Visual Studio 2019
 configuration: Release
 
-platform:
-- x86
-- x64
+platform: Any CPU
 
 install:
   - choco install gitversion.portable -pre -y
@@ -20,3 +18,9 @@ before_build:
 build:
   project: Image-Sort.sln
   parallel: true
+
+after_build
+  - ps: >-
+      cd .\ImageSort.WindowsSetup\;
+      MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
+      cd ..;
