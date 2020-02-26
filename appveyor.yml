@@ -11,15 +11,12 @@ install:
 before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
-      
-
-build:
-  project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
-  parallel: true
-
-after_build:
   - ps: >-
       cd .\ImageSort.WindowsSetup\;
       gitversion /updatewixversionfile;
-      msbuild /p:Configuration=Release /p:Platform=$env:PLATFORM /p:OutputPath=..\artifacts\$env:PLATFORM /p:BuildProjectReferences=false;
       cd ..;
+      
+
+build:
+  project: Image-Sort.sln
+  parallel: true
