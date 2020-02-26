@@ -34,6 +34,9 @@
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
 
     <Icon Id="ImageSort.exe" SourceFile="Image Sort.exe"/>
+
+    <Icon Id="icon.ico" SourceFile="Image Sort.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
   </Product>
 
   <Fragment>
