@@ -8,6 +8,9 @@ install:
 before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
+  - ps: >-
+      cd ImageSort.WindowsInstaller
+      gitversion /updatewixversionfile
 
 build:
   project: Image-Sort.sln
