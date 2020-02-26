@@ -9,7 +9,7 @@ before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
   - ps: >-
-      cd ImageSort.WindowsInstaller;
+      cd .\ImageSort.WindowsSetup\;
       gitversion /updatewixversionfile;
 
 build:
