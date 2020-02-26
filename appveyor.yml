@@ -18,4 +18,3 @@ before_build:
 build:
   project: Image-Sort.sln
   parallel: true
-  verbosity: minimal
