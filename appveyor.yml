@@ -16,5 +16,11 @@ before_build:
       gitversion /updatewixversionfile;
 
 build:
-  project: Image-Sort.sln
+  project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
   parallel: true
+
+after_build:
+  - ps: >-
+      cd .\ImageSort.WindowsSetup\;
+      msbuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false;
+      msbuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
