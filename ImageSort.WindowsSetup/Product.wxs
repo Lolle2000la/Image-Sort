@@ -60,7 +60,8 @@
         <File Id="LicenseRtf" Name="License.rtf" Source="License.rtf" KeyPath="yes"/>
       </Component>
       <Component Id="ImageSortExeComponent" Guid="036C3C1A-FA77-46CD-97F9-26653E110D8F">
-        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.PlatformSpecialFolder)$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe">
+        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.PlatformSpecialFolder)$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe"
+              KeyPath="yes">
           <Shortcut Id="StartMenuShortcut" Directory="StartMenuFolder" Name="Image Sort"
                     WorkingDirectory="INSTALLFOLDER" Advertise="yes"/>
           <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="Image Sort"
