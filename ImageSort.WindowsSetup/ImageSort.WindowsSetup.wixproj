@@ -4,7 +4,7 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
     <Platform Condition=" '$(Platform)' == 'Any CPU' ">x86</Platform>
-    <ProductVersion>3.10</ProductVersion>
+    <ProductVersion>3.11</ProductVersion>
     <ProjectGuid>e23b5421-90af-437c-a2b1-73efd57283ea</ProjectGuid>
     <SchemaVersion>2.0</SchemaVersion>
     <OutputName>ImageSort.$(Platform)</OutputName>
