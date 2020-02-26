@@ -69,32 +69,26 @@
       <!--Add "Open with Image Sort" to explorer-->
       <Component Id="OpenWithImageSortComponent" Guid="A54BFEA9-DA6F-4AF8-AA0C-045E0E0142EC">
         <RegistryKey Root="HKCU"
-                     Key="Software\Classes\Directory\shell\ImageSort"
-                     Action="createAndRemoveOnUninstall">
+                     Key="Software\Classes\Directory\shell\ImageSort">
           <RegistryValue Type="expandable" Value="Open with Image Sort" KeyPath="yes"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
-          <RegistryKey Key="command"
-                       Action="createAndRemoveOnUninstall">
+          <RegistryKey Key="command">
             <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
           </RegistryKey>
         </RegistryKey>
         <RegistryKey Root="HKCU"
-                     Key="Software\Classes\Drive\shell\ImageSort"
-                     Action="createAndRemoveOnUninstall">
+                     Key="Software\Classes\Drive\shell\ImageSort">
           <RegistryValue Type="expandable" Value="Open with Image Sort"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
-          <RegistryKey Key="command"
-                       Action="createAndRemoveOnUninstall">
+          <RegistryKey Key="command">
             <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
           </RegistryKey>
         </RegistryKey>
         <RegistryKey Root="HKCU"
-                     Key="Software\Classes\Folder\shell\ImageSort"
-                     Action="createAndRemoveOnUninstall">
+                     Key="Software\Classes\Folder\shell\ImageSort">
           <RegistryValue Type="expandable" Value="Open with Image Sort"/>
           <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
-          <RegistryKey Key="command"
-                       Action="createAndRemoveOnUninstall">
+          <RegistryKey Key="command">
             <RegistryValue Type="expandable" Value='"[#ImageSortExe]"'/>
           </RegistryKey>
         </RegistryKey>
