@@ -37,6 +37,7 @@
       <Directory Id="$(var.ProgramFilesFolder)">
         <Directory Id="INSTALLFOLDER" Name="Image Sort" />
       </Directory>
+      <Directory Id="StartMenuFolder" Name="StartMenu"/>
     </Directory>
   </Fragment>
 
@@ -46,6 +47,12 @@
        </Component>-->
       <Component Id="LicenseComponent" Guid="9B1F604F-1FA3-43BF-9EB0-E71565ADE974">
         <File Id="LicenseRtf" Name="License.rtf" Source="License.rtf" KeyPath="yes"/>
+      </Component>
+      <Component Id="ImageSortExeComponent" Guid="036C3C1A-FA77-46CD-97F9-26653E110D8F">
+        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe">
+          <Shortcut Id="StartMenuShortcut" Directory="StartMenuFolder" Name="Image Sort"
+                    WorkingDirectory="INSTALLFOLDER" Advertise="yes"/>
+        </File>
       </Component>
       <ComponentGroupRef Id="SourceComponentGroup" />
     </ComponentGroup>
