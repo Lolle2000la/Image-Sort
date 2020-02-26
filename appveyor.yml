@@ -11,9 +11,7 @@ install:
 before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
-  - ps: >-
-      cd .\ImageSort.WindowsSetup\;
-      gitversion /updatewixversionfile;
+      
 
 build:
   project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
@@ -22,5 +20,6 @@ build:
 after_build:
   - ps: >-
       cd .\ImageSort.WindowsSetup\;
+      gitversion /updatewixversionfile;
       msbuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false;
       msbuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
