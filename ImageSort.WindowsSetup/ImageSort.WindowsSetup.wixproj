@@ -29,9 +29,6 @@
     <OutputPath>..\artifacts\$(Platform)</OutputPath>
     <IntermediateOutputPath>obj\$(Configuration)\</IntermediateOutputPath>
   </PropertyGroup>
-  <PropertyGroup>
-    <SpecialFolderPath Condition=" '$(APPVEYOR)' == 'True' ">$(Platform)\</SpecialFolderPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Product.wxs" />
   </ItemGroup>
@@ -74,9 +71,9 @@
   <Target Name="BeforeBuild">
     <Exec WorkingDirectory="%(ProjectReference.RootDir)%(ProjectReference.Directory)" Command="dotnet publish -c $(Configuration) -p:Platform=$(Platform) -f %(ProjectReference.TargetFrameworkIdentifier) -r %(ProjectReference.Runtime)" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
     <ItemGroup>
-      <LinkerBindInputPaths Include="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(SpecialFolderPath)$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" />
+      <LinkerBindInputPaths Include="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(Platform)\$(SpecialFolderPath)$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" />
     </ItemGroup>
-    <HeatDirectory DirectoryRefId="INSTALLFOLDER" OutputFile="obj\$(Configuration)\%(ProjectReference.Name).wxs" Directory="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(SpecialFolderPath)$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" ComponentGroupName="SourceComponentGroup" ToolPath="$(WixToolPath)" Transforms="exclude-imagesort.exe.xslt" AutogenerateGuids="true" SuppressCom="True" SuppressRegistry="True" SuppressFragments="true" SuppressRootDirectory="true" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
+    <HeatDirectory DirectoryRefId="INSTALLFOLDER" OutputFile="obj\$(Configuration)\%(ProjectReference.Name).wxs" Directory="%(ProjectReference.RootDir)%(ProjectReference.Directory)bin\$(Platform)\$(SpecialFolderPath)$(Configuration)\%(ProjectReference.TargetFrameworkIdentifier)\%(ProjectReference.Runtime)\publish" ComponentGroupName="SourceComponentGroup" ToolPath="$(WixToolPath)" Transforms="exclude-imagesort.exe.xslt" AutogenerateGuids="true" SuppressCom="True" SuppressRegistry="True" SuppressFragments="true" SuppressRootDirectory="true" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
     <ItemGroup>
       <Compile Include="obj\$(Configuration)\%(ProjectReference.Name).wxs" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
     </ItemGroup>
