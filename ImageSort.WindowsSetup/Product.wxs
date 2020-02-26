@@ -9,9 +9,19 @@
   <?if $(var.Platform)=x64 ?>
     <?define win64Flag = "yes" ?>
     <?define ProgramFilesFolder="ProgramFiles64Folder"?>
+    <?ifdef env.APPVEYOR ?>
+      <?define PlatformSpecialFolder="x64\?>
+    <?else ?>
+      <?define PlatformSpecialFolder=""?>
+    <?endif ?>
   <?else ?>
     <?define win64Flag = "no" ?>
     <?define ProgramFilesFolder="ProgramFilesFolder"?>
+    <?ifdef env.APPVEYOR ?>
+      <?define PlatformSpecialFolder="x86\?>
+    <?else ?>
+      <?define PlatformSpecialFolder=""?>
+    <?endif ?>
   <?endif ?>
 
   <Product Id="*" Name="Image Sort" Language="1033" Version="$(var.AssemblySemFileVer)" Manufacturer="Lolle2000la" UpgradeCode="89fb2dc9-f60b-4a6a-93fb-3aba2eee9d82">
@@ -50,7 +60,7 @@
         <File Id="LicenseRtf" Name="License.rtf" Source="License.rtf" KeyPath="yes"/>
       </Component>
       <Component Id="ImageSortExeComponent" Guid="036C3C1A-FA77-46CD-97F9-26653E110D8F">
-        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe">
+        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.PlatformSpecialFolder)$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe">
           <Shortcut Id="StartMenuShortcut" Directory="StartMenuFolder" Name="Image Sort"
                     WorkingDirectory="INSTALLFOLDER" Advertise="yes"/>
           <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="Image Sort"
