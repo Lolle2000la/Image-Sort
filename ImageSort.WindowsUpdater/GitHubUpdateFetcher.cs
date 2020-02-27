@@ -17,7 +17,7 @@ namespace ImageSort.WindowsUpdater
             this.client = client;
         }
 
-        public bool TryGetLatestRelease(bool prerelease, out Release release)
+        public bool TryGetLatestRelease(out Release release, bool prerelease=false)
         {
             throw new NotImplementedException();
         }
