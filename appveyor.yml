@@ -9,11 +9,6 @@ install:
 before_build:
   - nuget restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
-#  - ps: >-
-#      cd .\ImageSort.WindowsSetup\;
-#      gitversion /updatewixversionfile;
-#      cd ..;
-      
 
 build:
   project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
@@ -29,6 +24,13 @@ after_build:
       cd ..;
 
 artifacts:
-    - path: '.\artifacts\**\*.msi'
-      name: Image Sort Installer
-      type: File
+  - path: '.\artifacts\**\*.msi'
+    name: Image Sort Installer
+    type: File
+
+deploy:
+  - provider: GitHub
+    release: Image Sort v$(appveyor_build_version)
+    auth_token:
+      secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
+    artifact: Image Sort Installer
