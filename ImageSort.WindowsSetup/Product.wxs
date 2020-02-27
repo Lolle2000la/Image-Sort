@@ -3,7 +3,7 @@
   <?ifdef env.APPVEYOR ?>
     <?include GitVersion_WixVersion.wxi ?>
   <?else ?>
-    <?define AssemblySemFileVer="1.28.0.0" ?>
+    <?define AssemblySemFileVer="2.0.0.0" ?>
   <?endif ?>
 
   <?if $(var.Platform)=x64 ?>
@@ -16,7 +16,7 @@
     <?define PlatformSpecialFolder="x86\"?>
   <?endif ?>
 
-  <Product Id="*" Name="Image Sort" Language="1033" Version="$(var.AssemblySemFileVer)" Manufacturer="Lolle2000la" UpgradeCode="89fb2dc9-f60b-4a6a-93fb-3aba2eee9d82">
+  <Product Id="*" Name="Image Sort" Language="1033" Version="$(var.AssemblySemFileVer)" Manufacturer="Lolle2000la" UpgradeCode="1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3">
 		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Description="Image Sort installer"
              Manufacturer="Lolle2000la"/>
 
