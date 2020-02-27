@@ -6,6 +6,7 @@ using Octokit;
 using ReactiveUI;
 using Splat;
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
@@ -20,6 +21,17 @@ namespace ImageSort.WPF
     {
         public App()
         {
+            var assembly = Assembly.GetAssembly(typeof(App));
+            var gitVersionInformationType = assembly.GetType("GitVersionInformation");
+            var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
+
+            if (Settings.Default.OldVersion != versionTag)
+            {
+                Settings.Default.Upgrade();
+                Settings.Default.OldVersion = versionTag;
+                Settings.Default.Save();
+            }
+
             Startup += OnStartup;
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
