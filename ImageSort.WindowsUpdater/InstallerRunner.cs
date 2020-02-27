@@ -18,7 +18,7 @@ namespace ImageSort.WindowsUpdater
 
             if (!Directory.Exists(tempFolder)) Directory.CreateDirectory(tempFolder);
 
-            var fs = File.Create(Path.Combine(tempFolder, "imagesort.exe");
+            var fs = File.Create(Path.Combine(tempFolder, "imagesort.exe"));
 
             await installer.CopyToAsync(fs);
 
