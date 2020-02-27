@@ -27,6 +27,9 @@ after_build:
       cd ..;
 
 artifacts:
-    - path: '.\artifacts\**\*.msi'
-      name: Image Sort Installer
+    - path: '.\artifacts\x64\ImageSort.x64.msi'
+      name: ImageSort.x64.msi
+      type: File
+    - path: '.\artifacts\x86\ImageSort.x86.msi'
+      name: ImageSort.x86.msi
       type: File
