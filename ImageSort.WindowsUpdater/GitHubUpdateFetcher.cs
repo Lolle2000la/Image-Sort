@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ImageSort.WindowsUpdater
 {
@@ -17,17 +18,17 @@ namespace ImageSort.WindowsUpdater
             this.client = client;
         }
 
-        public bool TryGetLatestRelease(out Release release, bool allowPrerelease=false)
+        public async Task<(bool, Release)> TryGetLatestReleaseAsync(bool allowPrerelease=false)
         {
             throw new NotImplementedException();
         }
 
-        public bool TryGetInstallerFromRelease(Release release, out ReleaseAsset installer)
+        public async Task<(bool, ReleaseAsset)> TryGetInstallerFromReleaseAsync(Release release)
         {
             throw new NotImplementedException();
         }
 
-        public Stream GetStreamFromAsset(ReleaseAsset asset)
+        public async Task<Stream> GetStreamFromAssetAsync(ReleaseAsset asset)
         {
             throw new NotImplementedException();
         }
