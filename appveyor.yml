@@ -31,6 +31,7 @@ artifacts:
 deploy:
   - provider: GitHub
     release: Image Sort v$(appveyor_build_version)
+    tag: $(APPVEYOR_REPO_TAG_NAME)
     auth_token:
       secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
     artifact: Image Sort Installer
