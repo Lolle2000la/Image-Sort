@@ -31,7 +31,7 @@ namespace ImageSort.WPF
 
         private async void OnStartup(object sender, StartupEventArgs e)
         {
-            if (Settings.Default.ShouldCheckForUpdates) return;
+            if (!Settings.Default.ShouldCheckForUpdates) return;
 
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);

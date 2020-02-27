@@ -184,6 +184,9 @@ namespace ImageSort.WPF
                     .Select(_ => Unit.Default)
                     .Subscribe(_ => Images.SearchTerm.Focus())
                     .DisposeWith(disposableRegistration);
+
+                  CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
+                  InstallPrereleaseBuilds.IsChecked = Settings.Default.UpdateToPrereleaseBuilds;
               });
         }
 
@@ -209,6 +212,22 @@ namespace ImageSort.WPF
         private void OnToggleDarkMode(object sender, RoutedEventArgs e)
         {
             ResourceLocator.SetColorScheme(Application.Current.Resources, (sender as ToggleButton)?.IsChecked == false ? ResourceLocator.LightColorScheme : ResourceLocator.DarkColorScheme);
+        }
+
+        private void OnCheckForUpdatesOnStartupClick(object sender, RoutedEventArgs e)
+        {
+            InstallPrereleaseBuilds.IsEnabled = CheckForUpdates.IsChecked == true;
+
+            Settings.Default.ShouldCheckForUpdates = CheckForUpdates.IsChecked == true;
+
+            Settings.Default.Save();
+        }
+
+        private void OnInstallPrereleaseBuildsClick(object sender, RoutedEventArgs e)
+        {
+            Settings.Default.UpdateToPrereleaseBuilds = InstallPrereleaseBuilds.IsChecked == true;
+
+            Settings.Default.Save();
         }
 
         #region IViewFor implementation

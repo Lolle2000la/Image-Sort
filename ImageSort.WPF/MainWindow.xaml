@@ -34,6 +34,9 @@
             <Separator Margin="{adonisUi:Space 0, 2}"/>
 
             <ToggleButton Content="Dark Mode" Click="OnToggleDarkMode"/>
+
+            <CheckBox Content="Check for updates on startup" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}"/>
+            <CheckBox Content="Install prerelease builds" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
         </StackPanel>
 
         <Grid Grid.Column="3">
