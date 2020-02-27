@@ -47,7 +47,7 @@ namespace ImageSort.WindowsUpdater
                         return prereleaseCondition && isNewVersion;
                     });
             }
-            catch (ApiException)
+            catch
             {
                 latestFitting = null;
             }
