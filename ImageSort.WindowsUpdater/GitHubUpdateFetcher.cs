@@ -37,7 +37,7 @@ namespace ImageSort.WindowsUpdater
                 latestFitting = releases
                     .FirstOrDefault(release => 
                     {
-                        var prereleaseCondition = !allowPrerelease ? !release.Prerelease : true;
+                        var prereleaseCondition = allowPrerelease || !release.Prerelease;
 
                         var releaseVersion = SemVersion.Parse(release.TagName);
 
