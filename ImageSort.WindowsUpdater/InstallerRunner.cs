@@ -31,7 +31,7 @@ namespace ImageSort.WindowsUpdater
 
         private static void RunSetup(string path)
         {
-            Process.Start("msiexec", $"/i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive");
+            Process.Start("cmd", $"/c @ping -n 5 localhost> nul & msiexec /i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive");
         }
     }
 }
