@@ -31,9 +31,11 @@ namespace ImageSort.WPF
 
         private async void OnStartup(object sender, StartupEventArgs e)
         {
+            if (Settings.Default.ShouldCheckForUpdates) return;
+
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
-            (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(true);
+            (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
 
             if (success && MessageBox.Show($"A new version of Image Sort is available: {release.TagName} \n\nDo you want to update?", 
                     "An update is available", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
