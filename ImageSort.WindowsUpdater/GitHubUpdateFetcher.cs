@@ -53,9 +53,17 @@ namespace ImageSort.WindowsUpdater
             return (latestFitting != null, latestFitting);
         }
 
-        public async Task<(bool, ReleaseAsset)> TryGetInstallerFromReleaseAsync(Release release)
+        public bool TryGetInstallerFromRelease(Release release, out ReleaseAsset installer)
         {
-            throw new NotImplementedException();
+            if (release == null) throw new ArgumentNullException(nameof(release));
+
+            var is64bit = Environment.Is64BitProcess;
+
+            installer = release.Assets
+                .FirstOrDefault(asset => asset.Name
+                    .Equals($"ImageSort.{(is64bit ? "x64" : "x86")}.msi", StringComparison.OrdinalIgnoreCase));
+
+            return installer != null;
         }
 
         public async Task<Stream> GetStreamFromAssetAsync(ReleaseAsset asset)
