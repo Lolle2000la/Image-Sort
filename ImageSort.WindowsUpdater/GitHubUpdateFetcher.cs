@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
@@ -68,7 +69,15 @@ namespace ImageSort.WindowsUpdater
 
         public async Task<Stream> GetStreamFromAssetAsync(ReleaseAsset asset)
         {
-            throw new NotImplementedException();
+            using var httpClient = new HttpClient();
+
+            httpClient.DefaultRequestHeaders.Add("User-Agent", "Image-Sort");
+
+            try
+            {
+                return await httpClient.GetStreamAsync(asset.BrowserDownloadUrl);
+            }
+            catch (HttpRequestException) { return null; }
         }
     }
 }
