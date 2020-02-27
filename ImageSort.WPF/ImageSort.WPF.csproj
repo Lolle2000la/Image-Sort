@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" />
     <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
   </ItemGroup>
 
@@ -30,6 +31,21 @@
     <Reference Include="Interop.Shell32">
       <HintPath>Interop.Shell32.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
    
    <PropertyGroup>
