@@ -12,12 +12,10 @@ namespace ImageSort.WindowsUpdater
 {
     public class GitHubUpdateFetcher
     {
-        private readonly string currentVersion;
         private readonly GitHubClient client;
 
-        public GitHubUpdateFetcher(string currentVersion, GitHubClient client)
+        public GitHubUpdateFetcher(GitHubClient client)
         {
-            this.currentVersion = currentVersion;
             this.client = client;
         }
 
