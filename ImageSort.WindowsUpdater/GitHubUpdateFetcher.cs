@@ -23,10 +23,9 @@ namespace ImageSort.WindowsUpdater
         public async Task<(bool, Release)> TryGetLatestReleaseAsync(bool allowPrerelease=false)
         {
             var assembly = Assembly.GetAssembly(typeof(GitHubUpdateFetcher));
-            var assemblyName = assembly.GetName().Name;
-            var gitVersionInformationType = assembly.GetType(assemblyName + ".GitVersionInformation");
-            dynamic gitVersionInformations = Activator.CreateInstance(gitVersionInformationType);
-            var version = SemVersion.Parse((string) gitVersionInformations.SemVer);
+            var gitVersionInformationType = assembly.GetType("GitVersionInformation");
+            var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
+            var version = SemVersion.Parse(versionTag);
 
             Release latestFitting;
 
@@ -39,7 +38,9 @@ namespace ImageSort.WindowsUpdater
                     {
                         var prereleaseCondition = allowPrerelease || !release.Prerelease;
 
-                        var releaseVersion = SemVersion.Parse(release.TagName);
+                        var firstIndexOfV = release.TagName.IndexOf('v');
+
+                        var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1));
 
                         var isNewVersion = version.CompareTo(releaseVersion) < 0;
 
