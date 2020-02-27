@@ -39,155 +39,156 @@ namespace ImageSort.WPF
             };
 
             this.WhenActivated(disposableRegistration =>
-              {
-                  this.Bind(ViewModel,
-                      vm => vm.Folders,
-                      view => view.Folders.ViewModel)
-                      .DisposeWith(disposableRegistration);
+            {
+                this.Bind(ViewModel,
+                    vm => vm.Folders,
+                    view => view.Folders.ViewModel)
+                    .DisposeWith(disposableRegistration);
 
-                  this.Bind(ViewModel,
-                      vm => vm.Images,
-                      view => view.Images.ViewModel)
-                      .DisposeWith(disposableRegistration);
+                this.Bind(ViewModel,
+                    vm => vm.Images,
+                    view => view.Images.ViewModel)
+                    .DisposeWith(disposableRegistration);
 
-                  this.OneWayBind(ViewModel,
-                      vm => vm.Actions,
-                      view => view.Actions.ViewModel)
-                      .DisposeWith(disposableRegistration);
+                this.OneWayBind(ViewModel,
+                    vm => vm.Actions,
+                    view => view.Actions.ViewModel)
+                    .DisposeWith(disposableRegistration);
 
-                  this.BindCommand(ViewModel,
-                      vm => vm.OpenFolder,
-                      view => view.OpenFolder)
-                      .DisposeWith(disposableRegistration);
+                this.BindCommand(ViewModel,
+                    vm => vm.OpenFolder,
+                    view => view.OpenFolder)
+                    .DisposeWith(disposableRegistration);
 
-                  this.BindCommand(ViewModel,
-                      vm => vm.OpenCurrentlySelectedFolder,
-                      view => view.OpenSelectedFolder)
-                      .DisposeWith(disposableRegistration);
+                this.BindCommand(ViewModel,
+                    vm => vm.OpenCurrentlySelectedFolder,
+                    view => view.OpenSelectedFolder)
+                    .DisposeWith(disposableRegistration);
 
-                  this.BindCommand(ViewModel,
-                      vm => vm.MoveImageToFolder,
-                      view => view.Move)
-                      .DisposeWith(disposableRegistration);
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveImageToFolder,
+                    view => view.Move)
+                    .DisposeWith(disposableRegistration);
 
-                  this.BindCommand(ViewModel,
-                      vm => vm.DeleteImage,
-                      view => view.Delete)
-                      .DisposeWith(disposableRegistration);
+                this.BindCommand(ViewModel,
+                    vm => vm.DeleteImage,
+                    view => view.Delete)
+                    .DisposeWith(disposableRegistration);
 
-                  ViewModel.PickFolder.RegisterHandler(ic =>
-                  {
-                      var folderBrowser = new System.Windows.Forms.FolderBrowserDialog()
-                      {
-                          ShowNewFolderButton = true
-                      };
+                ViewModel.PickFolder.RegisterHandler(ic =>
+                {
+                    var folderBrowser = new System.Windows.Forms.FolderBrowserDialog()
+                    {
+                        ShowNewFolderButton = true
+                    };
 
-                      if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                          ic.SetOutput(folderBrowser.SelectedPath);
-                  })
-                  .DisposeWith(disposableRegistration); ;
+                    if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                        ic.SetOutput(folderBrowser.SelectedPath);
+                })
+                .DisposeWith(disposableRegistration); ;
 
-                  var reservedKeys = new[]
-                  {
+                var reservedKeys = new[]
+                {
                     Key.Left, Key.Right, Key.Up, Key.Down, // image traversal, moving and deletion
                     Key.W, Key.A, Key.S, Key.D, // tree traversal
                     Key.Q, Key.E, // undo and redo
                     Key.O, Key.Enter, // open a new folder (second one opens the selected one)
                     Key.P, Key.U, // Pin and unpin folders
                     Key.I // Focus images search box
-                  };
+                };
 
-                  var reservedKeysPressed = this.Events().PreviewKeyDown
-                      .Where(_ => interceptReservedKeys)
-                      .Where(_ => !(Keyboard.FocusedElement is TextBox))
-                      .Where(k => reservedKeys.Contains(k.Key))
-                      .Do(k => k.Handled = true)
-                      .Select(k => k.Key);
+                var reservedKeysPressed = this.Events().PreviewKeyDown
+                    .Where(_ => interceptReservedKeys)
+                    .Where(_ => !(Keyboard.FocusedElement is TextBox))
+                    .Where(k => reservedKeys.Contains(k.Key))
+                    .Do(k => k.Handled = true)
+                    .Select(k => k.Key);
 
-                  // bind arrow keys
-                  reservedKeysPressed.Where(k => k == Key.Left)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Images.GoLeft)
-                      .DisposeWith(disposableRegistration);
+                // bind arrow keys
+                reservedKeysPressed.Where(k => k == Key.Left)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Images.GoLeft)
+                     .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.Right)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Images.GoRight)
-                      .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.Right)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Images.GoRight)
+                    .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.Up)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.MoveImageToFolder)
-                      .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.Up)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.MoveImageToFolder)
+                    .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.Down)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.DeleteImage)
-                      .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.Down)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.DeleteImage)
+                    .DisposeWith(disposableRegistration);
 
-                  // bind Q and E to undo and redo
-                  reservedKeysPressed.Where(k => k == Key.Q)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Actions.Undo)
-                      .DisposeWith(disposableRegistration);
+                // bind Q and E to undo and redo
+                reservedKeysPressed.Where(k => k == Key.Q)
+                   .Select(_ => Unit.Default)
+                   .InvokeCommand(ViewModel.Actions.Undo)
+                   .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.E)
-                      .Select(_ => Unit.Default)
-                      .InvokeCommand(ViewModel.Actions.Redo)
-                      .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.E)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Actions.Redo)
+                    .DisposeWith(disposableRegistration);
 
-                  // bind WASD to traversing the folders
-                  reservedKeysPressed
-                      .Where(k => k == Key.W || k == Key.A || k == Key.S || k == Key.D)
-                      .Select(k => k switch
-                      {
-                          Key.W => Key.Up,
-                          Key.A => Key.Left,
-                          Key.S => Key.Down,
-                          Key.D => Key.Right,
-                          Key other => other
-                      })
-                      .Subscribe(FireKeyEventOnFoldersTree)
-                      .DisposeWith(disposableRegistration);
+                // bind WASD to traversing the folders
+                reservedKeysPressed
+                    .Where(k => k == Key.W || k == Key.A || k == Key.S || k == Key.D)
+                    .Select(k => k switch
+                    {
+                        Key.W => Key.Up,
+                        Key.A => Key.Left,
+                        Key.S => Key.Down,
+                        Key.D => Key.Right,
+                        Key other => other
+                    })
+                    .Subscribe(FireKeyEventOnFoldersTree)
+                    .DisposeWith(disposableRegistration);
 
-                  // bind enter and 'r' to opening a new folder
-                  reservedKeysPressed.Where(k => k == Key.O)
+                // bind enter and 'r' to opening a new folder
+                reservedKeysPressed.Where(k => k == Key.O)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.OpenFolder)
                     .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.Enter)
-                    .Select(_ => Unit.Default)
-                    .InvokeCommand(ViewModel.OpenCurrentlySelectedFolder)
-                    .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.Enter)
+                  .Select(_ => Unit.Default)
+                  .InvokeCommand(ViewModel.OpenCurrentlySelectedFolder)
+                  .DisposeWith(disposableRegistration);
 
-                  // bind 'p' and 'u' to pin and unpin
-                  reservedKeysPressed.Where(k => k == Key.P)
-                    .Select(_ => Unit.Default)
-                    .Where(_ => !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
-                    .InvokeCommand(ViewModel.Folders.Pin)
-                    .DisposeWith(disposableRegistration);
+                // bind 'p' and 'u' to pin and unpin
+                reservedKeysPressed.Where(k => k == Key.P)
+                  .Select(_ => Unit.Default)
+                  .Where(_ => !Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
+                  .InvokeCommand(ViewModel.Folders.Pin)
+                  .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.P)
-                    .Select(_ => Unit.Default)
-                    .Where(_ => Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
-                    .InvokeCommand(ViewModel.Folders.PinSelected)
-                    .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.P)
+                  .Select(_ => Unit.Default)
+                  .Where(_ => Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+                  .InvokeCommand(ViewModel.Folders.PinSelected)
+                  .DisposeWith(disposableRegistration);
 
-                  reservedKeysPressed.Where(k => k == Key.U)
-                    .Select(_ => Unit.Default)
-                    .InvokeCommand(ViewModel.Folders.UnpinSelected)
-                    .DisposeWith(disposableRegistration);
+                reservedKeysPressed.Where(k => k == Key.U)
+                  .Select(_ => Unit.Default)
+                  .InvokeCommand(ViewModel.Folders.UnpinSelected)
+                  .DisposeWith(disposableRegistration);
 
-                  // bind 'i' to focusing the images search box
-                  reservedKeysPressed.Where(k => k == Key.I)
-                    .Select(_ => Unit.Default)
-                    .Subscribe(_ => Images.SearchTerm.Focus())
-                    .DisposeWith(disposableRegistration);
+                // bind 'i' to focusing the images search box
+                reservedKeysPressed.Where(k => k == Key.I)
+                  .Select(_ => Unit.Default)
+                  .Subscribe(_ => Images.SearchTerm.Focus())
+                  .DisposeWith(disposableRegistration);
 
-                  CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
-                  InstallPrereleaseBuilds.IsChecked = Settings.Default.UpdateToPrereleaseBuilds;
-              });
+                CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
+                InstallPrereleaseBuilds.IsChecked = Settings.Default.UpdateToPrereleaseBuilds;
+                if (Settings.Default.DarkMode) SetDarkMode(true);
+            });
         }
 
         private void FireKeyEventOnFoldersTree(Key key)
@@ -211,7 +212,13 @@ namespace ImageSort.WPF
 
         private void OnToggleDarkMode(object sender, RoutedEventArgs e)
         {
-            ResourceLocator.SetColorScheme(Application.Current.Resources, (sender as ToggleButton)?.IsChecked == false ? ResourceLocator.LightColorScheme : ResourceLocator.DarkColorScheme);
+            var darkMode = sender as ToggleButton;
+
+            SetDarkMode(darkMode?.IsChecked == true);
+
+            Settings.Default.DarkMode = darkMode.IsChecked == true;
+
+            Settings.Default.Save();
         }
 
         private void OnCheckForUpdatesOnStartupClick(object sender, RoutedEventArgs e)
@@ -228,6 +235,11 @@ namespace ImageSort.WPF
             Settings.Default.UpdateToPrereleaseBuilds = InstallPrereleaseBuilds.IsChecked == true;
 
             Settings.Default.Save();
+        }
+
+        private void SetDarkMode(bool darkMode)
+        {
+            ResourceLocator.SetColorScheme(Application.Current.Resources, darkMode ? ResourceLocator.DarkColorScheme : ResourceLocator.LightColorScheme);
         }
 
         #region IViewFor implementation
