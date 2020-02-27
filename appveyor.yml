@@ -34,3 +34,5 @@ deploy:
     auth_token:
       secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
     artifact: Image Sort Installer
+    on:
+      APPVEYOR_REPO_TAG: true
