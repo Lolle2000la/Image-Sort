@@ -31,7 +31,7 @@ namespace ImageSort.WPF
                     CurrentFolder = new FolderTreeItemViewModel()
                     {
                         // will be replaced with the default path or something
-                        Path = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+                        Path = Environment.GetCommandLineArgs().ElementAtOrDefault(1) ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
                     }
                 },
                 Images = new ImagesViewModel(),

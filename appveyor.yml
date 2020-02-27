@@ -1,5 +1,6 @@
 image: Visual Studio 2019
 configuration: Release
+
 platform: Any CPU
 
 install:
@@ -10,6 +11,29 @@ before_build:
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
 
 build:
-  project: Image-Sort.sln
+  project: ImageSort.UnitTests\ImageSort.UnitTests.csproj
   parallel: true
   verbosity: minimal
+
+after_build:
+  - ps: >-
+      cd .\ImageSort.WindowsSetup\;
+      gitversion /updatewixversionfile;
+      MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
+      MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false;
+      cd ..;
+
+artifacts:
+  - path: '.\artifacts\**\*.msi'
+    name: Image Sort Installer
+    type: File
+
+deploy:
+  - provider: GitHub
+    release: Image Sort v$(appveyor_build_version)
+    tag: $(APPVEYOR_REPO_TAG_NAME)
+    auth_token:
+      secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
+    artifact: Image Sort Installer
+    on:
+      APPVEYOR_REPO_TAG: true

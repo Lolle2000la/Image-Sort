@@ -4,6 +4,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
+    <AssemblyName>Image Sort</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,6 +34,7 @@
    
    <PropertyGroup>
      <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
+     <ApplicationIcon>Icons\Image Sort.ico</ApplicationIcon>
    </PropertyGroup>
 
 </Project>

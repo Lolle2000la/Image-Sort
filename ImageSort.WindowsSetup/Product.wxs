@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?ifdef env.APPVEYOR ?>
+    <?include GitVersion_WixVersion.wxi ?>
+  <?else ?>
+    <?define AssemblySemFileVer="2.0.0.0" ?>
+  <?endif ?>
+
+  <?if $(var.Platform)=x64 ?>
+    <?define win64Flag = "yes" ?>
+    <?define ProgramFilesFolder="ProgramFiles64Folder"?>
+    <?define PlatformSpecialFolder="x64\"?>
+  <?else ?>
+    <?define win64Flag = "no" ?>
+    <?define ProgramFilesFolder="ProgramFilesFolder"?>
+    <?define PlatformSpecialFolder="x86\"?>
+  <?endif ?>
+
+  <Product Id="*" Name="Image Sort" Language="1033" Version="$(var.AssemblySemFileVer)" Manufacturer="Lolle2000la" UpgradeCode="1AC9D063-74DA-4D56-BA4A-C7F4216CFAF3">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" Description="Image Sort installer"
+             Manufacturer="Lolle2000la"/>
+
+		<MajorUpgrade AllowSameVersionUpgrades="yes" DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+		<MediaTemplate EmbedCab="yes" />
+
+		<Feature Id="ProductFeature" Title="Image Sort" Level="1" ConfigurableDirectory="INSTALLFOLDER">
+			<ComponentGroupRef Id="ProductComponents" />
+		</Feature>
+
+    <UIRef Id="WixUI_InstallDir"/>
+    <UIRef Id="WixUI_ErrorProgressText" />
+
+    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+    <Icon Id="ImageSort.exe" SourceFile="Image Sort.exe"/>
+
+    <Icon Id="icon.ico" SourceFile="Image Sort.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+  </Product>
+
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="$(var.ProgramFilesFolder)">
+        <Directory Id="INSTALLFOLDER" Name="Image Sort" />
+      </Directory>
+      <Directory Id="StartMenuFolder" Name="StartMenu"/>
+      <Directory Id="DesktopFolder" Name="Desktop"/>
+    </Directory>
+  </Fragment>
+
+  <Fragment>
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+       <!--<Component Id="ProductComponent" Guid="B839CE01-30EC-431F-AD54-1521B29E65DE"> 
+       </Component>-->
+      <Component Id="LicenseComponent" Guid="9B1F604F-1FA3-43BF-9EB0-E71565ADE974">
+        <File Id="LicenseRtf" Name="License.rtf" Source="License.rtf" KeyPath="yes"/>
+      </Component>
+      <Component Id="ImageSortExeComponent" Guid="036C3C1A-FA77-46CD-97F9-26653E110D8F">
+        <File Id="ImageSortExe" Name="Image Sort.exe" Source="..\ImageSort.WPF\bin\$(var.PlatformSpecialFolder)$(var.Configuration)\netcoreapp3.1\win-$(var.Platform)\publish\Image Sort.exe"
+              KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="StartMenuFolder" Name="Image Sort"
+                    WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="ImageSort.exe" IconIndex="0"/>
+          <Shortcut Id="DesktopShortcut" Directory="DesktopFolder" Name="Image Sort"
+                    WorkingDirectory="INSTALLFOLDER" Advertise="yes" Icon="ImageSort.exe" IconIndex="0"/>
+        </File>
+      </Component>
+      <ComponentGroupRef Id="SourceComponentGroup" />
+      <!--Add "Open with Image Sort" to explorer-->
+      <Component Id="OpenWithImageSortComponent" Guid="A54BFEA9-DA6F-4AF8-AA0C-045E0E0142EC">
+        <RegistryKey Root="HKCU"
+                     Key="Software\Classes\Directory\shell\ImageSort">
+          <RegistryValue Type="expandable" Value="Open with Image Sort" KeyPath="yes"/>
+          <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
+          <RegistryKey Key="command">
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe] "%L""'/>
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKCU"
+                     Key="Software\Classes\Drive\shell\ImageSort">
+          <RegistryValue Type="expandable" Value="Open with Image Sort"/>
+          <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
+          <RegistryKey Key="command">
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe] "%L""'/>
+          </RegistryKey>
+        </RegistryKey>
+        <RegistryKey Root="HKCU"
+                     Key="Software\Classes\Folder\shell\ImageSort">
+          <RegistryValue Type="expandable" Value="Open with Image Sort"/>
+          <RegistryValue Type="expandable" Name="Icon" Value='"[#ImageSortExe]"'/>
+          <RegistryKey Key="command">
+            <RegistryValue Type="expandable" Value='"[#ImageSortExe]" "%L"'/>
+          </RegistryKey>
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

@@ -1,5 +1,6 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.ViewModels;
+using Microsoft.Reactive.Testing;
 using Moq;
 using ReactiveUI;
 using System;
@@ -27,14 +28,21 @@ namespace ImageSort.UnitTests.ViewModels
 
             var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths);
+            fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) 
+            var testScheduler = new TestScheduler();
+
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, testScheduler) 
             { 
                 Path = path
             };
 
+            testScheduler.Start();
+            testScheduler.AdvanceBy(1);
+
             var obtainedPaths = folderTreeItem.Children;
+
+            testScheduler.Stop();
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
 

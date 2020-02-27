@@ -3,6 +3,7 @@ using ImageSort.FileSystem;
 using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using Splat;
+using System;
 using System.Reflection;
 using System.Windows;
 
@@ -15,7 +16,9 @@ namespace ImageSort.WPF
     {
         public App()
         {
-            Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetCallingAssembly());
+            Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
             Locator.CurrentMutable.RegisterManditoryDependencies();
             Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
         }
