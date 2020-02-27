@@ -25,3 +25,8 @@ after_build:
       cd .\ImageSort.WindowsSetup\;
       MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
       cd ..;
+
+artifacts:
+    - path: '.\artifacts\**\*.msi'
+      name: Image Sort Installer
+      type: File
