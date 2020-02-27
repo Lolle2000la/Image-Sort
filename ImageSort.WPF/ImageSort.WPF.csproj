@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" />
     <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
   </ItemGroup>
 
