@@ -3,6 +3,9 @@ configuration: Release
 
 platform: Any CPU
 
+cache:
+  - ImageSort.WindowsSetup\wix
+
 install:
   - choco install gitversion.portable -pre -y
 
