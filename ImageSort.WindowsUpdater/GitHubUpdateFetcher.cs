@@ -45,7 +45,7 @@ namespace ImageSort.WindowsUpdater
 
                         if (int.TryParse(releaseVersion.Build, out int build)) releaseVersion = releaseVersion.Change(build: (build - 1).ToString(CultureInfo.InvariantCulture.NumberFormat));
 
-                        var isNewVersion = version.CompareTo(releaseVersion) < 0;
+                        var isNewVersion = version.CompareByPrecedence(releaseVersion) < 0;
 
                         return prereleaseCondition && isNewVersion;
                     });
