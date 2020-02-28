@@ -27,6 +27,15 @@ namespace ImageSort.WindowsUpdater
             var gitVersionInformationType = assembly.GetType("GitVersionInformation");
             var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
             var version = SemVersion.Parse(versionTag);
+            var prereleaseParts = version.Prerelease.Split('.');
+
+            if (prereleaseParts.Length > 1)
+            {
+                if (int.TryParse(prereleaseParts[1], out int prerelease))
+                {
+                    version = version.Change(prerelease: $"{prereleaseParts[0]}.{(prerelease - 1).ToString(CultureInfo.InvariantCulture.NumberFormat)}");
+                }
+            }
 
             Release latestFitting;
 
@@ -42,8 +51,6 @@ namespace ImageSort.WindowsUpdater
                         var firstIndexOfV = release.TagName.IndexOf('v');
 
                         var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1));
-
-                        if (int.TryParse(releaseVersion.Build, out int build)) releaseVersion = releaseVersion.Change(build: (build - 1).ToString(CultureInfo.InvariantCulture.NumberFormat));
 
                         var isNewVersion = version.CompareByPrecedence(releaseVersion) < 0;
 
