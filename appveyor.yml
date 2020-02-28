@@ -5,6 +5,7 @@ platform: Any CPU
 
 cache:
   - ImageSort.WindowsSetup\wix
+  - C:\ProgramData\chocolatey\lib -> appveyor.yml
 
 install:
   - choco install gitversion.portable -pre -y
