@@ -18,13 +18,16 @@ build:
   parallel: true
   verbosity: minimal
 
-after_test:
+after_build:
   - ps: >-
-      cd .\ImageSort.WindowsSetup\;
-      gitversion /updatewixversionfile;
-      MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
-      MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false;
-      cd ..;
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+          cd .\ImageSort.WindowsSetup\;
+          gitversion /updatewixversionfile;
+          MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false;
+          MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false;
+          cd ..;
+      }
+
 
 artifacts:
   - path: '.\artifacts\**\*.msi'
