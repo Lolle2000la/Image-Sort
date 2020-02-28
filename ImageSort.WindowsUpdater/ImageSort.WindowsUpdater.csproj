@@ -19,5 +19,5 @@
   <PropertyGroup>
     <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
   </PropertyGroup>
-
+  
 </Project>
