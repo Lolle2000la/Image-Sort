@@ -18,7 +18,7 @@ build:
   parallel: true
   verbosity: minimal
 
-after_build:
+after_test:
   - ps: >-
       cd .\ImageSort.WindowsSetup\;
       gitversion /updatewixversionfile;
