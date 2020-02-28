@@ -2,6 +2,7 @@
 using Semver;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -41,6 +42,8 @@ namespace ImageSort.WindowsUpdater
                         var firstIndexOfV = release.TagName.IndexOf('v');
 
                         var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1));
+
+                        if (int.TryParse(releaseVersion.Build, out int build)) releaseVersion = releaseVersion.Change(build: (build - 1).ToString(CultureInfo.InvariantCulture.NumberFormat));
 
                         var isNewVersion = version.CompareTo(releaseVersion) < 0;
 
