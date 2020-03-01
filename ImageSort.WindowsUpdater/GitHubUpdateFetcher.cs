@@ -27,15 +27,6 @@ namespace ImageSort.WindowsUpdater
             var gitVersionInformationType = assembly.GetType("GitVersionInformation");
             var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
             var version = SemVersion.Parse(versionTag);
-            var prereleaseParts = version.Prerelease.Split('.');
-
-            if (prereleaseParts.Length > 1)
-            {
-                if (int.TryParse(prereleaseParts[1], out int prerelease))
-                {
-                    version = version.Change(prerelease: $"{prereleaseParts[0]}.{(prerelease - 1).ToString(CultureInfo.InvariantCulture.NumberFormat)}");
-                }
-            }
 
             Release latestFitting;
 
