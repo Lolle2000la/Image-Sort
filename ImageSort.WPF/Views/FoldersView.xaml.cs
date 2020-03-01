@@ -1,10 +1,12 @@
 ﻿using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Forms;
 
 namespace ImageSort.WPF.Views
@@ -31,10 +33,24 @@ namespace ImageSort.WPF.Views
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
-                this.OneWayBind(ViewModel,
-                    vm => vm.AllFoldersTracked,
-                    view => view.Folders.ItemsSource)
+                var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
+
+                ViewModel.WhenAnyValue(x => x.CurrentFolder)
+                    .Where(c => c != null)
+                    .Subscribe(f => 
+                    {
+                        currentFolder.Clear();
+                        currentFolder.Add(f);
+                    })
                     .DisposeWith(disposableRegistration);
+
+                var compositeCollection = new CompositeCollection()
+                {
+                    new CollectionContainer() { Collection = currentFolder },
+                    new CollectionContainer() { Collection = ViewModel.PinnedFolders }
+                };
+
+                Folders.ItemsSource = compositeCollection;
 
                 this.Bind(ViewModel,
                     vm => vm.Selected,
