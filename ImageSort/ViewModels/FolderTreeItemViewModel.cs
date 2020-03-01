@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -28,6 +29,8 @@ namespace ImageSort.ViewModels
 
         private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _children;
         public ReadOnlyObservableCollection<FolderTreeItemViewModel> Children => _children;
+
+        public ReactiveCommand<string, Unit> CreateFolder { get; }
 
         public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
@@ -76,6 +79,17 @@ namespace ImageSort.ViewModels
                     catch (UnauthorizedAccessException) {  }
                 })
                 .DisposeWith(disposableRegistration);
+
+            CreateFolder = ReactiveCommand.Create<string, Unit>(name =>
+            {
+                var newFolderPath = System.IO.Path.Combine(Path, name);
+
+                fileSystem.CreateFolder(newFolderPath);
+
+                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = newFolderPath });
+
+                return Unit.Default;
+            });
         }
 
         ~FolderTreeItemViewModel()
