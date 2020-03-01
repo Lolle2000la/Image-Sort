@@ -22,7 +22,7 @@
 
         <WrapPanel Orientation="Horizontal">
             <Button x:Name="Pin" Content="Pin (P)"/>
-            <Button x:Name="PinSelected" Content="Pin selected (Ctrl+P)"/>
+            <Button x:Name="PinSelected" Content="Pin selected (F)"/>
             <Button x:Name="Unpin" Content="Unpin (U)"/>
         </WrapPanel>
 
