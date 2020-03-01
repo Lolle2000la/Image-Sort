@@ -39,5 +39,12 @@ namespace ImageSort.WindowsUpdater
 
             Process.Start(processStartInfo);
         }
+
+        public static void CleanUpInstaller()
+        {
+            var setupPath = Path.Combine(Path.GetTempPath(), "Image Sort", $"ImageSort.{(Environment.Is64BitProcess ? "x64" : "x86")}.msi");
+
+            if (File.Exists(setupPath)) File.Delete(setupPath);
+        }
     }
 }

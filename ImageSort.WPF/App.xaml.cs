@@ -43,6 +43,8 @@ namespace ImageSort.WPF
 
         private async void OnStartup(object sender, StartupEventArgs e)
         {
+            InstallerRunner.CleanUpInstaller();
+
             if (!Settings.Default.ShouldCheckForUpdates) return;
 
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
