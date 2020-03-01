@@ -98,6 +98,8 @@ namespace ImageSort.UnitTests.ViewModels
             testScheduler.AdvanceBy(1);
 
             await folderTreeItem.CreateFolder.Execute(addedFolder);
+            // verify that no second folder is created when a folder already exists
+            await folderTreeItem.CreateFolder.Execute(addedFolder);
 
             testScheduler.AdvanceBy(1);
 

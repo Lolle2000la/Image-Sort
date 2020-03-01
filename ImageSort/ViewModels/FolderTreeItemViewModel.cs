@@ -5,6 +5,7 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
@@ -76,13 +77,15 @@ namespace ImageSort.ViewModels
                             }
                         }
                     }
-                    catch (UnauthorizedAccessException) {  }
+                    catch (UnauthorizedAccessException) { }
                 })
                 .DisposeWith(disposableRegistration);
 
             CreateFolder = ReactiveCommand.Create<string, Unit>(name =>
             {
                 var newFolderPath = System.IO.Path.Combine(Path, name);
+
+                if (Children.Select(f => f.Path).Any(s => s == newFolderPath)) return Unit.Default;
 
                 fileSystem.CreateFolder(newFolderPath);
 
