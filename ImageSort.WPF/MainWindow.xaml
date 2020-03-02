@@ -10,7 +10,7 @@
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
                              xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                              mc:Ignorable="d"
-                             Title="Image Sort" Height="450" Width="800">
+                             Title="Image Sort" Height="600" Width="1000">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
