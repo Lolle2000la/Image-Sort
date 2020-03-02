@@ -1,4 +1,5 @@
 ﻿using DynamicData;
+using DynamicData.Binding;
 using ImageSort.FileSystem;
 using ReactiveUI;
 using Splat;
@@ -49,6 +50,7 @@ namespace ImageSort.ViewModels
 
             subFolders = new SourceList<FolderTreeItemViewModel>();
             subFolders.Connect()
+                .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
                 .Bind(out _children)
                 .Subscribe()
                 .DisposeWith(disposableRegistration);
@@ -110,6 +112,7 @@ namespace ImageSort.ViewModels
                 {
                     folderWatcher.Path = p;
                     folderWatcher.IncludeSubdirectories = false;
+                    folderWatcher.NotifyFilter = NotifyFilters.DirectoryName;
                     folderWatcher.EnableRaisingEvents = true;
 
                     folderWatcher.Created += OnFolderAdded;
