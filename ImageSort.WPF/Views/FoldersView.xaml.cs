@@ -35,6 +35,9 @@ namespace ImageSort.WPF.Views
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
+                ViewModel.PromptForName.RegisterHandler(ic => ic.SetOutput(
+                    IInputBox.Show("What name should the folder have?", "Create a folder", MessageBoxImage.Question)));
+
                 var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
 
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
@@ -74,18 +77,15 @@ namespace ImageSort.WPF.Views
                     view => view.Unpin)
                     .DisposeWith(disposableRegistration);
 
+                this.BindCommand(ViewModel,
+                    vm => vm.CreateFolderUnderSelected,
+                    view => view.CreateFolder)
+                    .DisposeWith(disposableRegistration);
+
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)
                     .Select(_ => Unit.Default)
                     .Subscribe(_ => SelectCurrentFolder())
-                    .DisposeWith(disposableRegistration);
-
-                Observable.FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
-                    handler => CreateFolder.Click += handler,
-                    handler => CreateFolder.Click -= handler)
-                    .Select(_ => IInputBox.Show("What name should the folder have?", "Create a folder", MessageBoxImage.Question))
-                    .Where(i => !string.IsNullOrEmpty(i))
-                    .InvokeCommand(ViewModel.CreateFolderUnderSelected)
                     .DisposeWith(disposableRegistration);
             });
         }

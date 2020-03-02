@@ -42,11 +42,14 @@ namespace ImageSort.ViewModels
         public Interaction<Unit, string> SelectFolder { get; } 
             = new Interaction<Unit, string>();
 
+        public Interaction<Unit, string> PromptForName { get; }
+            = new Interaction<Unit, string>();
+
         public ReactiveCommand<Unit, Unit> Pin { get; }
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
 
-        public ReactiveCommand<string, Unit> CreateFolderUnderSelected { get; }
+        public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
         public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
@@ -101,7 +104,14 @@ namespace ImageSort.ViewModels
             pinnedFolders.Add(null);
             pinnedFolders.RemoveAt(0);
 
-            CreateFolderUnderSelected = ReactiveCommand.CreateFromTask<string, Unit>(async name => await Selected.CreateFolder.Execute(name));
+            CreateFolderUnderSelected = ReactiveCommand.CreateFromTask(async () =>
+            {
+                var name = await PromptForName.Handle(Unit.Default);
+
+                if (string.IsNullOrEmpty(name)) return Unit.Default;
+
+                return await Selected.CreateFolder.Execute(name);
+            });
         }
 
         ~FoldersViewModel()
