@@ -114,6 +114,7 @@ namespace ImageSort.ViewModels
 
                     folderWatcher.Created += OnFolderAdded;
                     folderWatcher.Deleted += OnFolderDeleted;
+                    folderWatcher.Renamed += OnFolderRenamed;
                 });
         }
 
@@ -133,10 +134,26 @@ namespace ImageSort.ViewModels
             });
         }
 
+        private void OnFolderRenamed(object sender, RenamedEventArgs e)
+        {
+            RxApp.MainThreadScheduler.Schedule(() =>
+            {
+                var item = subFolders.Items.FirstOrDefault(f => f.Path == e.OldFullPath);
+
+                if (item != null)
+                {
+                    subFolders.Remove(item);
+
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath });
+                }
+            });
+        }
+
         ~FolderTreeItemViewModel()
         {
             folderWatcher.Created -= OnFolderAdded;
             folderWatcher.Deleted -= OnFolderDeleted;
+            folderWatcher.Renamed -= OnFolderRenamed;
 
             disposableRegistration.Dispose();
         }
