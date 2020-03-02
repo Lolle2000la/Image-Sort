@@ -72,20 +72,20 @@ namespace ImageSort.ViewModels
                                       .Where(s => s.EndsWithAny(
                                           StringComparison.OrdinalIgnoreCase,
                                           supportedTypes)))
-                .Subscribe(i=> 
+                .Subscribe(i =>
                 {
                     images.Clear();
 
                     images.AddRange(i);
                 });
 
-            
+
             _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
                 .Select(i => Images.ElementAtOrDefault(i))
                 .ToProperty(this, x => x.SelectedImage);
 
             images.Connect()
-                .Subscribe(_ => 
+                .Subscribe(_ =>
                 {
                     // necessary to notice the update
                     if (SelectedIndex == 0) SelectedIndex = -1;
@@ -96,14 +96,18 @@ namespace ImageSort.ViewModels
             var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
                 .Select(i => 0 < i);
 
-            GoLeft = ReactiveCommand.Create(() => {
-                SelectedIndex--; }, canGoLeft);
+            GoLeft = ReactiveCommand.Create(() =>
+            {
+                SelectedIndex--;
+            }, canGoLeft);
 
             var canGoRight = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
                 .Select(i => i < Images.Count - 1);
 
-            GoRight = ReactiveCommand.Create(() => { 
-                SelectedIndex++; }, canGoRight);
+            GoRight = ReactiveCommand.Create(() =>
+            {
+                SelectedIndex++;
+            }, canGoRight);
 
             this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => !string.IsNullOrEmpty(f))
@@ -111,6 +115,8 @@ namespace ImageSort.ViewModels
                 {
                     folderWatcher?.Dispose();
                     folderWatcher = folderWatcherFactory();
+
+                    if (folderWatcher == null) return;
 
                     folderWatcher.Path = f;
                     folderWatcher.IncludeSubdirectories = false;
