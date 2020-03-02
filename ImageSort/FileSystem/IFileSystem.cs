@@ -16,5 +16,7 @@ namespace ImageSort.FileSystem
         bool DirectoryExists(string path) => Directory.Exists(path);
 
         void Move(string source, string destination) => File.Move(source, destination);
+
+        void CreateFolder(string path) => Directory.CreateDirectory(path);
     }
 }

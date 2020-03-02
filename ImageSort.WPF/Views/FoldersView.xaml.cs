@@ -1,10 +1,12 @@
 ﻿using ImageSort.ViewModels;
+using IPrompt;
 using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Forms;
@@ -76,6 +78,14 @@ namespace ImageSort.WPF.Views
                     .Where(c => c != null)
                     .Select(_ => Unit.Default)
                     .Subscribe(_ => SelectCurrentFolder())
+                    .DisposeWith(disposableRegistration);
+
+                Observable.FromEventPattern<RoutedEventHandler, RoutedEventArgs>(
+                    handler => CreateFolder.Click += handler,
+                    handler => CreateFolder.Click -= handler)
+                    .Select(_ => IInputBox.Show("What name should the folder have?", "Create a folder", MessageBoxImage.Question))
+                    .Where(i => !string.IsNullOrEmpty(i))
+                    .InvokeCommand(ViewModel.CreateFolderUnderSelected)
                     .DisposeWith(disposableRegistration);
             });
         }
