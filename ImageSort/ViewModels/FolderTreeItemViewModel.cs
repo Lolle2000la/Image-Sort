@@ -123,13 +123,18 @@ namespace ImageSort.ViewModels
 
         private void OnFolderAdded(object sender, FileSystemEventArgs e)
         {
-            RxApp.MainThreadScheduler.Schedule(() => 
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
+            RxApp.MainThreadScheduler.Schedule(() =>
+            {
+                if (!subFolders.Items.Any(f => f.Path == e.FullPath))
+                {
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath });
+                }
+            });
         }
 
         private void OnFolderDeleted(object sender, FileSystemEventArgs e)
         {
-            RxApp.MainThreadScheduler.Schedule(() => 
+            RxApp.MainThreadScheduler.Schedule(() =>
             {
                 var item = subFolders.Items.FirstOrDefault(f => f.Path == e.FullPath);
 
