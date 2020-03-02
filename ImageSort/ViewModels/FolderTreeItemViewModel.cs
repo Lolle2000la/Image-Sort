@@ -117,6 +117,12 @@ namespace ImageSort.ViewModels
                 });
         }
 
+        private void OnFolderAdded(object sender, FileSystemEventArgs e)
+        {
+            RxApp.MainThreadScheduler.Schedule(() => 
+                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
+        }
+
         private void OnFolderDeleted(object sender, FileSystemEventArgs e)
         {
             RxApp.MainThreadScheduler.Schedule(() => 
@@ -127,15 +133,10 @@ namespace ImageSort.ViewModels
             });
         }
 
-        private void OnFolderAdded(object sender, FileSystemEventArgs e)
-        {
-            RxApp.MainThreadScheduler.Schedule(() => 
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
-        }
-
         ~FolderTreeItemViewModel()
         {
             folderWatcher.Created -= OnFolderAdded;
+            folderWatcher.Deleted -= OnFolderDeleted;
 
             disposableRegistration.Dispose();
         }
