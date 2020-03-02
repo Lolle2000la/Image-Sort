@@ -38,7 +38,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can open the currently selected folder")]
-        public async Task CanOpenCurrentlySelectedFolder()
+        public async ValueTask CanOpenCurrentlySelectedFolder()
         {
             await mainVM.OpenCurrentlySelectedFolder.Execute();
 
@@ -46,7 +46,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Does not open the currently selected folder if there is none or it is the current one.")]
-        public async Task DoesNotOpenCurrentlySelectedFolderWhenItDoesntMakeSense()
+        public async ValueTask DoesNotOpenCurrentlySelectedFolderWhenItDoesntMakeSense()
         {
             Assert.True(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync()); // just to make sure the state is correct beforehand.
 
@@ -60,7 +60,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Changes the path in the image view model to the current path when necessary")]
-        public async Task ChangesThePathInImageViewModel()
+        public async ValueTask ChangesThePathInImageViewModel()
         {
             await mainVM.OpenCurrentlySelectedFolder.Execute();
 
@@ -68,7 +68,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Properly selects the folder picked by the user when requested")]
-        public async Task ProperlySelectsPickedFolder()
+        public async ValueTask ProperlySelectsPickedFolder()
         {
             var requestsUserInput = false;
 
@@ -87,7 +87,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can move images to a folder and registers that action, removing the image from the images viewmodel in the process.")]
-        public async Task CanMoveImages()
+        public async ValueTask CanMoveImages()
         {
             const string currentDirectory = @"C:\Some Folder With Pictures";
             const string image = currentDirectory + @"\some image.png";
@@ -129,7 +129,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
-        public async Task CanDeleteImages()
+        public async ValueTask CanDeleteImages()
         {
             const string currentDirectory = @"C:\Some Folder With Pictures";
             const string image = currentDirectory + @"\some image.png";

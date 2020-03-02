@@ -10,7 +10,7 @@ namespace ImageSort.UnitTests.ViewModels
     public class ActionsViewModelTest
     {
         [Fact(DisplayName = "Executes an action, adds it to the history, allows it to be undone and allows it to be redone and makes the last un-/done visible, also checking if clearing works.")]
-        public async Task WorksCorrectly()
+        public async ValueTask WorksCorrectly()
         {
             const string actionDisplayName = "Test action display name";
 

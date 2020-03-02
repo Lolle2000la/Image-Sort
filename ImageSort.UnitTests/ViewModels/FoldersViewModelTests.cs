@@ -3,6 +3,7 @@ using ImageSort.ViewModels;
 using Moq;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
@@ -33,7 +34,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can prompt user to pin folders.")]
-        public async void CanPinFolders()
+        public async ValueTask CanPinFolders()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -54,7 +55,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Handles user canceling gracefully.")]
-        public async void HandlesCancelingGracefully()
+        public async ValueTask HandlesCancelingGracefully()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -70,7 +71,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can pin the selected folder.")]
-        public async void CanPinSelected()
+        public async ValueTask CanPinSelected()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -90,7 +91,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can unpin the selected folder.")]
-        public async void CanUnpinSelected()
+        public async ValueTask CanUnpinSelected()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -117,7 +118,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Only unpins if pinned in the first place.")]
-        public async void OnlyUnpinsIfPinned()
+        public async ValueTask OnlyUnpinsIfPinned()
         {
             var mockItem = CreateMock(MockPath);
 
@@ -131,7 +132,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Concatenates the current folder and the pinned folders correctly.")]
-        public async void ConcatenatesFoldersCorrectly()
+        public async ValueTask ConcatenatesFoldersCorrectly()
         {
             var currentFolder = CreateMock(MockPath);
 

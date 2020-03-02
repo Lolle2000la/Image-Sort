@@ -69,7 +69,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can create folders and adds them to the children.")]
-        public async Task CanCreateFolders()
+        public async ValueTask CanCreateFolders()
         {
             const string currentFolder = @"C:\current_folder";
             var subfolders = new []
