@@ -114,6 +114,12 @@ namespace ImageSort.ViewModels
                 if (oldIndex < Images.Images.Count) Images.SelectedIndex = oldIndex;
                 else if (Images.Images.Any()) Images.SelectedIndex = 0;
             }, canDeleteImageExecute);
+
+            this.WhenAnyValue(x => x.Folders, x => x.Actions)
+                .Where(models => models.Item1 != null && models.Item2 != null)
+                .SelectMany(_ => Folders.WhenAnyValue(x => x.CurrentFolder))
+                .Select(_ => Unit.Default)
+                .Subscribe(async _ => await Actions.Clear.Execute());
         }
     }
 }
