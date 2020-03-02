@@ -46,6 +46,8 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
 
+        public ReactiveCommand<string, Unit> CreateFolderUnderSelected { get; }
+
         public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
@@ -98,6 +100,8 @@ namespace ImageSort.ViewModels
             // make many above queries work
             pinnedFolders.Add(null);
             pinnedFolders.RemoveAt(0);
+
+            CreateFolderUnderSelected = ReactiveCommand.CreateFromTask<string, Unit>(async name => await Selected.CreateFolder.Execute(name));
         }
 
         ~FoldersViewModel()
