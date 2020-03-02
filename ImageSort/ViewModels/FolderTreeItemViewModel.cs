@@ -113,12 +113,24 @@ namespace ImageSort.ViewModels
                     folderWatcher.EnableRaisingEvents = true;
 
                     folderWatcher.Created += OnFolderAdded;
+                    folderWatcher.Deleted += OnFolderDeleted;
                 });
+        }
+
+        private void OnFolderDeleted(object sender, FileSystemEventArgs e)
+        {
+            RxApp.MainThreadScheduler.Schedule(() => 
+            {
+                var item = subFolders.Items.FirstOrDefault(f => f.Path == e.FullPath);
+
+                if (item != null) subFolders.Remove(item);
+            });
         }
 
         private void OnFolderAdded(object sender, FileSystemEventArgs e)
         {
-            RxApp.MainThreadScheduler.Schedule(() => subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
+            RxApp.MainThreadScheduler.Schedule(() => 
+                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
         }
 
         ~FolderTreeItemViewModel()
