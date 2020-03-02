@@ -7,14 +7,19 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace ImageSort.ViewModels
 {
     public class ImagesViewModel : ReactiveObject
     {
+        private static readonly string[] supportedTypes = new[] { ".png", ".jpg", ".gif", ".bmp", ".tiff", ".tif", ".ico" };
+        private FileSystemWatcher folderWatcher;
+
         private string _currentPath;
         public string CurrentFolder
         {
@@ -47,9 +52,10 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
 
-        public ImagesViewModel(IFileSystem fileSystem = null)
+        public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
 
             images = new SourceList<string>();
 
@@ -65,7 +71,7 @@ namespace ImageSort.ViewModels
                 .Select(f => fileSystem.GetFiles(f)
                                       .Where(s => s.EndsWithAny(
                                           StringComparison.OrdinalIgnoreCase,
-                                          ".png", ".jpg", ".gif", ".bmp", ".tiff", ".tif", ".ico")))
+                                          supportedTypes)))
                 .Subscribe(i=> 
                 {
                     images.Clear();
@@ -98,7 +104,26 @@ namespace ImageSort.ViewModels
 
             GoRight = ReactiveCommand.Create(() => { 
                 SelectedIndex++; }, canGoRight);
+
+            this.WhenAnyValue(x => x.CurrentFolder)
+                .Where(f => !string.IsNullOrEmpty(f))
+                .Subscribe(f =>
+                {
+                    folderWatcher?.Dispose();
+                    folderWatcher = folderWatcherFactory();
+
+                    folderWatcher.Path = f;
+                    folderWatcher.IncludeSubdirectories = false;
+                    folderWatcher.NotifyFilter = NotifyFilters.FileName;
+                    folderWatcher.InternalBufferSize = 64000;
+                    folderWatcher.EnableRaisingEvents = true;
+
+                    folderWatcher.Created += OnImageCreated;
+                    folderWatcher.Deleted += OnImageDeleted;
+                    folderWatcher.Renamed += OnImageRenamed;
+                });
         }
+
 
         public void RemoveImage(string image)
         {
@@ -110,9 +135,47 @@ namespace ImageSort.ViewModels
             images.Add(image);
         }
 
+        private void OnImageCreated(object sender, FileSystemEventArgs e)
+        {
+            if (e.FullPath.EndsWithAny(StringComparison.OrdinalIgnoreCase, supportedTypes))
+            {
+                RxApp.MainThreadScheduler.Schedule(() => images.Add(e.FullPath));
+            }
+        }
+
+        private void OnImageDeleted(object sender, FileSystemEventArgs e)
+        {
+            var item = images.Items.FirstOrDefault(i => i == e.FullPath);
+
+            if (item != null)
+            {
+                RxApp.MainThreadScheduler.Schedule(() => images.Remove(item));
+            }
+        }
+
+        private void OnImageRenamed(object sender, RenamedEventArgs e)
+        {
+            var item = images.Items.FirstOrDefault(i => i == e.OldFullPath);
+
+            if (item != null)
+            {
+                RxApp.MainThreadScheduler.Schedule(() =>
+                {
+                    images.Remove(item);
+
+                    images.Add(e.FullPath);
+                });
+            }
+        }
+
         ~ImagesViewModel()
         {
+            folderWatcher.Created -= OnImageCreated;
+            folderWatcher.Deleted -= OnImageDeleted;
+            folderWatcher.Renamed -= OnImageRenamed;
+
             images.Dispose();
+            folderWatcher.Dispose();
         }
     }
 }
