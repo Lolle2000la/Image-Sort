@@ -20,6 +20,7 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
+        public ReactiveCommand<Unit, Unit> Clear { get; }
 
         public ActionsViewModel()
         {
@@ -50,6 +51,12 @@ namespace ImageSort.ViewModels
 
                     done.Push(action);
                 }
+            });
+
+            Clear = ReactiveCommand.Create(() =>
+            {
+                done.Clear();
+                undone.Clear();
             });
 
             var historyChanges = Execute.Merge(Undo).Merge(Redo);
