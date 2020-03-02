@@ -45,7 +45,7 @@ namespace ImageSort.ViewModels
             this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
             this.folderWatcherFactory = folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
             folderWatcher = folderWatcherFactory();
-            folderWatcher.DisposeWith(disposableRegistration);
+            folderWatcher?.DisposeWith(disposableRegistration);
 
             subFolders = new SourceList<FolderTreeItemViewModel>();
             subFolders.Connect()
