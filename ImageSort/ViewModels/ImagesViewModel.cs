@@ -176,12 +176,15 @@ namespace ImageSort.ViewModels
 
         ~ImagesViewModel()
         {
-            folderWatcher.Created -= OnImageCreated;
-            folderWatcher.Deleted -= OnImageDeleted;
-            folderWatcher.Renamed -= OnImageRenamed;
+            if (folderWatcher != null)
+            {
+                folderWatcher.Created -= OnImageCreated;
+                folderWatcher.Deleted -= OnImageDeleted;
+                folderWatcher.Renamed -= OnImageRenamed;
+                folderWatcher.Dispose();
+            }
 
             images.Dispose();
-            folderWatcher.Dispose();
         }
     }
 }

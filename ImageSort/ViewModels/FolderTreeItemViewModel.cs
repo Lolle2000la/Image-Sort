@@ -154,9 +154,12 @@ namespace ImageSort.ViewModels
 
         ~FolderTreeItemViewModel()
         {
-            folderWatcher.Created -= OnFolderAdded;
-            folderWatcher.Deleted -= OnFolderDeleted;
-            folderWatcher.Renamed -= OnFolderRenamed;
+            if (folderWatcher != null)
+            {
+                folderWatcher.Created -= OnFolderAdded;
+                folderWatcher.Deleted -= OnFolderDeleted;
+                folderWatcher.Renamed -= OnFolderRenamed;
+            }
 
             disposableRegistration.Dispose();
         }
