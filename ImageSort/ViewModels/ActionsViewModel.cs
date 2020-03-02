@@ -59,7 +59,7 @@ namespace ImageSort.ViewModels
                 undone.Clear();
             });
 
-            var historyChanges = Execute.Merge(Undo).Merge(Redo);
+            var historyChanges = Execute.Merge(Undo).Merge(Redo).Merge(Clear);
 
             lastDone = historyChanges
                 .Select(_ =>
