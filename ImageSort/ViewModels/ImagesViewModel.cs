@@ -115,6 +115,7 @@ namespace ImageSort.ViewModels
                     folderWatcher.Path = f;
                     folderWatcher.IncludeSubdirectories = false;
                     folderWatcher.NotifyFilter = NotifyFilters.FileName;
+                    folderWatcher.InternalBufferSize = 64000;
                     folderWatcher.EnableRaisingEvents = true;
 
                     folderWatcher.Created += OnImageCreated;
