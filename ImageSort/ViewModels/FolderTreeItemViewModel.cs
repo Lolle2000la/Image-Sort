@@ -33,10 +33,11 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<string, Unit> CreateFolder { get; }
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, FileSystemWatcher folderWatcher)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
             backgroundScheduler ??= RxApp.TaskpoolScheduler;
+            folderWatcher ??= Locator.Current.GetService<FileSystemWatcher>();
 
             var subFolders = new SourceList<FolderTreeItemViewModel>();
             subFolders.Connect()
