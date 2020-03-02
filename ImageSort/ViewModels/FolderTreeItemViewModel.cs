@@ -17,6 +17,10 @@ namespace ImageSort.ViewModels
     public class FolderTreeItemViewModel : ReactiveObject
     {
         private readonly CompositeDisposable disposableRegistration = new CompositeDisposable();
+        private readonly IFileSystem fileSystem;
+        private readonly IScheduler backgroundScheduler;
+        private readonly Func<FileSystemWatcher> folderWatcherFactory;
+        private readonly FileSystemWatcher folderWatcher;
 
         private string _path;
         public string Path
@@ -28,18 +32,22 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> _folderName;
         public string FolderName => _folderName.Value;
 
+        private readonly SourceList<FolderTreeItemViewModel> subFolders;
+
         private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _children;
         public ReadOnlyObservableCollection<FolderTreeItemViewModel> Children => _children;
 
         public ReactiveCommand<string, Unit> CreateFolder { get; }
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, FileSystemWatcher folderWatcher = null)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
-            fileSystem ??= Locator.Current.GetService<IFileSystem>();
-            backgroundScheduler ??= RxApp.TaskpoolScheduler;
-            folderWatcher ??= Locator.Current.GetService<FileSystemWatcher>();
+            this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
+            this.folderWatcherFactory = folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
+            folderWatcher = folderWatcherFactory();
+            folderWatcher.DisposeWith(disposableRegistration);
 
-            var subFolders = new SourceList<FolderTreeItemViewModel>();
+            subFolders = new SourceList<FolderTreeItemViewModel>();
             subFolders.Connect()
                 .Bind(out _children)
                 .Subscribe()
@@ -94,10 +102,29 @@ namespace ImageSort.ViewModels
 
                 return Unit.Default;
             });
+
+            this.WhenAnyValue(x => x.Path)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Where(_ => folderWatcher != null)
+                .Subscribe(p =>
+                {
+                    folderWatcher.Path = p;
+                    folderWatcher.IncludeSubdirectories = false;
+                    folderWatcher.EnableRaisingEvents = true;
+
+                    folderWatcher.Created += OnFolderAdded;
+                });
+        }
+
+        private void OnFolderAdded(object sender, FileSystemEventArgs e)
+        {
+            RxApp.MainThreadScheduler.Schedule(() => subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath }));
         }
 
         ~FolderTreeItemViewModel()
         {
+            folderWatcher.Created -= OnFolderAdded;
+
             disposableRegistration.Dispose();
         }
     }
