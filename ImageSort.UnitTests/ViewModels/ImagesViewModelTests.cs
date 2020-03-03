@@ -132,10 +132,15 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
 
+            fsMock.Setup(fs => fs.FileExists(oldFilePath)).Returns(true);
+
             var imagesVM = new ImagesViewModel(fsMock.Object)
             {
                 CurrentFolder = basePath
             };
+
+            imagesVM.RenameImage.Where(a => a != null)
+                .Subscribe(a => a.Act());
 
             Assert.Equal(allFiles, imagesVM.Images);
 
@@ -144,6 +149,8 @@ namespace ImageSort.UnitTests.ViewModels
             await imagesVM.RenameImage.Execute();
 
             fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
+
+            await Task.Delay(1);
 
             Assert.Equal(allFilesResulting, imagesVM.Images);
 
