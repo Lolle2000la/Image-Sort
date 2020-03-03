@@ -95,7 +95,8 @@ namespace ImageSort.WPF
                     Key.O, Key.Enter, // open a new folder (second one opens the selected one)
                     Key.P, Key.F, Key.U, // Pin and unpin folders
                     Key.I, // Focus images search box
-                    Key.C // Create a new folder
+                    Key.C, // Create a new folder
+                    Key.R // Rename image
                 };
 
                 var reservedKeysPressed = this.Events().PreviewKeyDown
@@ -188,6 +189,11 @@ namespace ImageSort.WPF
                 reservedKeysPressed.Where(k => k == Key.C)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Folders.CreateFolderUnderSelected)
+                    .DisposeWith(disposableRegistration);
+
+                reservedKeysPressed.Where(k => k == Key.R)
+                    .Select(_ => Unit.Default)
+                    .InvokeCommand(ViewModel.Images.RenameImage)
                     .DisposeWith(disposableRegistration);
 
                 CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
