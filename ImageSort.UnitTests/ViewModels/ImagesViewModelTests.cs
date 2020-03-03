@@ -119,7 +119,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can rename images")]
-        public async ValueTask CanRenameImages()
+        public async Task CanRenameImages()
         {
             const string basePath = @"C:\";
             const string oldFilePath = basePath + "image.png";
