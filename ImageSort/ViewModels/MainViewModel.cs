@@ -124,6 +124,7 @@ namespace ImageSort.ViewModels
             this.WhenAnyValue(x => x.Images, x => x.Actions)
                 .Where(i => i.Item1 != null && i.Item2 != null)
                 .SelectMany(_ => Images.RenameImage)
+                .Where(a => a != null)
                 .Subscribe(async a => await Actions.Execute.Execute(a));
         }
     }
