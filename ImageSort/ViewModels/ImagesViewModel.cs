@@ -1,5 +1,6 @@
 ﻿using DynamicData;
 using DynamicData.Binding;
+using ImageSort.Actions;
 using ImageSort.FileSystem;
 using ImageSort.Helpers;
 using ReactiveUI;
@@ -54,7 +55,7 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
-        public ReactiveCommand<Unit, Unit> RenameImage { get; }
+        public ReactiveCommand<Unit, IReversibleAction> RenameImage { get; }
 
         public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
@@ -116,7 +117,7 @@ namespace ImageSort.ViewModels
             var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
                 .Select(p => !string.IsNullOrEmpty(p));
 
-            RenameImage = ReactiveCommand.CreateFromTask(async () =>
+            RenameImage = ReactiveCommand.CreateFromTask<IReversibleAction>(async _ =>
             {
                 var newFileName = await PromptForNewFileName.Handle(Unit.Default);
 
@@ -125,16 +126,13 @@ namespace ImageSort.ViewModels
                     if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
                         || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
                         || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0) 
-                        return;
+                        return null;
 
-                    var newPath = Path.Combine(CurrentFolder, newFileName + Path.GetExtension(SelectedImage));
-
-                    var selectedImage = SelectedImage;
-
-                    images.Replace(selectedImage, newPath);
-
-                    fileSystem.Move(selectedImage, newPath);
+                    return new RenameAction(SelectedImage, newFileName, fileSystem,
+                        (o, n) => images.Replace(o, n), (n, o) => images.Replace(n, o));
                 }
+
+                return null;
             }, canRenameImage);
 
             this.WhenAnyValue(x => x.CurrentFolder)
