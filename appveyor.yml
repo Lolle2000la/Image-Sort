@@ -4,7 +4,6 @@ configuration: Release
 platform: Any CPU
 
 cache:
-  - ImageSort.WindowsSetup\wix
   - 'C:\ProgramData\chocolatey\bin -> appveyor.yml'
   - 'C:\ProgramData\chocolatey\lib -> appveyor.yml'
   - '%USERPROFILE%\.nuget\packages -> **\*.csproj'
