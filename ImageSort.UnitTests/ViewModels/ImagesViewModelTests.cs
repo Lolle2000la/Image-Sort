@@ -133,7 +133,7 @@ namespace ImageSort.UnitTests.ViewModels
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetFiles(basePath))
-                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+                  .Returns(allFiles);
 
             fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
 

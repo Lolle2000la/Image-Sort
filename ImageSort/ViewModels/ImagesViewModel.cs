@@ -136,9 +136,20 @@ namespace ImageSort.ViewModels
             var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
                 .Select(p => !string.IsNullOrEmpty(p));
 
-            RenameImage = ReactiveCommand.Create(() =>
+            RenameImage = ReactiveCommand.CreateFromTask(async () =>
             {
+                var newFileName = await PromptForNewFileName.Handle(Unit.Default);
 
+                if (newFileName != null)
+                {
+                    var newPath = Path.Combine(CurrentFolder, newFileName + Path.GetExtension(SelectedImage));
+
+                    var selectedImage = SelectedImage;
+
+                    images.Replace(selectedImage, newPath);
+
+                    fileSystem.Move(selectedImage, newPath);
+                }
             }, canRenameImage);
         }
 
