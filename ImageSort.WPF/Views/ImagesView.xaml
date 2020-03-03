@@ -59,9 +59,18 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="Search images... (Shortcuts: I to focus, Tab to leave)"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="auto"/>
+                    </Grid.ColumnDefinitions>
+                    
+                    <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="Search images... (Shortcuts: I to focus, Tab to leave)"/>
 
-                <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" Grid.Column="1" SelectionChanged="OnSelectedImageChanged">
+                    <Button x:Name="Rename" Content="Rename (R)" Grid.Column="1"/>
+                </Grid>
+
+                <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" SelectionChanged="OnSelectedImageChanged">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
                             <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>

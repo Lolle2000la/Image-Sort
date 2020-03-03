@@ -1,4 +1,5 @@
 ﻿using ImageSort.ViewModels;
+using IPrompt;
 using ReactiveUI;
 using System;
 using System.Reactive;
@@ -50,6 +51,14 @@ namespace ImageSort.WPF.Views
                     vm => vm.GoRight,
                     view => view.GoRight)
                     .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.RenameImage,
+                    view => view.Rename)
+                    .DisposeWith(disposableRegistration);
+
+                ViewModel.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(
+                    IInputBox.Show("What name to rename the image to?", "Rename image", System.Windows.MessageBoxImage.Question)));
 
                 ViewModel.GoLeft
                     .Merge(ViewModel.GoRight)
