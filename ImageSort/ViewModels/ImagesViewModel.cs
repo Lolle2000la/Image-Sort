@@ -49,8 +49,12 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _searchTerm, value);
         }
 
+        public Interaction<Unit, string> PromptForNewFileName { get; }
+            = new Interaction<Unit, string>();
+
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
+        public ReactiveCommand<Unit, Unit> RenameImage { get; }
 
         public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
@@ -128,6 +132,14 @@ namespace ImageSort.ViewModels
                     folderWatcher.Deleted += OnImageDeleted;
                     folderWatcher.Renamed += OnImageRenamed;
                 });
+
+            var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
+                .Select(p => !string.IsNullOrEmpty(p));
+
+            RenameImage = ReactiveCommand.Create(() =>
+            {
+
+            }, canRenameImage);
         }
 
 
