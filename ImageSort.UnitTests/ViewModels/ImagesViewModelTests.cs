@@ -5,6 +5,8 @@ using System.Linq;
 using ImageSort.FileSystem;
 using Moq;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace ImageSort.UnitTests.ViewModels
 {
@@ -114,6 +116,39 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
 
             Assert.Contains(allFiles.First(), imagesVM.Images);
+        }
+
+        [Fact(DisplayName = "Can rename images")]
+        public async ValueTask CanRenameImages()
+        {
+            const string basePath = @"C:\";
+            const string oldFilePath = basePath + "image.png";
+            const string newFileName = "other_image";
+            const string newFilePath = basePath + newFileName + ".png";
+            var allFiles = new[] { oldFilePath };
+            var allFilesResulting = new[] { newFilePath };
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetFiles(basePath))
+                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+
+            fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
+
+            var imagesVM = new ImagesViewModel(fsMock.Object)
+            {
+                CurrentFolder = basePath
+            };
+
+            Assert.Equal(allFiles, imagesVM.Images);
+
+            imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(newFileName));
+
+            await imagesVM.RenameImage.Execute();
+
+            fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
+
+            Assert.Equal(allFilesResulting, imagesVM.Images);
         }
     }
 }
