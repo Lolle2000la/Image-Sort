@@ -125,11 +125,23 @@ namespace ImageSort.ViewModels
                 {
                     if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
                         || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("*", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("?", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains(":", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("<", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains(">", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("|", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("\"", StringComparison.OrdinalIgnoreCase)
                         || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0) 
                         return null;
 
-                    return new RenameAction(SelectedImage, newFileName, fileSystem,
-                        (o, n) => images.Replace(o, n), (n, o) => images.Replace(n, o));
+                    try
+                    {
+                        return new RenameAction(SelectedImage, newFileName, fileSystem,
+                            (o, n) => images.Replace(o, n), (n, o) => images.Replace(n, o));
+                    }
+                    catch (IOException)
+                    { }
                 }
 
                 return null;
