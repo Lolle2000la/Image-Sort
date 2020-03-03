@@ -23,15 +23,16 @@ namespace ImageSort.Actions
             if (newName == null) throw new ArgumentNullException(nameof(newName));
             if (fileSystem == null) throw new ArgumentNullException(nameof(fileSystem));
             if (!fileSystem.FileExists(path)) throw new FileNotFoundException(null, path);
-            if (!fileSystem.FileExists(newName)) throw new IOException($"The file \"{newName}\" already exists.");
+
+            oldPath = path = Path.GetFullPath(path);
+            newPath = Path.Combine(Path.GetDirectoryName(path), newName + Path.GetExtension(path));
+
+            if (fileSystem.FileExists(newPath)) throw new IOException($"The file \"{newName}\" already exists.");
 
             this.fileSystem = fileSystem;
 
             this.notifyAct = notifyAct;
             this.notifyRevert = notifyRevert;
-
-            oldPath = path = Path.GetFullPath(path);
-            newPath = Path.Combine(Path.GetDirectoryName(path), newName + Path.GetExtension(path));
         }
 
         public void Act()
