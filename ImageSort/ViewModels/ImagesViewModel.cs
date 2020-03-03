@@ -113,26 +113,6 @@ namespace ImageSort.ViewModels
                 SelectedIndex++;
             }, canGoRight);
 
-            this.WhenAnyValue(x => x.CurrentFolder)
-                .Where(f => !string.IsNullOrEmpty(f))
-                .Subscribe(f =>
-                {
-                    folderWatcher?.Dispose();
-                    folderWatcher = folderWatcherFactory();
-
-                    if (folderWatcher == null) return;
-
-                    folderWatcher.Path = f;
-                    folderWatcher.IncludeSubdirectories = false;
-                    folderWatcher.NotifyFilter = NotifyFilters.FileName;
-                    folderWatcher.InternalBufferSize = 64000;
-                    folderWatcher.EnableRaisingEvents = true;
-
-                    folderWatcher.Created += OnImageCreated;
-                    folderWatcher.Deleted += OnImageDeleted;
-                    folderWatcher.Renamed += OnImageRenamed;
-                });
-
             var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
                 .Select(p => !string.IsNullOrEmpty(p));
 
@@ -156,6 +136,26 @@ namespace ImageSort.ViewModels
                     fileSystem.Move(selectedImage, newPath);
                 }
             }, canRenameImage);
+
+            this.WhenAnyValue(x => x.CurrentFolder)
+                .Where(f => !string.IsNullOrEmpty(f))
+                .Subscribe(f =>
+                {
+                    folderWatcher?.Dispose();
+                    folderWatcher = folderWatcherFactory();
+
+                    if (folderWatcher == null) return;
+
+                    folderWatcher.Path = f;
+                    folderWatcher.IncludeSubdirectories = false;
+                    folderWatcher.NotifyFilter = NotifyFilters.FileName;
+                    folderWatcher.InternalBufferSize = 64000;
+                    folderWatcher.EnableRaisingEvents = true;
+
+                    folderWatcher.Created += OnImageCreated;
+                    folderWatcher.Deleted += OnImageDeleted;
+                    folderWatcher.Renamed += OnImageRenamed;
+                });
         }
 
 
