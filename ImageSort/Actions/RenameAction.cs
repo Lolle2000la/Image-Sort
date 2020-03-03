@@ -37,16 +37,16 @@ namespace ImageSort.Actions
 
         public void Act()
         {
-            fileSystem.Move(oldPath, newPath);
-
             notifyAct?.Invoke(oldPath, newPath);
+
+            fileSystem.Move(oldPath, newPath);
         }
 
         public void Revert()
         {
-            fileSystem.Move(newPath, oldPath);
-
             notifyRevert?.Invoke(newPath, oldPath);
+
+            fileSystem.Move(newPath, oldPath);
         }
     }
 }
