@@ -7,6 +7,7 @@ using Moq;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Reactive.Linq;
+using System.Reactive;
 
 namespace ImageSort.UnitTests.ViewModels
 {
@@ -126,6 +127,8 @@ namespace ImageSort.UnitTests.ViewModels
             var allFiles = new[] { oldFilePath };
             var allFilesResulting = new[] { newFilePath };
 
+            var notifiesUserOfError = false;
+
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
@@ -145,6 +148,12 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.Equal(allFiles, imagesVM.Images);
 
             imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(promptedFileName));
+            imagesVM.NotifyUserOfError.RegisterHandler(ic =>
+            {
+                notifiesUserOfError = true;
+
+                ic.SetOutput(Unit.Default);
+            });
 
             await imagesVM.RenameImage.Execute();
 
@@ -162,6 +171,8 @@ namespace ImageSort.UnitTests.ViewModels
 
                 Assert.Equal(allFilesResulting, imagesVM.Images);
             }
+
+            Assert.True(notifiesUserOfError);
         }
     }
 }
