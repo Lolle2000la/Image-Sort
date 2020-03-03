@@ -14,4 +14,4 @@ jobs:
       with:
         dotnet-version: 3.1.102
     - name: Build with dotnet
-      run: dotnet build --configuration Release ./ImageSort.UnitTests/ImageSort.UnitTests.csproj
+      run: dotnet build --configuration Release ./ImageSort.UnitTests/ImageSort.UnitTests.csproj /p:DoNotUseGitVersion=true
