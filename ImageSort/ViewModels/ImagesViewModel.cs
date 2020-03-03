@@ -53,6 +53,9 @@ namespace ImageSort.ViewModels
         public Interaction<Unit, string> PromptForNewFileName { get; }
             = new Interaction<Unit, string>();
 
+        public Interaction<string, Unit> NotifyUserOfError { get; }
+            = new Interaction<string, Unit>();
+
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
         public ReactiveCommand<Unit, IReversibleAction> RenameImage { get; }
@@ -132,16 +135,22 @@ namespace ImageSort.ViewModels
                         || newFileName.Contains(">", StringComparison.OrdinalIgnoreCase)
                         || newFileName.Contains("|", StringComparison.OrdinalIgnoreCase)
                         || newFileName.Contains("\"", StringComparison.OrdinalIgnoreCase)
-                        || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0) 
+                        || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+                    {
+                        await NotifyUserOfError.Handle($"The name \"{newFileName}\" contains illegal characters.");
+
                         return null;
+                    }
 
                     try
                     {
                         return new RenameAction(SelectedImage, newFileName, fileSystem,
                             (o, n) => images.Replace(o, n), (n, o) => images.Replace(n, o));
                     }
-                    catch (IOException)
-                    { }
+                    catch (IOException ex)
+                    {
+                        await NotifyUserOfError.Handle(ex.Message);
+                    }
                 }
 
                 return null;
