@@ -124,6 +124,8 @@ namespace ImageSort.UnitTests.ViewModels
             const string basePath = @"C:\";
             const string oldFilePath = basePath + "image.png";
             const string newFileName = "other_image";
+            var invalidFileNames = new[] { @"image\ima", "im/age", "%Appdata%" };
+            var promptedFileName = newFileName;
             const string newFilePath = basePath + newFileName + ".png";
             var allFiles = new[] { oldFilePath };
             var allFilesResulting = new[] { newFilePath };
@@ -142,13 +144,22 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(allFiles, imagesVM.Images);
 
-            imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(newFileName));
+            imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(promptedFileName));
 
             await imagesVM.RenameImage.Execute();
 
             fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
 
             Assert.Equal(allFilesResulting, imagesVM.Images);
+
+            foreach (var invalidFileName in invalidFileNames)
+            {
+                promptedFileName = invalidFileName;
+
+                await imagesVM.RenameImage.Execute();
+
+                Assert.Equal(allFilesResulting, imagesVM.Images);
+            }
         }
     }
 }
