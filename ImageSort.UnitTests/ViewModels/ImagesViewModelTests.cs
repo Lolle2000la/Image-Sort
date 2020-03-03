@@ -124,7 +124,7 @@ namespace ImageSort.UnitTests.ViewModels
             const string basePath = @"C:\";
             const string oldFilePath = basePath + "image.png";
             const string newFileName = "other_image";
-            var invalidFileNames = new[] { @"image\ima", "im/age", "%Appdata%" };
+            var invalidFileNames = new[] { @"image\ima", "im/age", "imag\n", "imag\t" };
             var promptedFileName = newFileName;
             const string newFilePath = basePath + newFileName + ".png";
             var allFiles = new[] { oldFilePath };

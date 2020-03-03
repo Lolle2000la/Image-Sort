@@ -142,6 +142,11 @@ namespace ImageSort.ViewModels
 
                 if (newFileName != null)
                 {
+                    if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
+                        || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0) 
+                        return;
+
                     var newPath = Path.Combine(CurrentFolder, newFileName + Path.GetExtension(SelectedImage));
 
                     var selectedImage = SelectedImage;
