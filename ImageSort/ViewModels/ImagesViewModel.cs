@@ -121,7 +121,7 @@ namespace ImageSort.ViewModels
             {
                 var newFileName = await PromptForNewFileName.Handle(Unit.Default);
 
-                if (newFileName != null)
+                if (!string.IsNullOrEmpty(newFileName))
                 {
                     if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
                         || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
