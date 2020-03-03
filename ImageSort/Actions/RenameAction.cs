@@ -37,12 +37,16 @@ namespace ImageSort.Actions
 
         public void Act()
         {
-            throw new NotImplementedException();
+            fileSystem.Move(oldPath, newPath);
+
+            notifyAct?.Invoke(oldPath, newPath);
         }
 
         public void Revert()
         {
-            throw new NotImplementedException();
+            fileSystem.Move(newPath, oldPath);
+
+            notifyRevert?.Invoke(newPath, oldPath);
         }
     }
 }
