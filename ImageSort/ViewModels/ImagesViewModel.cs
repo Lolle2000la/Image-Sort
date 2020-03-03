@@ -1,5 +1,6 @@
 ﻿using DynamicData;
 using DynamicData.Binding;
+using ImageSort.Actions;
 using ImageSort.FileSystem;
 using ImageSort.Helpers;
 using ReactiveUI;
@@ -52,9 +53,12 @@ namespace ImageSort.ViewModels
         public Interaction<Unit, string> PromptForNewFileName { get; }
             = new Interaction<Unit, string>();
 
+        public Interaction<string, Unit> NotifyUserOfError { get; }
+            = new Interaction<string, Unit>();
+
         public ReactiveCommand<Unit, Unit> GoLeft { get; }
         public ReactiveCommand<Unit, Unit> GoRight { get; }
-        public ReactiveCommand<Unit, Unit> RenameImage { get; }
+        public ReactiveCommand<Unit, IReversibleAction> RenameImage { get; }
 
         public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
@@ -113,6 +117,45 @@ namespace ImageSort.ViewModels
                 SelectedIndex++;
             }, canGoRight);
 
+            var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
+                .Select(p => !string.IsNullOrEmpty(p));
+
+            RenameImage = ReactiveCommand.CreateFromTask<IReversibleAction>(async _ =>
+            {
+                var newFileName = await PromptForNewFileName.Handle(Unit.Default);
+
+                if (!string.IsNullOrEmpty(newFileName))
+                {
+                    if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
+                        || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("*", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("?", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains(":", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("<", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains(">", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("|", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.Contains("\"", StringComparison.OrdinalIgnoreCase)
+                        || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
+                    {
+                        await NotifyUserOfError.Handle($"The name \"{newFileName}\" contains illegal characters.");
+
+                        return null;
+                    }
+
+                    try
+                    {
+                        return new RenameAction(SelectedImage, newFileName, fileSystem,
+                            (o, n) => images.Replace(o, n), (n, o) => images.Replace(n, o));
+                    }
+                    catch (IOException ex)
+                    {
+                        await NotifyUserOfError.Handle(ex.Message);
+                    }
+                }
+
+                return null;
+            }, canRenameImage);
+
             this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => !string.IsNullOrEmpty(f))
                 .Subscribe(f =>
@@ -132,14 +175,6 @@ namespace ImageSort.ViewModels
                     folderWatcher.Deleted += OnImageDeleted;
                     folderWatcher.Renamed += OnImageRenamed;
                 });
-
-            var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
-                .Select(p => !string.IsNullOrEmpty(p));
-
-            RenameImage = ReactiveCommand.Create(() =>
-            {
-
-            }, canRenameImage);
         }
 
 

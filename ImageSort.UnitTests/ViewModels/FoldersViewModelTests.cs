@@ -34,7 +34,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can prompt user to pin folders.")]
-        public async ValueTask CanPinFolders()
+        public async Task CanPinFolders()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -55,7 +55,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Handles user canceling gracefully.")]
-        public async ValueTask HandlesCancelingGracefully()
+        public async Task HandlesCancelingGracefully()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -71,7 +71,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can pin the selected folder.")]
-        public async ValueTask CanPinSelected()
+        public async Task CanPinSelected()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -91,7 +91,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Can unpin the selected folder.")]
-        public async ValueTask CanUnpinSelected()
+        public async Task CanUnpinSelected()
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
@@ -118,7 +118,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Only unpins if pinned in the first place.")]
-        public async ValueTask OnlyUnpinsIfPinned()
+        public async Task OnlyUnpinsIfPinned()
         {
             var mockItem = CreateMock(MockPath);
 
@@ -132,7 +132,7 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Concatenates the current folder and the pinned folders correctly.")]
-        public async ValueTask ConcatenatesFoldersCorrectly()
+        public async Task ConcatenatesFoldersCorrectly()
         {
             var currentFolder = CreateMock(MockPath);
 

@@ -5,6 +5,9 @@ using System.Linq;
 using ImageSort.FileSystem;
 using Moq;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
+using System.Reactive.Linq;
+using System.Reactive;
 
 namespace ImageSort.UnitTests.ViewModels
 {
@@ -23,8 +26,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Setup(fs => fs.GetFiles(basePath))
-                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
             var imagesVM = new ImagesViewModel(fsMock.Object) 
             { 
@@ -45,8 +47,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Setup(fs => fs.GetFiles(basePath))
-                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
             var imagesVM = new ImagesViewModel(fsMock.Object)
             {
@@ -71,8 +72,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Setup(fs => fs.GetFiles(basePath))
-                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
             var imagesVM = new ImagesViewModel(fsMock.Object)
             {
@@ -101,8 +101,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Setup(fs => fs.GetFiles(basePath))
-                  .Returns(new ReadOnlyCollection<string>(allFiles.ToList()));
+            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
             var imagesVM = new ImagesViewModel(fsMock.Object)
             {
@@ -114,6 +113,66 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
 
             Assert.Contains(allFiles.First(), imagesVM.Images);
+        }
+
+        [Fact(DisplayName = "Can rename images")]
+        public async Task CanRenameImages()
+        {
+            const string basePath = @"C:\";
+            const string oldFilePath = basePath + "image.png";
+            const string newFileName = "other_image";
+            var invalidFileNames = new[] { @"image\ima", "im/age", "imag\n", "imag\t" };
+            var promptedFileName = newFileName;
+            const string newFilePath = basePath + newFileName + ".png";
+            var allFiles = new[] { oldFilePath };
+            var allFilesResulting = new[] { newFilePath };
+
+            var notifiesUserOfError = false;
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+
+            fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
+
+            fsMock.Setup(fs => fs.FileExists(oldFilePath)).Returns(true);
+
+            var imagesVM = new ImagesViewModel(fsMock.Object)
+            {
+                CurrentFolder = basePath
+            };
+
+            imagesVM.RenameImage.Where(a => a != null)
+                .Subscribe(a => a.Act());
+
+            Assert.Equal(allFiles, imagesVM.Images);
+
+            imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(promptedFileName));
+            imagesVM.NotifyUserOfError.RegisterHandler(ic =>
+            {
+                notifiesUserOfError = true;
+
+                ic.SetOutput(Unit.Default);
+            });
+
+            await imagesVM.RenameImage.Execute();
+
+            fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
+
+            await Task.Delay(1);
+
+            Assert.Equal(allFilesResulting, imagesVM.Images);
+
+            foreach (var invalidFileName in invalidFileNames)
+            {
+                promptedFileName = invalidFileName;
+
+                await imagesVM.RenameImage.Execute();
+
+                Assert.Equal(allFilesResulting, imagesVM.Images);
+            }
+
+            Assert.True(notifiesUserOfError);
         }
     }
 }
