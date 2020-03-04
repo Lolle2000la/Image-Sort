@@ -161,5 +161,18 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.Equal(new[] { currentFolder.Path }.Concat(mockFolders),
                 foldersVM.AllFoldersTracked.Select(f => f.Path));
         }
+
+        [Fact(DisplayName = "Marks the current folder as such")]
+        public async Task MarksCurrentFolder()
+        {
+            var currentFolder = CreateMock(MockPath);
+
+            var foldersVM = new FoldersViewModel
+            {
+                CurrentFolder = currentFolder
+            };
+
+            Assert.True(foldersVM.CurrentFolder.IsCurrentFolder);
+        }
     }
 }
