@@ -23,6 +23,13 @@ namespace ImageSort.ViewModels
         private readonly Func<FileSystemWatcher> folderWatcherFactory;
         private readonly FileSystemWatcher folderWatcher;
 
+        private bool _isCurrentFolder;
+        public bool IsCurrentFolder
+        {
+            get => _isCurrentFolder;
+            set => this.RaiseAndSetIfChanged(ref _isCurrentFolder, value);
+        }
+
         private string _path;
         public string Path
         {
