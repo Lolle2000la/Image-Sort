@@ -115,7 +115,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to The directory &quot;{Folder}&quot; does not exist..
+        ///   Looks up a localized string similar to The directory &quot;{Directory}&quot; does not exist..
         /// </summary>
         public static string DirectoryNotFoundExceptionMessage {
             get {
@@ -129,6 +129,15 @@ namespace ImageSort.Localization {
         public static string Error {
             get {
                 return ResourceManager.GetString("Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to The file &quot;{FileName}&quot; already exists..
+        /// </summary>
+        public static string FileAlreadyExistsExceptionMessage {
+            get {
+                return ResourceManager.GetString("FileAlreadyExistsExceptionMessage", resourceCulture);
             }
         }
         

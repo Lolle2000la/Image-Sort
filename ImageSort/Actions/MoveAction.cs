@@ -20,7 +20,8 @@ namespace ImageSort.Actions
             if (toFolder == null) throw new ArgumentNullException(nameof(toFolder));
             if (fileSystem == null) throw new ArgumentNullException(nameof(fileSystem));
             if (!fileSystem.FileExists(file)) throw new FileNotFoundException(null, file);
-            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException($"The directory \"{toFolder}\" does not exist.");
+            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException(
+                Text.DirectoryNotFoundExceptionMessage.Replace("{Directory}", toFolder, StringComparison.OrdinalIgnoreCase));
 
             this.fileSystem = fileSystem;
 

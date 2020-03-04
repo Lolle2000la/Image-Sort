@@ -136,10 +136,13 @@
     <value>Delete {FileName}</value>
   </data>
   <data name="DirectoryNotFoundExceptionMessage" xml:space="preserve">
-    <value>The directory "{Folder}" does not exist.</value>
+    <value>The directory "{Directory}" does not exist.</value>
   </data>
   <data name="Error" xml:space="preserve">
     <value>Error</value>
+  </data>
+  <data name="FileAlreadyExistsExceptionMessage" xml:space="preserve">
+    <value>The file "{FileName}" already exists.</value>
   </data>
   <data name="GoLeftTooltip" xml:space="preserve">
     <value>Move image selection left (left arrow key)</value>

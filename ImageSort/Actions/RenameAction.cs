@@ -30,7 +30,8 @@ namespace ImageSort.Actions
             oldPath = path = Path.GetFullPath(path);
             newPath = Path.Combine(Path.GetDirectoryName(path), newName + Path.GetExtension(path));
 
-            if (fileSystem.FileExists(newPath)) throw new IOException($"The file \"{newName}\" already exists.");
+            if (fileSystem.FileExists(newPath)) throw new IOException(
+                Text.FileAlreadyExistsExceptionMessage.Replace("{FileName}", newName, StringComparison.OrdinalIgnoreCase));
 
             this.fileSystem = fileSystem;
 
