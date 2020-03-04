@@ -1,4 +1,5 @@
 ﻿using ImageSort.FileSystem;
+using ImageSort.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +15,9 @@ namespace ImageSort.Actions
         private readonly string oldPath;
         private readonly string newPath;
 
-        public string DisplayName => $"Rename {Path.GetFileName(oldPath)} to {Path.GetFileName(newPath)}";
+        public string DisplayName => Text.RenameActionMessage
+            .Replace("{OldFileName}", Path.GetFileName(oldPath), StringComparison.OrdinalIgnoreCase)
+            .Replace("{NewFileName}", Path.GetFileName(newPath), StringComparison.OrdinalIgnoreCase);
 
         public RenameAction(string path, string newName, IFileSystem fileSystem,
             Action<string, string> notifyAct = null, Action<string, string> notifyRevert = null)
@@ -27,7 +30,8 @@ namespace ImageSort.Actions
             oldPath = path = Path.GetFullPath(path);
             newPath = Path.Combine(Path.GetDirectoryName(path), newName + Path.GetExtension(path));
 
-            if (fileSystem.FileExists(newPath)) throw new IOException($"The file \"{newName}\" already exists.");
+            if (fileSystem.FileExists(newPath)) throw new IOException(
+                Text.FileAlreadyExistsExceptionMessage.Replace("{FileName}", newName, StringComparison.OrdinalIgnoreCase));
 
             this.fileSystem = fileSystem;
 
@@ -37,16 +41,16 @@ namespace ImageSort.Actions
 
         public void Act()
         {
-            notifyAct?.Invoke(oldPath, newPath);
-
             fileSystem.Move(oldPath, newPath);
+
+            notifyAct?.Invoke(oldPath, newPath);
         }
 
         public void Revert()
         {
-            notifyRevert?.Invoke(newPath, oldPath);
-
             fileSystem.Move(newPath, oldPath);
+
+            notifyRevert?.Invoke(newPath, oldPath);
         }
     }
 }

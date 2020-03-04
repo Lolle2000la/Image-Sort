@@ -121,7 +121,9 @@ namespace ImageSort.UnitTests.ViewModels
 
             await otherMainVM.MoveImageToFolder.Execute();
 
-            Assert.Equal($"Move {Path.GetFileName(image)} to {Path.GetDirectoryName(moveDestination)}", otherMainVM.Actions.LastDone);
+            Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
+
+            Assert.Contains(Path.GetDirectoryName(moveDestination), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 
             Assert.Empty(otherMainVM.Images.Images);
 
@@ -160,7 +162,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             await otherMainVM.DeleteImage.Execute();
 
-            Assert.Equal($"Delete {Path.GetFileName(image)}", otherMainVM.Actions.LastDone);
+            Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 
             Assert.Empty(otherMainVM.Images.Images);
 

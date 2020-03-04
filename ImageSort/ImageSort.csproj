@@ -15,6 +15,10 @@
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
+  </ItemGroup>
    
    <PropertyGroup>
      <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>

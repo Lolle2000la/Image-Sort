@@ -1,13 +1,16 @@
 ﻿using ImageSort.DependencyManagement;
 using ImageSort.FileSystem;
+using ImageSort.Localization;
 using ImageSort.WindowsUpdater;
 using ImageSort.WPF.FileSystem;
 using Octokit;
 using ReactiveUI;
 using Splat;
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Application = System.Windows.Application;
@@ -21,6 +24,11 @@ namespace ImageSort.WPF
     {
         public App()
         {
+#if DEBUG || DEBUG_LOCALIZATION
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en");
+#endif
+
             var assembly = Assembly.GetAssembly(typeof(App));
             var gitVersionInformationType = assembly.GetType("GitVersionInformation");
             var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
@@ -51,8 +59,8 @@ namespace ImageSort.WPF
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
             (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
 
-            if (success && MessageBox.Show($"A new version of Image Sort is available: {release.TagName} \n\nDo you want to update?", 
-                    "An update is available", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (success && MessageBox.Show(Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName, StringComparison.OrdinalIgnoreCase),
+                    Text.UpdateAvailablePromptTitle, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 if (updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {

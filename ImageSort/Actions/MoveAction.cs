@@ -1,4 +1,5 @@
 ﻿using ImageSort.FileSystem;
+using ImageSort.Localization;
 using System;
 using System.IO;
 
@@ -19,7 +20,8 @@ namespace ImageSort.Actions
             if (toFolder == null) throw new ArgumentNullException(nameof(toFolder));
             if (fileSystem == null) throw new ArgumentNullException(nameof(fileSystem));
             if (!fileSystem.FileExists(file)) throw new FileNotFoundException(null, file);
-            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException($"The directory \"{toFolder}\" does not exist.");
+            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException(
+                Text.DirectoryNotFoundExceptionMessage.Replace("{Directory}", toFolder, StringComparison.OrdinalIgnoreCase));
 
             this.fileSystem = fileSystem;
 
@@ -34,7 +36,9 @@ namespace ImageSort.Actions
             newDestination = Path.Combine(toFolder, Path.GetFileName(file));
         }
 
-        public string DisplayName => $"Move {Path.GetFileName(oldDestination)} to {Path.GetDirectoryName(newDestination)}";
+        public string DisplayName => Text.MoveActionMessage
+            .Replace("{FileName}", Path.GetFileName(oldDestination), StringComparison.OrdinalIgnoreCase)
+            .Replace("{Directory}", Path.GetDirectoryName(newDestination), StringComparison.OrdinalIgnoreCase);
 
         public void Act()
         {

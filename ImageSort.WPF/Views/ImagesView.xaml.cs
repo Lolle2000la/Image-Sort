@@ -1,4 +1,5 @@
-﻿using ImageSort.ViewModels;
+﻿using ImageSort.Localization;
+using ImageSort.ViewModels;
 using IPrompt;
 using ReactiveUI;
 using System;
@@ -59,11 +60,11 @@ namespace ImageSort.WPF.Views
                     .DisposeWith(disposableRegistration);
 
                 ViewModel.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(
-                    IInputBox.Show("What name to rename the image to?", "Rename image", System.Windows.MessageBoxImage.Question)));
+                    IInputBox.Show(Text.RenameImagePromptText, Text.RenameImagePromptTitle, MessageBoxImage.Question)));
 
                 ViewModel.NotifyUserOfError.RegisterHandler(ic =>
                 {
-                    MessageBox.Show(ic.Input, "An error happened while renaming the image", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(ic.Input, Text.Error, MessageBoxButton.OK, MessageBoxImage.Error);
 
                     ic.SetOutput(Unit.Default);
                 });

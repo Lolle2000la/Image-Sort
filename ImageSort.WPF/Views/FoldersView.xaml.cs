@@ -1,4 +1,5 @@
-﻿using ImageSort.ViewModels;
+﻿using ImageSort.Localization;
+using ImageSort.ViewModels;
 using IPrompt;
 using ReactiveUI;
 using System;
@@ -36,7 +37,7 @@ namespace ImageSort.WPF.Views
                 });
 
                 ViewModel.PromptForName.RegisterHandler(ic => ic.SetOutput(
-                    IInputBox.Show("What name should the folder have?", "Create a folder", MessageBoxImage.Question)));
+                    IInputBox.Show(Text.NewFolderPromptText, Text.NewFolderPromptTitle, MessageBoxImage.Question)));
 
                 var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
 

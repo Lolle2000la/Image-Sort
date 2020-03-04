@@ -8,6 +8,7 @@
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
+                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -21,10 +22,10 @@
         </Grid.RowDefinitions>
 
         <WrapPanel Orientation="Horizontal">
-            <Button x:Name="Pin" Content="Pin (P)"/>
-            <Button x:Name="PinSelected" Content="Pin selected (F)"/>
-            <Button x:Name="Unpin" Content="Unpin (U)"/>
-            <Button x:Name="CreateFolder" Content="Create Folder (C)"/>
+            <Button x:Name="Pin" Content="{x:Static text:Text.Pin}"/>
+            <Button x:Name="PinSelected" Content="{x:Static text:Text.PinSelected}"/>
+            <Button x:Name="Unpin" Content="{x:Static text:Text.Unpin}"/>
+            <Button x:Name="CreateFolder" Content="{x:Static text:Text.CreateFolder}"/>
         </WrapPanel>
 
         <TreeView x:Name="Folders" Grid.Row="1">

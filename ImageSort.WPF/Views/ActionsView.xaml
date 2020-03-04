@@ -7,6 +7,7 @@
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 xmlns:reactiveui="http://reactiveui.net"
+                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 mc:Ignorable="d" 
                                 d:DesignWidth="800">
     <Grid>
@@ -14,8 +15,8 @@
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        
-        <Button x:Name="Undo" Content="Undo (Q)" Padding="5"/>
-        <Button x:Name="Redo" Content="Redo (E)" Padding="5" Grid.Column="1"/>
+
+        <Button x:Name="Undo" Content="{x:Static text:Text.Undo}" Padding="5"/>
+        <Button x:Name="Redo" Content="{x:Static text:Text.Redo}" Padding="5" Grid.Column="1"/>
     </Grid>
 </reactiveui:ReactiveUserControl>

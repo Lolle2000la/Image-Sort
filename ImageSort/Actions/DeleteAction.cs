@@ -1,4 +1,5 @@
 ﻿using ImageSort.FileSystem;
+using ImageSort.Localization;
 using System;
 using System.IO;
 
@@ -30,7 +31,8 @@ namespace ImageSort.Actions
             this.recycleBin = recycleBin;
         }
 
-        public string DisplayName => $"Delete {Path.GetFileName(oldPath)}";
+        public string DisplayName => Text.DeleteActionMessage
+            .Replace("{FileName}", Path.GetFileName(oldPath), StringComparison.OrdinalIgnoreCase);
 
         public void Act()
         {
