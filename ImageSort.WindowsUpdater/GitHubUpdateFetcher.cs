@@ -39,7 +39,7 @@ namespace ImageSort.WindowsUpdater
                     {
                         var prereleaseCondition = allowPrerelease || !release.Prerelease;
 
-                        var firstIndexOfV = release.TagName.IndexOf('v');
+                        var firstIndexOfV = release.TagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
 
                         var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1));
 
