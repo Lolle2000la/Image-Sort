@@ -24,9 +24,9 @@ after_build:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
           cd .\ImageSort.WindowsSetup\;
-          gitversion /updatewixversionfile | Out-Null;
-          MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false | Out-Null;
-          MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false | Out-Null;
+          gitversion /updatewixversionfile | Out-String;
+          MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
+          MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
           cd ..;
       }
 
