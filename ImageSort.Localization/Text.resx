@@ -175,7 +175,7 @@
     <value>Pin selected (F)</value>
   </data>
   <data name="Redo" xml:space="preserve">
-    <value>Redo</value>
+    <value>Redo (E)</value>
   </data>
   <data name="Rename" xml:space="preserve">
     <value>Rename (R)</value>
@@ -196,7 +196,7 @@
     <value>Search images... (Shortcuts: I to focus, Tab to leave)</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>Undo</value>
+    <value>Undo (Q)</value>
   </data>
   <data name="Unpin" xml:space="preserve">
     <value>Unpin (U)</value>
