@@ -1,5 +1,6 @@
 ﻿using ImageSort.DependencyManagement;
 using ImageSort.FileSystem;
+using ImageSort.Localization;
 using ImageSort.WindowsUpdater;
 using ImageSort.WPF.FileSystem;
 using Octokit;
@@ -51,8 +52,8 @@ namespace ImageSort.WPF
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
             (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
 
-            if (success && MessageBox.Show($"A new version of Image Sort is available: {release.TagName} \n\nDo you want to update?", 
-                    "An update is available", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            if (success && MessageBox.Show(Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName, StringComparison.OrdinalIgnoreCase),
+                    Text.UpdateAvailablePromptTitle, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
                 if (updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {
