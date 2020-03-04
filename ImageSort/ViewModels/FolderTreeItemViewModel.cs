@@ -23,7 +23,7 @@ namespace ImageSort.ViewModels
         private readonly Func<FileSystemWatcher> folderWatcherFactory;
         private readonly FileSystemWatcher folderWatcher;
 
-        private bool _isCurrentFolder;
+        private bool _isCurrentFolder = false;
         public bool IsCurrentFolder
         {
             get => _isCurrentFolder;
