@@ -1,4 +1,5 @@
 ﻿using ImageSort.FileSystem;
+using ImageSort.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +15,9 @@ namespace ImageSort.Actions
         private readonly string oldPath;
         private readonly string newPath;
 
-        public string DisplayName => $"Rename {Path.GetFileName(oldPath)} to {Path.GetFileName(newPath)}";
+        public string DisplayName => Text.RenameActionMessage
+            .Replace("{OldFileName}", Path.GetFileName(oldPath), StringComparison.OrdinalIgnoreCase)
+            .Replace("{NewFileName}", Path.GetFileName(newPath), StringComparison.OrdinalIgnoreCase);
 
         public RenameAction(string path, string newName, IFileSystem fileSystem,
             Action<string, string> notifyAct = null, Action<string, string> notifyRevert = null)

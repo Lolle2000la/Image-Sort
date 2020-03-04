@@ -1,4 +1,5 @@
 ﻿using ImageSort.FileSystem;
+using ImageSort.Localization;
 using System;
 using System.IO;
 
@@ -34,7 +35,9 @@ namespace ImageSort.Actions
             newDestination = Path.Combine(toFolder, Path.GetFileName(file));
         }
 
-        public string DisplayName => $"Move {Path.GetFileName(oldDestination)} to {Path.GetDirectoryName(newDestination)}";
+        public string DisplayName => Text.MoveActionMessage
+            .Replace("{FileName}", Path.GetFileName(oldDestination), StringComparison.OrdinalIgnoreCase)
+            .Replace("{Directory}", Path.GetDirectoryName(newDestination), StringComparison.OrdinalIgnoreCase);
 
         public void Act()
         {
