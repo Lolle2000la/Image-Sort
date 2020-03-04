@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
     <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" />
     <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
   </ItemGroup>
