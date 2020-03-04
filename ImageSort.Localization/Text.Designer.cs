@@ -196,7 +196,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Create a folder.
+        ///   Looks up a localized string similar to Create folder.
         /// </summary>
         public static string NewFolderPromptTitle {
             get {
@@ -295,7 +295,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Search images... (Shortcuts: I to focus, Tab to leave).
+        ///   Looks up a localized string similar to Search images... (Shortcuts: &apos;I&apos; to focus, &apos;Tab&apos; to leave).
         /// </summary>
         public static string SearchTermWatermark {
             get {

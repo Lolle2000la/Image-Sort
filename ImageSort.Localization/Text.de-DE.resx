@@ -118,98 +118,98 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="CheckForUpdatesOnStartup" xml:space="preserve">
-    <value>Check for updates on startup</value>
+    <value>Beim Start nach Updates suchen</value>
   </data>
   <data name="CouldNotDeleteFileExceptionMessage" xml:space="preserve">
-    <value>Could not delete {FileName}</value>
+    <value>Die Datei {FileName} konnte nicht gelöscht werden</value>
   </data>
   <data name="CreateFolder" xml:space="preserve">
-    <value>Create Folder (C)</value>
+    <value>Ordner erstellen (C)</value>
   </data>
   <data name="DarkMode" xml:space="preserve">
-    <value>Dark Mode</value>
+    <value>Dunkler Modus</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Delete (↓)</value>
+    <value>Löschen (↓)</value>
   </data>
   <data name="DeleteActionMessage" xml:space="preserve">
-    <value>Delete {FileName}</value>
+    <value>{FileName} löschen</value>
   </data>
   <data name="DirectoryNotFoundExceptionMessage" xml:space="preserve">
-    <value>The directory "{Directory}" does not exist.</value>
+    <value>Der Ordner "{Directory}" existiert nicht.</value>
   </data>
   <data name="Error" xml:space="preserve">
-    <value>Error</value>
+    <value>Fehler</value>
   </data>
   <data name="FileAlreadyExistsExceptionMessage" xml:space="preserve">
-    <value>The file "{FileName}" already exists.</value>
+    <value>Die Datei "{FileName}" existiert schon.</value>
   </data>
   <data name="GoLeftTooltip" xml:space="preserve">
-    <value>Move image selection left (left arrow key)</value>
+    <value>Die Bildauswahl nach links verschieben (linke Pfeiltaste)</value>
   </data>
   <data name="GoRightTooltip" xml:space="preserve">
-    <value>Move image selection right (right arrow key)</value>
+    <value>Die Bildauswahl nach rechts verschieben (rechte Pfeiltaste)</value>
   </data>
   <data name="InstallPrereleaseBuilds" xml:space="preserve">
-    <value>Install prerelease builds</value>
+    <value>Vorschauversionen installieren</value>
   </data>
   <data name="Move" xml:space="preserve">
-    <value>Move (↑)</value>
+    <value>Verschieben (↑)</value>
   </data>
   <data name="MoveActionMessage" xml:space="preserve">
-    <value>Move {FileName} to {Directory}</value>
+    <value>{FileName} nach {Directory} verschieben</value>
   </data>
   <data name="NewFolderPromptText" xml:space="preserve">
-    <value>What name should the folder have?</value>
+    <value>Welchen Namen soll der Ordner haben?</value>
   </data>
   <data name="NewFolderPromptTitle" xml:space="preserve">
-    <value>Create a folder</value>
+    <value>Ordner erstellen</value>
   </data>
   <data name="OpenFolder" xml:space="preserve">
-    <value>Open folder (O)</value>
+    <value>Ordner öffnen (O)</value>
   </data>
   <data name="OpenSelectedFolder" xml:space="preserve">
-    <value>Open selected folder (Enter)</value>
+    <value>Ausgewählten Ordner öffnen (Enter)</value>
   </data>
   <data name="Pin" xml:space="preserve">
-    <value>Pin (P)</value>
+    <value>Anpinnen (P)</value>
   </data>
   <data name="PinSelected" xml:space="preserve">
-    <value>Pin selected (F)</value>
+    <value>Ausgewählten anpinnen (F)</value>
   </data>
   <data name="Redo" xml:space="preserve">
-    <value>Redo (E)</value>
+    <value>Wiederholen (E)</value>
   </data>
   <data name="Rename" xml:space="preserve">
-    <value>Rename (R)</value>
+    <value>Umbenennen (R)</value>
   </data>
   <data name="RenameActionMessage" xml:space="preserve">
-    <value>Rename {OldFileName} to {NewFileName}</value>
+    <value>{OldFileName} zu {NewFileName} umbenennen</value>
   </data>
   <data name="RenameImagePromptText" xml:space="preserve">
-    <value>What name to rename the image to?</value>
+    <value>Zu welchen Namen soll das Bild umbenannt werden?</value>
   </data>
   <data name="RenameImagePromptTitle" xml:space="preserve">
-    <value>Rename image</value>
+    <value>Bild umbenennen</value>
   </data>
   <data name="RenameNewNameContainsIllegalCharacters" xml:space="preserve">
-    <value>The name "{FileName}" contains illegal characters.</value>
+    <value>Der Name "{FileName}" enthält nicht zugelassene Zeichen.</value>
   </data>
   <data name="SearchTermWatermark" xml:space="preserve">
-    <value>Search images... (Shortcuts: I to focus, Tab to leave)</value>
+    <value>Bilder durchsuchen... (Shortcut: "I" zum auswählen, "Tab" zum verlassen)</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>Undo (Q)</value>
+    <value>Rückgängig (Q)</value>
   </data>
   <data name="Unpin" xml:space="preserve">
-    <value>Unpin (U)</value>
+    <value>Entfernen (U)</value>
   </data>
   <data name="UpdateAvailablePromptText" xml:space="preserve">
-    <value>A new version of Image Sort is available: {TagName}
+    <value>Eine neue Version von Image Sort ist verfügbar: {TagName}
 
-Do you want to update?</value>
+Wollen Sie updaten?</value>
   </data>
   <data name="UpdateAvailablePromptTitle" xml:space="preserve">
-    <value>An update is available</value>
+    <value>Ein Update ist verfügbar</value>
   </data>
 </root>

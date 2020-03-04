@@ -163,7 +163,7 @@
     <value>What name should the folder have?</value>
   </data>
   <data name="NewFolderPromptTitle" xml:space="preserve">
-    <value>Create a folder</value>
+    <value>Create folder</value>
   </data>
   <data name="OpenFolder" xml:space="preserve">
     <value>Open folder (O)</value>
@@ -196,7 +196,7 @@
     <value>The name "{FileName}" contains illegal characters.</value>
   </data>
   <data name="SearchTermWatermark" xml:space="preserve">
-    <value>Search images... (Shortcuts: I to focus, Tab to leave)</value>
+    <value>Search images... (Shortcuts: 'I' to focus, 'Tab' to leave)</value>
   </data>
   <data name="Undo" xml:space="preserve">
     <value>Undo (Q)</value>
