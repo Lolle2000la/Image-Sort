@@ -127,7 +127,7 @@ namespace ImageSort.ViewModels
 
                 if (!string.IsNullOrEmpty(newFileName))
                 {
-                    if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase) 
+                    if (newFileName.Contains(@"\", StringComparison.OrdinalIgnoreCase)
                         || newFileName.Contains("/", StringComparison.OrdinalIgnoreCase)
                         || newFileName.Contains("*", StringComparison.OrdinalIgnoreCase)
                         || newFileName.Contains("?", StringComparison.OrdinalIgnoreCase)
@@ -192,35 +192,40 @@ namespace ImageSort.ViewModels
 
         private void OnImageCreated(object sender, FileSystemEventArgs e)
         {
-            if (e.FullPath.EndsWithAny(StringComparison.OrdinalIgnoreCase, supportedTypes))
+            RxApp.MainThreadScheduler.Schedule(() =>
             {
-                RxApp.MainThreadScheduler.Schedule(() => images.Add(e.FullPath));
-            }
+                if (e.FullPath.EndsWithAny(StringComparison.OrdinalIgnoreCase, supportedTypes)
+                    && !images.Items.Contains(e.FullPath))
+                {
+                    images.Add(e.FullPath);
+                }
+            });
         }
 
         private void OnImageDeleted(object sender, FileSystemEventArgs e)
         {
             var item = images.Items.FirstOrDefault(i => i == e.FullPath);
 
-            if (item != null)
+            RxApp.MainThreadScheduler.Schedule(() =>
             {
-                RxApp.MainThreadScheduler.Schedule(() => images.Remove(item));
-            }
+                if (item != null && images.Items.Contains(item))
+                {
+                    images.Remove(item);
+                }
+            });
         }
 
         private void OnImageRenamed(object sender, RenamedEventArgs e)
         {
             var item = images.Items.FirstOrDefault(i => i == e.OldFullPath);
 
-            if (item != null)
+            RxApp.MainThreadScheduler.Schedule(() =>
             {
-                RxApp.MainThreadScheduler.Schedule(() =>
+                if (item != null && images.Items.Contains(item))
                 {
-                    images.Remove(item);
-
-                    images.Add(e.FullPath);
-                });
-            }
+                    images.Replace(item, e.FullPath);
+                }
+            });
         }
 
         ~ImagesViewModel()
