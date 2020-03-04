@@ -3,6 +3,7 @@ using DynamicData.Binding;
 using ImageSort.Actions;
 using ImageSort.FileSystem;
 using ImageSort.Helpers;
+using ImageSort.Localization;
 using ReactiveUI;
 using Splat;
 using System;
@@ -137,7 +138,8 @@ namespace ImageSort.ViewModels
                         || newFileName.Contains("\"", StringComparison.OrdinalIgnoreCase)
                         || newFileName.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
                     {
-                        await NotifyUserOfError.Handle($"The name \"{newFileName}\" contains illegal characters.");
+                        await NotifyUserOfError.Handle(Text.RenameNewNameContainsIllegalCharacters
+                            .Replace("{FileName}", newFileName, StringComparison.OrdinalIgnoreCase));
 
                         return null;
                     }
