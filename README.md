@@ -5,7 +5,7 @@ Sorts your image at high speed
 
 <a href='//www.microsoft.com/store/apps/9PGDK9WN8HG6?ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="200"/></a>
 
-![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/blob/master/screenshot_1.12.0.png?raw=true)
+![Screenshot from the user interface of Image Sort](./Image-Sort-Screenshot.png)
 
 # Currently, all work is being focused on version 2.0. Below refers to version 1.X.
 
