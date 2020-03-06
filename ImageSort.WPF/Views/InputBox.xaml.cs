@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AdonisUI.Controls;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Windows;
@@ -15,7 +16,7 @@ namespace ImageSort.WPF.Views
     /// <summary>
     /// Interaction logic for InputBox.xaml
     /// </summary>
-    public partial class InputBox : Window
+    public partial class InputBox : AdonisWindow
     {
 		public InputBox(string question, string title)
 		{
