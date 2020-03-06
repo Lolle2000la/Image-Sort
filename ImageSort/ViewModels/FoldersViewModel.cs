@@ -95,11 +95,15 @@ namespace ImageSort.ViewModels
             }, canPinSelectedExecute);
 
             var canUnpinSelectedExecute = this.WhenAnyValue(vm => vm.Selected, x => x.PinnedFolders.Count, (s, _) => s)
-                .Select(s => s != null && PinnedFolders.Contains(s));
+                .Select(s => s != null && PinnedFolders.Where(f => f != null)
+                    .Select(f => f.Path)
+                    .Contains(s.Path));
 
             UnpinSelected = ReactiveCommand.Create(() =>
             {
-                pinnedFolders.Remove(Selected);
+                var pinned = pinnedFolders.Items.FirstOrDefault(f => f.Path == Selected.Path);
+
+                if (pinned != null) pinnedFolders.Remove(pinned);
             }, canUnpinSelectedExecute);
 
             // make many above queries work

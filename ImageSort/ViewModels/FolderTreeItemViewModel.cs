@@ -89,7 +89,8 @@ namespace ImageSort.ViewModels
                             {
                                 try
                                 {
-                                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = folder });
+                                    RxApp.MainThreadScheduler.Schedule(() => 
+                                        subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = folder }));
                                 }
                                 catch (UnauthorizedAccessException) { }
                             }
