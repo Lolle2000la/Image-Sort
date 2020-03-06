@@ -73,6 +73,8 @@ namespace ImageSort.ViewModels
                 {
                     var folderToPin = await SelectFolder.Handle(Unit.Default);
 
+                    if (pinnedFolders.Items.Any(f => f.Path == folderToPin)) return;
+
                     pinnedFolders.Add(
                         new FolderTreeItemViewModel(fileSystem, backgroundScheduler)
                         {
@@ -85,7 +87,9 @@ namespace ImageSort.ViewModels
             });
 
             var canPinSelectedExecute = this.WhenAnyValue(x => x.Selected, x => x.PinnedFolders.Count, (s, _) => s)
-                .Select(s => s != null && !PinnedFolders.Contains(s));
+                .Select(s => s != null && !PinnedFolders.Where(f => f != null)
+                    .Select(f => f.Path)
+                    .Contains(s.Path));
 
             PinSelected = ReactiveCommand.Create(() =>
             {
@@ -93,11 +97,15 @@ namespace ImageSort.ViewModels
             }, canPinSelectedExecute);
 
             var canUnpinSelectedExecute = this.WhenAnyValue(vm => vm.Selected, x => x.PinnedFolders.Count, (s, _) => s)
-                .Select(s => s != null && PinnedFolders.Contains(s));
+                .Select(s => s != null && PinnedFolders.Where(f => f != null)
+                    .Select(f => f.Path)
+                    .Contains(s.Path));
 
             UnpinSelected = ReactiveCommand.Create(() =>
             {
-                pinnedFolders.Remove(Selected);
+                var pinned = pinnedFolders.Items.FirstOrDefault(f => f.Path == Selected.Path);
+
+                if (pinned != null) pinnedFolders.Remove(pinned);
             }, canUnpinSelectedExecute);
 
             // make many above queries work
