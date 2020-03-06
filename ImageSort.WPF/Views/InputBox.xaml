@@ -14,7 +14,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Label Name="Question">Question:</Label>
+        <TextBlock Name="Question" Foreground="Black">Question:</TextBlock>
         <TextBox Name="AnswerBox" Grid.Row="1" MinWidth="250"/>
 
         <WrapPanel Grid.Row="2" HorizontalAlignment="Right" Margin="0,15,0,0">

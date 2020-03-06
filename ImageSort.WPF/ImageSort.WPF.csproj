@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="AdonisUI" Version="1.13.0" />
     <PackageReference Include="AdonisUI.ClassicTheme" Version="1.13.0" />
-    <PackageReference Include="IPrompt" Version="1.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -25,7 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
-    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" Condition=" '$(DoNotIncludeUpdater)' != 'true' "/>
+    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" Condition=" '$(DoNotIncludeUpdater)' != 'true' " />
     <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
   </ItemGroup>
 

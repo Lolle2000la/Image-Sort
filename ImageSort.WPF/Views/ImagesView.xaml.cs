@@ -1,6 +1,5 @@
 ﻿using ImageSort.Localization;
 using ImageSort.ViewModels;
-using IPrompt;
 using ReactiveUI;
 using System;
 using System.Reactive;
@@ -59,8 +58,13 @@ namespace ImageSort.WPF.Views
                     view => view.Rename)
                     .DisposeWith(disposableRegistration);
 
-                ViewModel.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(
-                    IInputBox.Show(Text.RenameImagePromptText, Text.RenameImagePromptTitle, MessageBoxImage.Question)));
+                ViewModel.PromptForNewFileName.RegisterHandler(ic =>
+                {
+                    var inputBox = new InputBox(Text.RenameImagePromptText, Text.RenameImagePromptTitle);
+
+                    if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
+                    else ic.SetOutput(null);
+                });
 
                 ViewModel.NotifyUserOfError.RegisterHandler(ic =>
                 {
