@@ -20,7 +20,7 @@ namespace ImageSort.WPF.Views
 		public InputBox(string question, string title)
 		{
 			InitializeComponent();
-			Question.Content = question;
+			Question.Text = question;
 			Title = title;
 		}
 
