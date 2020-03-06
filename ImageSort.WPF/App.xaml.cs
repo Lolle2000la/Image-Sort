@@ -1,9 +1,7 @@
 ﻿using ImageSort.DependencyManagement;
 using ImageSort.FileSystem;
 using ImageSort.Localization;
-using ImageSort.WindowsUpdater;
 using ImageSort.WPF.FileSystem;
-using Octokit;
 using ReactiveUI;
 using Splat;
 using System;
@@ -14,6 +12,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Application = System.Windows.Application;
+#if !DO_NOT_INCLUDE_UPDATER
+using Octokit;
+using ImageSort.WindowsUpdater;
+#endif
 
 namespace ImageSort.WPF
 {
@@ -40,7 +42,9 @@ namespace ImageSort.WPF
                 Settings.Default.Save();
             }
 
+#if !DO_NOT_INCLUDE_UPDATER
             Startup += OnStartup;
+#endif
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
@@ -49,6 +53,7 @@ namespace ImageSort.WPF
             Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
         }
 
+#if !DO_NOT_INCLUDE_UPDATER
         private async void OnStartup(object sender, StartupEventArgs e)
         {
             InstallerRunner.CleanUpInstaller();
@@ -75,5 +80,6 @@ namespace ImageSort.WPF
         {
             Startup -= OnStartup;
         }
+#endif
     }
 }

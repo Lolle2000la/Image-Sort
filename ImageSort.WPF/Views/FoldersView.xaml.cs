@@ -1,6 +1,5 @@
 ﻿using ImageSort.Localization;
 using ImageSort.ViewModels;
-using IPrompt;
 using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
@@ -27,8 +26,8 @@ namespace ImageSort.WPF.Views
             {
                 ViewModel.SelectFolder.RegisterHandler(ic =>
                 {
-                    var folderBrowser = new FolderBrowserDialog() 
-                    { 
+                    var folderBrowser = new FolderBrowserDialog()
+                    {
                         ShowNewFolderButton = true
                     };
 
@@ -36,14 +35,19 @@ namespace ImageSort.WPF.Views
                         ic.SetOutput(folderBrowser.SelectedPath);
                 });
 
-                ViewModel.PromptForName.RegisterHandler(ic => ic.SetOutput(
-                    IInputBox.Show(Text.NewFolderPromptText, Text.NewFolderPromptTitle, MessageBoxImage.Question)));
+                ViewModel.PromptForName.RegisterHandler(ic =>
+                {
+                    var inputBox = new InputBox(Text.NewFolderPromptText, Text.NewFolderPromptTitle);
+
+                    if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
+                    else ic.SetOutput(null);
+                });
 
                 var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
 
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)
-                    .Subscribe(f => 
+                    .Subscribe(f =>
                     {
                         currentFolder.Clear();
                         currentFolder.Add(f);

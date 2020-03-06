@@ -5,16 +5,21 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <AssemblyName>Image Sort</AssemblyName>
+    <Configurations>Debug;Release;MSIX</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'MSIX' ">
+    <DoNotIncludeUpdater>true</DoNotIncludeUpdater>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AdonisUI" Version="1.13.0" />
     <PackageReference Include="AdonisUI.ClassicTheme" Version="1.13.0" />
-    <PackageReference Include="IPrompt" Version="1.0.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.2" />
     <PackageReference Include="ReactiveUI" Version="11.2.3" />
     <PackageReference Include="ReactiveUI.Events.WPF" Version="11.2.3" />
     <PackageReference Include="ReactiveUI.WPF" Version="11.2.3" />
@@ -25,9 +30,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
-    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" />
+    <ProjectReference Include="..\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj" Condition=" '$(DoNotIncludeUpdater)' != 'true' " />
     <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
   </ItemGroup>
+
+  <PropertyGroup Condition=" '$(DoNotIncludeUpdater)' == 'true' ">
+    <DefineConstants>DO_NOT_INCLUDE_UPDATER</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="Interop.Shell32">
