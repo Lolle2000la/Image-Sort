@@ -7,12 +7,6 @@ Sorts your image at high speed
 
 ![Screenshot from the user interface of Image Sort](./Image-Sort-Screenshot.png)
 
-# Currently, all work is being focused on version 2.0. Below refers to version 1.X.
-
-If you want to contribute to 2.0, you need the [.NET Core 3.1 Windows SDK](https://dotnet.microsoft.com/download/dotnet-core/3.1).
-You can run the tests in ImageSort.UnitTests with 'dotnet test' and run the Windows app in ImageSort.WPF with 'dotnet run'.
-Of course you can also just launch the solution in Visual Studio. That requires Visual Studio 2019 updated to the newest version. 
-
 ## How to use
 1. Open the app, select a folder to sort and finished. The app will now show you the images one by one for you. You must then choose the folder you want the image to sort into (subfolders of the selected folder) and press the move button. You can also skip the image if you don't want to move it.
 2. If you want to you can use the keyboard allone for all the tasks:
