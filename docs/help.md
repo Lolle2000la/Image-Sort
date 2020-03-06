@@ -1,5 +1,7 @@
 # Getting started
 
+> This document refers to version 1.X and is not relevant to current versions anymore.
+
 To get started, just follow this tour though the app:
 
 1.  Select a folder, by pressing the "Select Folder" Button,
