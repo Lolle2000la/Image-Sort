@@ -8,8 +8,26 @@ Sorts your image at high speed
 ![Screenshot from the user interface of Image Sort](./Image-Sort-Screenshot.png)
 
 ## How to use
-1. Open the app, select a folder to sort and finished. The app will now show you the images one by one for you. You must then choose the folder you want the image to sort into (subfolders of the selected folder) and press the move button. You can also skip the image if you don't want to move it.
-2. If you want to you can use the keyboard allone for all the tasks:
+
+> The central philosophy behind Image Sort's design is speed. For that reason the ideal way to use this app is not to
+leave the keyboard. However, you can of course use the app in any way you wish and ideally it should still help you.
+
+When you open the app, you are presented with your pictures folder already being open. When you want to open another
+folder, open it by pressing the "Open folder" button or the 'O' key.
+
+### Central workflow
+
+On the left you have your folders. It's a tree, so you can access all your sub-folders. You can also pin folders,
+either the selected one ("Pin selected") or a manually picked one  ("Pin"), making them easier to access, but also
+making it possible to f.e. sort images from one folder into others on other disks.
+
+Then, select an image and choose whether you want to move the image to the selected folder or want to delete (move
+to recycle bin) it.
+
+But maybe you accidentally delete or move an image and think 'Oh, why did I do that? Can I undo this?'. Yes, you can.
+Simply press undo. You would not believe how much of a pain this is to achieve for the recycle bin. But it was worth it.
+
+2. If you want to you can use the keyboard alone for all the tasks:
    #### The important stuff
    * F2 for selecting the folder
    * F3 to create a new folder
@@ -32,7 +50,7 @@ auto-updater uses GitHub services, so to facilitate the services some data can b
 if you do not want this to happen.)
 
 ## Requirements
-* Windows 7 Sevice Pack 1 or higher
+* Windows 7 Service Pack 1 or higher
 
 ## Build-Prerequisites
 * [.NET Core SDK 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1)
