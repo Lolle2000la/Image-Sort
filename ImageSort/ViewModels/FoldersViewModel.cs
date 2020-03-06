@@ -85,7 +85,9 @@ namespace ImageSort.ViewModels
             });
 
             var canPinSelectedExecute = this.WhenAnyValue(x => x.Selected, x => x.PinnedFolders.Count, (s, _) => s)
-                .Select(s => s != null && !PinnedFolders.Contains(s));
+                .Select(s => s != null && !PinnedFolders.Where(f => f != null)
+                    .Select(f => f.Path)
+                    .Contains(s.Path));
 
             PinSelected = ReactiveCommand.Create(() =>
             {
