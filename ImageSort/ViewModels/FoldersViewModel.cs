@@ -113,9 +113,18 @@ namespace ImageSort.ViewModels
                 return await Selected.CreateFolder.Execute(name);
             });
 
+            FolderTreeItemViewModel oldFolder = null;
+
             this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => f != null)
-                .Subscribe(f => f.IsCurrentFolder = true);
+                .Subscribe(f => 
+                {
+                    if (oldFolder != null) oldFolder.IsCurrentFolder = false;
+
+                    f.IsCurrentFolder = true;
+
+                    oldFolder = f;
+                });
         }
 
         ~FoldersViewModel()
