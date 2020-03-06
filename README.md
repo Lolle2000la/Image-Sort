@@ -25,12 +25,16 @@ Sorts your image at high speed
    * F4 to change the resolution in which the images should get loaded (default: 1000 pixel, smaller = less RAM usage and faster loading speed). Pressing F4 will move your focus to the text box, so that you can type in your preferred resolution. Pressing Enter or Escape, as well as moving the focus away restores normal keyboard input behavior.
    
 ## Privacy Policy
-Read the [Privacy Policy](https://imagesort.org/privacy_policy.html) page for details on what data we collect.
+Read the [Privacy Policy](https://imagesort.org/privacy_policy.html) page for details on what data we collect. 
+
+(This is necessary for the Windows Store version. Right now, no data is willingly collected. However, the 
+auto-updater uses GitHub services, so to facilitate the services some data can be collected. Turn off "Check for updates on startup"
+if you do not want this to happen.)
 
 ## Requirements
-* .NET Framework 4.7.2
 * Windows 7 Sevice Pack 1 or higher
 
 ## Build-Prerequisites
-* Visual Studio 2017
-* (optional) For building the installer, you need the [Microsoft Visual Studio 2017 Installer Projects](https://marketplace.visualstudio.com/items?itemName=VisualStudioProductTeam.MicrosoftVisualStudio2017InstallerProjects)
+* [.NET Core SDK 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1)
+* (optional) Visual Studio 2019
+* (optional) For building the installer, you need [WiX Toolset](https://wixtoolset.org/) 3.11 or higher
