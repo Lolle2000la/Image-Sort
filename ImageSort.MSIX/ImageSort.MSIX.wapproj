@@ -8,6 +8,26 @@
       <Configuration>Debug</Configuration>
       <Platform>x86</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="MSIX|AnyCPU">
+      <Configuration>MSIX</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MSIX|ARM">
+      <Configuration>MSIX</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MSIX|ARM64">
+      <Configuration>MSIX</Configuration>
+      <Platform>ARM64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MSIX|x64">
+      <Configuration>MSIX</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MSIX|x86">
+      <Configuration>MSIX</Configuration>
+      <Platform>x86</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|x86">
       <Configuration>Release</Configuration>
       <Platform>x86</Platform>
@@ -115,9 +135,6 @@
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
     <Content Include="Images\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
-  <PropertyGroup>
-    <DoNotIncludeUpdater>true</DoNotIncludeUpdater>
-  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.WPF\ImageSort.WPF.csproj">
       <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>

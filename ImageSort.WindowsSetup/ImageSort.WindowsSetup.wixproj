@@ -65,6 +65,14 @@
   <PropertyGroup>
     <EnableProjectHarvesting>True</EnableProjectHarvesting>
   </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'MSIX|x86' ">
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'MSIX|x64' ">
+    <OutputPath>bin\$(Platform)\$(Configuration)\</OutputPath>
+    <IntermediateOutputPath>obj\$(Platform)\$(Configuration)\</IntermediateOutputPath>
+  </PropertyGroup>
   <Target Name="BeforeBuild">
     <Exec WorkingDirectory="%(ProjectReference.RootDir)%(ProjectReference.Directory)" Command="dotnet publish -c $(Configuration) -p:Platform=$(Platform) -f %(ProjectReference.TargetFrameworkIdentifier) -r %(ProjectReference.Runtime)" Condition="'%(ProjectReference.IsDotnetSDKProject)' == 'True'" />
     <ItemGroup>

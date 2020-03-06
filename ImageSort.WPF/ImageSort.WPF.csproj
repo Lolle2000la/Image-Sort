@@ -5,6 +5,11 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <UseWPF>true</UseWPF>
     <AssemblyName>Image Sort</AssemblyName>
+    <Configurations>Debug;Release;MSIX</Configurations>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'MSIX' ">
+    <DoNotIncludeUpdater>true</DoNotIncludeUpdater>
   </PropertyGroup>
 
   <ItemGroup>
