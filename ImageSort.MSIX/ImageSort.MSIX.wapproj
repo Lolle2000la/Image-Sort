@@ -115,6 +115,9 @@
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
     <Content Include="Images\Wide310x150Logo.scale-400.png" />
   </ItemGroup>
+  <PropertyGroup>
+    <DoNotIncludeUpdater>true</DoNotIncludeUpdater>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.WPF\ImageSort.WPF.csproj">
       <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>
