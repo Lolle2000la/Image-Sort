@@ -7,13 +7,13 @@
   IgnorableNamespaces="uap rescap">
 
   <Identity
-    Name="f83c7c0b-f0ec-4726-8b5d-c3b317e0a524"
-    Publisher="CN=Lolle"
-    Version="1.0.0.0" />
+    Name="42290Lolle2000la.Imagesort"
+    Publisher="CN=1400B225-7A75-4D6E-B7BA-8B7725EF5D4E"
+    Version="2.0.0.0" />
 
   <Properties>
-    <DisplayName>ImageSort.MSIX</DisplayName>
-    <PublisherDisplayName>Lolle</PublisherDisplayName>
+    <DisplayName>Image sort</DisplayName>
+    <PublisherDisplayName>Lolle2000la</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
 
