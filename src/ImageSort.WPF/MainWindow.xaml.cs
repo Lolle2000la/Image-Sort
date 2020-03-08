@@ -196,6 +196,7 @@ namespace ImageSort.WPF
                     .InvokeCommand(ViewModel.Images.RenameImage)
                     .DisposeWith(disposableRegistration);
 
+                DarkMode.IsChecked = Settings.Default.DarkMode;
                 CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
                 InstallPrereleaseBuilds.IsChecked = Settings.Default.UpdateToPrereleaseBuilds;
                 if (Settings.Default.DarkMode) SetDarkMode(true);
