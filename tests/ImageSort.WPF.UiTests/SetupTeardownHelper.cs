@@ -1,5 +1,6 @@
 ﻿using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Tools;
 using FlaUI.UIA3;
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,14 @@ namespace ImageSort.WPF.UiTests
             var app = Application.Launch(new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\""));
             var automation = new UIA3Automation();
 
-            var mainWindow = app.GetMainWindow(automation);
+            var mainWindow = Retry.WhileNull(() =>
+            {
+                var allWindows = app.GetAllTopLevelWindows(automation);
+
+                if (allWindows.Length > 0) return allWindows[0];
+
+                return null;
+            }, TimeSpan.FromSeconds(30), null, true).Result;
 
             return (currentPath, app, automation, mainWindow);
         }
