@@ -142,6 +142,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Folder.
+        /// </summary>
+        public static string Folder {
+            get {
+                return ResourceManager.GetString("Folder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Move image selection left (left arrow key).
         /// </summary>
         public static string GoLeftTooltip {
@@ -156,6 +165,15 @@ namespace ImageSort.Localization {
         public static string GoRightTooltip {
             get {
                 return ResourceManager.GetString("GoRightTooltip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to History.
+        /// </summary>
+        public static string History {
+            get {
+                return ResourceManager.GetString("History", resourceCulture);
             }
         }
         

@@ -26,14 +26,14 @@
 
         <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="{adonisUi:Space 0, 1, 1, 1}">
 
-            <GroupBox Margin="{adonisUi:Space 0, 1}">
+            <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
                 <StackPanel>
                     <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
                     <Button Content="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
                 </StackPanel>
             </GroupBox>
 
-            <GroupBox Margin="{adonisUi:Space 0, 1}">
+            <GroupBox Header="{x:Static text:Text.History}" Margin="{adonisUi:Space 0, 1}">
                 <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
             </GroupBox>
 
