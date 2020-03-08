@@ -20,10 +20,11 @@ namespace ImageSort.UnitTests.ViewModels
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] { @"C:\folder" });
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
 
             fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(new[] { @"c:\img.png" }); // just so that no exception is thrown
 
-            mainVM = new MainViewModel()
+            mainVM = new MainViewModel(fsMock.Object)
             {
                 Images = new ImagesViewModel(fsMock.Object)
                 {
@@ -107,7 +108,7 @@ namespace ImageSort.UnitTests.ViewModels
             var otherMainVM = new MainViewModel(fsMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) { Path = currentDirectory } },
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } },
                 Images = new ImagesViewModel(fsMock.Object)
             };
 
@@ -154,7 +155,7 @@ namespace ImageSort.UnitTests.ViewModels
             var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, RxApp.MainThreadScheduler) { Path = currentDirectory } },
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } },
                 Images = new ImagesViewModel(fsMock.Object)
             };
 

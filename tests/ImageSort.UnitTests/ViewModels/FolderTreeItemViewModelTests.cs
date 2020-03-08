@@ -16,7 +16,7 @@ namespace ImageSort.UnitTests.ViewModels
     public class FolderTreeItemViewModelTests
     {
         [Fact(DisplayName = "Obtains the child folders of the current folder correctly")]
-        public void ObtainsChildrenCorrectly()
+        public async Task ObtainsChildrenCorrectly()
         {
             const string path = @"C:\current folder";
 
@@ -27,30 +27,20 @@ namespace ImageSort.UnitTests.ViewModels
                     @"\folder 2",
                     @"\folder 3"
                 }
-                .Select(sub => path + sub) // make the (mock) subfolders absolute paths.
-                .ToArray();
+                .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
 
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var testScheduler = new TestScheduler();
-
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, testScheduler) 
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object) 
             { 
                 Path = path
             };
 
-            testScheduler.Start();
-            testScheduler.AdvanceBy(1);
-
-            var obtainedPaths = folderTreeItem.Children;
-
-            testScheduler.Stop();
-
             fsMock.Verify(fs => fs.GetSubFolders(path));
 
-            Assert.Equal(resultingPaths, obtainedPaths.Select(vm => vm.Path).ToArray());
+            Assert.Equal(resultingPaths, folderTreeItem.Children.Select(vm => vm.Path).ToArray());
         }
 
         [Fact(DisplayName = "Handles an tried access to an unauthorized file (UnauthorizedAccessException) gracefully.")]
@@ -90,7 +80,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             testScheduler.Start();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, testScheduler)
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
             {
                 Path = currentFolder
             };

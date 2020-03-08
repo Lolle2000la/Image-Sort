@@ -38,7 +38,11 @@ namespace ImageSort.UnitTests.ViewModels
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
-            var foldersVM = new FoldersViewModel
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+
+            var foldersVM = new FoldersViewModel(fsMock.Object)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -95,7 +99,11 @@ namespace ImageSort.UnitTests.ViewModels
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
-            var foldersVM = new FoldersViewModel
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+
+            var foldersVM = new FoldersViewModel(fsMock.Object)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -136,7 +144,11 @@ namespace ImageSort.UnitTests.ViewModels
         {
             var currentFolder = CreateMock(MockPath);
 
-            var foldersVM = new FoldersViewModel
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+
+            var foldersVM = new FoldersViewModel(fsMock.Object)
             {
                 CurrentFolder = currentFolder
             };

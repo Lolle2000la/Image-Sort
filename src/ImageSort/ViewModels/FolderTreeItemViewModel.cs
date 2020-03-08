@@ -47,7 +47,7 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<string, Unit> CreateFolder { get; }
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, Func<FileSystemWatcher> folderWatcherFactory = null)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
         {
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
@@ -74,7 +74,6 @@ namespace ImageSort.ViewModels
                 .ToProperty(this, x => x.FolderName);
 
             this.WhenAnyValue(x => x.Path)
-                .ObserveOn(backgroundScheduler)
                 .Where(p => p != null)
                 .Subscribe(p =>
                 {
@@ -89,8 +88,7 @@ namespace ImageSort.ViewModels
                             {
                                 try
                                 {
-                                    RxApp.MainThreadScheduler.Schedule(() => 
-                                        subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = folder }));
+                                    subFolders.Add(new FolderTreeItemViewModel(fileSystem) { Path = folder });
                                 }
                                 catch (UnauthorizedAccessException) { }
                             }
@@ -108,7 +106,7 @@ namespace ImageSort.ViewModels
 
                 fileSystem.CreateFolder(newFolderPath);
 
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler) { Path = newFolderPath });
+                subFolders.Add(new FolderTreeItemViewModel(fileSystem) { Path = newFolderPath });
 
                 return Unit.Default;
             });
@@ -135,7 +133,7 @@ namespace ImageSort.ViewModels
             {
                 if (!subFolders.Items.Any(f => f.Path == e.FullPath))
                 {
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath });
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = e.FullPath });
                 }
             });
         }
@@ -160,7 +158,7 @@ namespace ImageSort.ViewModels
                 {
                     subFolders.Remove(item);
 
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, backgroundScheduler, folderWatcherFactory) { Path = e.FullPath });
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = e.FullPath });
                 }
             });
         }
