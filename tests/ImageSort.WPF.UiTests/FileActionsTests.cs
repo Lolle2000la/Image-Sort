@@ -8,14 +8,14 @@ using FlaUI.Core.AutomationElements;
 
 namespace ImageSort.WPF.UiTests
 {
-    public class MoveTests : IDisposable
+    public class FileActionsTests : IDisposable
     {
         private readonly Application app;
         private readonly UIA3Automation automation;
         private readonly string currentPath;
         private readonly Window mainWindow;
 
-        public MoveTests()
+        public FileActionsTests()
         {
             (currentPath, app, automation, mainWindow) = SetupTeardownHelper.Setup();
         }
