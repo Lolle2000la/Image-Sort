@@ -9,6 +9,7 @@
                              xmlns:local="clr-namespace:ImageSort.WPF"
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
                              xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                             xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                              xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                              mc:Ignorable="d"
                              Title="Image Sort" Height="600" Width="1000">
@@ -24,7 +25,8 @@
 
         <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}"/>
 
-        <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}">
+        <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}"
+                  adonisExtensions:CornerRadiusExtension.CornerRadius="5">
             <StackPanel  VerticalAlignment="Center">
 
                 <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
