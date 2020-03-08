@@ -20,10 +20,11 @@ namespace ImageSort.UnitTests.ViewModels
             var fsMock = new Mock<IFileSystem>();
 
             fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] { @"C:\folder" });
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
 
             fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>())).Returns(new[] { @"c:\img.png" }); // just so that no exception is thrown
 
-            mainVM = new MainViewModel()
+            mainVM = new MainViewModel(fsMock.Object)
             {
                 Images = new ImagesViewModel(fsMock.Object)
                 {
