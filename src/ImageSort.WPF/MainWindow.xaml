@@ -34,10 +34,14 @@
             
             <Separator Margin="{adonisUi:Space 0, 2}"/>
 
-            <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode"/>
+            <GroupBox Header="Settings">
+                <StackPanel>
+                    <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" Margin="{adonisUi:Space 1}"/>
 
-            <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}"/>
-            <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
+                    <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}"/>
+                    <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
+                </StackPanel>
+            </GroupBox>
         </StackPanel>
 
         <Grid Grid.Column="3">
