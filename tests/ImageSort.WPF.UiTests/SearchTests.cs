@@ -9,7 +9,7 @@ using Xunit;
 
 namespace ImageSort.WPF.UiTests
 {
-    public class SearchTests
+    public class SearchTests : IDisposable
     {
         private readonly Application app;
         private readonly UIA3Automation automation;
@@ -17,7 +17,7 @@ namespace ImageSort.WPF.UiTests
 
         public SearchTests()
         {
-            currentPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, Guid.NewGuid().ToString());
+            currentPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temporary State", Guid.NewGuid().ToString());
 
             CopyFolder(Path.GetFullPath("MockState"), currentPath);
 
@@ -30,10 +30,12 @@ namespace ImageSort.WPF.UiTests
         {
         }
 
-        ~SearchTests()
+        public void Dispose()
         {
             automation.Dispose();
             app.Dispose();
+
+            Directory.Delete(currentPath, true);
         }
 
         private static void CopyFolder(string sourceFolder, string destFolder)
