@@ -24,8 +24,8 @@
 
         <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}"/>
 
-        <GroupBox Grid.Column="2">
-            <StackPanel  VerticalAlignment="Center" Margin="{adonisUi:Space 0, 1, 1, 1}">
+        <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}">
+            <StackPanel  VerticalAlignment="Center">
 
                 <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
                     <StackPanel>
@@ -46,6 +46,7 @@
                         <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
                     </StackPanel>
                 </GroupBox>
+                
             </StackPanel>
         </GroupBox>
 
