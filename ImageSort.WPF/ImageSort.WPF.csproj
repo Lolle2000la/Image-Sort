@@ -8,7 +8,7 @@
     <Configurations>Debug;Release;MSIX</Configurations>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)' == 'MSIX' ">
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' Or '$(Configuration)' == 'MSIX' ">
     <DoNotIncludeUpdater>true</DoNotIncludeUpdater>
   </PropertyGroup>
 
