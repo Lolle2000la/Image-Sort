@@ -76,7 +76,7 @@ namespace ImageSort.ViewModels
                     if (pinnedFolders.Items.Any(f => f.Path == folderToPin)) return;
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem, backgroundScheduler)
+                        new FolderTreeItemViewModel(fileSystem)
                         {
                             Path = folderToPin
                         });
