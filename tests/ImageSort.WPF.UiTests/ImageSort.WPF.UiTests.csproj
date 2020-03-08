@@ -21,7 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ImageSort.WPF\ImageSort.WPF.csproj" />
+    <ProjectReference Include="..\..\src\ImageSort.WPF\ImageSort.WPF.csproj" >
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>
