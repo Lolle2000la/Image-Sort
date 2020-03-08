@@ -19,22 +19,25 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        
+
         <views:FoldersView x:Name="Folders"/>
 
         <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}"/>
 
         <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="{adonisUi:Space 0, 1, 1, 1}">
-            <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
-            <Button Content="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
 
-            <Separator Margin="{adonisUi:Space 0, 2}"/>
+            <GroupBox Margin="{adonisUi:Space 0, 1}">
+                <StackPanel>
+                    <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
+                    <Button Content="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
+                </StackPanel>
+            </GroupBox>
 
-            <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
-            
-            <Separator Margin="{adonisUi:Space 0, 2}"/>
+            <GroupBox Margin="{adonisUi:Space 0, 1}">
+                <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
+            </GroupBox>
 
-            <GroupBox Header="{x:Static text:Text.Settings}">
+            <GroupBox Header="{x:Static text:Text.Settings}" Margin="{adonisUi:Space 0, 1}">
                 <StackPanel>
                     <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" x:Name="DarkMode" Margin="{adonisUi:Space 1}"/>
 
