@@ -198,6 +198,9 @@
   <data name="SearchTermWatermark" xml:space="preserve">
     <value>Bilder durchsuchen... (Shortcut: "I" zum auswählen, "Tab" zum verlassen)</value>
   </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
   <data name="Undo" xml:space="preserve">
     <value>Rückgängig (Q)</value>
   </data>
