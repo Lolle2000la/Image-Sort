@@ -12,7 +12,8 @@
                              xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                              xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                              mc:Ignorable="d"
-                             Title="Image Sort" Height="600" Width="1000">
+                             Title="Image Sort" Height="600" Width="1000"
+                             MinWidth="800" MinHeight="520">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="300"/>
