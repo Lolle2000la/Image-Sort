@@ -5,6 +5,14 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 using FlaUI.Core.AutomationElements;
+using FlaUI.Core.Tools;
+using FlaUI.Core.Input;
+using FlaUI.Core.WindowsAPI;
+using System.Threading.Tasks;
+using System.Linq;
+using System.IO;
+
+[assembly: CollectionBehavior(DisableTestParallelization = true)]
 
 namespace ImageSort.WPF.UiTests
 {
@@ -18,6 +26,33 @@ namespace ImageSort.WPF.UiTests
         public FileActionsTests()
         {
             (currentPath, app, automation, mainWindow) = SetupTeardownHelper.Setup();
+        }
+
+        [Fact(DisplayName = "Can move image, undo and redo")]
+        public void CanMoveImages()
+        {
+            var oldLocation = Directory.GetFiles(currentPath)[0];
+            var newLocation = Path.Combine(Directory.GetDirectories(currentPath)[0], Path.GetFileName(oldLocation));
+
+            Assert.True(File.Exists(oldLocation));
+            Assert.False(File.Exists(newLocation));
+
+            app.WaitWhileBusy();
+
+            mainWindow.Focus();
+
+            Keyboard.Press(VirtualKeyShort.KEY_D);
+
+            Keyboard.Press(VirtualKeyShort.KEY_S);
+
+            app.WaitWhileBusy();
+
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Move"))?.AsButton().Click();
+
+            app.WaitWhileBusy();
+
+            Assert.False(File.Exists(oldLocation));
+            Assert.True(File.Exists(newLocation));
         }
 
         public void Dispose()
