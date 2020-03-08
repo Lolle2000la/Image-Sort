@@ -21,10 +21,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\ImageSort.WPF\ImageSort.WPF.csproj" >
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ProjectReference Include="..\..\src\ImageSort.WPF\ImageSort.WPF.csproj" />
   </ItemGroup>
+
+  <Target AfterTargets="AfterBuild" Name="IncludeEverythingFromWPFProject">
+    <ItemGroup>
+      <_CopyItems Include="$(ProjectDir)\..\..\src\ImageSort.WPF\bin\$(Configuration)\netcoreapp3.1\*.*" />
+    </ItemGroup>
+    <Copy
+        SourceFiles="@(_CopyItems)"
+        DestinationFolder="$(OutDir)"
+        SkipUnchangedFiles="true"
+    />
+  </Target>
 
   <ItemGroup>
     <Content Include="MockState\**\*">
