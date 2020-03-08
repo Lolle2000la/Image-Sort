@@ -144,11 +144,17 @@
   <data name="FileAlreadyExistsExceptionMessage" xml:space="preserve">
     <value>Die Datei "{FileName}" existiert schon.</value>
   </data>
+  <data name="Folder" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
   <data name="GoLeftTooltip" xml:space="preserve">
     <value>Die Bildauswahl nach links verschieben (linke Pfeiltaste)</value>
   </data>
   <data name="GoRightTooltip" xml:space="preserve">
     <value>Die Bildauswahl nach rechts verschieben (rechte Pfeiltaste)</value>
+  </data>
+  <data name="History" xml:space="preserve">
+    <value>Historie</value>
   </data>
   <data name="InstallPrereleaseBuilds" xml:space="preserve">
     <value>Vorschauversionen installieren</value>
