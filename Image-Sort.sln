@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29806.167
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort", "ImageSort\ImageSort.csproj", "{7DAF4545-3E6D-4015-8C8F-C312B6D3F465}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort", "src\ImageSort\ImageSort.csproj", "{7DAF4545-3E6D-4015-8C8F-C312B6D3F465}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.WPF", "ImageSort.WPF\ImageSort.WPF.csproj", "{FF41F5A7-55C5-47BD-8A6D-D8EB86E9C967}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.WPF", "src\ImageSort.WPF\ImageSort.WPF.csproj", "{FF41F5A7-55C5-47BD-8A6D-D8EB86E9C967}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.UnitTests", "ImageSort.UnitTests\ImageSort.UnitTests.csproj", "{4E5B0352-9E1A-4930-9455-F1B2A9E682D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.UnitTests", "tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj", "{4E5B0352-9E1A-4930-9455-F1B2A9E682D8}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "ImageSort.WindowsSetup", "ImageSort.WindowsSetup\ImageSort.WindowsSetup.wixproj", "{E23B5421-90AF-437C-A2B1-73EFD57283EA}"
+Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "ImageSort.WindowsSetup", "src\ImageSort.WindowsSetup\ImageSort.WindowsSetup.wixproj", "{E23B5421-90AF-437C-A2B1-73EFD57283EA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9550B546-E9B0-45D2-AA67-2B9819BB8BF2}"
 	ProjectSection(SolutionItems) = preProject
@@ -18,11 +18,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Image Sort.svg = Image Sort.svg
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.WindowsUpdater", "ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj", "{826C2537-7F2E-4CE5-BC4E-65D800FF2868}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.WindowsUpdater", "src\ImageSort.WindowsUpdater\ImageSort.WindowsUpdater.csproj", "{826C2537-7F2E-4CE5-BC4E-65D800FF2868}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.Localization", "ImageSort.Localization\ImageSort.Localization.csproj", "{DF9B003E-4B31-494D-8186-15CE8DD69489}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort.Localization", "src\ImageSort.Localization\ImageSort.Localization.csproj", "{DF9B003E-4B31-494D-8186-15CE8DD69489}"
 EndProject
-Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "ImageSort.MSIX", "ImageSort.MSIX\ImageSort.MSIX.wapproj", "{1E511652-E2A5-44EE-B0F6-E8E53FD6AA8F}"
+Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "ImageSort.MSIX", "src\ImageSort.MSIX\ImageSort.MSIX.wapproj", "{1E511652-E2A5-44EE-B0F6-E8E53FD6AA8F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0F31C99F-8F09-4B2C-9411-26532A69AE62}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -231,6 +235,15 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7DAF4545-3E6D-4015-8C8F-C312B6D3F465} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
+		{FF41F5A7-55C5-47BD-8A6D-D8EB86E9C967} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
+		{4E5B0352-9E1A-4930-9455-F1B2A9E682D8} = {0F31C99F-8F09-4B2C-9411-26532A69AE62}
+		{E23B5421-90AF-437C-A2B1-73EFD57283EA} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
+		{826C2537-7F2E-4CE5-BC4E-65D800FF2868} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
+		{DF9B003E-4B31-494D-8186-15CE8DD69489} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
+		{1E511652-E2A5-44EE-B0F6-E8E53FD6AA8F} = {D1378C69-4AE6-4045-9CE3-1310C1DAFB2D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0577168B-4A3F-4316-8E17-0E4423B092CC}
