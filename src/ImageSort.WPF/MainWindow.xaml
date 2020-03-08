@@ -36,7 +36,7 @@
 
             <GroupBox Header="{x:Static text:Text.Settings}">
                 <StackPanel>
-                    <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" Margin="{adonisUi:Space 1}"/>
+                    <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" x:Name="DarkMode" Margin="{adonisUi:Space 1}"/>
 
                     <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}"/>
                     <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
