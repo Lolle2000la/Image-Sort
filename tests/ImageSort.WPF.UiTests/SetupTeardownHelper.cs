@@ -1,4 +1,5 @@
 ﻿using FlaUI.Core;
+using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace ImageSort.WPF.UiTests
 {
     static class SetupTeardownHelper
     {
-        public static (string, Application, UIA3Automation) Setup()
+        public static (string, Application, UIA3Automation, Window) Setup()
         {
             var currentPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temporary State", Guid.NewGuid().ToString());
 
@@ -19,7 +20,9 @@ namespace ImageSort.WPF.UiTests
             var app = Application.Launch(new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\""));
             var automation = new UIA3Automation();
 
-            return (currentPath, app, automation);
+            var mainWindow = app.GetMainWindow(automation);
+
+            return (currentPath, app, automation, mainWindow);
         }
 
         public static void TearDown(string currentPath, Application app, UIA3Automation automation)
