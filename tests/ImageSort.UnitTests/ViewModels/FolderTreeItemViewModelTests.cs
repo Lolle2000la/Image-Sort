@@ -16,7 +16,7 @@ namespace ImageSort.UnitTests.ViewModels
     public class FolderTreeItemViewModelTests
     {
         [Fact(DisplayName = "Obtains the child folders of the current folder correctly")]
-        public async Task ObtainsChildrenCorrectly()
+        public void ObtainsChildrenCorrectly()
         {
             const string path = @"C:\current folder";
 
@@ -33,8 +33,8 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object) 
-            { 
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+            {
                 Path = path
             };
 
