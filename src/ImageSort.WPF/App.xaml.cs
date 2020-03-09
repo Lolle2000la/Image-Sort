@@ -64,21 +64,21 @@ namespace ImageSort.WPF
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
             (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
 
-            var messageBox = new MessageBoxModel
+            if (success)
             {
-                Caption = Text.UpdateAvailablePromptTitle,
-                Text = Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName ?? "NO TAG INFORMATION AVAILABLE", StringComparison.OrdinalIgnoreCase),
-                Buttons = new[] 
-                { 
-                    MessageBoxButtons.Yes(Text.Update),
-                    MessageBoxButtons.No(Text.DoNotUpdate)
-                },
-                Icon = MessageBoxImage.Question
-            };
+                var messageBox = new MessageBoxModel
+                {
+                    Caption = Text.UpdateAvailablePromptTitle,
+                    Text = Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName ?? "NO TAG INFORMATION AVAILABLE", StringComparison.OrdinalIgnoreCase),
+                    Buttons = new[]
+                    {
+                        MessageBoxButtons.Yes(Text.Update),
+                        MessageBoxButtons.No(Text.DoNotUpdate)
+                    },
+                    Icon = MessageBoxImage.Question
+                };
 
-            if (success && MessageBox.Show(messageBox) == MessageBoxResult.Yes)
-            {
-                if (updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
+                if (MessageBox.Show(messageBox) == MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {
                     var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset);
 
