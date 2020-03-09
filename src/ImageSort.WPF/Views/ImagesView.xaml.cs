@@ -1,11 +1,11 @@
-﻿using ImageSort.Localization;
+﻿using AdonisUI.Controls;
+using ImageSort.Localization;
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
@@ -68,7 +68,15 @@ namespace ImageSort.WPF.Views
 
                 ViewModel.NotifyUserOfError.RegisterHandler(ic =>
                 {
-                    MessageBox.Show(ic.Input, Text.Error, MessageBoxButton.OK, MessageBoxImage.Error);
+                    var messageBox = new MessageBoxModel
+                    {
+                        Caption = Text.Error,
+                        Text = ic.Input,
+                        Buttons = new[] { MessageBoxButtons.Ok(Text.OK) },
+                        Icon = MessageBoxImage.Error
+                    };
+
+                    MessageBox.Show(messageBox);
 
                     ic.SetOutput(Unit.Default);
                 });
