@@ -124,6 +124,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Don&apos;t update.
+        /// </summary>
+        public static string DoNotUpdate {
+            get {
+                return ResourceManager.GetString("DoNotUpdate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Error.
         /// </summary>
         public static string Error {
@@ -345,6 +354,15 @@ namespace ImageSort.Localization {
         public static string Unpin {
             get {
                 return ResourceManager.GetString("Unpin", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Update.
+        /// </summary>
+        public static string Update {
+            get {
+                return ResourceManager.GetString("Update", resourceCulture);
             }
         }
         

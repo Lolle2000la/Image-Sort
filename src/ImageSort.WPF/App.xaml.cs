@@ -10,8 +10,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using Application = System.Windows.Application;
+using AdonisUI.Controls;
 #if !DO_NOT_INCLUDE_UPDATER
 using Octokit;
 using ImageSort.WindowsUpdater;
@@ -54,7 +54,7 @@ namespace ImageSort.WPF
         }
 
 #if !DO_NOT_INCLUDE_UPDATER
-        private async void OnStartup(object sender, StartupEventArgs e)
+        private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
             InstallerRunner.CleanUpInstaller();
 
@@ -64,8 +64,19 @@ namespace ImageSort.WPF
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
             (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
 
-            if (success && MessageBox.Show(Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName, StringComparison.OrdinalIgnoreCase),
-                    Text.UpdateAvailablePromptTitle, MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+            var messageBox = new MessageBoxModel
+            {
+                Caption = Text.UpdateAvailablePromptTitle,
+                Text = Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName ?? "NO TAG INFORMATION AVAILABLE", StringComparison.OrdinalIgnoreCase),
+                Buttons = new[] 
+                { 
+                    MessageBoxButtons.Yes(Text.Update),
+                    MessageBoxButtons.No(Text.DoNotUpdate)
+                },
+                Icon = MessageBoxImage.Question
+            };
+
+            if (success && MessageBox.Show(messageBox) == MessageBoxResult.Yes)
             {
                 if (updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {

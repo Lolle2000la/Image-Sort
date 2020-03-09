@@ -138,6 +138,9 @@
   <data name="DirectoryNotFoundExceptionMessage" xml:space="preserve">
     <value>The directory "{Directory}" does not exist.</value>
   </data>
+  <data name="DoNotUpdate" xml:space="preserve">
+    <value>Don't update</value>
+  </data>
   <data name="Error" xml:space="preserve">
     <value>Error</value>
   </data>
@@ -212,6 +215,9 @@
   </data>
   <data name="Unpin" xml:space="preserve">
     <value>Unpin (U)</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Update</value>
   </data>
   <data name="UpdateAvailablePromptText" xml:space="preserve">
     <value>A new version of Image Sort is available: {TagName}
