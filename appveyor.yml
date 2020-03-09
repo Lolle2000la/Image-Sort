@@ -11,6 +11,7 @@ install:
   - choco install gitversion.portable -pre -y
 
 before_build:
+  - dotnet restore
   - ps: gitversion /l console /output buildserver /updateAssemblyInfo
 
 build:
