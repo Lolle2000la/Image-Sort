@@ -16,15 +16,15 @@
                              MinWidth="800" MinHeight="520">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="300"/>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition Width="auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="300" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <views:FoldersView x:Name="Folders"/>
+        <views:FoldersView x:Name="Folders" />
 
-        <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}"/>
+        <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}" />
 
         <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}"
                   adonisExtensions:CornerRadiusExtension.CornerRadius="8">
@@ -32,39 +32,38 @@
 
                 <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
                     <StackPanel>
-                        <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
-                        <Button Content="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
+                        <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder" />
+                        <Button Content="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder" />
                     </StackPanel>
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:Text.History}" Margin="{adonisUi:Space 0, 1}">
-                    <views:ActionsView x:Name="Actions" HorizontalAlignment="Center"/>
+                    <views:ActionsView x:Name="Actions" HorizontalAlignment="Center" />
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:Text.Settings}" Margin="{adonisUi:Space 0, 1}">
                     <StackPanel>
-                        <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" x:Name="DarkMode" Margin="{adonisUi:Space 1}"/>
+                        <ToggleButton Content="{x:Static text:Text.DarkMode}" Click="OnToggleDarkMode" x:Name="DarkMode" Margin="{adonisUi:Space 1}" />
 
-                        <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}"/>
-                        <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}"/>
+                        <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" Click="OnCheckForUpdatesOnStartupClick" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}" />
+                        <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" Click="OnInstallPrereleaseBuildsClick" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}" />
                     </StackPanel>
                 </GroupBox>
-                
             </StackPanel>
         </GroupBox>
 
         <Grid Grid.Column="3">
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
 
-            <Button x:Name="Move" Content="{x:Static text:Text.Move}" Grid.Row="0" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
+            <Button x:Name="Move" Content="{x:Static text:Text.Move}" Grid.Row="0" Margin="{adonisUi:Space 0, 0, 0, 1}" />
 
-            <views:ImagesView x:Name="Images" Grid.Row="1"/>
+            <views:ImagesView x:Name="Images" Grid.Row="1" />
 
-            <Button x:Name="Delete" Content="{x:Static text:Text.Delete}" Grid.Row="2" Margin="{adonisUi:Space 0, 1, 0, 0}"/>
+            <Button x:Name="Delete" Content="{x:Static text:Text.Delete}" Grid.Row="2" Margin="{adonisUi:Space 0, 1, 0, 0}" />
         </Grid>
     </Grid>
 </adonisControls:AdonisWindow>

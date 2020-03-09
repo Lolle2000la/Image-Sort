@@ -1,13 +1,10 @@
 ﻿using Octokit;
 using Semver;
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ImageSort.WindowsUpdater
@@ -21,7 +18,7 @@ namespace ImageSort.WindowsUpdater
             this.client = client;
         }
 
-        public async Task<(bool, Release)> TryGetLatestReleaseAsync(bool allowPrerelease=false)
+        public async Task<(bool, Release)> TryGetLatestReleaseAsync(bool allowPrerelease = false)
         {
             var assembly = Assembly.GetAssembly(typeof(GitHubUpdateFetcher));
             var gitVersionInformationType = assembly.GetType("GitVersionInformation");
@@ -35,7 +32,7 @@ namespace ImageSort.WindowsUpdater
                 var releases = await client.Repository.Release.GetAll("Lolle2000la", "Image-Sort");
 
                 latestFitting = releases
-                    .FirstOrDefault(release => 
+                    .FirstOrDefault(release =>
                     {
                         var prereleaseCondition = allowPrerelease || !release.Prerelease;
 

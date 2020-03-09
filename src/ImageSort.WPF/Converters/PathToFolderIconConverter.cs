@@ -6,7 +6,7 @@ using System.Windows.Data;
 
 namespace ImageSort.WPF.Converters
 {
-    class PathToFolderIconConverter : IValueConverter
+    internal class PathToFolderIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {

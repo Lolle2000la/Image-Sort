@@ -2,21 +2,21 @@
                                 x:TypeArguments="vm:ActionsViewModel"
                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
-                                mc:Ignorable="d" 
+                                mc:Ignorable="d"
                                 d:DesignWidth="800">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Button x:Name="Undo" Content="{x:Static text:Text.Undo}" Padding="5"/>
-        <Button x:Name="Redo" Content="{x:Static text:Text.Redo}" Padding="5" Grid.Column="1"/>
+        <Button x:Name="Undo" Content="{x:Static text:Text.Undo}" Padding="5" />
+        <Button x:Name="Redo" Content="{x:Static text:Text.Redo}" Padding="5" Grid.Column="1" />
     </Grid>
 </reactiveui:ReactiveUserControl>

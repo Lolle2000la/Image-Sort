@@ -3,6 +3,7 @@
     public interface IReversibleAction
     {
         void Act();
+
         void Revert();
 
         string DisplayName { get; }

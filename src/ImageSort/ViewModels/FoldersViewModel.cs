@@ -15,6 +15,7 @@ namespace ImageSort.ViewModels
     public class FoldersViewModel : ReactiveObject
     {
         private FolderTreeItemViewModel _currentFolder;
+
         public FolderTreeItemViewModel CurrentFolder
         {
             get => _currentFolder;
@@ -30,6 +31,7 @@ namespace ImageSort.ViewModels
         public IEnumerable<FolderTreeItemViewModel> AllFoldersTracked => _allFoldersTracked.Value;
 
         private FolderTreeItemViewModel _selected;
+
         public FolderTreeItemViewModel Selected
         {
             get => _selected;
@@ -39,7 +41,7 @@ namespace ImageSort.ViewModels
         /// <summary>
         /// Should prompt the user to select a folder.
         /// </summary>
-        public Interaction<Unit, string> SelectFolder { get; } 
+        public Interaction<Unit, string> SelectFolder { get; }
             = new Interaction<Unit, string>();
 
         public Interaction<Unit, string> PromptForName { get; }
@@ -67,7 +69,7 @@ namespace ImageSort.ViewModels
                 .Select(folders => new[] { folders.c }.Concat(folders.Items))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
 
-            Pin = ReactiveCommand.CreateFromTask(async () => 
+            Pin = ReactiveCommand.CreateFromTask(async () =>
             {
                 try
                 {
@@ -81,7 +83,7 @@ namespace ImageSort.ViewModels
                             Path = folderToPin
                         });
                 }
-                // an exception is ignored, because it only means that the 
+                // an exception is ignored, because it only means that the
                 // user has canceled the dialog.
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
@@ -125,7 +127,7 @@ namespace ImageSort.ViewModels
 
             this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => f != null)
-                .Subscribe(f => 
+                .Subscribe(f =>
                 {
                     if (oldFolder != null) oldFolder.IsCurrentFolder = false;
 

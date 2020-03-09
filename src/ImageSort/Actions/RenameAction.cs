@@ -1,9 +1,7 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.Localization;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace ImageSort.Actions
 {

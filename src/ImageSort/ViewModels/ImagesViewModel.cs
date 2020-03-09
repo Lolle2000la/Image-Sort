@@ -23,6 +23,7 @@ namespace ImageSort.ViewModels
         private FileSystemWatcher folderWatcher;
 
         private string _currentPath;
+
         public string CurrentFolder
         {
             get => _currentPath;
@@ -35,6 +36,7 @@ namespace ImageSort.ViewModels
         public ReadOnlyObservableCollection<string> Images => _images;
 
         private int _selectedIndex;
+
         public int SelectedIndex
         {
             get => _selectedIndex;
@@ -45,6 +47,7 @@ namespace ImageSort.ViewModels
         public string SelectedImage => _selectedImage.Value;
 
         private string _searchTerm;
+
         public string SearchTerm
         {
             get => _searchTerm;
@@ -87,7 +90,6 @@ namespace ImageSort.ViewModels
 
                     images.AddRange(i);
                 });
-
 
             _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
                 .Select(i => Images.ElementAtOrDefault(i))
@@ -178,7 +180,6 @@ namespace ImageSort.ViewModels
                     folderWatcher.Renamed += OnImageRenamed;
                 });
         }
-
 
         public void RemoveImage(string image)
         {

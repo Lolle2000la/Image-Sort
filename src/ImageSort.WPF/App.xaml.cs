@@ -5,16 +5,16 @@ using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Application = System.Windows.Application;
 using AdonisUI.Controls;
+
 #if !DO_NOT_INCLUDE_UPDATER
+
 using Octokit;
 using ImageSort.WindowsUpdater;
+
 #endif
 
 namespace ImageSort.WPF
@@ -54,6 +54,7 @@ namespace ImageSort.WPF
         }
 
 #if !DO_NOT_INCLUDE_UPDATER
+
         private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
             InstallerRunner.CleanUpInstaller();
@@ -91,6 +92,7 @@ namespace ImageSort.WPF
         {
             Startup -= OnStartup;
         }
+
 #endif
     }
 }

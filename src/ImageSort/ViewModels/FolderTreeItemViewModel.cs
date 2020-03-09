@@ -24,6 +24,7 @@ namespace ImageSort.ViewModels
         private readonly FileSystemWatcher folderWatcher;
 
         private bool _isCurrentFolder = false;
+
         public bool IsCurrentFolder
         {
             get => _isCurrentFolder;
@@ -31,6 +32,7 @@ namespace ImageSort.ViewModels
         }
 
         private string _path;
+
         public string Path
         {
             get => _path;

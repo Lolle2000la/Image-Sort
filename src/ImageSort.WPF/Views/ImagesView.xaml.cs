@@ -83,12 +83,12 @@ namespace ImageSort.WPF.Views
 
                 ViewModel.GoLeft
                     .Merge(ViewModel.GoRight)
-                    .Subscribe(_ => 
-                    { 
+                    .Subscribe(_ =>
+                    {
                         if (Images.ItemContainerGenerator.ContainerFromItem(Images.SelectedItem) is ListBoxItem item)
                         {
                             item.Focus();
-                        } 
+                        }
                     })
                     .DisposeWith(disposableRegistration);
             });
@@ -96,7 +96,7 @@ namespace ImageSort.WPF.Views
 
         private static BitmapImage PathToImage(string path)
         {
-            if (path == null) return null; 
+            if (path == null) return null;
 
             var bitmapImage = new BitmapImage();
 

@@ -2,7 +2,7 @@
 
 namespace ImageSort.Helpers
 {
-    static class StringHelper
+    internal static class StringHelper
     {
         public static bool EndsWithAny(
             this string @string,
@@ -11,7 +11,7 @@ namespace ImageSort.Helpers
         {
             var endsWithIt = false;
 
-            foreach(var end in atEnd)
+            foreach (var end in atEnd)
             {
                 if (@string.EndsWith(end, comparisonType)) endsWithIt = true;
             }

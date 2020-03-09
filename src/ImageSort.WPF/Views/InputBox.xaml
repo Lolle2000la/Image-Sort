@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Name="Question" Margin="{adonisUi:Space 0, 1}">Question:</TextBlock>
-        <TextBox Name="AnswerBox" Grid.Row="1" MinWidth="250"/>
+        <TextBox Name="AnswerBox" Grid.Row="1" MinWidth="250" />
 
         <WrapPanel Grid.Row="2" HorizontalAlignment="Right" Margin="{adonisUi:Space 0, 2, 0, 0}">
             <Button IsDefault="True" Name="btnDialogOk" Click="btnDialogOk_Click" MinWidth="60" Margin="{adonisUi:Space 0, 0, 1, 0}">_Ok</Button>

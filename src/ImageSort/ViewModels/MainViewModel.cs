@@ -12,6 +12,7 @@ namespace ImageSort.ViewModels
     public class MainViewModel : ReactiveObject
     {
         private ActionsViewModel actions;
+
         public ActionsViewModel Actions
         {
             get => actions;
@@ -19,6 +20,7 @@ namespace ImageSort.ViewModels
         }
 
         private FoldersViewModel _foldersViewModel;
+
         public FoldersViewModel Folders
         {
             get => _foldersViewModel;
@@ -26,6 +28,7 @@ namespace ImageSort.ViewModels
         }
 
         private ImagesViewModel _images;
+
         public ImagesViewModel Images
         {
             get => _images;

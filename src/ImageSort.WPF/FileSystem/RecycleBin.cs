@@ -6,7 +6,7 @@ using System.Reactive.Disposables;
 
 namespace ImageSort.WPF.FileSystem
 {
-    class RecycleBin : IRecycleBin
+    internal class RecycleBin : IRecycleBin
     {
         private readonly Shell shell = new Shell();
 
@@ -33,7 +33,7 @@ namespace ImageSort.WPF.FileSystem
         {
             Folder recycler = shell.NameSpace(10);
 
-            foreach(FolderItem item in recycler.Items())
+            foreach (FolderItem item in recycler.Items())
             {
                 var fileName = recycler.GetDetailsOf(item, 0);
 

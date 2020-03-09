@@ -1,15 +1,6 @@
 ﻿using AdonisUI.Controls;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ImageSort.WPF.Views
 {
@@ -18,24 +9,24 @@ namespace ImageSort.WPF.Views
     /// </summary>
     public partial class InputBox : AdonisWindow
     {
-		public InputBox(string question, string title)
-		{
-			InitializeComponent();
-			Question.Text = question;
-			Title = title;
-		}
+        public InputBox(string question, string title)
+        {
+            InitializeComponent();
+            Question.Text = question;
+            Title = title;
+        }
 
-		private void btnDialogOk_Click(object sender, RoutedEventArgs e)
-		{
-			this.DialogResult = true;
-		}
+        private void btnDialogOk_Click(object sender, RoutedEventArgs e)
+        {
+            this.DialogResult = true;
+        }
 
-		private void Window_ContentRendered(object sender, EventArgs e)
-		{
-			AnswerBox.SelectAll();
-			AnswerBox.Focus();
-		}
+        private void Window_ContentRendered(object sender, EventArgs e)
+        {
+            AnswerBox.SelectAll();
+            AnswerBox.Focus();
+        }
 
-		public string Answer => AnswerBox.Text;
-	}
+        public string Answer => AnswerBox.Text;
+    }
 }
