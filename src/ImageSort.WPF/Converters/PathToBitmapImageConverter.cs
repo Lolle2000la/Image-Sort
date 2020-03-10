@@ -27,6 +27,8 @@ namespace ImageSort.WPF.Converters
                     bitmapImage.BeginInit();
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                     bitmapImage.UriSource = new Uri(path);
+                    if (parameter is string param && int.TryParse(param, out int decodeWidth)) 
+                        bitmapImage.DecodePixelWidth = decodeWidth;
                     bitmapImage.EndInit();
 
                     return bitmapImage;

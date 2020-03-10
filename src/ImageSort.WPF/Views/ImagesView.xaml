@@ -25,7 +25,8 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}"/>
+                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}, 
+                                        ConverterParameter=120}"/>
 
                 <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1" />
             </Grid>
