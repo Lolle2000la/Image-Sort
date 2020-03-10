@@ -121,11 +121,15 @@ namespace ImageSort.ViewModels
                     folderWatcher.Path = p;
                     folderWatcher.IncludeSubdirectories = false;
                     folderWatcher.NotifyFilter = NotifyFilters.DirectoryName;
-                    folderWatcher.EnableRaisingEvents = true;
+                    try
+                    {
+                        folderWatcher.EnableRaisingEvents = true;
 
-                    folderWatcher.Created += OnFolderAdded;
-                    folderWatcher.Deleted += OnFolderDeleted;
-                    folderWatcher.Renamed += OnFolderRenamed;
+                        folderWatcher.Created += OnFolderAdded;
+                        folderWatcher.Deleted += OnFolderDeleted;
+                        folderWatcher.Renamed += OnFolderRenamed;
+                    }
+                    catch { }
                 });
         }
 
