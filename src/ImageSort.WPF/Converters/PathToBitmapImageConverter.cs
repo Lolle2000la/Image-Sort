@@ -32,12 +32,8 @@ namespace ImageSort.WPF.Converters
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show(Text.CouldNotLoadImageErrorText
-                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                        .Replace("{FileName}", Path.GetFileName(path), StringComparison.OrdinalIgnoreCase), Text.Error);
+                    return null;
                 }
-
-                return null;
             }
 
             throw new ArgumentException("Value should be a string.", nameof(value));
