@@ -2,6 +2,7 @@
 using ImageSort.Localization;
 using ImageSort.ViewModels;
 using ReactiveUI;
+using System.Reactive;
 using System.Reactive.Disposables;
 
 namespace ImageSort.WPF.Views
@@ -48,6 +49,8 @@ namespace ImageSort.WPF.Views
                     };
 
                     MessageBox.Show(messageBox);
+
+                    ic.SetOutput(Unit.Default);
                 });
             });
         }
