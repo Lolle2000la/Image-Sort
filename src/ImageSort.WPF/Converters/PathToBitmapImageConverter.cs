@@ -13,6 +13,7 @@ namespace ImageSort.WPF.Converters
     [ValueConversion(typeof(string), typeof(BitmapImage))]
     class PathToBitmapImageConverter : IValueConverter
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "The app should not crash just because some exception happened")]
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
             if (value == null) throw new ArgumentNullException(nameof(value));
