@@ -19,7 +19,7 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> lastUndone;
         public string LastUndone => lastUndone.Value;
 
-        private Interaction<string, Unit> NotifyUserOfError = new Interaction<string, Unit>();
+        public Interaction<string, Unit> NotifyUserOfError { get; } = new Interaction<string, Unit>();
 
         public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
         public ReactiveCommand<Unit, Unit> Undo { get; }
@@ -28,7 +28,7 @@ namespace ImageSort.ViewModels
 
         public ActionsViewModel()
         {
-            Execute = ReactiveCommand.Create<IReversibleAction>(action =>
+            Execute = ReactiveCommand.CreateFromTask<IReversibleAction>(async action =>
             {
                 try
                 {
@@ -36,10 +36,9 @@ namespace ImageSort.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    NotifyUserOfError.Handle(Text.CouldNotActErrorText
+                    await NotifyUserOfError.Handle(Text.CouldNotActErrorText
                         .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                        .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
-                    .Wait();
+                        .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
 
                     return;
                 }
@@ -49,7 +48,7 @@ namespace ImageSort.ViewModels
                 undone.Clear();
             });
 
-            Undo = ReactiveCommand.Create(() =>
+            Undo = ReactiveCommand.CreateFromTask(async () =>
             {
                 if (done.TryPop(out var action))
                 {
@@ -59,10 +58,9 @@ namespace ImageSort.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        NotifyUserOfError.Handle(Text.CouldNotUndoErrorText
+                        await NotifyUserOfError.Handle(Text.CouldNotUndoErrorText
                             .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
-                        .Wait();
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
 
                         return;
                     }
@@ -71,7 +69,7 @@ namespace ImageSort.ViewModels
                 }
             });
 
-            Redo = ReactiveCommand.Create(() =>
+            Redo = ReactiveCommand.CreateFromTask(async () =>
             {
                 if (undone.TryPop(out var action))
                 {
@@ -81,10 +79,9 @@ namespace ImageSort.ViewModels
                     }
                     catch (Exception ex)
                     {
-                        NotifyUserOfError.Handle(Text.CouldNotRedoErrorText
+                        await NotifyUserOfError.Handle(Text.CouldNotRedoErrorText
                             .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
-                        .Wait();
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
 
                         return;
                     }
