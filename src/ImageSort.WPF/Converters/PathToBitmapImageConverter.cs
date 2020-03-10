@@ -27,8 +27,7 @@ namespace ImageSort.WPF.Converters
                     bitmapImage.BeginInit();
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                     bitmapImage.UriSource = new Uri(path);
-                    if (parameter is string param && int.TryParse(param, out int decodeWidth)) 
-                        bitmapImage.DecodePixelWidth = decodeWidth;
+                    if (LoadWidth != null && LoadWidth.HasValue) bitmapImage.DecodePixelWidth = LoadWidth.Value;
                     bitmapImage.EndInit();
 
                     return bitmapImage;
@@ -46,5 +45,7 @@ namespace ImageSort.WPF.Converters
         {
             throw new NotImplementedException();
         }
+
+        public int? LoadWidth { get; set; } = null;
     }
 }
