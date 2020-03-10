@@ -79,6 +79,17 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not load &quot;{FileName}&quot;
+        ///
+        ///{ErrorMessage}.
+        /// </summary>
+        public static string CouldNotLoadImageErrorText {
+            get {
+                return ResourceManager.GetString("CouldNotLoadImageErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Create Folder (C).
         /// </summary>
         public static string CreateFolder {

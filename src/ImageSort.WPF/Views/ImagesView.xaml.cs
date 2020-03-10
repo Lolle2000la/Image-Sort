@@ -3,6 +3,7 @@ using ImageSort.Localization;
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -98,14 +99,25 @@ namespace ImageSort.WPF.Views
         {
             if (path == null) return null;
 
-            var bitmapImage = new BitmapImage();
+            try
+            {
+                var bitmapImage = new BitmapImage();
 
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.UriSource = new Uri(path);
-            bitmapImage.EndInit();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.UriSource = new Uri(path);
+                bitmapImage.EndInit();
 
-            return bitmapImage;
+                return bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Text.CouldNotLoadImageErrorText
+                    .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                    .Replace("{FileName}", Path.GetFileName(path), StringComparison.OrdinalIgnoreCase), Text.Error);
+            }
+
+            return null;
         }
 
         private void OnSelectedImageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

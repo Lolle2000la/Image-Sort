@@ -123,6 +123,11 @@
   <data name="CouldNotDeleteFileExceptionMessage" xml:space="preserve">
     <value>Die Datei {FileName} konnte nicht gelöscht werden</value>
   </data>
+  <data name="CouldNotLoadImageErrorText" xml:space="preserve">
+    <value>"{FileName}" konnte nicht geladen werden
+
+{ErrorMessage}</value>
+  </data>
   <data name="CreateFolder" xml:space="preserve">
     <value>Ordner erstellen (C)</value>
   </data>
