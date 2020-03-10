@@ -1,4 +1,6 @@
-﻿using ImageSort.ViewModels;
+﻿using AdonisUI.Controls;
+using ImageSort.Localization;
+using ImageSort.ViewModels;
 using ReactiveUI;
 using System.Reactive.Disposables;
 
@@ -34,6 +36,19 @@ namespace ImageSort.WPF.Views
                     vm => vm.LastUndone,
                     view => view.Redo.ToolTip)
                     .DisposeWith(disposableRegistration);
+
+                ViewModel.NotifyUserOfError.RegisterHandler(ic =>
+                {
+                    var messageBox = new MessageBoxModel
+                    {
+                        Caption = Text.Error,
+                        Text = ic.Input,
+                        Icon = MessageBoxImage.Error,
+                        Buttons = new[] { MessageBoxButtons.Ok(Text.OK) }
+                    };
+
+                    MessageBox.Show(messageBox);
+                });
             });
         }
     }
