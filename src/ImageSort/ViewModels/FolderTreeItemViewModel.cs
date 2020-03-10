@@ -77,24 +77,24 @@ namespace ImageSort.ViewModels
 
             this.WhenAnyValue(x => x.Path)
                 .Where(p => p != null)
-                .Subscribe(p =>
+                .Select(p =>
                 {
                     try
                     {
-                        var _subFolders = fileSystem
-                            .GetSubFolders(p);
-
-                        if (_subFolders != null)
-                        {
-                            foreach (var folder in _subFolders.Where(f => f != null))
-                            {
-                                try
-                                {
-                                    subFolders.Add(new FolderTreeItemViewModel(fileSystem) { Path = folder });
-                                }
-                                catch (UnauthorizedAccessException) { }
-                            }
-                        }
+                        return fileSystem.GetSubFolders(p);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                })
+                .Where(p => p != null)
+                .Subscribe(paths =>
+                {
+                    try
+                    {
+                        subFolders.AddRange(paths.Where(p => p != null)
+                            .Select(p => new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = p }));
                     }
                     catch (UnauthorizedAccessException) { }
                 })
