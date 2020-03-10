@@ -133,7 +133,7 @@ namespace ImageSort.WPF.Views
                             })
                     },
                     Brush = System.Windows.Media.Brushes.Black,
-                    Pen = new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 1)
+                    Pen = new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 0.5)
                 };
 
                 return new DrawingImage(textDrawing);
