@@ -81,7 +81,9 @@ namespace ImageSort.Localization {
         /// <summary>
         ///   Looks up a localized string similar to Could not load &quot;{FileName}&quot;
         ///
-        ///{ErrorMessage}.
+        ///Message: {ErrorMessage}
+        ///
+        ///Note: Usually this is because the file is damaged.
         /// </summary>
         public static string CouldNotLoadImageErrorText {
             get {

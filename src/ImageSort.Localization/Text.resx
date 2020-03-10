@@ -126,7 +126,9 @@
   <data name="CouldNotLoadImageErrorText" xml:space="preserve">
     <value>Could not load "{FileName}"
 
-{ErrorMessage}</value>
+Message: {ErrorMessage}
+
+Note: Usually this is because the file is damaged</value>
   </data>
   <data name="CreateFolder" xml:space="preserve">
     <value>Create Folder (C)</value>
