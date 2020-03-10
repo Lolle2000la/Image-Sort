@@ -123,6 +123,13 @@
   <data name="CouldNotDeleteFileExceptionMessage" xml:space="preserve">
     <value>Die Datei {FileName} konnte nicht gelöscht werden</value>
   </data>
+  <data name="CouldNotLoadImageErrorText" xml:space="preserve">
+    <value>"{FileName}" konnte nicht geladen werden
+
+{ErrorMessage}
+
+Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
+  </data>
   <data name="CreateFolder" xml:space="preserve">
     <value>Ordner erstellen (C)</value>
   </data>
@@ -229,5 +236,20 @@ Wollen Sie updaten?</value>
   </data>
   <data name="UpdateAvailablePromptTitle" xml:space="preserve">
     <value>Ein Update ist verfügbar</value>
+  </data>
+  <data name="CouldNotUndoErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht rückgängig gemacht werden:
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotRedoErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht wiederholt werden:
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotActErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht ausgeführt werden:
+
+{ErrorMessage}</value>
   </data>
 </root>

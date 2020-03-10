@@ -3,10 +3,14 @@ using ImageSort.Localization;
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Drawing;
+using System.Globalization;
+using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows.Controls;
+using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace ImageSort.WPF.Views
@@ -94,18 +98,46 @@ namespace ImageSort.WPF.Views
             });
         }
 
-        private static BitmapImage PathToImage(string path)
+        private static ImageSource PathToImage(string path)
         {
             if (path == null) return null;
 
-            var bitmapImage = new BitmapImage();
+            try
+            {
+                var bitmapImage = new BitmapImage();
 
-            bitmapImage.BeginInit();
-            bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-            bitmapImage.UriSource = new Uri(path);
-            bitmapImage.EndInit();
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.UriSource = new Uri(path);
+                bitmapImage.EndInit();
 
-            return bitmapImage;
+                return bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                var textDrawing = new GeometryDrawing()
+                {
+                    Geometry = new GeometryGroup()
+                    {
+                        Children = new GeometryCollection(new[]
+                            {
+                                new FormattedText(Text.CouldNotLoadImageErrorText
+                                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                                        .Replace("{FileName}", Path.GetFileName(path), StringComparison.OrdinalIgnoreCase),
+                                    CultureInfo.CurrentCulture,
+                                    System.Windows.FlowDirection.LeftToRight,
+                                    new Typeface("Segoe UI"),
+                                    16,
+                                    System.Windows.Media.Brushes.Black, 1)
+                                .BuildGeometry(new System.Windows.Point(8, 8))
+                            })
+                    },
+                    Brush = System.Windows.Media.Brushes.Black,
+                    Pen = new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 0.5)
+                };
+
+                return new DrawingImage(textDrawing);
+            }
         }
 
         private void OnSelectedImageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)

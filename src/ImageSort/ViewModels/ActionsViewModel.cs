@@ -1,5 +1,7 @@
 ﻿using ImageSort.Actions;
+using ImageSort.Localization;
 using ReactiveUI;
+using System;
 using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -17,6 +19,8 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> lastUndone;
         public string LastUndone => lastUndone.Value;
 
+        public Interaction<string, Unit> NotifyUserOfError { get; } = new Interaction<string, Unit>();
+
         public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
@@ -24,30 +28,63 @@ namespace ImageSort.ViewModels
 
         public ActionsViewModel()
         {
-            Execute = ReactiveCommand.Create<IReversibleAction>(action =>
+            Execute = ReactiveCommand.CreateFromTask<IReversibleAction>(async action =>
             {
-                action.Act();
+                try
+                {
+                    action.Act();
+                }
+                catch (Exception ex)
+                {
+                    await NotifyUserOfError.Handle(Text.CouldNotActErrorText
+                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                        .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
+
+                    return;
+                }
 
                 done.Push(action);
 
                 undone.Clear();
             });
 
-            Undo = ReactiveCommand.Create(() =>
+            Undo = ReactiveCommand.CreateFromTask(async () =>
             {
                 if (done.TryPop(out var action))
                 {
-                    action.Revert();
+                    try
+                    {
+                        action.Revert();
+                    }
+                    catch (Exception ex)
+                    {
+                        await NotifyUserOfError.Handle(Text.CouldNotUndoErrorText
+                            .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
+
+                        return;
+                    }
 
                     undone.Push(action);
                 }
             });
 
-            Redo = ReactiveCommand.Create(() =>
+            Redo = ReactiveCommand.CreateFromTask(async () =>
             {
                 if (undone.TryPop(out var action))
                 {
-                    action.Act();
+                    try
+                    {
+                        action.Act();
+                    }
+                    catch (Exception ex)
+                    {
+                        await NotifyUserOfError.Handle(Text.CouldNotRedoErrorText
+                            .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
+
+                        return;
+                    }
 
                     done.Push(action);
                 }

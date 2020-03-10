@@ -3,9 +3,11 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Windows.Data;
+using System.Windows.Media.Imaging;
 
 namespace ImageSort.WPF.Converters
 {
+    [ValueConversion(typeof(string), typeof(BitmapImage))]
     internal class PathToFolderIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)

@@ -27,8 +27,8 @@ namespace ImageSort.WPF
         public App()
         {
 #if DEBUG && !DEBUG_LOCALIZATION
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("en");
-            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en");
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en");
+            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("en");
 #endif
 
             var assembly = Assembly.GetAssembly(typeof(App));

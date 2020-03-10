@@ -16,6 +16,7 @@
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
         <converters:PathToFilenameConverter x:Key="PathToFilenameConverter" />
+        <converters:PathToBitmapImageConverter x:Key="PathToBitmapImageConverter" LoadWidth="120" />
 
         <DataTemplate x:Key="ImageEntry" DataType="{x:Type System:String}">
             <Grid Height="100" Width="120">
@@ -24,13 +25,7 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
 
-                <Image>
-                    <Image.Source>
-                        <BitmapImage DecodePixelWidth="120"
-                                     CacheOption="OnLoad"
-                                     UriSource="{Binding}" />
-                    </Image.Source>
-                </Image>
+                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}"/>
 
                 <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1" />
             </Grid>

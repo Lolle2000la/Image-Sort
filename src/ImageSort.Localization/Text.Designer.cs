@@ -70,11 +70,57 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Could not execute action &quot;{ActMessage}&quot;:
+        ///
+        ///{ErrorMessage}.
+        /// </summary>
+        public static string CouldNotActErrorText {
+            get {
+                return ResourceManager.GetString("CouldNotActErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not delete {FileName}.
         /// </summary>
         public static string CouldNotDeleteFileExceptionMessage {
             get {
                 return ResourceManager.GetString("CouldNotDeleteFileExceptionMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not load &quot;{FileName}&quot;
+        ///
+        ///Message: {ErrorMessage}
+        ///
+        ///Note: Usually this is because the file is damaged.
+        /// </summary>
+        public static string CouldNotLoadImageErrorText {
+            get {
+                return ResourceManager.GetString("CouldNotLoadImageErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not redo action &quot;{ActMessage}&quot;:
+        ///
+        ///{ErrorMessage}.
+        /// </summary>
+        public static string CouldNotRedoErrorText {
+            get {
+                return ResourceManager.GetString("CouldNotRedoErrorText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Could not undo action &quot;{ActMessage}&quot;: 
+        ///
+        ///{ErrorMessage}.
+        /// </summary>
+        public static string CouldNotUndoErrorText {
+            get {
+                return ResourceManager.GetString("CouldNotUndoErrorText", resourceCulture);
             }
         }
         
