@@ -1,5 +1,7 @@
 ﻿using ImageSort.Actions;
+using ImageSort.Localization;
 using ReactiveUI;
+using System;
 using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -17,6 +19,8 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> lastUndone;
         public string LastUndone => lastUndone.Value;
 
+        private Interaction<string, Unit> NotifyUserOfError = new Interaction<string, Unit>();
+
         public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
         public ReactiveCommand<Unit, Unit> Undo { get; }
         public ReactiveCommand<Unit, Unit> Redo { get; }
@@ -26,7 +30,19 @@ namespace ImageSort.ViewModels
         {
             Execute = ReactiveCommand.Create<IReversibleAction>(action =>
             {
-                action.Act();
+                try
+                {
+                    action.Act();
+                }
+                catch (Exception ex)
+                {
+                    NotifyUserOfError.Handle(Text.CouldNotActErrorText
+                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                        .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
+                    .Wait();
+
+                    return;
+                }
 
                 done.Push(action);
 
@@ -37,7 +53,19 @@ namespace ImageSort.ViewModels
             {
                 if (done.TryPop(out var action))
                 {
-                    action.Revert();
+                    try
+                    {
+                        action.Revert();
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyUserOfError.Handle(Text.CouldNotUndoErrorText
+                            .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
+                        .Wait();
+
+                        return;
+                    }
 
                     undone.Push(action);
                 }
@@ -47,7 +75,19 @@ namespace ImageSort.ViewModels
             {
                 if (undone.TryPop(out var action))
                 {
-                    action.Act();
+                    try
+                    {
+                        action.Act();
+                    }
+                    catch (Exception ex)
+                    {
+                        NotifyUserOfError.Handle(Text.CouldNotRedoErrorText
+                            .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                            .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase))
+                        .Wait();
+
+                        return;
+                    }
 
                     done.Push(action);
                 }

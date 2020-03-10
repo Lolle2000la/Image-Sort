@@ -237,4 +237,19 @@ Wollen Sie updaten?</value>
   <data name="UpdateAvailablePromptTitle" xml:space="preserve">
     <value>Ein Update ist verfügbar</value>
   </data>
+  <data name="CouldNotUndoErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht rückgängig gemacht werden:
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotRedoErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht wiederholt werden:
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotActErrorText" xml:space="preserve">
+    <value>Die Aktion "{ActMessage}" konnte nicht ausgeführt werden:
+
+{ErrorMessage}</value>
+  </data>
 </root>

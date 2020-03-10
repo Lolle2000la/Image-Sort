@@ -237,4 +237,19 @@ Do you want to update?</value>
   <data name="UpdateAvailablePromptTitle" xml:space="preserve">
     <value>An update is available</value>
   </data>
+  <data name="CouldNotUndoErrorText" xml:space="preserve">
+    <value>Could not undo action "{ActMessage}": 
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotRedoErrorText" xml:space="preserve">
+    <value>Could not redo action "{ActMessage}":
+
+{ErrorMessage}</value>
+  </data>
+  <data name="CouldNotActErrorText" xml:space="preserve">
+    <value>Could not execute action "{ActMessage}":
+
+{ErrorMessage}</value>
+  </data>
 </root>
