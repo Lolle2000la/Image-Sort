@@ -70,5 +70,16 @@ namespace ImageSort.WPF {
                 this["DarkMode"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        public global::System.Collections.Specialized.StringCollection PinnedFolders {
+            get {
+                return ((global::System.Collections.Specialized.StringCollection)(this["PinnedFolders"]));
+            }
+            set {
+                this["PinnedFolders"] = value;
+            }
+        }
     }
 }
