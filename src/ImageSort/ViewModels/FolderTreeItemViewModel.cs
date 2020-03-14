@@ -94,29 +94,36 @@ namespace ImageSort.ViewModels
                     }
                 })
                 .Where(p => p != null)
-                .Subscribe(paths =>
+                .Select(paths =>
                 {
-                    try
-                    {
-                        subFolders.AddRange(paths.Where(p => p != null)
-                            .Select(p => new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel) { Path = p }));
-                    }
-                    catch (UnauthorizedAccessException) { }
+                    return paths.Where(p => p != null)
+                        .Select(p =>
+                        {
+                            try
+                            {
+                                return new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel) { Path = p };
+                            }
+                            catch (UnauthorizedAccessException) { return null; }
+                        })
+                        .Where(f => f != null)
+                        .ToList();
                 })
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(folders => subFolders.AddRange(folders))
                 .DisposeWith(disposableRegistration);
 
             CreateFolder = ReactiveCommand.Create<string, Unit>(name =>
-            {
-                var newFolderPath = System.IO.Path.Combine(Path, name);
+                {
+                    var newFolderPath = System.IO.Path.Combine(Path, name);
 
-                if (Children.Select(f => f.Path).Any(s => s == newFolderPath)) return Unit.Default;
+                    if (Children.Select(f => f.Path).Any(s => s == newFolderPath)) return Unit.Default;
 
-                fileSystem.CreateFolder(newFolderPath);
+                    fileSystem.CreateFolder(newFolderPath);
 
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = newFolderPath });
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = newFolderPath });
 
-                return Unit.Default;
-            });
+                    return Unit.Default;
+                });
 
             this.WhenAnyValue(x => x.Path)
                 .Where(p => !string.IsNullOrEmpty(p))
