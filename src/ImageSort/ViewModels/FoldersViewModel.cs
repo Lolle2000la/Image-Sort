@@ -1,4 +1,5 @@
 ﻿using DynamicData;
+using DynamicData.Binding;
 using ImageSort.FileSystem;
 using ReactiveUI;
 using Splat;
@@ -61,6 +62,7 @@ namespace ImageSort.ViewModels
             pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
                 .ObserveOn(RxApp.MainThreadScheduler)
+                .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
                 .Bind(out _pinnedFolders)
                 .Subscribe();
 
