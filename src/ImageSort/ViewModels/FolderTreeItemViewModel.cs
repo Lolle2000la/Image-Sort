@@ -86,7 +86,7 @@ namespace ImageSort.ViewModels
                     {
                         if (noParallel) return fileSystem.GetSubFolders(p);
 
-                        return await Task.Run(() => fileSystem.GetSubFolders(p));
+                        return await Task.Run(() => fileSystem.GetSubFolders(p)).ConfigureAwait(false);
                     }
                     catch
                     {
