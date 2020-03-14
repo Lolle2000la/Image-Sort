@@ -120,7 +120,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
 
+            var actions = otherMainVM.Actions.Execute.Replay();
+            actions.Connect();
+
             await otherMainVM.MoveImageToFolder.Execute();
+
+            await actions.FirstAsync();
 
             Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 
