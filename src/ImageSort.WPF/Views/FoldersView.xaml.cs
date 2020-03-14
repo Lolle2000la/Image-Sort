@@ -2,7 +2,9 @@
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -91,6 +93,41 @@ namespace ImageSort.WPF.Views
                     .Select(_ => Unit.Default)
                     .Subscribe(_ => SelectCurrentFolder())
                     .DisposeWith(disposableRegistration);
+
+                // restore pinned folders
+                if (Settings.Default.PinnedFolders != null)
+                {
+                    var pinnedFolders = new List<string>(Settings.Default.PinnedFolders.Count);
+
+                    foreach (var pinned in Settings.Default.PinnedFolders)
+                    {
+                        pinnedFolders.Add(pinned);
+                    }
+
+                    ViewModel.AddPinnedFoldersFromPaths(pinnedFolders);
+                }
+
+                // save pinned folders
+                ViewModel.PinnedFolders.ActOnEveryObject(f =>
+                {
+                    if (Settings.Default.PinnedFolders == null) Settings.Default.PinnedFolders = new System.Collections.Specialized.StringCollection();
+                    if (f == null) return;
+                    if (Settings.Default.PinnedFolders.Contains(f.Path)) return;
+
+                    Settings.Default.PinnedFolders.Add(f.Path);
+
+                    Settings.Default.Save();
+                },
+                f => 
+                {
+                    if (Settings.Default.PinnedFolders == null) Settings.Default.PinnedFolders = new System.Collections.Specialized.StringCollection();
+                    if (f == null) return;
+                    if (!Settings.Default.PinnedFolders.Contains(f.Path)) return;
+
+                    Settings.Default.PinnedFolders.Remove(f.Path);
+
+                    Settings.Default.Save();
+                });
             });
         }
 
