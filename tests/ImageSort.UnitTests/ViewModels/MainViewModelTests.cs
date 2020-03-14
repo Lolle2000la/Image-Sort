@@ -116,11 +116,11 @@ namespace ImageSort.UnitTests.ViewModels
 
             otherMainVM.Folders.SelectFolder.RegisterHandler(ic => ic.SetOutput(newDirectory));
 
-            otherMainVM.Folders.Pin.Execute().Wait();
+            await otherMainVM.Folders.Pin.Execute();
 
             otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
 
-            otherMainVM.MoveImageToFolder.Execute().Wait();
+            await otherMainVM.MoveImageToFolder.Execute();
 
             Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 
