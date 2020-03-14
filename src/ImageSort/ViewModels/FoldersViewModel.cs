@@ -6,6 +6,7 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
@@ -15,6 +16,9 @@ namespace ImageSort.ViewModels
 {
     public class FoldersViewModel : ReactiveObject
     {
+        private readonly IFileSystem fileSystem;
+        private readonly bool noParallel;
+
         private FolderTreeItemViewModel _currentFolder;
 
         public FolderTreeItemViewModel CurrentFolder
@@ -56,8 +60,9 @@ namespace ImageSort.ViewModels
 
         public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, bool noParallel = false)
         {
-            fileSystem ??= Locator.Current.GetService<IFileSystem>();
+            this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             backgroundScheduler ??= RxApp.TaskpoolScheduler;
+            this.noParallel = noParallel;
 
             pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
@@ -137,6 +142,20 @@ namespace ImageSort.ViewModels
 
                     oldFolder = f;
                 });
+        }
+
+        public void AddPinnedFoldersFromPaths(IEnumerable<string> paths)
+        {
+            pinnedFolders.AddRange(paths.Select(p =>
+                {
+                    if (!fileSystem.DirectoryExists(p)) return null;
+
+                    try
+                    {
+                        return new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = p };
+                    }
+                    catch { return null; }
+                }).Where(f => f != null));
         }
 
         ~FoldersViewModel()
