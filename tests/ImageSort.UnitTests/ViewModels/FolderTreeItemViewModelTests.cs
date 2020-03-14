@@ -80,7 +80,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             testScheduler.Start();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
             {
                 Path = currentFolder
             };
