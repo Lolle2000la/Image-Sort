@@ -105,10 +105,10 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
 
-            var otherMainVM = new MainViewModel(fsMock.Object)
+            var otherMainVM = new MainViewModel(fsMock.Object, noParallel: true)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } },
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler, true) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, noParallel: true) { Path = currentDirectory } },
                 Images = new ImagesViewModel(fsMock.Object)
             };
 
@@ -120,7 +120,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
 
+            var actions = otherMainVM.Actions.Execute.Replay();
+            actions.Connect();
+
             await otherMainVM.MoveImageToFolder.Execute();
+
+            await actions.FirstAsync();
 
             Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 
@@ -155,7 +160,7 @@ namespace ImageSort.UnitTests.ViewModels
             var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) { Path = currentDirectory } },
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler, false) { CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, noParallel: true) { Path = currentDirectory } },
                 Images = new ImagesViewModel(fsMock.Object)
             };
 
