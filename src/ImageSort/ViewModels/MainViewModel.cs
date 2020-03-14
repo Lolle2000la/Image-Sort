@@ -44,7 +44,7 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> DeleteImage { get; }
 
-        public MainViewModel(IFileSystem fileSystem = null, IRecycleBin recycleBin = null)
+        public MainViewModel(IFileSystem fileSystem = null, IRecycleBin recycleBin = null, bool noParallel = false)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
             recycleBin ??= Locator.Current.GetService<IRecycleBin>();
@@ -77,7 +77,7 @@ namespace ImageSort.ViewModels
             {
                 try
                 {
-                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem) { Path = await PickFolder.Handle(Unit.Default) };
+                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = await PickFolder.Handle(Unit.Default) };
                 }
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
