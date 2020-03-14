@@ -12,6 +12,7 @@ using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Threading.Tasks;
 
 namespace ImageSort.ViewModels
 {
@@ -22,6 +23,7 @@ namespace ImageSort.ViewModels
         private readonly IScheduler backgroundScheduler;
         private readonly Func<FileSystemWatcher> folderWatcherFactory;
         private readonly FileSystemWatcher folderWatcher;
+        private readonly bool noParallel;
 
         private bool _isCurrentFolder = false;
 
@@ -49,10 +51,11 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<string, Unit> CreateFolder { get; }
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
+        public FolderTreeItemViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, bool noParallel = false)
         {
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
+            this.noParallel = noParallel;
             this.folderWatcherFactory = folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
             folderWatcher = folderWatcherFactory();
             folderWatcher?.DisposeWith(disposableRegistration);
@@ -77,11 +80,13 @@ namespace ImageSort.ViewModels
 
             this.WhenAnyValue(x => x.Path)
                 .Where(p => p != null)
-                .Select(p =>
+                .SelectMany(async p =>
                 {
                     try
                     {
-                        return fileSystem.GetSubFolders(p);
+                        if (noParallel) return fileSystem.GetSubFolders(p);
+
+                        return await Task.Run(() => fileSystem.GetSubFolders(p));
                     }
                     catch
                     {
@@ -94,7 +99,7 @@ namespace ImageSort.ViewModels
                     try
                     {
                         subFolders.AddRange(paths.Where(p => p != null)
-                            .Select(p => new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = p }));
+                            .Select(p => new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel) { Path = p }));
                     }
                     catch (UnauthorizedAccessException) { }
                 })
@@ -108,7 +113,7 @@ namespace ImageSort.ViewModels
 
                 fileSystem.CreateFolder(newFolderPath);
 
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem) { Path = newFolderPath });
+                subFolders.Add(new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = newFolderPath });
 
                 return Unit.Default;
             });
@@ -139,7 +144,7 @@ namespace ImageSort.ViewModels
             {
                 if (!subFolders.Items.Any(f => f.Path == e.FullPath))
                 {
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = e.FullPath });
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel: noParallel) { Path = e.FullPath });
                 }
             });
         }
@@ -164,7 +169,7 @@ namespace ImageSort.ViewModels
                 {
                     subFolders.Remove(item);
 
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory) { Path = e.FullPath });
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel) { Path = e.FullPath });
                 }
             });
         }

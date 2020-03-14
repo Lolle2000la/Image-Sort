@@ -53,7 +53,7 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
-        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
+        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, bool noParallel = false)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
             backgroundScheduler ??= RxApp.TaskpoolScheduler;
@@ -78,7 +78,7 @@ namespace ImageSort.ViewModels
                     if (pinnedFolders.Items.Any(f => f.Path == folderToPin)) return;
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem)
+                        new FolderTreeItemViewModel(fileSystem, noParallel: noParallel)
                         {
                             Path = folderToPin
                         });
