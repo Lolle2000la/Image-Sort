@@ -22,5 +22,18 @@ namespace ImageSort.SettingsManagement
                 SettingsStore[args.PropertyName] = args.Sender.GetType().GetProperty(args.PropertyName).GetValue(args.Sender);
             });
         }
+
+        public void UpdatePropertiesFromStore()
+        {
+            var properties = this.GetType().GetProperties();
+
+            foreach (var property in properties)
+            {
+                if (SettingsStore.TryGetValue(property.Name, out var setting))
+                {
+                    property.SetValue(this, setting);
+                }
+            }
+        }
     }
 }
