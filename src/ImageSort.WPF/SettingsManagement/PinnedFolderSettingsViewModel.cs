@@ -15,9 +15,9 @@ namespace ImageSort.WPF.SettingsManagement
 
         public override bool IsVisible => false;
 
-        private List<string> _pinnedFolders = new List<string>();
+        private IEnumerable<string> _pinnedFolders = new List<string>();
 
-        public List<string> PinnedFolders
+        public IEnumerable<string> PinnedFolders
         {
             get => _pinnedFolders;
             set => this.RaiseAndSetIfChanged(ref _pinnedFolders, value);
