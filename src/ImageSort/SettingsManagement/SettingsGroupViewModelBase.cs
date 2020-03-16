@@ -11,7 +11,6 @@ namespace ImageSort.SettingsManagement
         /// </summary>
         public abstract string Name { get; }
         public abstract string Header { get; }
-        protected Dictionary<string, object> SettingsStore { get; } = new Dictionary<string, object>();
-        public IReadOnlyDictionary<string, object> SettingsModel => new ReadOnlyDictionary<string, object>(SettingsStore);
+        public Dictionary<string, object> SettingsStore { get; } = new Dictionary<string, object>();
     }
 }
