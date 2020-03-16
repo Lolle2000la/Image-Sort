@@ -35,9 +35,5 @@ namespace ImageSort.WPF.SettingsManagement
             get => _installPrereleaseBuilds;
             set => this.RaiseAndSetIfChanged(ref _installPrereleaseBuilds, value);
         }
-
-        public GeneralSettingsGroup() : base()
-        {
-        }
     }
 }
