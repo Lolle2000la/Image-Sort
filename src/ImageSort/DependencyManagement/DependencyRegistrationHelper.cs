@@ -31,7 +31,7 @@ namespace ImageSort.DependencyManagement
 
             if (userSettings.Count > 0) settings.AddRange(userSettings);
 
-            dependencyResolver.Register<IEnumerable<SettingsGroupViewModelBase>>(() => settings);
+            dependencyResolver.RegisterConstant<IEnumerable<SettingsGroupViewModelBase>>(settings);
         }
     }
 }
