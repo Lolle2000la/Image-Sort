@@ -30,6 +30,10 @@ namespace ImageSort.WPF.SettingsManagement
             {
                 ViewModel ??= Locator.Current.GetService<SettingsViewModel>();
 
+                ViewModel.Restore();
+
+                Closed += (o, e) => ViewModel.Save();
+
                 this.OneWayBind(ViewModel,
                     vm => vm.SettingsGroups,
                     view => view.Groups.ItemsSource)
