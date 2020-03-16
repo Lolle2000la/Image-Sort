@@ -20,7 +20,7 @@ namespace ImageSort.WPF.SettingsManagement
 
             using var file = File.Create(ConfigFileLocation);
 
-            await JsonSerializer.SerializeAsync(file, settings.AsDictionary());
+            await JsonSerializer.SerializeAsync(file, settings.AsDictionary()).ConfigureAwait(false);
         }
 
         public static async Task RestoreAsync(this SettingsViewModel settings)
