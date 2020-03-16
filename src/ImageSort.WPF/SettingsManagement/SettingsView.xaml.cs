@@ -3,6 +3,7 @@ using ImageSort.SettingsManagement;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +24,14 @@ namespace ImageSort.WPF.SettingsManagement
         public SettingsView()
         {
             InitializeComponent();
+
+            this.WhenActivated(disposableRegistration =>
+            {
+                this.OneWayBind(ViewModel,
+                    vm => vm.SettingsGroups,
+                    view => view.Groups.ItemsSource)
+                    .DisposeWith(disposableRegistration);
+            });
         }
 
         #region IViewFor implementation

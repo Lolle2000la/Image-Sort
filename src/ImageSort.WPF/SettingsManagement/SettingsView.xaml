@@ -7,7 +7,7 @@
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
                              mc:Ignorable="d"
                              Title="SettingsView" Height="450" Width="800">
-    <Grid>
+    <TabControl x:Name="Groups">
         
-    </Grid>
+    </TabControl>
 </adonisControls:AdonisWindow>
