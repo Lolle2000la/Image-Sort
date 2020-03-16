@@ -251,6 +251,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Key bindings.
+        /// </summary>
+        public static string KeyBindingsSettingsHeader {
+            get {
+                return ResourceManager.GetString("KeyBindingsSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Move (↑).
         /// </summary>
         public static string Move {

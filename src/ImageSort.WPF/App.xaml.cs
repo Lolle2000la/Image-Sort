@@ -10,6 +10,7 @@ using Application = System.Windows.Application;
 using ImageSort.WPF.SettingsManagement;
 using ImageSort.SettingsManagement;
 using System.Reactive.Concurrency;
+using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 
 #if !DO_NOT_INCLUDE_UPDATER
 
@@ -42,6 +43,7 @@ namespace ImageSort.WPF
             {
                 settings.Add(new GeneralSettingsGroupViewModel());
                 settings.Add(new PinnedFolderSettingsViewModel());
+                settings.Add(new KeyBindingsSettingsGroupViewModel());
             });
             Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
 

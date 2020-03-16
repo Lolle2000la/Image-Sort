@@ -261,4 +261,7 @@ Wollen Sie updaten?</value>
   <data name="PinnedFoldersSettingsHeader" xml:space="preserve">
     <value>Angepinnte Ordner</value>
   </data>
+  <data name="KeyBindingsSettingsHeader" xml:space="preserve">
+    <value>Tastenbelegung</value>
+  </data>
 </root>

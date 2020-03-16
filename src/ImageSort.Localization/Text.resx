@@ -261,4 +261,7 @@ Do you want to update?</value>
   <data name="PinnedFoldersSettingsHeader" xml:space="preserve">
     <value>Pinned folders</value>
   </data>
+  <data name="KeyBindingsSettingsHeader" xml:space="preserve">
+    <value>Key bindings</value>
+  </data>
 </root>
