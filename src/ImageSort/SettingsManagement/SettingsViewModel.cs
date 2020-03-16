@@ -28,7 +28,7 @@ namespace ImageSort.SettingsManagement
             throw new NotImplementedException();
         }
 
-        public void RestoreFromDictionary(Dictionary<Type, Dictionary<string, object>> dictionary)
+        public void RestoreFromDictionary(Dictionary<string, Dictionary<string, object>> dictionary)
         {
             throw new NotImplementedException();
         }
