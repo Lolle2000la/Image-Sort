@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ImageSort.WPF.Settings
+namespace ImageSort.WPF.SettingsManagement
 {
     class GeneralSettingsGroup : SettingsGroupViewModelBase
     {
