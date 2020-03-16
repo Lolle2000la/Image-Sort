@@ -9,6 +9,7 @@ using System.Linq;
 using System.Reflection;
 using Application = System.Windows.Application;
 using AdonisUI.Controls;
+using ImageSort.WPF.SettingsManagement;
 
 #if !DO_NOT_INCLUDE_UPDATER
 
@@ -51,6 +52,10 @@ namespace ImageSort.WPF
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
             Locator.CurrentMutable.RegisterManditoryDependencies();
             Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
+            Locator.CurrentMutable.RegisterSettings(settings =>
+            {
+                settings.Add(new GeneralSettingsGroupViewModel());
+            });
         }
 
 #if !DO_NOT_INCLUDE_UPDATER
