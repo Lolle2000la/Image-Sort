@@ -1,21 +1,35 @@
 ﻿using ImageSort.SettingsManagement;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ImageSort.WPF.SettingsManagement
 {
     internal static class SettingsHelper
     {
+        public static string ConfigFileLocation { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort", "config.json");
+
         public static void Save(this SettingsViewModel settings)
         {
-            Settings.Default["Settings"] = settings.AsDictionary();
-            Settings.Default.Save();
+            var dir = Path.GetDirectoryName(ConfigFileLocation);
+
+            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            using var file = File.Create(ConfigFileLocation);
+
+            JsonSerializer.SerializeAsync(file, settings.AsDictionary());
         }
 
-        public static void Restore(this SettingsViewModel settings)
+        public static async Task RestoreAsync(this SettingsViewModel settings)
         {
-            settings.RestoreFromDictionary((Dictionary<string, Dictionary<string, object>>)Settings.Default["Settings"]);
+            if (!File.Exists(ConfigFileLocation)) return;
+
+            using var configFile = File.OpenRead(ConfigFileLocation);
+
+            settings.RestoreFromDictionary(await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile));
         }
     }
 }
