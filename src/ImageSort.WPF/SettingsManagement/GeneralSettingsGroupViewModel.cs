@@ -1,8 +1,8 @@
-﻿using ImageSort.SettingsManagement;
+﻿using AdonisUI;
+using ImageSort.SettingsManagement;
 using ReactiveUI;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Windows;
 
 namespace ImageSort.WPF.SettingsManagement
 {
@@ -34,6 +34,17 @@ namespace ImageSort.WPF.SettingsManagement
         {
             get => _installPrereleaseBuilds;
             set => this.RaiseAndSetIfChanged(ref _installPrereleaseBuilds, value);
+        }
+
+        public GeneralSettingsGroupViewModel()
+        {
+            void SetDarkMode(bool darkMode)
+            {
+                ResourceLocator.SetColorScheme(Application.Current.Resources, darkMode ? ResourceLocator.DarkColorScheme : ResourceLocator.LightColorScheme);
+            }
+
+            this.WhenAnyValue(vm => vm.DarkMode)
+                .Subscribe(SetDarkMode);
         }
     }
 }
