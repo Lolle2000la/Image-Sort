@@ -12,7 +12,7 @@ namespace ImageSort.WPF.SettingsManagement
     {
         public static string ConfigFileLocation { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort", "config.json");
 
-        public static void Save(this SettingsViewModel settings)
+        public static async Task SaveAsync(this SettingsViewModel settings)
         {
             var dir = Path.GetDirectoryName(ConfigFileLocation);
 

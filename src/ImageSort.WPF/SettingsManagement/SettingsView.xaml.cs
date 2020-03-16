@@ -26,13 +26,13 @@ namespace ImageSort.WPF.SettingsManagement
         {
             InitializeComponent();
 
-            this.WhenActivated(disposableRegistration =>
+            this.WhenActivated(async disposableRegistration =>
             {
                 ViewModel ??= Locator.Current.GetService<SettingsViewModel>();
 
-                ViewModel.Restore();
+                await ViewModel.RestoreAsync();
 
-                Closed += (o, e) => ViewModel.Save();
+                Closed += async (o, e) => await ViewModel.SaveAsync().ConfigureAwait(false);
 
                 this.OneWayBind(ViewModel,
                     vm => vm.SettingsGroups,
