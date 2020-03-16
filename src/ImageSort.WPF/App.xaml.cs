@@ -13,6 +13,8 @@ using System.Reactive.Concurrency;
 
 #if !DO_NOT_INCLUDE_UPDATER
 
+using AdonisUI.Controls;
+using ImageSort.Localization;
 using Octokit;
 using ImageSort.WindowsUpdater;
 
