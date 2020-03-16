@@ -37,7 +37,15 @@ namespace ImageSort.SettingsManagement
 
         public void RestoreFromDictionary(Dictionary<string, Dictionary<string, object>> dictionary)
         {
-            throw new NotImplementedException();
+            foreach (var storedGroup in dictionary)
+            {
+                var group = SettingsGroups.FirstOrDefault(g => g.Name == storedGroup.Key);
+
+                foreach (var setting in storedGroup.Value)
+                {
+                    group.SettingsStore[setting.Key] = setting.Value;
+                }
+            }
         }
     }
 }
