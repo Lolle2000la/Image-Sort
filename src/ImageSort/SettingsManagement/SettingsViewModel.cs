@@ -23,7 +23,7 @@ namespace ImageSort.SettingsManagement
                 .FirstOrDefault();
         }
 
-        public Dictionary<Type, Dictionary<string, object>> AsDictionary()
+        public Dictionary<string, Dictionary<string, object>> AsDictionary()
         {
             throw new NotImplementedException();
         }
