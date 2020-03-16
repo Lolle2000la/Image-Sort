@@ -1,6 +1,5 @@
 ﻿using ImageSort.DependencyManagement;
 using ImageSort.FileSystem;
-using ImageSort.Localization;
 using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using Splat;
@@ -8,9 +7,9 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Application = System.Windows.Application;
-using AdonisUI.Controls;
 using ImageSort.WPF.SettingsManagement;
 using ImageSort.SettingsManagement;
+using System.Reactive.Concurrency;
 
 #if !DO_NOT_INCLUDE_UPDATER
 
@@ -44,9 +43,7 @@ namespace ImageSort.WPF
                 Settings.Default.Save();
             }
 
-#if !DO_NOT_INCLUDE_UPDATER
             Startup += OnStartup;
-#endif
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
@@ -60,10 +57,16 @@ namespace ImageSort.WPF
             Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
         }
 
-#if !DO_NOT_INCLUDE_UPDATER
-
         private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
         {
+            RxApp.MainThreadScheduler.Schedule(async () =>
+            {
+                var settings = Locator.Current.GetService<SettingsViewModel>();
+
+                await settings.RestoreAsync().ConfigureAwait(true);
+            });
+
+#if !DO_NOT_INCLUDE_UPDATER
             InstallerRunner.CleanUpInstaller();
 
             if (!Settings.Default.ShouldCheckForUpdates) return;
@@ -93,13 +96,12 @@ namespace ImageSort.WPF
                     InstallerRunner.RunAsync(installer);
                 }
             }
+#endif
         }
 
         ~App()
         {
             Startup -= OnStartup;
         }
-
-#endif
     }
 }
