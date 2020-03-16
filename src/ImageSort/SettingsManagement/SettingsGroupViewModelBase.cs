@@ -3,6 +3,7 @@ using ReactiveUI;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
+using System.Linq;
 
 namespace ImageSort.SettingsManagement
 {
@@ -32,7 +33,14 @@ namespace ImageSort.SettingsManagement
             {
                 if (SettingsStore.TryGetValue(property.Name, out var setting))
                 {
-                    property.SetValue(this, setting);
+                    if (setting is object[] objects)
+                    {
+                        property.SetValue(this, objects.OfType<string>());
+                    }
+                    else
+                    {
+                        property.SetValue(this, setting);
+                    }
                 }
             }
         }
