@@ -38,15 +38,20 @@ namespace ImageSort.WPF.SettingsManagement
                 {
                     var everyPossibleGetterMethod = typeof(JsonElement).GetMethods().Where(m => m.Name.StartsWith("TryGet", StringComparison.Ordinal));
 
-                    configContents[configGroup.Key][config.Key] = ((JsonElement)config.Value) switch
+                    object JsonElementToValue(JsonElement element)
                     {
-                        JsonElement { ValueKind: JsonValueKind.False } => false,
-                        JsonElement { ValueKind: JsonValueKind.True } => true,
-                        JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
-                        JsonElement { ValueKind: JsonValueKind.Number } e => e.GetDouble(),
-                        JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().ToArray(),
-                        _ => null
-                    };
+                        return element switch
+                        {
+                            JsonElement { ValueKind: JsonValueKind.False } => false,
+                            JsonElement { ValueKind: JsonValueKind.True } => true,
+                            JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
+                            JsonElement { ValueKind: JsonValueKind.Number } e => e.GetDouble(),
+                            JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
+                            _ => null
+                        };
+                    }
+
+                    configContents[configGroup.Key][config.Key] = JsonElementToValue((JsonElement)config.Value);
                 }
             }
 
