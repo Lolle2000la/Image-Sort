@@ -30,7 +30,7 @@ namespace ImageSort.WPF.SettingsManagement
             {
                 ViewModel ??= Locator.Current.GetService<SettingsViewModel>();
 
-                await ViewModel.RestoreAsync();
+                await ViewModel.RestoreAsync().ConfigureAwait(true);
 
                 Closed += async (o, e) => await ViewModel.SaveAsync().ConfigureAwait(false);
 
