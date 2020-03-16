@@ -258,4 +258,7 @@ Wollen Sie updaten?</value>
   <data name="GeneralSettingsHeader" xml:space="preserve">
     <value>Allgemeine Einstellungen</value>
   </data>
+  <data name="PinnedFoldersSettingsHeader" xml:space="preserve">
+    <value>Angepinnte Ordner</value>
+  </data>
 </root>

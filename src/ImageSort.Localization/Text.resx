@@ -258,4 +258,7 @@ Do you want to update?</value>
   <data name="GeneralSettingsHeader" xml:space="preserve">
     <value>General settings</value>
   </data>
+  <data name="PinnedFoldersSettingsHeader" xml:space="preserve">
+    <value>Pinned folders</value>
+  </data>
 </root>

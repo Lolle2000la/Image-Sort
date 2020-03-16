@@ -332,6 +332,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Pinned folders.
+        /// </summary>
+        public static string PinnedFoldersSettingsHeader {
+            get {
+                return ResourceManager.GetString("PinnedFoldersSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pin selected (F).
         /// </summary>
         public static string PinSelected {
