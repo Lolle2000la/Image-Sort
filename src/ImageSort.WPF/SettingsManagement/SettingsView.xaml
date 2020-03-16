@@ -9,7 +9,7 @@
                              xmlns:reactiveUi="http://reactiveui.net"
                              mc:Ignorable="d"
                              Title="SettingsView" Height="450" Width="800">
-    <TabControl x:Name="Groups">
+    <TabControl x:Name="Groups" SelectedIndex="0">
         <TabControl.ItemTemplate>
             <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
                 <TextBlock Text="{Binding Header}"/>
