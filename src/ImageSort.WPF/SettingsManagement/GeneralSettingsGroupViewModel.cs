@@ -1,4 +1,5 @@
 ﻿using AdonisUI;
+using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ReactiveUI;
 using System;
@@ -10,7 +11,7 @@ namespace ImageSort.WPF.SettingsManagement
     {
         public override string Name => "General";
 
-        public override string Header => "General";
+        public override string Header => Text.GeneralSettingsHeader;
 
         private bool _darkMode = false;
 

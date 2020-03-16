@@ -206,6 +206,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to General settings.
+        /// </summary>
+        public static string GeneralSettingsHeader {
+            get {
+                return ResourceManager.GetString("GeneralSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Move image selection left (left arrow key).
         /// </summary>
         public static string GoLeftTooltip {

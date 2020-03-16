@@ -255,4 +255,7 @@ Do you want to update?</value>
   <data name="Open" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="GeneralSettingsHeader" xml:space="preserve">
+    <value>General settings</value>
+  </data>
 </root>
