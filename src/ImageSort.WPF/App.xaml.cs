@@ -52,6 +52,7 @@ namespace ImageSort.WPF
             Locator.CurrentMutable.RegisterSettings(settings =>
             {
                 settings.Add(new GeneralSettingsGroupViewModel());
+                settings.Add(new PinnedFolderSettingsViewModel());
             });
             Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
 
