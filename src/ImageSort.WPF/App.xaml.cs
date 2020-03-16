@@ -46,10 +46,6 @@ namespace ImageSort.WPF
                 Settings.Default.Save();
             }
 
-            Startup += OnStartup;
-
-            Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
-
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
             Locator.CurrentMutable.RegisterManditoryDependencies();
             Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
@@ -58,6 +54,11 @@ namespace ImageSort.WPF
                 settings.Add(new GeneralSettingsGroupViewModel());
             });
             Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
+
+            Startup += OnStartup;
+
+            Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
         }
 
         private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
