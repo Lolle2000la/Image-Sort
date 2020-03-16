@@ -4,7 +4,9 @@ using ReactiveUI;
 using Splat;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -32,10 +34,10 @@ namespace ImageSort.WPF.SettingsManagement
 
                 Closed += async (o, e) => await ViewModel.SaveAsync().ConfigureAwait(false);
 
-                this.OneWayBind(ViewModel,
-                    vm => vm.SettingsGroups,
-                    view => view.Groups.ItemsSource)
-                    .DisposeWith(disposableRegistration);
+                ViewModel.WhenAnyValue(vm => vm.SettingsGroups)
+                    .Where(gs => gs != null)
+                    .Select(gs => gs.Where(g => g.IsVisible))
+                    .Subscribe(gs => Groups.ItemsSource = gs);
             });
         }
 
