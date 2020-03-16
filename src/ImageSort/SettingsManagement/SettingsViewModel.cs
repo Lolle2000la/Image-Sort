@@ -17,9 +17,9 @@ namespace ImageSort.SettingsManagement
             SettingsGroups = settingsGroups ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
         }
 
-        public GroupType GetGroup<GroupType>() where GroupType : SettingsGroupViewModelBase
+        public TGroup GetGroup<TGroup>() where TGroup : SettingsGroupViewModelBase
         {
-            return SettingsGroups.OfType<GroupType>()
+            return SettingsGroups.OfType<TGroup>()
                 .FirstOrDefault();
         }
 
