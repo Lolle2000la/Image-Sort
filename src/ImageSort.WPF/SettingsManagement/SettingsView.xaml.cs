@@ -1,6 +1,7 @@
 ﻿using AdonisUI.Controls;
 using ImageSort.SettingsManagement;
 using ReactiveUI;
+using Splat;
 using System;
 using System.Collections.Generic;
 using System.Reactive.Disposables;
@@ -27,6 +28,8 @@ namespace ImageSort.WPF.SettingsManagement
 
             this.WhenActivated(disposableRegistration =>
             {
+                ViewModel ??= new SettingsViewModel();
+
                 this.OneWayBind(ViewModel,
                     vm => vm.SettingsGroups,
                     view => view.Groups.ItemsSource)
