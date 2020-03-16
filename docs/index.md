@@ -1,4 +1,4 @@
-![Screenshot from the user interface of Image Sort](https://raw.githubusercontent.com/Lolle2000la/Image-Sort/master/Image-Sort-Screenshot.png)
+![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/raw/master/Image-Sort-Screenshot.gif)
 
 ## Installation
 
