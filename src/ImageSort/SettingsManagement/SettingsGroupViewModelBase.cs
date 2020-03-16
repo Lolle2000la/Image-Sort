@@ -13,6 +13,7 @@ namespace ImageSort.SettingsManagement
         /// </summary>
         public abstract string Name { get; }
         public abstract string Header { get; }
+        public virtual bool IsVisible => true;
         public Dictionary<string, object> SettingsStore { get; } = new Dictionary<string, object>();
 
         protected SettingsGroupViewModelBase()
