@@ -24,13 +24,13 @@ namespace ImageSort.WPF.SettingsManagement
             await JsonSerializer.SerializeAsync(file, settings.AsDictionary()).ConfigureAwait(false);
         }
 
-        public static async Task RestoreAsync(this SettingsViewModel settings)
+        public static void Restore(this SettingsViewModel settings)
         {
             if (!File.Exists(ConfigFileLocation)) return;
 
             using var configFile = File.OpenRead(ConfigFileLocation);
 
-            var configContents = await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile);
+            var configContents = JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile).Result;
 
             foreach (var configGroup in new Dictionary<string, Dictionary<string, object>>(configContents))
             {

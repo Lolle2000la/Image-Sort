@@ -67,7 +67,7 @@ namespace ImageSort.WPF
             {
                 var settings = Locator.Current.GetService<SettingsViewModel>();
 
-                await settings.RestoreAsync().ConfigureAwait(true);
+                settings.Restore();
             });
 
 #if !DO_NOT_INCLUDE_UPDATER
