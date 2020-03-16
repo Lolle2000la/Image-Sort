@@ -14,7 +14,8 @@ namespace ImageSort.SettingsManagement
 
         public SettingsViewModel(IEnumerable<SettingsGroupViewModelBase> settingsGroups = null)
         {
-            SettingsGroups = settingsGroups ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
+            SettingsGroups = (settingsGroups ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>())
+                .Where(g => g.IsVisible);
         }
 
         public TGroup GetGroup<TGroup>() where TGroup : SettingsGroupViewModelBase
