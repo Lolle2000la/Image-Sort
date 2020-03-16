@@ -25,7 +25,14 @@ namespace ImageSort.SettingsManagement
 
         public Dictionary<string, Dictionary<string, object>> AsDictionary()
         {
-            throw new NotImplementedException();
+            var dict = new Dictionary<string, Dictionary<string, object>>();
+
+            foreach (var group in SettingsGroups)
+            {
+                dict.Add(group.Name, group.SettingsStore);
+            }
+
+            return dict;
         }
 
         public void RestoreFromDictionary(Dictionary<string, Dictionary<string, object>> dictionary)
