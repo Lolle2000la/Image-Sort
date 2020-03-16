@@ -56,5 +56,23 @@ namespace ImageSort.UnitTests.SettingsManagement
 
             Assert.Null(testSettingsGroup.SettingsStore["TestString"]);
         }
+
+        [Fact(DisplayName = "Updates properties based on the what is in store")]
+        public void UpdatesPropertiesBasedOnWhatIsStored()
+        {
+            var testSettingsGroup = new TestSettingsGroup() 
+            { 
+                TestProperty = false,
+                TestString = "test value"
+            };
+
+            testSettingsGroup.SettingsStore["TestProperty"] = true;
+            testSettingsGroup.SettingsStore["TestString"] = "new test value";
+
+            testSettingsGroup.UpdatePropertiesFromStore();
+
+            Assert.True(testSettingsGroup.TestProperty);
+            Assert.Equal("new test value", testSettingsGroup.TestString);
+        }
     }
 }
