@@ -29,7 +29,9 @@ namespace ImageSort.WPF.SettingsManagement
 
             using var configFile = File.OpenRead(ConfigFileLocation);
 
-            settings.RestoreFromDictionary(await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile));
+            var configContents = await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile);
+
+            settings.RestoreFromDictionary(configContents);
         }
     }
 }
