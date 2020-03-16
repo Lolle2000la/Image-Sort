@@ -1,6 +1,7 @@
 ﻿using AdonisUI;
 using AdonisUI.Controls;
 using ImageSort.ViewModels;
+using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;
 using System;
 using System.Linq;
@@ -195,11 +196,6 @@ namespace ImageSort.WPF
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.RenameImage)
                     .DisposeWith(disposableRegistration);
-
-                DarkMode.IsChecked = Settings.Default.DarkMode;
-                CheckForUpdates.IsChecked = Settings.Default.ShouldCheckForUpdates;
-                InstallPrereleaseBuilds.IsChecked = Settings.Default.UpdateToPrereleaseBuilds;
-                if (Settings.Default.DarkMode) SetDarkMode(true);
             });
         }
 
@@ -222,36 +218,9 @@ namespace ImageSort.WPF
             interceptReservedKeys = true;
         }
 
-        private void OnToggleDarkMode(object sender, RoutedEventArgs e)
+        private void OnOpenSettingsClicked(object sender, RoutedEventArgs e)
         {
-            var darkMode = sender as ToggleButton;
-
-            SetDarkMode(darkMode?.IsChecked == true);
-
-            Settings.Default.DarkMode = darkMode.IsChecked == true;
-
-            Settings.Default.Save();
-        }
-
-        private void OnCheckForUpdatesOnStartupClick(object sender, RoutedEventArgs e)
-        {
-            InstallPrereleaseBuilds.IsEnabled = CheckForUpdates.IsChecked == true;
-
-            Settings.Default.ShouldCheckForUpdates = CheckForUpdates.IsChecked == true;
-
-            Settings.Default.Save();
-        }
-
-        private void OnInstallPrereleaseBuildsClick(object sender, RoutedEventArgs e)
-        {
-            Settings.Default.UpdateToPrereleaseBuilds = InstallPrereleaseBuilds.IsChecked == true;
-
-            Settings.Default.Save();
-        }
-
-        private void SetDarkMode(bool darkMode)
-        {
-            ResourceLocator.SetColorScheme(Application.Current.Resources, darkMode ? ResourceLocator.DarkColorScheme : ResourceLocator.LightColorScheme);
+            new SettingsView().ShowDialog();
         }
 
         #region IViewFor implementation

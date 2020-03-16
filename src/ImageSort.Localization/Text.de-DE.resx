@@ -252,4 +252,7 @@ Wollen Sie updaten?</value>
 
 {ErrorMessage}</value>
   </data>
+  <data name="Open" xml:space="preserve">
+    <value>Öffnen</value>
+  </data>
 </root>
