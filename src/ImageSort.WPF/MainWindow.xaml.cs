@@ -1,8 +1,10 @@
 ﻿using AdonisUI;
 using AdonisUI.Controls;
+using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;
+using Splat;
 using System;
 using System.Linq;
 using System.Reactive;
@@ -38,6 +40,10 @@ namespace ImageSort.WPF
                 Images = new ImagesViewModel(),
                 Actions = new ActionsViewModel()
             };
+
+            var settings = Locator.Current.GetService<SettingsViewModel>();
+
+            Closed += async (o, e) => await settings.SaveAsync().ConfigureAwait(false);
 
             this.WhenActivated(disposableRegistration =>
             {
