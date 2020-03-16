@@ -25,30 +25,6 @@ namespace ImageSort.WPF {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool ShouldCheckForUpdates {
-            get {
-                return ((bool)(this["ShouldCheckForUpdates"]));
-            }
-            set {
-                this["ShouldCheckForUpdates"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool UpdateToPrereleaseBuilds {
-            get {
-                return ((bool)(this["UpdateToPrereleaseBuilds"]));
-            }
-            set {
-                this["UpdateToPrereleaseBuilds"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string OldVersion {
             get {
@@ -56,18 +32,6 @@ namespace ImageSort.WPF {
             }
             set {
                 this["OldVersion"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool DarkMode {
-            get {
-                return ((bool)(this["DarkMode"]));
-            }
-            set {
-                this["DarkMode"] = value;
             }
         }
         
