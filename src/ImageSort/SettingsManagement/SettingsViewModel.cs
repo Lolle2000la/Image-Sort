@@ -47,6 +47,8 @@ namespace ImageSort.SettingsManagement
                 {
                     group.SettingsStore[setting.Key] = setting.Value;
                 }
+
+                group.UpdatePropertiesFromStore();
             }
         }
     }
