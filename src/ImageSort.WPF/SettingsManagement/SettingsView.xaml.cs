@@ -28,7 +28,7 @@ namespace ImageSort.WPF.SettingsManagement
 
             this.WhenActivated(disposableRegistration =>
             {
-                ViewModel ??= new SettingsViewModel();
+                ViewModel ??= Locator.Current.GetService<SettingsViewModel>();
 
                 this.OneWayBind(ViewModel,
                     vm => vm.SettingsGroups,
