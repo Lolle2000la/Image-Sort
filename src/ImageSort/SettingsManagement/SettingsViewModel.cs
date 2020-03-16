@@ -37,6 +37,8 @@ namespace ImageSort.SettingsManagement
 
         public void RestoreFromDictionary(Dictionary<string, Dictionary<string, object>> dictionary)
         {
+            if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
+
             foreach (var storedGroup in dictionary)
             {
                 var group = SettingsGroups.FirstOrDefault(g => g.Name == storedGroup.Key);
