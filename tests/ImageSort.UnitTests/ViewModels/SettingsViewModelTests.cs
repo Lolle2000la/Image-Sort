@@ -9,7 +9,7 @@ namespace ImageSort.UnitTests.ViewModels
 {
     public class SettingsViewModelTests
     {
-        public class FirstGroupMock : SettingsGroupViewModelBase
+        private class FirstGroupMock : SettingsGroupViewModelBase
         {
             public override string Name => "FirstGroup";
             public override string Header => "First group";
@@ -20,7 +20,7 @@ namespace ImageSort.UnitTests.ViewModels
             }
         }
 
-        public class SecondGroupMock : SettingsGroupViewModelBase
+        private class SecondGroupMock : SettingsGroupViewModelBase
         {
             public override string Name => "SecondGroup";
             public override string Header => "Second group";

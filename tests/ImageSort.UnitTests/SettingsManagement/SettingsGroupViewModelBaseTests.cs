@@ -9,7 +9,7 @@ namespace ImageSort.UnitTests.SettingsManagement
 {
     public class SettingsGroupViewModelBaseTests
     {
-        public class TestSettingsGroup : SettingsGroupViewModelBase
+        private class TestSettingsGroup : SettingsGroupViewModelBase
         {
             private bool _testProperty = false;
 
