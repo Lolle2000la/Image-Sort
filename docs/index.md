@@ -5,8 +5,9 @@
 You can install Image Sort either using the [Microsoft Store](https://www.microsoft.com/store/apps/9PGDK9WN8HG6) (Windows 10 only) or the installer. 
 If you are not sure whether you should run the x86 or the x64 installer, please refer to this [link](https://support.microsoft.com/de-de/help/15056/windows-32-64-bit-faq).
 
-| [x86](https://github.com/Lolle2000la/Image-Sort/releases/latest/download/ImageSort.x86.msi) | [x64](https://github.com/Lolle2000la/Image-Sort/releases/latest/download/ImageSort.x64.msi) |
-|---------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| x86                                                                                              | x64                                                                                              |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+| [download](https://github.com/Lolle2000la/Image-Sort/releases/latest/download/ImageSort.x86.msi) | [download](https://github.com/Lolle2000la/Image-Sort/releases/latest/download/ImageSort.x64.msi) |
 
 ## A quick description
 
