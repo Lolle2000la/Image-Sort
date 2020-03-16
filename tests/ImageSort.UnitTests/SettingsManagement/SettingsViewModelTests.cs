@@ -5,7 +5,7 @@ using ImageSort.SettingsManagement;
 using Moq;
 using Xunit;
 
-namespace ImageSort.UnitTests.ViewModels
+namespace ImageSort.UnitTests.SettingsManagement
 {
     public class SettingsViewModelTests
     {
