@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -30,6 +31,24 @@ namespace ImageSort.WPF.SettingsManagement
             using var configFile = File.OpenRead(ConfigFileLocation);
 
             var configContents = await JsonSerializer.DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile);
+
+            foreach (var configGroup in new Dictionary<string, Dictionary<string, object>>(configContents))
+            {
+                foreach (var config in new Dictionary<string, object>(configGroup.Value))
+                {
+                    var everyPossibleGetterMethod = typeof(JsonElement).GetMethods().Where(m => m.Name.StartsWith("TryGet", StringComparison.Ordinal));
+
+                    configContents[configGroup.Key][config.Key] = ((JsonElement)config.Value) switch
+                    {
+                        JsonElement { ValueKind: JsonValueKind.False } => false,
+                        JsonElement { ValueKind: JsonValueKind.True } => true,
+                        JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
+                        JsonElement { ValueKind: JsonValueKind.Number } e => e.GetDouble(),
+                        JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().ToArray(),
+                        _ => null
+                    };
+                }
+            }
 
             settings.RestoreFromDictionary(configContents);
         }
