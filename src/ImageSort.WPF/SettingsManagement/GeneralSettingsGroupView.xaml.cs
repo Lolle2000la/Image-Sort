@@ -15,7 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ImageSort.WPF.Views
+namespace ImageSort.WPF.SettingsManagement
 {
     /// <summary>
     /// Interaction logic for GeneralSettingsGroupView.xaml

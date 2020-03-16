@@ -1,4 +1,4 @@
-﻿<reactiveui:ReactiveUserControl x:Class="ImageSort.WPF.Views.GeneralSettingsGroupView"
+﻿<reactiveui:ReactiveUserControl x:Class="ImageSort.WPF.SettingsManagement.GeneralSettingsGroupView"
                                 x:TypeArguments="settings:GeneralSettingsGroupViewModel" 
                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
