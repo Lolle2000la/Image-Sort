@@ -20,7 +20,7 @@ namespace ImageSort.WPF.SettingsManagement
             set => this.RaiseAndSetIfChanged(ref _darkMode, value);
         }
 
-        private bool _checkForUpdatesOnStartup = false;
+        private bool _checkForUpdatesOnStartup = true;
 
         public bool CheckForUpdatesOnStartup
         {
