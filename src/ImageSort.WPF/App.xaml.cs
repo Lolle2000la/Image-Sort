@@ -35,17 +35,6 @@ namespace ImageSort.WPF
             System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("en");
 #endif
 
-            var assembly = Assembly.GetAssembly(typeof(App));
-            var gitVersionInformationType = assembly.GetType("GitVersionInformation");
-            var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
-
-            if (Settings.Default.OldVersion != versionTag)
-            {
-                Settings.Default.Upgrade();
-                Settings.Default.OldVersion = versionTag;
-                Settings.Default.Save();
-            }
-
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
             Locator.CurrentMutable.RegisterManditoryDependencies();
             Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
