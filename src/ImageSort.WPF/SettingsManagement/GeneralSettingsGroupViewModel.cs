@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ImageSort.WPF.SettingsManagement
 {
-    class GeneralSettingsGroup : SettingsGroupViewModelBase
+    class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
     {
         public override string Name => "General";
 
