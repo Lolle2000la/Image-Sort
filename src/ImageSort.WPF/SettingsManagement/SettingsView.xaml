@@ -4,10 +4,21 @@
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement"
+                             xmlns:settings="clr-namespace:ImageSort.SettingsManagement;assembly=ImageSort"
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+                             xmlns:reactiveUi="http://reactiveui.net"
                              mc:Ignorable="d"
                              Title="SettingsView" Height="450" Width="800">
     <TabControl x:Name="Groups">
-        
+        <TabControl.ItemTemplate>
+            <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
+                <TextBlock Text="{Binding Header}"/>
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+        <TabControl.ContentTemplate>
+            <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
+                <reactiveUi:ViewModelViewHost ViewModel="{Binding}"/>
+            </DataTemplate>
+        </TabControl.ContentTemplate>
     </TabControl>
 </adonisControls:AdonisWindow>
