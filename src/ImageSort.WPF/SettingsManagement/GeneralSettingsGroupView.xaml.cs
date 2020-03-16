@@ -47,14 +47,7 @@ namespace ImageSort.WPF.SettingsManagement
                     vm => vm.CheckForUpdatesOnStartup,
                     view => view.InstallPrereleaseBuilds.IsEnabled)
                     .DisposeWith(disposableRegistration);
-
-                ViewModel.WhenAnyValue(vm => vm.DarkMode)
-                    .Subscribe(SetDarkMode);
             });
-        }
-        private void SetDarkMode(bool darkMode)
-        {
-            ResourceLocator.SetColorScheme(Application.Current.Resources, darkMode ? ResourceLocator.DarkColorScheme : ResourceLocator.LightColorScheme);
         }
     }
 }
