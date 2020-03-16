@@ -1,0 +1,13 @@
+﻿<adonisControls:AdonisWindow x:Class="ImageSort.WPF.SettingsManagement.SettingsView"
+                             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                             xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement"
+                             xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+                             mc:Ignorable="d"
+                             Title="SettingsView" Height="450" Width="800">
+    <Grid>
+        
+    </Grid>
+</adonisControls:AdonisWindow>
