@@ -13,6 +13,7 @@ using System.Reactive.Concurrency;
 
 #if !DO_NOT_INCLUDE_UPDATER
 
+using System.Collections.Generic;
 using AdonisUI.Controls;
 using ImageSort.Localization;
 using Octokit;
@@ -71,11 +72,15 @@ namespace ImageSort.WPF
 #if !DO_NOT_INCLUDE_UPDATER
             InstallerRunner.CleanUpInstaller();
 
-            if (!Settings.Default.ShouldCheckForUpdates) return;
+            var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                .OfType<GeneralSettingsGroupViewModel>()
+                .Single();
+
+            if (!generalSettings.CheckForUpdatesOnStartup) return;
 
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
-            (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(Settings.Default.UpdateToPrereleaseBuilds);
+            (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
 
             if (success)
             {
@@ -93,9 +98,9 @@ namespace ImageSort.WPF
 
                 if (MessageBox.Show(messageBox) == MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {
-                    var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset);
+                    var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(false);
 
-                    InstallerRunner.RunAsync(installer);
+                    InstallerRunner.RunAsync(installer).ConfigureAwait(false);
                 }
             }
 #endif
