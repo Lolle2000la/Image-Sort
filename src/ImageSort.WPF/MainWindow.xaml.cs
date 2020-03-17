@@ -3,6 +3,7 @@ using AdonisUI.Controls;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
+using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ReactiveUI;
 using Splat;
 using System;
@@ -227,6 +228,11 @@ namespace ImageSort.WPF
         private void OnOpenSettingsClicked(object sender, RoutedEventArgs e)
         {
             new SettingsView().ShowDialog();
+        }
+
+        private void OnOpenKeybindingsClicked(object sender, RoutedEventArgs e)
+        {
+            new AdonisWindow() { Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() } }.Show();
         }
 
         #region IViewFor implementation

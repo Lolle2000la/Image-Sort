@@ -42,7 +42,10 @@
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:Text.Settings}" Margin="{adonisUi:Space 0, 1}">
-                    <Button Content="{x:Static text:Text.Open}" Click="OnOpenSettingsClicked"/>
+                    <StackPanel>
+                        <Button Content="{x:Static text:Text.Open}" Click="OnOpenSettingsClicked"/>
+                        <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}" Click="OnOpenKeybindingsClicked"/>
+                    </StackPanel>
                 </GroupBox>
             </StackPanel>
         </GroupBox>
