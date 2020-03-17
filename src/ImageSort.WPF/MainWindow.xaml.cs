@@ -230,13 +230,16 @@ namespace ImageSort.WPF
 
         private void OnOpenKeybindingsClicked(object sender, RoutedEventArgs e)
         {
-            new AdonisWindow() 
+            var keyBindings = new AdonisWindow() 
             { 
                 Title = Text.KeyBindingsSettingsHeader,
                 Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() },
                 Width = 640,
-                SizeToContent = SizeToContent.Height
-            }.Show();
+                SizeToContent = SizeToContent.Height,
+                Top = 50
+            };
+
+            keyBindings.Show();
         }
 
         protected override void OnClosed(EventArgs e)
