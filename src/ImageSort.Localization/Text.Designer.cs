@@ -413,6 +413,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Restore default key bindings.
+        /// </summary>
+        public static string RestoreDefaultKeyBindings {
+            get {
+                return ResourceManager.GetString("RestoreDefaultKeyBindings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Search images... (press &apos;Tab&apos; to leave).
         /// </summary>
         public static string SearchTermWatermark {

@@ -264,4 +264,7 @@ Wollen Sie updaten?</value>
   <data name="KeyBindingsSettingsHeader" xml:space="preserve">
     <value>Tastenbelegung</value>
   </data>
+  <data name="RestoreDefaultKeyBindings" xml:space="preserve">
+    <value>Standardbelegung wiederherstellen</value>
+  </data>
 </root>

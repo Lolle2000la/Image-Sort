@@ -33,6 +33,11 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
                     .OfType<KeyBindingsSettingsGroupViewModel>()
                     .FirstOrDefault();
 
+                this.BindCommand(ViewModel,
+                    vm => vm.RestoreDefaultBindings,
+                    view => view.RestoreDefault)
+                    .DisposeWith(disposableRegistration);
+
                 // image management
                 this.Bind(ViewModel,
                     vm => vm.Move,

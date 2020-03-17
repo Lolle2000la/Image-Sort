@@ -264,4 +264,7 @@ Do you want to update?</value>
   <data name="KeyBindingsSettingsHeader" xml:space="preserve">
     <value>Key bindings</value>
   </data>
+  <data name="RestoreDefaultKeyBindings" xml:space="preserve">
+    <value>Restore default key bindings</value>
+  </data>
 </root>
