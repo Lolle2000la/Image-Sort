@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <EmbeddedResource Update="KeyBindingNames.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>KeyBindingNames.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Text.de-DE.resx">
