@@ -76,10 +76,14 @@
             </StackPanel>
         </GroupBox>
 
-        <GroupBox Header="{x:Static text:KeyBindingNames.HistoryHeader}">
+        <GroupBox Header="{x:Static text:KeyBindingNames.OtherHeader}">
             <StackPanel>
-                <local:HotkeyEditor Description="{x:Static text:Text.Undo}" x:Name="Undo"/>
-                <local:HotkeyEditor Description="{x:Static text:Text.Redo}" x:Name="Redo"/>
+                <GroupBox Header="{x:Static text:KeyBindingNames.HistoryHeader}">
+                    <StackPanel>
+                        <local:HotkeyEditor Description="{x:Static text:Text.Undo}" x:Name="Undo"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.Redo}" x:Name="Redo"/>
+                    </StackPanel>
+                </GroupBox>
             </StackPanel>
         </GroupBox>
     </StackPanel>

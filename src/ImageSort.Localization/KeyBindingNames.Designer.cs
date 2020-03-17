@@ -187,6 +187,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Other.
+        /// </summary>
+        public static string OtherHeader {
+            get {
+                return ResourceManager.GetString("OtherHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pinned folders.
         /// </summary>
         public static string PinnedFoldersHeader {

@@ -165,4 +165,7 @@
   <data name="ImagesHeader" xml:space="preserve">
     <value>Images</value>
   </data>
+  <data name="OtherHeader" xml:space="preserve">
+    <value>Other</value>
+  </data>
 </root>
