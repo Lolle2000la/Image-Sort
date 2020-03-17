@@ -171,9 +171,9 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         {
             var allHotkeyProps = typeof(KeyBindingsSettingsGroupViewModel).GetProperties().Where(p => p.PropertyType == typeof(Hotkey));
             
-            foreach (var prop in allHotkeyProps)
+            foreach ((var propName, var value) in allHotkeyProps.Select(p => (p.Name, p.GetValue(this))))
             {
-                SettingsStore[prop.Name] = prop.GetValue(this);
+                SettingsStore[propName] = value;
             }
         }
     }
