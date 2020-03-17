@@ -13,6 +13,6 @@
         </Grid.ColumnDefinitions>
         
         <TextBlock Text="{Binding Description}"/>
-        <local:HotkeyEditorControl Hotkey="{Binding Hotkey}" Grid.Column="1"/>
+        <local:HotkeyEditorControl x:Name="HotkeyEditorControl" Grid.Column="1"/>
     </Grid>
 </UserControl>

@@ -22,6 +22,8 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         {
             InitializeComponent();
             DataContext = this;
+
+            HotkeyEditorControl.HotkeyChanged += (o, e) => Hotkey = (o as HotkeyEditorControl)?.Hotkey;
         }
 
         public string Description
@@ -42,6 +44,14 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
         // Using a DependencyProperty as the backing store for Hotkey.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty HotkeyProperty =
-            DependencyProperty.Register("Hotkey", typeof(Hotkey), typeof(HotkeyEditor), new PropertyMetadata(null));
+            DependencyProperty.Register("Hotkey", typeof(Hotkey), typeof(HotkeyEditor), new PropertyMetadata(null, OnHotkeyChanged));
+
+        private static void OnHotkeyChanged(DependencyObject @object, DependencyPropertyChangedEventArgs args)
+        {
+            if (@object is HotkeyEditor editor && args.NewValue is Hotkey hotkey)
+            {
+                editor.HotkeyEditorControl.Hotkey = hotkey;
+            }
+        }
     }
 }

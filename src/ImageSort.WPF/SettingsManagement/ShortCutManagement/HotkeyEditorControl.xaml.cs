@@ -22,13 +22,24 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         DependencyProperty.Register(nameof(Hotkey), typeof(Hotkey),
             typeof(HotkeyEditorControl),
             new FrameworkPropertyMetadata(default(Hotkey),
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault));
+                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                OnHotkeyChanged));
+
+        private static void OnHotkeyChanged(DependencyObject @object, DependencyPropertyChangedEventArgs args)
+        {
+            if (@object is HotkeyEditorControl hotkeyEditorControl && args.NewValue != null)
+            {
+                hotkeyEditorControl.HotkeyChanged?.Invoke(hotkeyEditorControl, new EventArgs());
+            }
+        }
 
         public Hotkey Hotkey
         {
             get => (Hotkey)GetValue(HotkeyProperty);
             set => SetValue(HotkeyProperty, value);
         }
+
+        public event EventHandler HotkeyChanged;
 
         public HotkeyEditorControl()
         {
