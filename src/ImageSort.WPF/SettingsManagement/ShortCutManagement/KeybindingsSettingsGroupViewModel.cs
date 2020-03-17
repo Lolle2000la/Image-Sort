@@ -14,12 +14,156 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
         public override string Header => Text.KeyBindingsSettingsHeader;
 
-        private Hotkey _move = new Hotkey(Key.Up, default(ModifierKeys));
+        // image manipulation
+        private Hotkey _move = new Hotkey(Key.Up, ModifierKeys.None);
 
         public Hotkey Move
         {
             get => _move;
             set => this.RaiseAndSetIfChanged(ref _move, value);
+        }
+
+        private Hotkey _delete = new Hotkey(Key.Down, ModifierKeys.None);
+
+        public Hotkey Delete
+        {
+            get => _delete;
+            set => this.RaiseAndSetIfChanged(ref _delete, value);
+        }
+
+        private Hotkey _rename = new Hotkey(Key.R, ModifierKeys.None);
+
+        public Hotkey Rename
+        {
+            get => _rename;
+            set => this.RaiseAndSetIfChanged(ref _rename, value);
+        }
+
+        // image selection
+        private Hotkey _goLeft = new Hotkey(Key.Left, ModifierKeys.None);
+
+        public Hotkey GoLeft
+        {
+            get => _goLeft;
+            set => this.RaiseAndSetIfChanged(ref _goLeft, value);
+        }
+
+        private Hotkey _goRight = new Hotkey(Key.Right, ModifierKeys.None);
+
+        public Hotkey GoRight
+        {
+            get => _goRight;
+            set => this.RaiseAndSetIfChanged(ref _goRight, value);
+        }
+
+        // folder manipulation
+        private Hotkey _createFolder = new Hotkey(Key.C, ModifierKeys.None);
+
+        public Hotkey CreateFolder
+        {
+            get => _createFolder;
+            set => this.RaiseAndSetIfChanged(ref _createFolder, value);
+        }
+
+        // folder traversal
+        private Hotkey _folderUp = new Hotkey(Key.W, ModifierKeys.None);
+
+        public Hotkey FolderUp
+        {
+            get => _folderUp;
+            set => this.RaiseAndSetIfChanged(ref _folderUp, value);
+        }
+
+        private Hotkey _folderLeft = new Hotkey(Key.A, ModifierKeys.None);
+
+        public Hotkey FolderLeft
+        {
+            get => _folderLeft;
+            set => this.RaiseAndSetIfChanged(ref _folderLeft, value);
+        }
+
+        private Hotkey _folderDown = new Hotkey(Key.S, ModifierKeys.None);
+
+        public Hotkey FolderDown
+        {
+            get => _folderDown;
+            set => this.RaiseAndSetIfChanged(ref _folderDown, value);
+        }
+
+        private Hotkey _folderRight = new Hotkey(Key.D, ModifierKeys.None);
+
+        public Hotkey FolderRight
+        {
+            get => _folderRight;
+            set => this.RaiseAndSetIfChanged(ref _folderRight, value);
+        }
+
+        // undo and redo
+        private Hotkey _undo = new Hotkey(Key.Q, ModifierKeys.None);
+
+        public Hotkey Undo
+        {
+            get => _undo;
+            set => this.RaiseAndSetIfChanged(ref _undo, value);
+        }
+
+        private Hotkey _redo = new Hotkey(Key.E, ModifierKeys.None);
+
+        public Hotkey Redo
+        {
+            get => _redo;
+            set => this.RaiseAndSetIfChanged(ref _redo, value);
+        }
+
+        // open folder
+        private Hotkey _openFolder = new Hotkey(Key.O, ModifierKeys.None);
+
+        public Hotkey OpenFolder
+        {
+            get => _openFolder;
+            set => this.RaiseAndSetIfChanged(ref _openFolder, value);
+        }
+
+        private Hotkey _openSelectedFolder = new Hotkey(Key.Enter, ModifierKeys.None);
+
+        public Hotkey OpenSelectedFolder
+        {
+            get => _openSelectedFolder;
+            set => this.RaiseAndSetIfChanged(ref _openSelectedFolder, value);
+        }
+
+        // pinned folders
+        private Hotkey _pin = new Hotkey(Key.P, ModifierKeys.None);
+
+        public Hotkey Pin
+        {
+            get => _pin;
+            set => this.RaiseAndSetIfChanged(ref _pin, value);
+        }
+
+        private Hotkey _pinSelected = new Hotkey(Key.F, ModifierKeys.None);
+
+        public Hotkey PinSelected
+        {
+            get => _pinSelected;
+            set => this.RaiseAndSetIfChanged(ref _pinSelected, value);
+        }
+
+        private Hotkey _unpin = new Hotkey(Key.U, ModifierKeys.None);
+
+        public Hotkey Unpin
+        {
+            get => _unpin;
+            set => this.RaiseAndSetIfChanged(ref _unpin, value);
+        }
+
+        // focus image search box
+        private Hotkey _searchImages = new Hotkey(Key.I, ModifierKeys.None);
+
+        public Hotkey SearchImages
+        {
+            get => _searchImages;
+            set => this.RaiseAndSetIfChanged(ref _searchImages, value);
         }
     }
 }
