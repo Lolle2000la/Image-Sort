@@ -357,3 +357,4 @@ MigrationBackup/
 
 # GitVersion wix version file
 GitVersion_WixVersion.wxi
+/src/global.json
