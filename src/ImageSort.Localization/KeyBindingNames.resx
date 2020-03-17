@@ -117,4 +117,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="ImageManagementHeader" xml:space="preserve">
+    <value>Image management</value>
+  </data>
+  <data name="ImageSelectionHeader" xml:space="preserve">
+    <value>Image selection</value>
+  </data>
+  <data name="SearchImagesHeader" xml:space="preserve">
+    <value>Search images</value>
+  </data>
+  <data name="FolderManagementHeader" xml:space="preserve">
+    <value>Folder management</value>
+  </data>
+  <data name="OpenFolderHeader" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="PinnedFoldersHeader" xml:space="preserve">
+    <value>Pinned folders</value>
+  </data>
+  <data name="FolderSelectionHeader" xml:space="preserve">
+    <value>Folder selection</value>
+  </data>
+  <data name="HistoryHeader" xml:space="preserve">
+    <value>History</value>
+  </data>
 </root>

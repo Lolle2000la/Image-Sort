@@ -5,10 +5,42 @@
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
                                 xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement.ShortCutManagement"
+                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 xmlns:reactiveui="http://reactiveui.net"
+                                xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-            
-    </Grid>
+    <StackPanel>
+        <GroupBox Header="{x:Static text:KeyBindingNames.ImageManagementHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.ImageSelectionHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.SearchImagesHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.FolderManagementHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.OpenFolderHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.PinnedFoldersHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.FolderSelectionHeader}">
+
+        </GroupBox>
+
+        <GroupBox Header="{x:Static text:KeyBindingNames.HistoryHeader}">
+
+        </GroupBox>
+    </StackPanel>
 </reactiveui:ReactiveUserControl>
