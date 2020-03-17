@@ -159,4 +159,10 @@
   <data name="FolderRight" xml:space="preserve">
     <value>Expand folder (list sub-folders)</value>
   </data>
+  <data name="FoldersHeader" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="ImagesHeader" xml:space="preserve">
+    <value>Images</value>
+  </data>
 </root>

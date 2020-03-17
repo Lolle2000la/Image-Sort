@@ -159,4 +159,10 @@
   <data name="FolderRight" xml:space="preserve">
     <value>Ordner aufklappen (Unterordner auflisten)</value>
   </data>
+  <data name="FoldersHeader" xml:space="preserve">
+    <value>Ordner</value>
+  </data>
+  <data name="ImagesHeader" xml:space="preserve">
+    <value>Bilder</value>
+  </data>
 </root>

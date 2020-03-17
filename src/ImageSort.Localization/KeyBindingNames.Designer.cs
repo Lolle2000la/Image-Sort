@@ -106,6 +106,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Folders.
+        /// </summary>
+        public static string FoldersHeader {
+            get {
+                return ResourceManager.GetString("FoldersHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Select the folder above.
         /// </summary>
         public static string FolderUp {
@@ -156,6 +165,15 @@ namespace ImageSort.Localization {
         public static string ImageSelectionHeader {
             get {
                 return ResourceManager.GetString("ImageSelectionHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Images.
+        /// </summary>
+        public static string ImagesHeader {
+            get {
+                return ResourceManager.GetString("ImagesHeader", resourceCulture);
             }
         }
         
