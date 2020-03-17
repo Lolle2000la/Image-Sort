@@ -141,4 +141,22 @@
   <data name="HistoryHeader" xml:space="preserve">
     <value>Historie</value>
   </data>
+  <data name="GoLeft" xml:space="preserve">
+    <value>Linkes Bild auswählen</value>
+  </data>
+  <data name="GoRight" xml:space="preserve">
+    <value>Rechtes Bild auswählen</value>
+  </data>
+  <data name="FolderUp" xml:space="preserve">
+    <value>Ordner über dem Aktuellen auswählen</value>
+  </data>
+  <data name="FolderLeft" xml:space="preserve">
+    <value>Ordner zusammenklappen</value>
+  </data>
+  <data name="FolderDown" xml:space="preserve">
+    <value>Ordner unter dem Aktuellen auswählen</value>
+  </data>
+  <data name="FolderRight" xml:space="preserve">
+    <value>Ordner aufklappen (Unterordner auflisten)</value>
+  </data>
 </root>

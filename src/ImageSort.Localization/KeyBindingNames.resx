@@ -141,4 +141,22 @@
   <data name="HistoryHeader" xml:space="preserve">
     <value>History</value>
   </data>
+  <data name="GoLeft" xml:space="preserve">
+    <value>Select image on the left</value>
+  </data>
+  <data name="GoRight" xml:space="preserve">
+    <value>Select image on the right</value>
+  </data>
+  <data name="FolderUp" xml:space="preserve">
+    <value>Select the folder above</value>
+  </data>
+  <data name="FolderLeft" xml:space="preserve">
+    <value>Collapse folder</value>
+  </data>
+  <data name="FolderDown" xml:space="preserve">
+    <value>Select the folder below</value>
+  </data>
+  <data name="FolderRight" xml:space="preserve">
+    <value>Expand folder (list sub-folders)</value>
+  </data>
 </root>

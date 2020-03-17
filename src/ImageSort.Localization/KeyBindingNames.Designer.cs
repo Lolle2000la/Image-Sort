@@ -61,6 +61,24 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Select the folder below.
+        /// </summary>
+        public static string FolderDown {
+            get {
+                return ResourceManager.GetString("FolderDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Collapse folder.
+        /// </summary>
+        public static string FolderLeft {
+            get {
+                return ResourceManager.GetString("FolderLeft", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Folder management.
         /// </summary>
         public static string FolderManagementHeader {
@@ -70,11 +88,47 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Expand folder (list sub-folders).
+        /// </summary>
+        public static string FolderRight {
+            get {
+                return ResourceManager.GetString("FolderRight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Folder selection.
         /// </summary>
         public static string FolderSelectionHeader {
             get {
                 return ResourceManager.GetString("FolderSelectionHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select the folder above.
+        /// </summary>
+        public static string FolderUp {
+            get {
+                return ResourceManager.GetString("FolderUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select image on the left.
+        /// </summary>
+        public static string GoLeft {
+            get {
+                return ResourceManager.GetString("GoLeft", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Select image on the right.
+        /// </summary>
+        public static string GoRight {
+            get {
+                return ResourceManager.GetString("GoRight", resourceCulture);
             }
         }
         

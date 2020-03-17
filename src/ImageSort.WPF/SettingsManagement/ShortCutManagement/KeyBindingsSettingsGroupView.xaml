@@ -12,35 +12,57 @@
                                 d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
         <GroupBox Header="{x:Static text:KeyBindingNames.ImageManagementHeader}">
-            <local:HotkeyEditor Description="Move" x:Name="Move"/>
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:Text.Move}" x:Name="Move"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.Delete}" x:Name="Delete"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.Rename}" x:Name="Rename"/>
+            </StackPanel>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.ImageSelectionHeader}">
-
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoLeft}" x:Name="GoLeft"/>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoRight}" x:Name="GoRight"/>
+            </StackPanel>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.SearchImagesHeader}">
-
+            <local:HotkeyEditor Description="{x:Static text:Text.SearchTermWatermark}" x:Name="SearchImages"/>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.FolderManagementHeader}">
-
+            <local:HotkeyEditor Description="{x:Static text:Text.CreateFolder}" x:Name="CreateFolder"/>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.OpenFolderHeader}">
-
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
+            </StackPanel>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.PinnedFoldersHeader}">
-
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:Text.Pin}" x:Name="Pin"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.PinSelected}" x:Name="PinSelected"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.Unpin}" x:Name="Unpin"/>
+            </StackPanel>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.FolderSelectionHeader}">
-
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderUp}" x:Name="FolderUp"/>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderLeft}" x:Name="FolderLeft"/>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderDown}" x:Name="FolderDown"/>
+                <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderRight}" x:Name="FolderRight"/>
+            </StackPanel>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.HistoryHeader}">
-
+            <StackPanel>
+                <local:HotkeyEditor Description="{x:Static text:Text.Undo}" x:Name="Undo"/>
+                <local:HotkeyEditor Description="{x:Static text:Text.Redo}" x:Name="Redo"/>
+            </StackPanel>
         </GroupBox>
     </StackPanel>
 </reactiveui:ReactiveUserControl>
