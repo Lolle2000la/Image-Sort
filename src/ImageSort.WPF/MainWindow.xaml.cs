@@ -233,7 +233,9 @@ namespace ImageSort.WPF
             new AdonisWindow() 
             { 
                 Title = Text.KeyBindingsSettingsHeader,
-                Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() } 
+                Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() },
+                Width = 640,
+                SizeToContent = SizeToContent.Height
             }.Show();
         }
 
