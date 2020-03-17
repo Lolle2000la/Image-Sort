@@ -45,7 +45,7 @@ namespace ImageSort.WPF.SettingsManagement
                             JsonElement { ValueKind: JsonValueKind.False } => false,
                             JsonElement { ValueKind: JsonValueKind.True } => true,
                             JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
-                            JsonElement { ValueKind: JsonValueKind.Number } e => e.GetDouble(),
+                            JsonElement { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
                             JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
                             _ => null
                         };
