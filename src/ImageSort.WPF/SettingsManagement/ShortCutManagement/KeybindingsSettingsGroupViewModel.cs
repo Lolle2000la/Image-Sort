@@ -3,6 +3,7 @@ using ImageSort.SettingsManagement;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Windows.Input;
 
@@ -164,6 +165,16 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         {
             get => _searchImages;
             set => this.RaiseAndSetIfChanged(ref _searchImages, value);
+        }
+
+        public KeyBindingsSettingsGroupViewModel()
+        {
+            var allHotkeyProps = typeof(KeyBindingsSettingsGroupViewModel).GetProperties().Where(p => p.PropertyType == typeof(Hotkey));
+            
+            foreach (var prop in allHotkeyProps)
+            {
+                SettingsStore[prop.Name] = prop.GetValue(this);
+            }
         }
     }
 }
