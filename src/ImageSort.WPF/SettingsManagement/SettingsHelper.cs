@@ -1,4 +1,5 @@
 ﻿using ImageSort.SettingsManagement;
+using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace ImageSort.WPF.SettingsManagement
 {
@@ -47,6 +49,9 @@ namespace ImageSort.WPF.SettingsManagement
                             JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
                             JsonElement { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
                             JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
+                            JsonElement { ValueKind: JsonValueKind.Object } e => new Hotkey(
+                                (Key) Enum.ToObject(typeof(Key), e.EnumerateObject().First(o => o.Name == "Key").Value.GetInt32()),
+                                (ModifierKeys) Enum.ToObject(typeof(ModifierKeys), e.EnumerateObject().First(o => o.Name == "Modifiers").Value.GetInt32())),
                             _ => null
                         };
                     }
