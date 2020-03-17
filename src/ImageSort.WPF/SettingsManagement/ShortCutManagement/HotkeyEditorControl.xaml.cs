@@ -33,6 +33,7 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         public HotkeyEditorControl()
         {
             InitializeComponent();
+            DataContext = this;
         }
 
         private void HotkeyTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
