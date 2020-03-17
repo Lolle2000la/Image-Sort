@@ -1,7 +1,9 @@
-﻿using ReactiveUI;
+﻿using ImageSort.SettingsManagement;
+using ReactiveUI;
 using Splat;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Disposables;
 using System.Text;
 using System.Windows;
@@ -27,7 +29,9 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
             this.WhenActivated(disposableRegistration =>
             {
-                ViewModel ??= Locator.Current.GetService<KeyBindingsSettingsGroupViewModel>();
+                ViewModel ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                    .OfType<KeyBindingsSettingsGroupViewModel>()
+                    .FirstOrDefault();
 
                 // image management
                 this.Bind(ViewModel,
