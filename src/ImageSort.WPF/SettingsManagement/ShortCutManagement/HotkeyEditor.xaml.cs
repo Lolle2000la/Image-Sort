@@ -22,8 +22,6 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         {
             InitializeComponent();
             DataContext = this;
-
-            HotkeyEditorControl.HotkeyChanged += (o, e) => Hotkey = (o as HotkeyEditorControl)?.Hotkey;
         }
 
         public string Description
@@ -52,6 +50,10 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             {
                 editor.HotkeyEditorControl.Hotkey = hotkey;
             }
+        }
+        private void OnHotkeyEditorControlHotkeyChanged(object sender, EventArgs e)
+        {
+            Hotkey = (sender as HotkeyEditorControl)?.Hotkey;
         }
     }
 }
