@@ -1,5 +1,6 @@
 ﻿using AdonisUI;
 using AdonisUI.Controls;
+using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
@@ -232,7 +233,11 @@ namespace ImageSort.WPF
 
         private void OnOpenKeybindingsClicked(object sender, RoutedEventArgs e)
         {
-            new AdonisWindow() { Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() } }.Show();
+            new AdonisWindow() 
+            { 
+                Title = Text.KeyBindingsSettingsHeader,
+                Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() } 
+            }.Show();
         }
 
         #region IViewFor implementation
