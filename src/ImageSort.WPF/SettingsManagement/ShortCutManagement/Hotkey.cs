@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Windows.Input;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {
-    public class Hotkey
+    public class Hotkey : IEquatable<Hotkey>
     {
         public Key Key { get; }
 
@@ -49,5 +50,7 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
             return base.Equals(obj);
         }
+
+        public bool Equals([AllowNull] Hotkey other) => this == other;
     }
 }
