@@ -12,7 +12,7 @@
                                 d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
         <GroupBox Header="{x:Static text:KeyBindingNames.ImageManagementHeader}">
-
+            <local:HotkeyEditor Description="Move" x:Name="Move"/>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.ImageSelectionHeader}">
