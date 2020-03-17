@@ -11,6 +11,12 @@
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
+        <StackPanel.Resources>
+            <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
+                <Setter Property="Margin" Value="{adonisUi:Space 0, 1, 0, 0}"/>
+            </Style>
+        </StackPanel.Resources>
+        
         <Button Content="{x:Static text:Text.RestoreDefaultKeyBindings}" x:Name="RestoreDefault" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
 
         <GroupBox Header="{x:Static text:KeyBindingNames.ImageManagementHeader}">
