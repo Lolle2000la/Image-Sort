@@ -42,5 +42,12 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
         public static bool operator !=(Hotkey first, Hotkey second) => (first.Key, first.Modifiers) != (second.Key, second.Modifiers);
 
         public static bool Equals(Hotkey left, Hotkey right) => left == right;
+
+        public override bool Equals(object obj)
+        {
+            if (obj is Hotkey hotkey) return this == hotkey;
+
+            return base.Equals(obj);
+        }
     }
 }
