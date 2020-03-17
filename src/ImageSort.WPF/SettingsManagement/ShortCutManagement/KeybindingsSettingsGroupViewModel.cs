@@ -8,7 +8,7 @@ using System.Windows.Input;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {
-    class KeyBindingsSettingsGroupViewModel : SettingsGroupViewModelBase
+    public class KeyBindingsSettingsGroupViewModel : SettingsGroupViewModelBase
     {
         public override string Name => "KeyBindings";
 
