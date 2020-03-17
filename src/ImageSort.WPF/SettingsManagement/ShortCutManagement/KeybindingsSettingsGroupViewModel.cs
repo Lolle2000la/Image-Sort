@@ -4,6 +4,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Text;
 using System.Windows.Input;
 
@@ -167,11 +168,11 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             set => this.RaiseAndSetIfChanged(ref _searchImages, value);
         }
 
-        private readonly IReadOnlyDictionary<string, Hotkey> defaultHotkeys;
+        public ReactiveCommand<Unit, Unit> RestoreDefaultBindings { get; }
 
         public KeyBindingsSettingsGroupViewModel()
         {
-            var allHotkeyProps = typeof(KeyBindingsSettingsGroupViewModel).GetProperties().Where(p => p.PropertyType == typeof(Hotkey));
+            var allHotkeyProps = typeof(KeyBindingsSettingsGroupViewModel).GetProperties().Where(p => p.PropertyType == typeof(Hotkey)).ToArray();
 
             var defaultHotkeys = new Dictionary<string, Hotkey>();
 
@@ -182,7 +183,19 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
                 defaultHotkeys[propName] = (Hotkey) value;
             }
 
-            this.defaultHotkeys = defaultHotkeys;
+            RestoreDefaultBindings = ReactiveCommand.Create(() =>
+            {
+                foreach (var prop in allHotkeyProps)
+                {
+                    foreach (var binding in defaultHotkeys)
+                    {
+                        if (prop.Name == binding.Key)
+                        {
+                            prop.SetValue(this, binding.Value);
+                        }
+                    }
+                }
+            });
         }
     }
 }
