@@ -27,7 +27,7 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
         private static void OnHotkeyChanged(DependencyObject @object, DependencyPropertyChangedEventArgs args)
         {
-            if (@object is HotkeyEditorControl hotkeyEditorControl && args.NewValue != null)
+            if (@object is HotkeyEditorControl hotkeyEditorControl)
             {
                 hotkeyEditorControl.HotkeyChanged?.Invoke(hotkeyEditorControl, new EventArgs());
             }
