@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -6,6 +6,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Update="KeyBindingNames.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>KeyBindingNames.resx</DependentUpon>
+    </Compile>
     <Compile Update="Text - Copy.Designer.cs">
       <DependentUpon>Text.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -19,6 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="KeyBindingNames.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>KeyBindingNames.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Text.de-DE.resx">
       <LastGenOutput>Text.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
