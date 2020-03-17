@@ -8,12 +8,14 @@
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                                xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
         <StackPanel.Resources>
             <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
                 <Setter Property="Margin" Value="{adonisUi:Space 0, 1, 0, 0}"/>
+                <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="8"/>
             </Style>
         </StackPanel.Resources>
         
