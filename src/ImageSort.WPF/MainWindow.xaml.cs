@@ -239,6 +239,13 @@ namespace ImageSort.WPF
             }.Show();
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+
+            Application.Current.Shutdown();
+        }
+
         #region IViewFor implementation
 
         public static readonly DependencyProperty ViewModelProperty = DependencyProperty
