@@ -17,7 +17,9 @@
         </TabControl.ItemTemplate>
         <TabControl.ContentTemplate>
             <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
-                <reactiveUi:ViewModelViewHost ViewModel="{Binding}"/>
+                <ScrollViewer>
+                    <reactiveUi:ViewModelViewHost ViewModel="{Binding}"/>
+                </ScrollViewer>
             </DataTemplate>
         </TabControl.ContentTemplate>
     </TabControl>
