@@ -167,14 +167,22 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             set => this.RaiseAndSetIfChanged(ref _searchImages, value);
         }
 
+        private readonly IReadOnlyDictionary<string, Hotkey> defaultHotkeys;
+
         public KeyBindingsSettingsGroupViewModel()
         {
             var allHotkeyProps = typeof(KeyBindingsSettingsGroupViewModel).GetProperties().Where(p => p.PropertyType == typeof(Hotkey));
-            
+
+            var defaultHotkeys = new Dictionary<string, Hotkey>();
+
             foreach ((var propName, var value) in allHotkeyProps.Select(p => (p.Name, p.GetValue(this))))
             {
                 SettingsStore[propName] = value;
+
+                defaultHotkeys[propName] = (Hotkey) value;
             }
+
+            this.defaultHotkeys = defaultHotkeys;
         }
     }
 }
