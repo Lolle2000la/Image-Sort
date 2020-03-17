@@ -125,7 +125,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Create Folder (C).
+        ///   Looks up a localized string similar to Create Folder.
         /// </summary>
         public static string CreateFolder {
             get {
@@ -143,7 +143,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Delete (↓).
+        ///   Looks up a localized string similar to Delete.
         /// </summary>
         public static string Delete {
             get {
@@ -206,6 +206,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to General settings.
+        /// </summary>
+        public static string GeneralSettingsHeader {
+            get {
+                return ResourceManager.GetString("GeneralSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Move image selection left (left arrow key).
         /// </summary>
         public static string GoLeftTooltip {
@@ -242,7 +251,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Move (↑).
+        ///   Looks up a localized string similar to Key bindings.
+        /// </summary>
+        public static string KeyBindingsSettingsHeader {
+            get {
+                return ResourceManager.GetString("KeyBindingsSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move.
         /// </summary>
         public static string Move {
             get {
@@ -287,7 +305,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Open folder (O).
+        ///   Looks up a localized string similar to Open.
+        /// </summary>
+        public static string Open {
+            get {
+                return ResourceManager.GetString("Open", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open folder.
         /// </summary>
         public static string OpenFolder {
             get {
@@ -296,7 +323,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Open selected folder (Enter).
+        ///   Looks up a localized string similar to Open selected folder.
         /// </summary>
         public static string OpenSelectedFolder {
             get {
@@ -305,7 +332,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pin (P).
+        ///   Looks up a localized string similar to Pin.
         /// </summary>
         public static string Pin {
             get {
@@ -314,7 +341,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pin selected (F).
+        ///   Looks up a localized string similar to Pinned folders.
+        /// </summary>
+        public static string PinnedFoldersSettingsHeader {
+            get {
+                return ResourceManager.GetString("PinnedFoldersSettingsHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pin selected.
         /// </summary>
         public static string PinSelected {
             get {
@@ -323,7 +359,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Redo (E).
+        ///   Looks up a localized string similar to Redo.
         /// </summary>
         public static string Redo {
             get {
@@ -332,7 +368,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Rename (R).
+        ///   Looks up a localized string similar to Rename.
         /// </summary>
         public static string Rename {
             get {
@@ -377,7 +413,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Search images... (Shortcuts: &apos;I&apos; to focus, &apos;Tab&apos; to leave).
+        ///   Looks up a localized string similar to Restore default key bindings.
+        /// </summary>
+        public static string RestoreDefaultKeyBindings {
+            get {
+                return ResourceManager.GetString("RestoreDefaultKeyBindings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Search images... (press &apos;Tab&apos; to leave).
         /// </summary>
         public static string SearchTermWatermark {
             get {
@@ -395,7 +440,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Undo (Q).
+        ///   Looks up a localized string similar to Undo.
         /// </summary>
         public static string Undo {
             get {
@@ -404,7 +449,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Unpin (U).
+        ///   Looks up a localized string similar to Unpin.
         /// </summary>
         public static string Unpin {
             get {

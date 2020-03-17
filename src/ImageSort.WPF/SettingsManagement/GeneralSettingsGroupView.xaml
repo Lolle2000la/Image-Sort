@@ -1,0 +1,22 @@
+﻿<reactiveui:ReactiveUserControl x:Class="ImageSort.WPF.SettingsManagement.GeneralSettingsGroupView"
+                                x:TypeArguments="settings:GeneralSettingsGroupViewModel" 
+                                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                                xmlns:local="clr-namespace:ImageSort.WPF.Views"
+                                xmlns:settings="clr-namespace:ImageSort.WPF.SettingsManagement"
+                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
+                                xmlns:reactiveui="http://reactiveui.net"
+                                xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                                mc:Ignorable="d" 
+                                d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <StackPanel>
+            <ToggleButton Content="{x:Static text:Text.DarkMode}" x:Name="DarkMode" Margin="{adonisUi:Space 1}" />
+
+            <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}" />
+            <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}" />
+        </StackPanel>
+    </Grid>
+</reactiveui:ReactiveUserControl>

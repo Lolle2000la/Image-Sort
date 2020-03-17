@@ -117,154 +117,46 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CheckForUpdatesOnStartup" xml:space="preserve">
-    <value>Check for updates on startup</value>
+  <data name="ImageManagementHeader" xml:space="preserve">
+    <value>Image management</value>
   </data>
-  <data name="CouldNotDeleteFileExceptionMessage" xml:space="preserve">
-    <value>Could not delete {FileName}</value>
+  <data name="ImageSelectionHeader" xml:space="preserve">
+    <value>Image selection</value>
   </data>
-  <data name="CouldNotLoadImageErrorText" xml:space="preserve">
-    <value>Could not load "{FileName}"
-
-Message: {ErrorMessage}
-
-Note: Usually this is because the file is damaged</value>
+  <data name="SearchImagesHeader" xml:space="preserve">
+    <value>Search images</value>
   </data>
-  <data name="CreateFolder" xml:space="preserve">
-    <value>Create Folder</value>
+  <data name="FolderManagementHeader" xml:space="preserve">
+    <value>Folder management</value>
   </data>
-  <data name="DarkMode" xml:space="preserve">
-    <value>Dark Mode</value>
-  </data>
-  <data name="Delete" xml:space="preserve">
-    <value>Delete</value>
-  </data>
-  <data name="DeleteActionMessage" xml:space="preserve">
-    <value>Delete {FileName}</value>
-  </data>
-  <data name="DirectoryNotFoundExceptionMessage" xml:space="preserve">
-    <value>The directory "{Directory}" does not exist.</value>
-  </data>
-  <data name="DoNotUpdate" xml:space="preserve">
-    <value>Don't update</value>
-  </data>
-  <data name="Error" xml:space="preserve">
-    <value>Error</value>
-  </data>
-  <data name="FileAlreadyExistsExceptionMessage" xml:space="preserve">
-    <value>The file "{FileName}" already exists.</value>
-  </data>
-  <data name="Folder" xml:space="preserve">
-    <value>Folder</value>
-  </data>
-  <data name="GoLeftTooltip" xml:space="preserve">
-    <value>Move image selection left (left arrow key)</value>
-  </data>
-  <data name="GoRightTooltip" xml:space="preserve">
-    <value>Move image selection right (right arrow key)</value>
-  </data>
-  <data name="History" xml:space="preserve">
-    <value>History</value>
-  </data>
-  <data name="InstallPrereleaseBuilds" xml:space="preserve">
-    <value>Install prerelease builds</value>
-  </data>
-  <data name="Move" xml:space="preserve">
-    <value>Move</value>
-  </data>
-  <data name="MoveActionMessage" xml:space="preserve">
-    <value>Move {FileName} to {Directory}</value>
-  </data>
-  <data name="NewFolderPromptText" xml:space="preserve">
-    <value>What name should the folder have?</value>
-  </data>
-  <data name="NewFolderPromptTitle" xml:space="preserve">
-    <value>Create folder</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
-  </data>
-  <data name="OpenFolder" xml:space="preserve">
+  <data name="OpenFolderHeader" xml:space="preserve">
     <value>Open folder</value>
   </data>
-  <data name="OpenSelectedFolder" xml:space="preserve">
-    <value>Open selected folder</value>
-  </data>
-  <data name="Pin" xml:space="preserve">
-    <value>Pin</value>
-  </data>
-  <data name="PinSelected" xml:space="preserve">
-    <value>Pin selected</value>
-  </data>
-  <data name="Redo" xml:space="preserve">
-    <value>Redo</value>
-  </data>
-  <data name="Rename" xml:space="preserve">
-    <value>Rename</value>
-  </data>
-  <data name="RenameActionMessage" xml:space="preserve">
-    <value>Rename {OldFileName} to {NewFileName}</value>
-  </data>
-  <data name="RenameImagePromptText" xml:space="preserve">
-    <value>What name to rename the image to?</value>
-  </data>
-  <data name="RenameImagePromptTitle" xml:space="preserve">
-    <value>Rename image</value>
-  </data>
-  <data name="RenameNewNameContainsIllegalCharacters" xml:space="preserve">
-    <value>The name "{FileName}" contains illegal characters.</value>
-  </data>
-  <data name="SearchTermWatermark" xml:space="preserve">
-    <value>Search images... (press 'Tab' to leave)</value>
-  </data>
-  <data name="Settings" xml:space="preserve">
-    <value>Settings</value>
-  </data>
-  <data name="Undo" xml:space="preserve">
-    <value>Undo</value>
-  </data>
-  <data name="Unpin" xml:space="preserve">
-    <value>Unpin</value>
-  </data>
-  <data name="Update" xml:space="preserve">
-    <value>Update</value>
-  </data>
-  <data name="UpdateAvailablePromptText" xml:space="preserve">
-    <value>A new version of Image Sort is available: {TagName}
-
-Do you want to update?</value>
-  </data>
-  <data name="UpdateAvailablePromptTitle" xml:space="preserve">
-    <value>An update is available</value>
-  </data>
-  <data name="CouldNotUndoErrorText" xml:space="preserve">
-    <value>Could not undo action "{ActMessage}": 
-
-{ErrorMessage}</value>
-  </data>
-  <data name="CouldNotRedoErrorText" xml:space="preserve">
-    <value>Could not redo action "{ActMessage}":
-
-{ErrorMessage}</value>
-  </data>
-  <data name="CouldNotActErrorText" xml:space="preserve">
-    <value>Could not execute action "{ActMessage}":
-
-{ErrorMessage}</value>
-  </data>
-  <data name="Open" xml:space="preserve">
-    <value>Open</value>
-  </data>
-  <data name="GeneralSettingsHeader" xml:space="preserve">
-    <value>General settings</value>
-  </data>
-  <data name="PinnedFoldersSettingsHeader" xml:space="preserve">
+  <data name="PinnedFoldersHeader" xml:space="preserve">
     <value>Pinned folders</value>
   </data>
-  <data name="KeyBindingsSettingsHeader" xml:space="preserve">
-    <value>Key bindings</value>
+  <data name="FolderSelectionHeader" xml:space="preserve">
+    <value>Folder selection</value>
   </data>
-  <data name="RestoreDefaultKeyBindings" xml:space="preserve">
-    <value>Restore default key bindings</value>
+  <data name="HistoryHeader" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="GoLeft" xml:space="preserve">
+    <value>Select image on the left</value>
+  </data>
+  <data name="GoRight" xml:space="preserve">
+    <value>Select image on the right</value>
+  </data>
+  <data name="FolderUp" xml:space="preserve">
+    <value>Select the folder above</value>
+  </data>
+  <data name="FolderLeft" xml:space="preserve">
+    <value>Collapse folder</value>
+  </data>
+  <data name="FolderDown" xml:space="preserve">
+    <value>Select the folder below</value>
+  </data>
+  <data name="FolderRight" xml:space="preserve">
+    <value>Expand folder (list sub-folders)</value>
   </data>
 </root>

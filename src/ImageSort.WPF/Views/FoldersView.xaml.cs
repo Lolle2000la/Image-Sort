@@ -1,6 +1,9 @@
 ﻿using ImageSort.Localization;
+using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
+using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;
+using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -94,39 +97,34 @@ namespace ImageSort.WPF.Views
                     .Subscribe(_ => SelectCurrentFolder())
                     .DisposeWith(disposableRegistration);
 
+                var settings = Locator.Current.GetService<SettingsViewModel>();
+                var pinnedFolderSettings = settings.GetGroup<PinnedFolderSettingsViewModel>();
+
                 // restore pinned folders
-                if (Settings.Default.PinnedFolders != null)
-                {
-                    var pinnedFolders = new List<string>(Settings.Default.PinnedFolders.Count);
-
-                    foreach (var pinned in Settings.Default.PinnedFolders)
-                    {
-                        pinnedFolders.Add(pinned);
-                    }
-
-                    ViewModel.AddPinnedFoldersFromPaths(pinnedFolders);
-                }
+                ViewModel.AddPinnedFoldersFromPaths(pinnedFolderSettings.PinnedFolders);
 
                 // save pinned folders
                 ViewModel.PinnedFolders.ActOnEveryObject(f =>
                 {
-                    if (Settings.Default.PinnedFolders == null) Settings.Default.PinnedFolders = new System.Collections.Specialized.StringCollection();
                     if (f == null) return;
-                    if (Settings.Default.PinnedFolders.Contains(f.Path)) return;
+                    if (pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    Settings.Default.PinnedFolders.Add(f.Path);
+                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
 
-                    Settings.Default.Save();
+                    pinnedFolders.Add(f.Path);
+
+                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
                 },
-                f => 
+                f =>
                 {
-                    if (Settings.Default.PinnedFolders == null) Settings.Default.PinnedFolders = new System.Collections.Specialized.StringCollection();
                     if (f == null) return;
-                    if (!Settings.Default.PinnedFolders.Contains(f.Path)) return;
+                    if (!pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    Settings.Default.PinnedFolders.Remove(f.Path);
+                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
 
-                    Settings.Default.Save();
+                    pinnedFolders.Remove(f.Path);
+
+                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
                 });
             });
         }
