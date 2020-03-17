@@ -118,25 +118,25 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ImageManagementHeader" xml:space="preserve">
-    <value>Image management</value>
+    <value>Management</value>
   </data>
   <data name="ImageSelectionHeader" xml:space="preserve">
-    <value>Image selection</value>
+    <value>Selection</value>
   </data>
   <data name="SearchImagesHeader" xml:space="preserve">
-    <value>Search images</value>
+    <value>Search</value>
   </data>
   <data name="FolderManagementHeader" xml:space="preserve">
-    <value>Folder management</value>
+    <value>Management</value>
   </data>
   <data name="OpenFolderHeader" xml:space="preserve">
-    <value>Open folder</value>
+    <value>Open</value>
   </data>
   <data name="PinnedFoldersHeader" xml:space="preserve">
-    <value>Pinned folders</value>
+    <value>Pinned</value>
   </data>
   <data name="FolderSelectionHeader" xml:space="preserve">
-    <value>Folder selection</value>
+    <value>Selection</value>
   </data>
   <data name="HistoryHeader" xml:space="preserve">
     <value>History</value>
@@ -158,5 +158,14 @@
   </data>
   <data name="FolderRight" xml:space="preserve">
     <value>Expand folder (list sub-folders)</value>
+  </data>
+  <data name="FoldersHeader" xml:space="preserve">
+    <value>Folders</value>
+  </data>
+  <data name="ImagesHeader" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="OtherHeader" xml:space="preserve">
+    <value>Other</value>
   </data>
 </root>

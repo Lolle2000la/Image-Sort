@@ -79,7 +79,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Folder management.
+        ///   Looks up a localized string similar to Management.
         /// </summary>
         public static string FolderManagementHeader {
             get {
@@ -97,11 +97,20 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Folder selection.
+        ///   Looks up a localized string similar to Selection.
         /// </summary>
         public static string FolderSelectionHeader {
             get {
                 return ResourceManager.GetString("FolderSelectionHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Folders.
+        /// </summary>
+        public static string FoldersHeader {
+            get {
+                return ResourceManager.GetString("FoldersHeader", resourceCulture);
             }
         }
         
@@ -142,7 +151,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Image management.
+        ///   Looks up a localized string similar to Management.
         /// </summary>
         public static string ImageManagementHeader {
             get {
@@ -151,7 +160,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Image selection.
+        ///   Looks up a localized string similar to Selection.
         /// </summary>
         public static string ImageSelectionHeader {
             get {
@@ -160,7 +169,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Open folder.
+        ///   Looks up a localized string similar to Images.
+        /// </summary>
+        public static string ImagesHeader {
+            get {
+                return ResourceManager.GetString("ImagesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open.
         /// </summary>
         public static string OpenFolderHeader {
             get {
@@ -169,7 +187,16 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Pinned folders.
+        ///   Looks up a localized string similar to Other.
+        /// </summary>
+        public static string OtherHeader {
+            get {
+                return ResourceManager.GetString("OtherHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Pinned.
         /// </summary>
         public static string PinnedFoldersHeader {
             get {
@@ -178,7 +205,7 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Search images.
+        ///   Looks up a localized string similar to Search.
         /// </summary>
         public static string SearchImagesHeader {
             get {
