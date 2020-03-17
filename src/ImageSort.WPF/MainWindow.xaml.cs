@@ -17,6 +17,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
+using System.Windows.Interop;
 
 namespace ImageSort.WPF
 {
@@ -230,16 +231,28 @@ namespace ImageSort.WPF
 
         private void OnOpenKeybindingsClicked(object sender, RoutedEventArgs e)
         {
+            const int distanceFromTop = 50;
+
             var keyBindings = new AdonisWindow() 
             { 
                 Title = Text.KeyBindingsSettingsHeader,
                 Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() },
                 Width = 640,
                 SizeToContent = SizeToContent.Height,
-                Top = 50
+                Top = distanceFromTop
             };
 
             keyBindings.Show();
+
+            var windowInteropHelper = new WindowInteropHelper(keyBindings);
+            var screen = System.Windows.Forms.Screen.FromHandle(windowInteropHelper.Handle);
+
+            if (keyBindings.Height > screen.WorkingArea.Height - distanceFromTop)
+            {
+                keyBindings.SizeToContent = SizeToContent.Manual;
+
+                keyBindings.Height = screen.WorkingArea.Height - distanceFromTop * 2;
+            }
         }
 
         protected override void OnClosed(EventArgs e)
