@@ -39,7 +39,14 @@ namespace ImageSort.SettingsManagement
                     }
                     else
                     {
-                        property.SetValue(this, setting);
+                        if (typeof(Enum).IsAssignableFrom(property.PropertyType))
+                        {
+                            property.SetValue(this, Enum.ToObject(property.PropertyType, setting));
+                        }
+                        else
+                        {
+                            property.SetValue(this, setting);
+                        }
                     }
                 }
             }
