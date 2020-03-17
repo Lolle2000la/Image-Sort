@@ -12,7 +12,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
-        <TextBlock Text="{Binding Description}"/>
+        <TextBlock Text="{Binding Description}" VerticalAlignment="Center"/>
         <local:HotkeyEditorControl x:Name="HotkeyEditorControl" HotkeyChanged="OnHotkeyEditorControlHotkeyChanged" Grid.Column="1"/>
     </Grid>
 </UserControl>
