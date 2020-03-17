@@ -14,9 +14,9 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 
         public override string Header => Text.KeyBindingsSettingsHeader;
 
-        private Key _move = Key.Up;
+        private Hotkey _move = new Hotkey(Key.Up, default(ModifierKeys));
 
-        public Key Move
+        public Hotkey Move
         {
             get => _move;
             set => this.RaiseAndSetIfChanged(ref _move, value);
