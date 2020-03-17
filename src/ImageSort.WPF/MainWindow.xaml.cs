@@ -8,6 +8,7 @@ using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ReactiveUI;
 using Splat;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -94,113 +95,109 @@ namespace ImageSort.WPF
                     if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                         ic.SetOutput(folderBrowser.SelectedPath);
                 })
-                .DisposeWith(disposableRegistration); ;
+                .DisposeWith(disposableRegistration);
 
-                var reservedKeys = new[]
-                {
-                    Key.Left, Key.Right, Key.Up, Key.Down, // image traversal, moving and deletion
-                    Key.W, Key.A, Key.S, Key.D, // tree traversal
-                    Key.Q, Key.E, // undo and redo
-                    Key.O, Key.Enter, // open a new folder (second one opens the selected one)
-                    Key.P, Key.F, Key.U, // Pin and unpin folders
-                    Key.I, // Focus images search box
-                    Key.C, // Create a new folder
-                    Key.R // Rename image
-                };
+                var keyBindings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                    .OfType<KeyBindingsSettingsGroupViewModel>()
+                    .FirstOrDefault();
+
+                var reservedKeys = keyBindings.SettingsStore
+                    .Select(kv => kv.Value)
+                    .OfType<Hotkey>();
 
                 var reservedKeysPressed = this.Events().PreviewKeyDown
                     .Where(_ => interceptReservedKeys)
                     .Where(_ => !(Keyboard.FocusedElement is TextBox))
-                    .Where(k => reservedKeys.Contains(k.Key))
+                    .Where(k => reservedKeys.Contains(new Hotkey(k.Key, Keyboard.Modifiers)))
                     .Do(k => k.Handled = true)
-                    .Select(k => k.Key);
+                    .Select(k => new Hotkey(k.Key, Keyboard.Modifiers));
 
                 // bind arrow keys
-                reservedKeysPressed.Where(k => k == Key.Left)
+                reservedKeysPressed.Where(k => k == keyBindings.GoLeft)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoLeft)
                      .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.Right)
+                reservedKeysPressed.Where(k => k == keyBindings.GoRight)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.GoRight)
                     .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.Up)
+                reservedKeysPressed.Where(k => k == keyBindings.Move)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.MoveImageToFolder)
                     .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.Down)
+                reservedKeysPressed.Where(k => k == keyBindings.Delete)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.DeleteImage)
                     .DisposeWith(disposableRegistration);
 
                 // bind Q and E to undo and redo
-                reservedKeysPressed.Where(k => k == Key.Q)
+                reservedKeysPressed.Where(k => k == keyBindings.Undo)
                    .Select(_ => Unit.Default)
                    .InvokeCommand(ViewModel.Actions.Undo)
                    .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.E)
+                reservedKeysPressed.Where(k => k == keyBindings.Redo)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Actions.Redo)
                     .DisposeWith(disposableRegistration);
 
                 // bind WASD to traversing the folders
                 reservedKeysPressed
-                    .Where(k => k == Key.W || k == Key.A || k == Key.S || k == Key.D)
-                    .Select(k => k switch
+                    .Where(k => k == keyBindings.FolderUp || k == keyBindings.FolderLeft || k == keyBindings.FolderDown || k == keyBindings.FolderRight)
+                    .Select(k => 
                     {
-                        Key.W => Key.Up,
-                        Key.A => Key.Left,
-                        Key.S => Key.Down,
-                        Key.D => Key.Right,
-                        Key other => other
+                        if (k == keyBindings.FolderUp) return Key.Up;
+                        if (k == keyBindings.FolderLeft) return Key.Left;
+                        if (k == keyBindings.FolderDown) return Key.Down;
+                        if (k == keyBindings.FolderRight) return Key.Right;
+                        return Key.None;
                     })
                     .Subscribe(FireKeyEventOnFoldersTree)
                     .DisposeWith(disposableRegistration);
 
                 // bind enter and 'r' to opening a new folder
-                reservedKeysPressed.Where(k => k == Key.O)
+                reservedKeysPressed.Where(k => k == keyBindings.OpenFolder)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.OpenFolder)
                     .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.Enter)
+                reservedKeysPressed.Where(k => k == keyBindings.OpenSelectedFolder)
                   .Select(_ => Unit.Default)
                   .InvokeCommand(ViewModel.OpenCurrentlySelectedFolder)
                   .DisposeWith(disposableRegistration);
 
                 // bind 'p' and 'u' to pin and unpin
-                reservedKeysPressed.Where(k => k == Key.P)
+                reservedKeysPressed.Where(k => k == keyBindings.Pin)
                   .Select(_ => Unit.Default)
                   .InvokeCommand(ViewModel.Folders.Pin)
                   .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.F)
+                reservedKeysPressed.Where(k => k == keyBindings.PinSelected)
                   .Select(_ => Unit.Default)
                   .InvokeCommand(ViewModel.Folders.PinSelected)
                   .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.U)
+                reservedKeysPressed.Where(k => k == keyBindings.Unpin)
                   .Select(_ => Unit.Default)
                   .InvokeCommand(ViewModel.Folders.UnpinSelected)
                   .DisposeWith(disposableRegistration);
 
                 // bind 'i' to focusing the images search box
-                reservedKeysPressed.Where(k => k == Key.I)
+                reservedKeysPressed.Where(k => k == keyBindings.SearchImages)
                   .Select(_ => Unit.Default)
                   .Subscribe(_ => Images.SearchTerm.Focus())
                   .DisposeWith(disposableRegistration);
 
                 // bind 'c' to folder creation
-                reservedKeysPressed.Where(k => k == Key.C)
+                reservedKeysPressed.Where(k => k == keyBindings.CreateFolder)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Folders.CreateFolderUnderSelected)
                     .DisposeWith(disposableRegistration);
 
-                reservedKeysPressed.Where(k => k == Key.R)
+                reservedKeysPressed.Where(k => k == keyBindings.Rename)
                     .Select(_ => Unit.Default)
                     .InvokeCommand(ViewModel.Images.RenameImage)
                     .DisposeWith(disposableRegistration);
