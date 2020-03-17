@@ -131,13 +131,13 @@ Message: {ErrorMessage}
 Note: Usually this is because the file is damaged</value>
   </data>
   <data name="CreateFolder" xml:space="preserve">
-    <value>Create Folder (C)</value>
+    <value>Create Folder</value>
   </data>
   <data name="DarkMode" xml:space="preserve">
     <value>Dark Mode</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Delete (↓)</value>
+    <value>Delete</value>
   </data>
   <data name="DeleteActionMessage" xml:space="preserve">
     <value>Delete {FileName}</value>
@@ -170,7 +170,7 @@ Note: Usually this is because the file is damaged</value>
     <value>Install prerelease builds</value>
   </data>
   <data name="Move" xml:space="preserve">
-    <value>Move (↑)</value>
+    <value>Move</value>
   </data>
   <data name="MoveActionMessage" xml:space="preserve">
     <value>Move {FileName} to {Directory}</value>
@@ -185,22 +185,22 @@ Note: Usually this is because the file is damaged</value>
     <value>OK</value>
   </data>
   <data name="OpenFolder" xml:space="preserve">
-    <value>Open folder (O)</value>
+    <value>Open folder</value>
   </data>
   <data name="OpenSelectedFolder" xml:space="preserve">
-    <value>Open selected folder (Enter)</value>
+    <value>Open selected folder</value>
   </data>
   <data name="Pin" xml:space="preserve">
-    <value>Pin (P)</value>
+    <value>Pin</value>
   </data>
   <data name="PinSelected" xml:space="preserve">
-    <value>Pin selected (F)</value>
+    <value>Pin selected</value>
   </data>
   <data name="Redo" xml:space="preserve">
-    <value>Redo (E)</value>
+    <value>Redo</value>
   </data>
   <data name="Rename" xml:space="preserve">
-    <value>Rename (R)</value>
+    <value>Rename</value>
   </data>
   <data name="RenameActionMessage" xml:space="preserve">
     <value>Rename {OldFileName} to {NewFileName}</value>
@@ -215,16 +215,16 @@ Note: Usually this is because the file is damaged</value>
     <value>The name "{FileName}" contains illegal characters.</value>
   </data>
   <data name="SearchTermWatermark" xml:space="preserve">
-    <value>Search images... (Shortcuts: 'I' to focus, 'Tab' to leave)</value>
+    <value>Search images... (press 'Tab' to leave)</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>Settings</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>Undo (Q)</value>
+    <value>Undo</value>
   </data>
   <data name="Unpin" xml:space="preserve">
-    <value>Unpin (U)</value>
+    <value>Unpin</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Update</value>

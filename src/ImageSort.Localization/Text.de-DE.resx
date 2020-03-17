@@ -131,13 +131,13 @@
 Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
   </data>
   <data name="CreateFolder" xml:space="preserve">
-    <value>Ordner erstellen (C)</value>
+    <value>Ordner erstellen</value>
   </data>
   <data name="DarkMode" xml:space="preserve">
     <value>Dunkler Modus</value>
   </data>
   <data name="Delete" xml:space="preserve">
-    <value>Löschen (↓)</value>
+    <value>Löschen</value>
   </data>
   <data name="DeleteActionMessage" xml:space="preserve">
     <value>{FileName} löschen</value>
@@ -170,7 +170,7 @@ Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
     <value>Vorschauversionen installieren</value>
   </data>
   <data name="Move" xml:space="preserve">
-    <value>Verschieben (↑)</value>
+    <value>Verschieben</value>
   </data>
   <data name="MoveActionMessage" xml:space="preserve">
     <value>{FileName} nach {Directory} verschieben</value>
@@ -185,22 +185,22 @@ Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
     <value>OK</value>
   </data>
   <data name="OpenFolder" xml:space="preserve">
-    <value>Ordner öffnen (O)</value>
+    <value>Ordner öffnen</value>
   </data>
   <data name="OpenSelectedFolder" xml:space="preserve">
-    <value>Ausgewählten Ordner öffnen (Enter)</value>
+    <value>Ausgewählten Ordner öffnen</value>
   </data>
   <data name="Pin" xml:space="preserve">
-    <value>Anpinnen (P)</value>
+    <value>Anpinnen</value>
   </data>
   <data name="PinSelected" xml:space="preserve">
-    <value>Ausgewählten anpinnen (F)</value>
+    <value>Ausgewählten anpinnen</value>
   </data>
   <data name="Redo" xml:space="preserve">
-    <value>Wiederholen (E)</value>
+    <value>Wiederholen</value>
   </data>
   <data name="Rename" xml:space="preserve">
-    <value>Umbenennen (R)</value>
+    <value>Umbenennen</value>
   </data>
   <data name="RenameActionMessage" xml:space="preserve">
     <value>{OldFileName} zu {NewFileName} umbenennen</value>
@@ -215,16 +215,16 @@ Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
     <value>Der Name "{FileName}" enthält nicht zugelassene Zeichen.</value>
   </data>
   <data name="SearchTermWatermark" xml:space="preserve">
-    <value>Bilder durchsuchen... (Shortcut: "I" zum auswählen, "Tab" zum verlassen)</value>
+    <value>Bilder durchsuchen... ("Tab" drücken zum verlassen)</value>
   </data>
   <data name="Settings" xml:space="preserve">
     <value>Einstellungen</value>
   </data>
   <data name="Undo" xml:space="preserve">
-    <value>Rückgängig (Q)</value>
+    <value>Rückgängig</value>
   </data>
   <data name="Unpin" xml:space="preserve">
-    <value>Entfernen (U)</value>
+    <value>Entfernen</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Aktualisieren</value>
