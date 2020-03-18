@@ -15,7 +15,6 @@
         <StackPanel.Resources>
             <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
                 <Setter Property="Margin" Value="{adonisUi:Space 0, 1, 0, 0}"/>
-                <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="8"/>
             </Style>
         </StackPanel.Resources>
         
