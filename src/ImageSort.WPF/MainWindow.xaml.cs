@@ -259,11 +259,8 @@ namespace ImageSort.WPF
                 keyBindings.Height = realHeight - distanceFromTop * 2;
             }
 
-            var correctScreenLeft = screen.WorkingArea.Left + keyBindings.Left;
-            var correctScreenTop = screen.WorkingArea.Top + keyBindings.Top;
-
-            keyBindings.Left = correctScreenLeft;
-            keyBindings.Top = correctScreenTop;
+            keyBindings.Left = screen.WorkingArea.Left + keyBindings.Left;
+            keyBindings.Top = screen.WorkingArea.Top + keyBindings.Top;
         }
 
         protected override void OnClosed(EventArgs e)
