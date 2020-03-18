@@ -3,5 +3,6 @@
                     xmlns:local="clr-namespace:ImageSort.WPF.Styles">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="/Styles/GroupBox.xaml"/>
+        <ResourceDictionary Source="/Styles/HotkeyEditor.xaml"/>
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>
