@@ -26,8 +26,7 @@
 
         <GridSplitter Grid.Column="1" Width="{adonisUi:Space 1}" />
 
-        <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}"
-                  adonisExtensions:CornerRadiusExtension.CornerRadius="8">
+        <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}">
             <StackPanel  VerticalAlignment="Center">
 
                 <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
