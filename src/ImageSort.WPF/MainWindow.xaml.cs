@@ -18,6 +18,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
+using System.Windows.Media;
 
 namespace ImageSort.WPF
 {
@@ -247,11 +248,14 @@ namespace ImageSort.WPF
             var windowInteropHelper = new WindowInteropHelper(keyBindings);
             var screen = System.Windows.Forms.Screen.FromHandle(windowInteropHelper.Handle);
 
-            if (keyBindings.Height > screen.WorkingArea.Height - distanceFromTop)
+            var dpiScale = VisualTreeHelper.GetDpi(keyBindings);
+            var realHeight = screen.WorkingArea.Height / dpiScale.DpiScaleX;
+
+            if (keyBindings.Height > realHeight - distanceFromTop)
             {
                 keyBindings.SizeToContent = SizeToContent.Manual;
 
-                keyBindings.Height = screen.WorkingArea.Height - distanceFromTop * 2;
+                keyBindings.Height = realHeight - distanceFromTop * 2;
             }
         }
 
