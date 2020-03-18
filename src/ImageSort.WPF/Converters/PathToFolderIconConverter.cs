@@ -12,16 +12,16 @@ namespace ImageSort.WPF.Converters
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value == null) return null;
 
             if (value is string path)
             {
-                if (!Directory.Exists(path)) throw new DirectoryNotFoundException();
+                if (!Directory.Exists(path)) return null;
 
                 return ShellFileLoader.GetThumbnailFromShellForWpf(path);
             }
 
-            throw new ArgumentException("Value should be a string.", nameof(value));
+            return null;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
