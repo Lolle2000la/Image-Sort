@@ -38,7 +38,7 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
 
-        <Image x:Name="SelectedImage" Grid.Row="0" />
+        <Image x:Name="SelectedImage" Grid.Row="0" Source="/Icons/Image Sort.png" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
