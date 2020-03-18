@@ -245,10 +245,11 @@ namespace ImageSort.WPF
 
             keyBindings.Show();
 
-            var windowInteropHelper = new WindowInteropHelper(keyBindings);
+            var windowInteropHelper = new WindowInteropHelper(this);
             var screen = System.Windows.Forms.Screen.FromHandle(windowInteropHelper.Handle);
 
             var dpiScale = VisualTreeHelper.GetDpi(keyBindings);
+
             var realHeight = screen.WorkingArea.Height / dpiScale.DpiScaleX;
 
             if (keyBindings.Height > realHeight - distanceFromTop)
@@ -257,6 +258,12 @@ namespace ImageSort.WPF
 
                 keyBindings.Height = realHeight - distanceFromTop * 2;
             }
+
+            var correctScreenLeft = screen.WorkingArea.Left + keyBindings.Left;
+            var correctScreenTop = screen.WorkingArea.Top + keyBindings.Top;
+
+            keyBindings.Left = correctScreenLeft;
+            keyBindings.Top = correctScreenTop;
         }
 
         protected override void OnClosed(EventArgs e)
