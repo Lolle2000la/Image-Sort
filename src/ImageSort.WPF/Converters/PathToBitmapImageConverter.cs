@@ -32,7 +32,7 @@ namespace ImageSort.WPF.Converters
 
                     return bitmapImage;
                 }
-                catch (Exception ex)
+                catch
                 {
                     return null;
                 }
