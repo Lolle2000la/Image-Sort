@@ -193,5 +193,13 @@
       <SkipGetTargetFrameworkProperties>True</SkipGetTargetFrameworkProperties>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="Microsoft.VCLibs,Version=14.0">
+      <TargetedSDKConfiguration Condition="'$(Configuration)'!='Debug'">Retail</TargetedSDKConfiguration>
+      <TargetedSDKConfiguration Condition="'$(Configuration)'=='Debug'">Debug</TargetedSDKConfiguration>
+      <TargetedSDKArchitecture>$(PlatformShortName)</TargetedSDKArchitecture>
+      <Implicit>true</Implicit>
+    </SDKReference>
+  </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
 </Project>
