@@ -13,7 +13,13 @@ namespace ImageSort.WPF.SettingsManagement
 {
     internal static class SettingsHelper
     {
-        public static string ConfigFileLocation { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort", "config.json");
+        public static string ConfigFileLocation { get; } = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort",
+#if DEBUG
+            "debug_config.json"
+#else
+            "config.json"
+#endif
+            );
 
         public static async Task SaveAsync(this SettingsViewModel settings)
         {
