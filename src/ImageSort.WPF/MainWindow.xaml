@@ -37,7 +37,7 @@
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:Text.History}" Margin="{adonisUi:Space 0, 1}">
-                    <views:ActionsView x:Name="Actions" HorizontalAlignment="Center" />
+                    <views:ActionsView x:Name="Actions" HorizontalAlignment="Stretch" />
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:Text.Settings}" Margin="{adonisUi:Space 0, 1}">
