@@ -9,7 +9,7 @@
   <Identity
     Name="42290Lolle2000la.Imagesort"
     Publisher="CN=1400B225-7A75-4D6E-B7BA-8B7725EF5D4E"
-    Version="2.0.13.0" />
+    Version="2.0.14.0" />
 
   <Properties>
     <DisplayName>Image sort</DisplayName>
