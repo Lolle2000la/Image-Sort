@@ -267,4 +267,10 @@ Do you want to update?</value>
   <data name="RestoreDefaultKeyBindings" xml:space="preserve">
     <value>Restore default key bindings</value>
   </data>
+  <data name="Updates" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
 </root>
