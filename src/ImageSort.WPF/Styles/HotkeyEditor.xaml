@@ -7,7 +7,7 @@
             <ResourceDictionary>
                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="BorderBrush" Value="{DynamicResource adonisUi:Brushes.AccentForegroundBrush}"/>
-                    <Setter Property="BorderThickness" Value="{adonisUi:Space 0, 0, 0, 0.375}"/>
+                    <Setter Property="BorderThickness" Value="{adonisUi:Space 0, 0, 0, 0.25}"/>
                     <Setter Property="Padding" Value="{adonisUi:Space 0, 0.5}"/>
                 </Style>
             </ResourceDictionary>
