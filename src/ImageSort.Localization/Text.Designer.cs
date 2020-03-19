@@ -61,6 +61,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Appearance.
+        /// </summary>
+        public static string Appearance {
+            get {
+                return ResourceManager.GetString("Appearance", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Check for updates on startup.
         /// </summary>
         public static string CheckForUpdatesOnStartup {
@@ -483,6 +492,15 @@ namespace ImageSort.Localization {
         public static string UpdateAvailablePromptTitle {
             get {
                 return ResourceManager.GetString("UpdateAvailablePromptTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Updates.
+        /// </summary>
+        public static string Updates {
+            get {
+                return ResourceManager.GetString("Updates", resourceCulture);
             }
         }
     }

@@ -16,7 +16,7 @@ namespace ImageSort.WPF.Converters
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "The app should not crash just because some exception happened")]
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value == null) throw new ArgumentNullException(nameof(value));
+            if (value == null) return null;
 
             if (value is string path)
             {
@@ -32,13 +32,13 @@ namespace ImageSort.WPF.Converters
 
                     return bitmapImage;
                 }
-                catch (Exception ex)
+                catch
                 {
                     return null;
                 }
             }
 
-            throw new ArgumentException("Value should be a string.", nameof(value));
+            return null;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

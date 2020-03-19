@@ -9,14 +9,28 @@
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+                                xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <StackPanel>
+    <StackPanel>
+        <StackPanel.Resources>
+            <ResourceDictionary>
+                <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
+                    <Setter Property="Margin" Value="{adonisUi:Space 0, 0.5}"/>
+                    <Setter Property="adonisExtensions:LayerExtension.Layer" Value="2"/>
+                </Style>
+            </ResourceDictionary>
+        </StackPanel.Resources>
+        
+        <GroupBox Header="{x:Static text:Text.Appearance}">
             <ToggleButton Content="{x:Static text:Text.DarkMode}" x:Name="DarkMode" Margin="{adonisUi:Space 1}" />
+        </GroupBox>
 
-            <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}" />
-            <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}" />
-        </StackPanel>
-    </Grid>
+        <GroupBox Header="{x:Static text:Text.Updates}">
+            <StackPanel>
+                <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" x:Name="CheckForUpdates" Margin="{adonisUi:Space 1}" />
+                <CheckBox Content="{x:Static text:Text.InstallPrereleaseBuilds}" x:Name="InstallPrereleaseBuilds" Margin="{adonisUi:Space 1}" />
+            </StackPanel>
+        </GroupBox>
+    </StackPanel>
 </reactiveui:ReactiveUserControl>

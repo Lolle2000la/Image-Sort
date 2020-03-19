@@ -37,7 +37,7 @@ namespace ImageSort.WPF.Views
 
                     if (folderBrowser.ShowDialog() == DialogResult.OK)
                         ic.SetOutput(folderBrowser.SelectedPath);
-                });
+                }).DisposeWith(disposableRegistration);
 
                 ViewModel.PromptForName.RegisterHandler(ic =>
                 {
@@ -45,7 +45,7 @@ namespace ImageSort.WPF.Views
 
                     if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
                     else ic.SetOutput(null);
-                });
+                }).DisposeWith(disposableRegistration);
 
                 var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
 
