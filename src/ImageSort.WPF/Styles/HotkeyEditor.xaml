@@ -8,14 +8,8 @@
                 <Style TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
                     <Setter Property="BorderBrush" Value="{DynamicResource adonisUi:Brushes.AccentForegroundBrush}"/>
                     <Setter Property="BorderThickness" Value="{adonisUi:Space 0, 0, 0, 0.5}"/>
-                    <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="Padding" Value="{adonisUi:Space 0, 1}"/>
                 </Style>
-
-                <SolidColorBrush x:Key="{x:Static adonisUi:Brushes.Layer1BackgroundBrush}" Color="{DynamicResource {x:Static adonisUi:Colors.Layer0BackgroundColor}}"/>
-                <SolidColorBrush x:Key="{x:Static adonisUi:Brushes.Layer2BackgroundBrush}" Color="{DynamicResource {x:Static adonisUi:Colors.Layer1BackgroundColor}}"/>
-                <SolidColorBrush x:Key="{x:Static adonisUi:Brushes.Layer3BackgroundBrush}" Color="{DynamicResource {x:Static adonisUi:Colors.Layer2BackgroundColor}}"/>
-                <SolidColorBrush x:Key="{x:Static adonisUi:Brushes.Layer4BackgroundBrush}" Color="{DynamicResource {x:Static adonisUi:Colors.Layer3BackgroundColor}}"/>
              </ResourceDictionary>
         </Style.Resources>
     </Style>
