@@ -16,16 +16,17 @@ using System.IO;
 
 namespace ImageSort.WPF.UiTests
 {
-    public class FileActionsTests : IDisposable
+    [Collection("App collection")]
+    public class FileActionsTests
     {
         private readonly Application app;
         private readonly UIA3Automation automation;
         private readonly string currentPath;
         private readonly Window mainWindow;
 
-        public FileActionsTests()
+        public FileActionsTests(AppFixture appFixture)
         {
-            (currentPath, app, automation, mainWindow) = SetupTeardownHelper.Setup();
+            (currentPath, app, automation, mainWindow) = appFixture;
         }
 
         [Fact(DisplayName = "Can move image, undo and redo")]
@@ -53,11 +54,6 @@ namespace ImageSort.WPF.UiTests
 
             Assert.False(File.Exists(oldLocation));
             Assert.True(File.Exists(newLocation));
-        }
-
-        public void Dispose()
-        {
-            SetupTeardownHelper.TearDown(currentPath, app, automation);
         }
     }
 }

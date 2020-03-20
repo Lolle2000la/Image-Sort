@@ -11,16 +11,17 @@ using Xunit;
 
 namespace ImageSort.WPF.UiTests
 {
-    public class SearchTests : IDisposable
+    [Collection("App collection")]
+    public class SearchTests
     {
         private readonly Application app;
         private readonly UIA3Automation automation;
         private readonly string currentPath;
         private readonly Window mainWindow;
 
-        public SearchTests()
+        public SearchTests(AppFixture appFixture)
         {
-            (currentPath, app, automation, mainWindow) = SetupTeardownHelper.Setup();
+            (currentPath, app, automation, mainWindow) = appFixture;
         }
 
         [Fact(DisplayName = "Filters out images correctly")]
