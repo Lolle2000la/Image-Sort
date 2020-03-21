@@ -205,7 +205,7 @@ namespace ImageSort.ViewModels
 
         private void OnImageDeleted(object sender, FileSystemEventArgs e)
         {
-            var item = images.Items.FirstOrDefault(i => i == e.FullPath);
+            var item = images.Items.FirstOrDefault(i => i.PathEquals(e.FullPath));
 
             RxApp.MainThreadScheduler.Schedule(() =>
             {
@@ -218,7 +218,7 @@ namespace ImageSort.ViewModels
 
         private void OnImageRenamed(object sender, RenamedEventArgs e)
         {
-            var item = images.Items.FirstOrDefault(i => i == e.OldFullPath);
+            var item = images.Items.FirstOrDefault(i => i.PathEquals(e.OldFullPath));
 
             RxApp.MainThreadScheduler.Schedule(() =>
             {

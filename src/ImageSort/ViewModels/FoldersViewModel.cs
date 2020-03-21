@@ -1,6 +1,7 @@
 ﻿using DynamicData;
 using DynamicData.Binding;
 using ImageSort.FileSystem;
+using ImageSort.Helpers;
 using ReactiveUI;
 using Splat;
 using System;
@@ -82,7 +83,7 @@ namespace ImageSort.ViewModels
                 {
                     var folderToPin = await SelectFolder.Handle(Unit.Default);
 
-                    if (pinnedFolders.Items.Any(f => f.Path == folderToPin)) return;
+                    if (pinnedFolders.Items.Any(f => f.Path.PathEquals(folderToPin))) return;
 
                     pinnedFolders.Add(
                         new FolderTreeItemViewModel(fileSystem, noParallel: noParallel)
@@ -112,7 +113,7 @@ namespace ImageSort.ViewModels
 
             UnpinSelected = ReactiveCommand.Create(() =>
             {
-                var pinned = pinnedFolders.Items.FirstOrDefault(f => f.Path == Selected.Path);
+                var pinned = pinnedFolders.Items.FirstOrDefault(f => f.Path.PathEquals(Selected.Path));
 
                 if (pinned != null) pinnedFolders.Remove(pinned);
             }, canUnpinSelectedExecute);
