@@ -32,7 +32,7 @@ namespace ImageSort.WPF.UiTests
         [Fact(DisplayName = "Can move image, undo and redo")]
         public void CanMoveImages()
         {
-            var oldLocation = Directory.GetFiles(currentPath)[0];
+            var oldLocation = mainWindow.GetSelectedImage();
             var newLocation = Path.Combine(Directory.GetDirectories(currentPath)[0], Path.GetFileName(oldLocation));
 
             Assert.True(File.Exists(oldLocation));
@@ -75,6 +75,30 @@ namespace ImageSort.WPF.UiTests
 
             // clean-up
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+        }
+
+        [Fact(DisplayName = "Can delete images")]
+        public void CanDeleteImages()
+        {
+            var file = mainWindow.GetSelectedImage();
+
+            Assert.True(File.Exists(file));
+
+            app.WaitWhileBusy();
+
+            mainWindow.Focus();
+
+            // delete image
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Delete"))?.AsButton().Click();
+
+            app.WaitWhileBusy();
+
+            Assert.False(File.Exists(file));
+
+            // clean-up
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+
+            Assert.True(File.Exists(file));
         }
     }
 }
