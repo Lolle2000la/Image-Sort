@@ -42,18 +42,39 @@ namespace ImageSort.WPF.UiTests
 
             mainWindow.Focus();
 
+            // select folder
             Keyboard.Press(VirtualKeyShort.KEY_D);
 
             Keyboard.Press(VirtualKeyShort.KEY_S);
 
             app.WaitWhileBusy();
 
+            // move image
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Move"))?.AsButton().Click();
 
             app.WaitWhileBusy();
 
             Assert.False(File.Exists(oldLocation));
             Assert.True(File.Exists(newLocation));
+
+            // undo
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+
+            app.WaitWhileBusy();
+
+            Assert.True(File.Exists(oldLocation));
+            Assert.False(File.Exists(newLocation));
+
+            // redo
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Redo"))?.AsButton().Click();
+
+            app.WaitWhileBusy();
+
+            Assert.False(File.Exists(oldLocation));
+            Assert.True(File.Exists(newLocation));
+
+            // clean-up
+            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
         }
     }
 }
