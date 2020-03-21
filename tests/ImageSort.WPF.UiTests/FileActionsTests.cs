@@ -92,6 +92,7 @@ namespace ImageSort.WPF.UiTests
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Delete"))?.AsButton().Click();
 
             app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
 
             Assert.False(File.Exists(file));
 
