@@ -35,6 +35,7 @@ namespace ImageSort.WPF.UiTests
 
         public static void TearDown(string currentPath, Application app, UIA3Automation automation)
         {
+            app.Close();
             automation.Dispose();
             app.Dispose();
 
