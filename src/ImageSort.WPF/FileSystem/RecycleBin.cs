@@ -2,6 +2,7 @@
 using Shell32;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reactive.Disposables;
 
 namespace ImageSort.WPF.FileSystem
@@ -41,7 +42,7 @@ namespace ImageSort.WPF.FileSystem
 
                 var filePath = recycler.GetDetailsOf(item, 1);
 
-                if (path == Path.Combine(filePath, fileName))
+                if (Path.GetFullPath(path).Equals(Path.GetFullPath(Path.Combine(filePath, fileName)), StringComparison.OrdinalIgnoreCase))
                 {
                     Restore(item);
                     return;
