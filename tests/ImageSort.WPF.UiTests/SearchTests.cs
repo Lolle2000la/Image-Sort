@@ -31,10 +31,7 @@ namespace ImageSort.WPF.UiTests
             search.Focus();
             search.Text = ".jpg";
 
-            var images = mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Images")).AsListBox()
-                .FindAllChildren()
-                .Select(e => e.AsListBoxItem())
-                .Select(e => e.Name)
+            var images = mainWindow.GetImages()
                 .Select(n => Path.GetFileName(n));
 
             Assert.DoesNotContain("mock 4.png", images);
