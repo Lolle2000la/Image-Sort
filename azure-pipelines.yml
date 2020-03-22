@@ -39,7 +39,7 @@ steps:
     targetType: 'inline'
     script: |
       [xml]$manifest= get-content ".\src\ImageSort.MSIX\Package.appxmanifest"
-      $manifest.Package.Identity.Version = "$(env:AssemblySemVer)"
+      $manifest.Package.Identity.Version = "$(GitVersion.AssemblySemVer)"
       $manifest.save(".\src\ImageSort.MSIX\Package.appxmanifest")
 
 - task: VSBuild@1
