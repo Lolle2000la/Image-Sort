@@ -34,7 +34,7 @@ steps:
     Contents: |
       ImageSort.MSIX_TemporaryKey.pfx
       Package.StoreAssociation.xml
-    TargetFolder: '$(Agent.BuildDirectory)\src\ImageSort.MSIX'
+    TargetFolder: '$(Build.SourcesDirectory)\src\ImageSort.MSIX'
 
 - task: DotNetCoreCLI@2
   inputs:
