@@ -37,10 +37,11 @@ steps:
     msbuildArgs: '/restore /p:AppxPackageDir="$(build.artifactStagingDirectory)\AppxPackages\\" /p:AppxBundlePlatforms="$(buildPlatform)" /p:UapAppxPackageBuildMode=CI /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload'
     configuration: '$(buildConfiguration)'
 
-- task: VSTest@2
+- task: DotNetCoreCLI@2
   inputs:
-    platform: '$(buildPlatform)'
-    configuration: '$(buildConfiguration)'
+    command: 'test'
+    projects: |
+      tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj
 
 - task: PublishBuildArtifacts@1
   inputs:
