@@ -49,6 +49,8 @@ namespace ImageSort.WPF.UiTests
 
             app.WaitWhileBusy();
 
+            var selectedImage = mainWindow.GetSelectedImage();
+
             // move image
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Move"))?.AsButton().Click();
 
@@ -61,6 +63,9 @@ namespace ImageSort.WPF.UiTests
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
 
             app.WaitWhileBusy();
+
+            // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
+            Assert.Single(mainWindow.GetImages().Where(i => i == selectedImage));
 
             Assert.True(File.Exists(oldLocation));
             Assert.False(File.Exists(newLocation));
@@ -88,6 +93,8 @@ namespace ImageSort.WPF.UiTests
 
             mainWindow.Focus();
 
+            var selectedImage = mainWindow.GetSelectedImage();
+
             // delete image
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Delete"))?.AsButton().Click();
 
@@ -98,6 +105,9 @@ namespace ImageSort.WPF.UiTests
 
             // clean-up
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+
+            // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
+            Assert.Single(mainWindow.GetImages().Where(i => i == selectedImage));
 
             Assert.True(File.Exists(file));
         }
