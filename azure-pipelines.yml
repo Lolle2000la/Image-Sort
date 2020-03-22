@@ -17,6 +17,27 @@ variables:
 
 steps:
 
+- task: DownloadSecureFile@1
+  name: tempCert
+  displayName: 'Download temp certificate'
+  inputs:
+    secureFile: 'ImageSort.MSIX_TemporaryKey.pfx'
+- task: DownloadSecureFile@1
+  name: 
+  displayName: 'Download store association'
+  inputs:
+    secureFile: 'Package.StoreAssociation.xml'
+
+- task: PowerShell@2
+  inputs:
+    targetType: 'inline'
+    script: |
+      $tempCertName = Split-Path $(tempCert.secureFilePath) -leaf
+      $storeAssociationName = Split-Path $(storeAssociation.secureFilePath) -leaf
+      
+      Copy-Item -Path $(tempCert.secureFilePath) -Destination .\src\ImageSort.MSIX\$tempCertName
+      Copy-Item -Path $(storeAssociation.secureFilePath) -Destination .\src\ImageSort.MSIX\$storeAssociationName
+
 - task: DotNetCoreCLI@2
   inputs:
     command: 'restore'
