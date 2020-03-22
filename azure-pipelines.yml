@@ -18,11 +18,6 @@ variables:
 steps:
 
 - task: DownloadSecureFile@1
-  name: tempCert
-  displayName: 'Download temp certificate'
-  inputs:
-    secureFile: 'ImageSort.MSIX_TemporaryKey.pfx'
-- task: DownloadSecureFile@1
   name: 
   displayName: 'Download store association'
   inputs:
@@ -32,21 +27,14 @@ steps:
   inputs:
     SourceFolder: '$(Agent.WorkFolder)\_temp'
     Contents: |
-      ImageSort.MSIX_TemporaryKey.pfx
       Package.StoreAssociation.xml
     TargetFolder: '$(Build.SourcesDirectory)\src\ImageSort.MSIX'
-
-- task: DotNetCoreCLI@2
-  inputs:
-    command: 'restore'
-    projects: '**/*.csproj'
-    feedsToUse: 'select'
-    verbosityRestore: 'Minimal'
 
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
+    msbuildArgs: '/restore /p:AppxPackageDir="$(build.artifactStagingDirectory)\AppxPackages\\" /p:AppxBundlePlatforms="$(buildPlatform)" /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload'
     configuration: '$(buildConfiguration)'
 
 - task: VSTest@2
