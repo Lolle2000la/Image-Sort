@@ -9,14 +9,12 @@ namespace ImageSort.Helpers
             StringComparison comparisonType,
             params string[] atEnd)
         {
-            var endsWithIt = false;
-
             foreach (var end in atEnd)
             {
-                if (@string.EndsWith(end, comparisonType)) endsWithIt = true;
+                if (@string.EndsWith(end, comparisonType)) return true;
             }
 
-            return endsWithIt;
+            return false;
         }
     }
 }

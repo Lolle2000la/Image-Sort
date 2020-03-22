@@ -1,6 +1,7 @@
 ﻿using DynamicData;
 using DynamicData.Binding;
 using ImageSort.FileSystem;
+using ImageSort.Helpers;
 using ReactiveUI;
 using Splat;
 using System;
@@ -116,7 +117,7 @@ namespace ImageSort.ViewModels
                 {
                     var newFolderPath = System.IO.Path.Combine(Path, name);
 
-                    if (Children.Select(f => f.Path).Any(s => s == newFolderPath)) return Unit.Default;
+                    if (Children.Select(f => f.Path).Any(s => s.PathEquals(newFolderPath))) return Unit.Default;
 
                     fileSystem.CreateFolder(newFolderPath);
 
@@ -149,7 +150,7 @@ namespace ImageSort.ViewModels
         {
             RxApp.MainThreadScheduler.Schedule(() =>
             {
-                if (!subFolders.Items.Any(f => f.Path == e.FullPath))
+                if (!subFolders.Items.Any(f => f.Path.PathEquals(e.FullPath)))
                 {
                     subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, noParallel: noParallel) { Path = e.FullPath });
                 }
@@ -160,7 +161,7 @@ namespace ImageSort.ViewModels
         {
             RxApp.MainThreadScheduler.Schedule(() =>
             {
-                var item = subFolders.Items.FirstOrDefault(f => f.Path == e.FullPath);
+                var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.FullPath));
 
                 if (item != null) subFolders.Remove(item);
             });
@@ -170,7 +171,7 @@ namespace ImageSort.ViewModels
         {
             RxApp.MainThreadScheduler.Schedule(() =>
             {
-                var item = subFolders.Items.FirstOrDefault(f => f.Path == e.OldFullPath);
+                var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.OldFullPath));
 
                 if (item != null)
                 {
