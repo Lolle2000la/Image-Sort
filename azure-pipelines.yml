@@ -66,9 +66,7 @@ steps:
 - task: store-publish@0
   inputs:
     serviceEndpoint: 'Windows Dev Center'
-    nameType: 'AppName'
-    appName: 'Image sort'
+    appId: '9PGDK9WN8HG6'
     packagePath: '$(build.artifactStagingDirectory)\AppxPackages\*.appxupload'
     force: false
     skipPolling: false
-    isMandatoryUpdate: true
