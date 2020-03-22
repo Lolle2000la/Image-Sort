@@ -10,7 +10,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
+  solution: 'Image-Sort.sln'
   buildPlatform: 'x86'
   buildConfiguration: 'MSIX'
 
