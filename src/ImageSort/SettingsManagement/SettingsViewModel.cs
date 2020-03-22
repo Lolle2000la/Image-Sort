@@ -14,7 +14,7 @@ namespace ImageSort.SettingsManagement
 
         public SettingsViewModel(IEnumerable<SettingsGroupViewModelBase> settingsGroups = null)
         {
-            SettingsGroups = settingsGroups ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
+            SettingsGroups = settingsGroups ?? Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
         }
 
         public TGroup GetGroup<TGroup>() where TGroup : SettingsGroupViewModelBase
@@ -41,14 +41,14 @@ namespace ImageSort.SettingsManagement
 
             foreach (var storedGroup in dictionary)
             {
-                var group = SettingsGroups.FirstOrDefault(g => g.Name == storedGroup.Key);
+                var settingsGroup = SettingsGroups.FirstOrDefault(g => g.Name == storedGroup.Key);
 
                 foreach (var setting in storedGroup.Value)
                 {
-                    group.SettingsStore[setting.Key] = setting.Value;
+                    settingsGroup.SettingsStore[setting.Key] = setting.Value;
                 }
 
-                group.UpdatePropertiesFromStore();
+                settingsGroup.UpdatePropertiesFromStore();
             }
         }
     }
