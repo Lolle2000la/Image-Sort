@@ -49,3 +49,13 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'AppxPackages'
     publishLocation: 'Container'
+
+- task: store-publish@0
+  inputs:
+    serviceEndpoint: 'Windows Dev Center'
+    nameType: 'AppName'
+    appName: 'Image sort'
+    packagePath: '$(build.artifactStagingDirectory)\AppxPackages\*.appxupload'
+    force: false
+    skipPolling: false
+    isMandatoryUpdate: true
