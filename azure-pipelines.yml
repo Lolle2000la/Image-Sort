@@ -35,6 +35,7 @@ steps:
     versionSpec: '5.*'
 
 - task: PowerShell@2
+  displayName: 'Update Package.appxmanifest version'
   inputs:
     targetType: 'inline'
     script: |
