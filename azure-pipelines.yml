@@ -30,6 +30,10 @@ steps:
       Package.StoreAssociation.xml
     TargetFolder: '$(Build.SourcesDirectory)\src\ImageSort.MSIX'
 
+- task: UseGitVersion@5
+  inputs:
+    versionSpec: '5.2.5'
+
 - task: VSBuild@1
   inputs:
     solution: '$(solution)'
