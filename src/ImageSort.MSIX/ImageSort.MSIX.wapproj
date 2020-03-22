@@ -74,9 +74,9 @@
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.17134.0</TargetPlatformMinVersion>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <!--<AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>-->
     <EntryPointProjectUniqueName>..\ImageSort.WPF\ImageSort.WPF.csproj</EntryPointProjectUniqueName>
-    <PackageCertificateThumbprint>85DC5C7B3425D6E7F73B9D152FF13405603AAFE5</PackageCertificateThumbprint>
+    <!--<PackageCertificateThumbprint>85DC5C7B3425D6E7F73B9D152FF13405603AAFE5</PackageCertificateThumbprint>-->
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
