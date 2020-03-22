@@ -34,7 +34,7 @@ steps:
   inputs:
     solution: '$(solution)'
     platform: '$(buildPlatform)'
-    msbuildArgs: '/restore /p:AppxPackageDir="$(build.artifactStagingDirectory)\AppxPackages\\" /p:AppxBundlePlatforms="$(buildPlatform)" /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload'
+    msbuildArgs: '/restore /p:AppxPackageDir="$(build.artifactStagingDirectory)\AppxPackages\\" /p:AppxBundlePlatforms="$(buildPlatform)" /p:UapAppxPackageBuildMode=CI /p:AppxBundle=Always /p:UapAppxPackageBuildMode=StoreUpload'
     configuration: '$(buildConfiguration)'
 
 - task: VSTest@2
