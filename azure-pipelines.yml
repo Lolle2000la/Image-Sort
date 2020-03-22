@@ -28,18 +28,13 @@ steps:
   inputs:
     secureFile: 'Package.StoreAssociation.xml'
 
-- task: PowerShell@2
+- task: CopyFiles@2
   inputs:
-    targetType: 'inline'
-    script: |
-      $tempCertPath = $(Agent.WorkFolder)\_temp\ImageSort.MSIX_TemporaryKey.pfx
-      $storeAssociationPath = $(Agent.WorkFolder)\_temp\Package.StoreAssociation.xml
-
-      $tempCertName = Split-Path $tempCertPath -leaf
-      $storeAssociationName = Split-Path $storeAssociationPath -leaf
-      
-      Copy-Item -Path $tempCertPath -Destination .\src\ImageSort.MSIX\$tempCertName
-      Copy-Item -Path $storeAssociationPath -Destination .\src\ImageSort.MSIX\$storeAssociationName
+    SourceFolder: '$(Agent.WorkFolder)\_temp'
+    Contents: |
+      ImageSort.MSIX_TemporaryKey.pfx
+      Package.StoreAssociation.xml
+    TargetFolder: 'src\ImageSort.MSIX'
 
 - task: DotNetCoreCLI@2
   inputs:
