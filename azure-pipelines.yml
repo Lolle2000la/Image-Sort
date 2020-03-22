@@ -32,11 +32,14 @@ steps:
   inputs:
     targetType: 'inline'
     script: |
-      $tempCertName = Split-Path $tempCert.secureFilePath -leaf
-      $storeAssociationName = Split-Path $storeAssociation.secureFilePath -leaf
+      $tempCertPath = $(Agent.WorkFolder)\_temp\ImageSort.MSIX_TemporaryKey.pfx
+      $storeAssociationPath = $(Agent.WorkFolder)\_temp\Package.StoreAssociation.xml
+
+      $tempCertName = Split-Path $tempCertPath -leaf
+      $storeAssociationName = Split-Path $storeAssociationPath -leaf
       
-      Copy-Item -Path $tempCert.secureFilePath -Destination .\src\ImageSort.MSIX\$tempCertName
-      Copy-Item -Path $storeAssociation.secureFilePath -Destination .\src\ImageSort.MSIX\$storeAssociationName
+      Copy-Item -Path $tempCertPath -Destination .\src\ImageSort.MSIX\$tempCertName
+      Copy-Item -Path $storeAssociationPath -Destination .\src\ImageSort.MSIX\$storeAssociationName
 
 - task: DotNetCoreCLI@2
   inputs:
