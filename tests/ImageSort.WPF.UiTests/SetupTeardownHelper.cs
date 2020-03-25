@@ -38,6 +38,8 @@ namespace ImageSort.WPF.UiTests
 
             mainWindow.Focus();
 
+            while (currentPath == null || app == null || automation == null || mainWindow == null) { }
+
             ControlHelper.App = app;
             ControlHelper.MainWindow = mainWindow;
 
