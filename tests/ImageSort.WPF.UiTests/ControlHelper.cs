@@ -13,7 +13,7 @@ namespace ImageSort.WPF.UiTests
 
         public static void ClickButton(this AutomationElement element, string automationId)
         {
-            element.FindFirstDescendant(cf => cf.ByAutomationId("Rename"))?.AsButton().Click();
+            element.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton().Click();
 
             App.WaitWhileBusy();
             MainWindow.WaitUntilClickable();
