@@ -21,6 +21,8 @@ namespace ImageSort.WPF.UiTests
             var app = Application.Launch(new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\""));
             var automation = new UIA3Automation();
 
+            app.WaitWhileBusy();
+
             var mainWindow = Retry.WhileNull(() =>
             {
                 var allWindows = app.GetAllTopLevelWindows(automation);
@@ -31,6 +33,7 @@ namespace ImageSort.WPF.UiTests
             }, TimeSpan.FromSeconds(30), null, true).Result;
 
             app.WaitWhileBusy();
+            app.WaitWhileMainHandleIsMissing();
             mainWindow.WaitUntilClickable();
 
             mainWindow.Focus();
