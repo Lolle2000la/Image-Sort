@@ -18,6 +18,8 @@ namespace ImageSort.WPF.UiTests
         public AppFixture()
         {
             (CurrentPath, App, Automation, MainWindow) = SetupTeardownHelper.Setup();
+
+            if (MainWindow == null || App == null || Automation == null || CurrentPath == null) System.Diagnostics.Debug.WriteLine("Could not setup app fixture: One of the instances returned by setup is null");
         }
 
         public void Dispose()
