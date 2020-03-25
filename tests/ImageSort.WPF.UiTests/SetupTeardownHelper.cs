@@ -30,6 +30,14 @@ namespace ImageSort.WPF.UiTests
                 return null;
             }, TimeSpan.FromSeconds(30), null, true).Result;
 
+            app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
+
+            mainWindow.Focus();
+
+            ControlHelper.App = app;
+            ControlHelper.MainWindow = mainWindow;
+
             return (currentPath, app, automation, mainWindow);
         }
 
