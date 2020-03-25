@@ -21,7 +21,7 @@ build:
 
 after_build:
   - ps: >-
-      if ($env:APPVEYOR_REPO_TAG -eq "true") {
+      if ($env:APPVEYOR_REPO_TAG -eq "true" -or $env:APPVEYOR_REPO_BRANCH -eq "master") {
           cd .\src\ImageSort.WindowsSetup\;
           gitversion /updatewixversionfile | Out-String;
           MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
