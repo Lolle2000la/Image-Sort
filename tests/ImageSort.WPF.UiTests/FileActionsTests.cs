@@ -76,6 +76,10 @@ namespace ImageSort.WPF.UiTests
 
             // clean-up
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+
+            // unselect folder
+            Keyboard.Press(VirtualKeyShort.KEY_A);
+            Keyboard.Press(VirtualKeyShort.KEY_A);
         }
 
         [Fact(DisplayName = "Can delete images")]
