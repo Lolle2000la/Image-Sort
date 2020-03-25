@@ -31,6 +31,7 @@ namespace ImageSort.WPF.UiTests
             }, TimeSpan.FromSeconds(30), null, true).Result;
 
             app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
 
             mainWindow.Focus();
 

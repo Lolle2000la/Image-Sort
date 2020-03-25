@@ -38,10 +38,6 @@ namespace ImageSort.WPF.UiTests
             Assert.True(File.Exists(oldLocation));
             Assert.False(File.Exists(newLocation));
 
-            app.WaitWhileBusy();
-
-            mainWindow.Focus();
-
             // select folder
             Keyboard.Press(VirtualKeyShort.KEY_D);
 
@@ -89,10 +85,6 @@ namespace ImageSort.WPF.UiTests
 
             Assert.True(File.Exists(file));
 
-            app.WaitWhileBusy();
-
-            mainWindow.Focus();
-
             // delete image
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Delete"))?.AsButton().Click();
 
@@ -116,10 +108,6 @@ namespace ImageSort.WPF.UiTests
             var file = mainWindow.GetSelectedImage();
 
             Assert.True(File.Exists(file));
-
-            app.WaitWhileBusy();
-
-            mainWindow.Focus();
 
             mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Rename"))?.AsButton().Click();
 
