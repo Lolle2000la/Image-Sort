@@ -35,6 +35,9 @@ namespace ImageSort.WPF.UiTests
 
             mainWindow.Focus();
 
+            ControlHelper.App = app;
+            ControlHelper.MainWindow = mainWindow;
+
             return (currentPath, app, automation, mainWindow);
         }
 
