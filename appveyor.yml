@@ -48,7 +48,7 @@ deploy:
   - provider: GitHub
     release: Image Sort Prerelease v$(appveyor_build_version)
     tag: $(appveyor_build_version)
-    description: WARNING: Installing a prerelease build is not recommended in a production environment
+    description: 'WARNING: Installing a prerelease build is not recommended in a production environment'
     prerelease: true
     auth_token:
       secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
