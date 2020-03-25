@@ -30,6 +30,10 @@ namespace ImageSort.WPF.UiTests
                 return null;
             }, TimeSpan.FromSeconds(30), null, true).Result;
 
+            app.WaitWhileBusy();
+
+            mainWindow.Focus();
+
             return (currentPath, app, automation, mainWindow);
         }
 
