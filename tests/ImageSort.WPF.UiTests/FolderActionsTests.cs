@@ -24,7 +24,7 @@ namespace ImageSort.WPF.UiTests
             (currentPath, app, automation, mainWindow) = appFixture;
         }
 
-        [Fact(DisplayName = "Can create folders and reacts to its deletion", Skip = "Broken")]
+        [Fact(DisplayName = "Can create folders and reacts to its deletion")]
         public void CanCreateFolders()
         {
             const string newFolderName = "new folder";

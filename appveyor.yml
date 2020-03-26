@@ -19,9 +19,9 @@ build:
   parallel: true
   verbosity: minimal
 
-after_build:
+after_test:
   - ps: >-
-      if ($env:APPVEYOR_REPO_TAG -eq "true" -or $env:APPVEYOR_REPO_BRANCH -eq "master") {
+      if ($env:APPVEYOR_REPO_TAG -eq "true" -or ($env:APPVEYOR_REPO_BRANCH -eq "master" -and $env:APPVEYOR_REPO_TAG -eq "false")) {
           cd .\src\ImageSort.WindowsSetup\;
           gitversion /updatewixversionfile | Out-String;
           MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
@@ -55,3 +55,4 @@ deploy:
     artifact: Image Sort Installer
     on:
       branch: master
+      APPVEYOR_REPO_TAG: false
