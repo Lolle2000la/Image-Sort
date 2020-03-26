@@ -106,7 +106,7 @@ namespace ImageSort.WPF.UiTests
             Assert.True(File.Exists(file));
         }
 
-        [Fact(DisplayName = "Can rename images", Skip = "Broken")]
+        [Fact(DisplayName = "Can rename images")]
         public void CanRenameImages()
         {
             var file = mainWindow.GetSelectedImage();
