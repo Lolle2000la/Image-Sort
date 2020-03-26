@@ -21,7 +21,7 @@ build:
 
 after_test:
   - ps: >-
-      if ($env:APPVEYOR_REPO_TAG -eq "true" -or ($env:APPVEYOR_REPO_BRANCH -eq "master" -and $env:APPVEYOR_REPO_TAG -eq "false")) {
+      if ($env:APPVEYOR_REPO_TAG -eq "true") {
           cd .\src\ImageSort.WindowsSetup\;
           gitversion /updatewixversionfile | Out-String;
           MSBuild /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
@@ -44,15 +44,3 @@ deploy:
     artifact: Image Sort Installer
     on:
       APPVEYOR_REPO_TAG: true
-
-  - provider: GitHub
-    release: Image Sort Prerelease v$(appveyor_build_version)
-    tag: $(appveyor_build_version)
-    description: 'WARNING: Installing a prerelease build is not recommended in a production environment'
-    prerelease: true
-    auth_token:
-      secure: Gka4zhwdCzAkR5hGyS988om/2MSNTP+BZDilT87BtI1jA7NYq9x0BB1cBUO3gPKa
-    artifact: Image Sort Installer
-    on:
-      branch: master
-      APPVEYOR_REPO_TAG: false
