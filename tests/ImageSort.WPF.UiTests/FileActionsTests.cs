@@ -48,7 +48,7 @@ namespace ImageSort.WPF.UiTests
             var selectedImage = mainWindow.GetSelectedImage();
 
             // move image
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Move"))?.AsButton().Click();
+            mainWindow.ClickButton("Move");
 
             app.WaitWhileBusy();
 
@@ -56,9 +56,7 @@ namespace ImageSort.WPF.UiTests
             Assert.True(File.Exists(newLocation));
 
             // undo
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
-
-            app.WaitWhileBusy();
+            mainWindow.ClickButton("Undo");
 
             // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
             Assert.Single(mainWindow.GetImages().Where(i => i == selectedImage));
@@ -67,15 +65,13 @@ namespace ImageSort.WPF.UiTests
             Assert.False(File.Exists(newLocation));
 
             // redo
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Redo"))?.AsButton().Click();
-
-            app.WaitWhileBusy();
+            mainWindow.ClickButton("Redo");
 
             Assert.False(File.Exists(oldLocation));
             Assert.True(File.Exists(newLocation));
 
             // clean-up
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+            mainWindow.ClickButton("Undo");
 
             // unselect folder
             Keyboard.Press(VirtualKeyShort.KEY_A);
@@ -90,20 +86,48 @@ namespace ImageSort.WPF.UiTests
             Assert.True(File.Exists(file));
 
             // delete image
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Delete"))?.AsButton().Click();
-
-            app.WaitWhileBusy();
-            mainWindow.WaitUntilClickable();
+            mainWindow.ClickButton("Delete");
 
             Assert.False(File.Exists(file));
 
             // clean-up
-            mainWindow.FindFirstDescendant(cf => cf.ByAutomationId("Undo"))?.AsButton().Click();
+            mainWindow.ClickButton("Undo");
 
             // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
             Assert.Single(mainWindow.GetImages().Where(i => i == file));
 
             Assert.True(File.Exists(file));
+        }
+
+        [Fact(DisplayName = "Can rename images")]
+        public void CanRenameImages()
+        {
+            app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
+
+            var file = mainWindow.GetSelectedImage();
+
+            Assert.True(File.Exists(file));
+
+            mainWindow.ClickButton("Rename");
+
+            Keyboard.Type("mock ren");
+            Keyboard.Press(VirtualKeyShort.ENTER);
+
+            app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
+
+            Assert.False(File.Exists(file));
+            Assert.Contains("mock ren", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
+
+            // clean-up
+            mainWindow.ClickButton("Undo");
+
+            // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
+            Assert.Single(mainWindow.GetImages().Where(i => i == file));
+
+            Assert.True(File.Exists(file));
+            Assert.DoesNotContain("mock ren", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
         }
     }
 }
