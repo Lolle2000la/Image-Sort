@@ -105,5 +105,33 @@ namespace ImageSort.WPF.UiTests
 
             Assert.True(File.Exists(file));
         }
+
+        [Fact(DisplayName = "Can rename images", Skip = "Broken")]
+        public void CanRenameImages()
+        {
+            var file = mainWindow.GetSelectedImage();
+
+            Assert.True(File.Exists(file));
+
+            mainWindow.ClickButton("Rename");
+
+            Keyboard.Type("mock renamed");
+            Keyboard.Press(VirtualKeyShort.ENTER);
+
+            app.WaitWhileBusy();
+            mainWindow.WaitUntilClickable();
+
+            Assert.False(File.Exists(file));
+            Assert.Contains("mock renamed", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
+
+            // clean-up
+            mainWindow.ClickButton("Undo");
+
+            // make sure the image is not added back twice, for example by the FileSystemWatcher in addition to the code itself
+            Assert.Single(mainWindow.GetImages().Where(i => i == file));
+
+            Assert.True(File.Exists(file));
+            Assert.DoesNotContain("mock renamed", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
+        }
     }
 }
