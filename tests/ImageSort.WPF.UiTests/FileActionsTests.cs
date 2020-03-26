@@ -122,7 +122,7 @@ namespace ImageSort.WPF.UiTests
             mainWindow.WaitUntilClickable();
 
             Assert.False(File.Exists(file));
-            Assert.Contains("mock renamed", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
+            Assert.Contains("mock ren", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
 
             // clean-up
             mainWindow.ClickButton("Undo");
@@ -131,7 +131,7 @@ namespace ImageSort.WPF.UiTests
             Assert.Single(mainWindow.GetImages().Where(i => i == file));
 
             Assert.True(File.Exists(file));
-            Assert.DoesNotContain("mock renamed", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
+            Assert.DoesNotContain("mock ren", Directory.EnumerateFiles(currentPath).Select(p => Path.GetFileNameWithoutExtension(p)));
         }
     }
 }
