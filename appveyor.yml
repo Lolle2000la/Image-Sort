@@ -19,7 +19,7 @@ build:
   parallel: true
   verbosity: minimal
 
-after_build:
+after_test:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true" -or $env:APPVEYOR_REPO_BRANCH -eq "master") {
           cd .\src\ImageSort.WindowsSetup\;
