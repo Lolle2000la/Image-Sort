@@ -28,12 +28,14 @@ namespace ImageSort.WPF.Views
             if (windowPosition.ScreenCount != screenCount)
             {
                 windowPosition.ScreenCount = screenCount;
-                return;
+            }
+            else
+            {
+                window.Left = windowPosition.Left;
+                window.Top = windowPosition.Top;
             }
 
             window.WindowState = windowPosition.IsMaximized ? WindowState.Maximized : WindowState.Normal;
-            window.Left = windowPosition.Left;
-            window.Top = windowPosition.Top;
             window.Height = windowPosition.Height;
             window.Width = windowPosition.Width;
         }
