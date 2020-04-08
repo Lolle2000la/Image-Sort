@@ -22,9 +22,20 @@ namespace ImageSort.WPF.Views
 
             if (windowPosition == null) return;
 
+            var screenCount = System.Windows.Forms.Screen.AllScreens.Length;
+
+            // ensure when the number of screen was changed the window will still be visible
+            if (windowPosition.ScreenCount != screenCount)
+            {
+                windowPosition.ScreenCount = screenCount;
+            }
+            else
+            {
+                window.Left = windowPosition.Left;
+                window.Top = windowPosition.Top;
+            }
+
             window.WindowState = windowPosition.IsMaximized ? WindowState.Maximized : WindowState.Normal;
-            window.Left = windowPosition.Left;
-            window.Top = windowPosition.Top;
             window.Height = windowPosition.Height;
             window.Width = windowPosition.Width;
         }
@@ -43,6 +54,9 @@ namespace ImageSort.WPF.Views
             windowPosition.Top = (int) window.Top;
             windowPosition.Height = (int) window.Height;
             windowPosition.Width = (int) window.Width;
+
+            // record the screen count at the time.
+            windowPosition.ScreenCount = System.Windows.Forms.Screen.AllScreens.Length;
         }
     }
 }

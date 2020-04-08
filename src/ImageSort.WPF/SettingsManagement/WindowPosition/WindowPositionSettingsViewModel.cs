@@ -52,5 +52,13 @@ namespace ImageSort.WPF.SettingsManagement.WindowPosition
             get => _width;
             set => this.RaiseAndSetIfChanged(ref _width, value);
         }
+
+        // used to ensure that when the window count changes the window will still be visible (e.g. when the display count changes everything will be reset)
+        private int _screenCount = 0;
+        public int ScreenCount
+        {
+            get => _screenCount;
+            set => this.RaiseAndSetIfChanged(ref _screenCount, value);
+        }
     }
 }
