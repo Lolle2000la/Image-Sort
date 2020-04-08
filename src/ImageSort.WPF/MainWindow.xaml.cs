@@ -5,6 +5,7 @@ using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
+using ImageSort.WPF.Views;
 using ReactiveUI;
 using Splat;
 using System;
@@ -49,6 +50,12 @@ namespace ImageSort.WPF
             var settings = Locator.Current.GetService<SettingsViewModel>();
 
             Closed += async (o, e) => await settings.SaveAsync().ConfigureAwait(false);
+
+            // restore last window state
+            this.RestoreWindowState();
+
+            // ensure window state is saved when closed
+            Closed += (o, e) => this.SaveWindowState();
 
             this.WhenActivated(disposableRegistration =>
             {
