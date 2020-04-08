@@ -36,6 +36,9 @@ namespace ImageSort.WPF.Views
             if (windowPosition == null) return;
 
             windowPosition.IsMaximized = window.WindowState == WindowState.Maximized;
+
+            if (window.WindowState == WindowState.Maximized) window.WindowState = WindowState.Normal;
+
             windowPosition.Left = (int) window.Left;
             windowPosition.Top = (int) window.Top;
             windowPosition.Height = (int) window.Height;
