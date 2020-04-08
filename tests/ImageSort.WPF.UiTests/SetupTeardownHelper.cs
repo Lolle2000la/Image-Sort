@@ -18,6 +18,9 @@ namespace ImageSort.WPF.UiTests
 
             CopyFolder(Path.GetFullPath("MockState"), currentPath);
 
+            // ensure previous config file is removed
+            if (File.Exists(@".\ui_test_config.json")) File.Delete(@".\ui_test_config.json");
+
             var procInfo = new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\"");
 
             // ensures the app is not affected by and does not affect global config file
