@@ -3,14 +3,16 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows;
 
 namespace ImageSort.WPF.SettingsManagement.WindowPosition
 {
-    public class WindowPositionSettingsViewModel : SettingsGroupViewModelBase
+    public class WindowPositionSettingsViewModel<TWindow> : SettingsGroupViewModelBase
+        where TWindow : Window
     {
-        public override string Name => "WindowPosition";
+        public override string Name => typeof(TWindow).Name;
 
-        public override string Header => "Window position";
+        public override string Header => typeof(TWindow).Name;
 
         public override bool IsVisible => false;
 
