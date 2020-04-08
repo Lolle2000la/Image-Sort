@@ -37,18 +37,18 @@ namespace ImageSort.WPF.SettingsManagement.WindowPosition
         }
 
         // size
-        private int _width = 100;
-        public int Width
-        {
-            get => _width;
-            set => this.RaiseAndSetIfChanged(ref _width, value);
-        }
-
-        private int _height = 100;
+        private int _height = 600;
         public int Height
         {
             get => _height;
             set => this.RaiseAndSetIfChanged(ref _height, value);
+        }
+
+        private int _width = 1000;
+        public int Width
+        {
+            get => _width;
+            set => this.RaiseAndSetIfChanged(ref _width, value);
         }
     }
 }
