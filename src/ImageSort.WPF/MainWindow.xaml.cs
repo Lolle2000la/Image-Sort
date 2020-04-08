@@ -51,14 +51,14 @@ namespace ImageSort.WPF
 
             Closed += async (o, e) => await settings.SaveAsync().ConfigureAwait(false);
 
-            // restore last window state
-            this.RestoreWindowState();
-
-            // ensure window state is saved when closing
-            Closing += (o, e) => this.SaveWindowState();
-
             this.WhenActivated(disposableRegistration =>
             {
+                // restore last window state
+                this.RestoreWindowState();
+
+                // ensure window state is saved when closing
+                Closing += (o, e) => this.SaveWindowState();
+
                 this.Bind(ViewModel,
                     vm => vm.Folders,
                     view => view.Folders.ViewModel)
