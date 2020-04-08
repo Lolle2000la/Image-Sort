@@ -54,8 +54,8 @@ namespace ImageSort.WPF
             // restore last window state
             this.RestoreWindowState();
 
-            // ensure window state is saved when closed
-            Closed += (o, e) => this.SaveWindowState();
+            // ensure window state is saved when closing
+            Closing += (o, e) => this.SaveWindowState();
 
             this.WhenActivated(disposableRegistration =>
             {
