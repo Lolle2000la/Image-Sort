@@ -5,6 +5,7 @@ using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
+using ImageSort.WPF.Views;
 using ReactiveUI;
 using Splat;
 using System;
@@ -52,6 +53,12 @@ namespace ImageSort.WPF
 
             this.WhenActivated(disposableRegistration =>
             {
+                // restore last window state
+                this.RestoreWindowState();
+
+                // ensure window state is saved when closing
+                Closing += (o, e) => this.SaveWindowState();
+
                 this.Bind(ViewModel,
                     vm => vm.Folders,
                     view => view.Folders.ViewModel)

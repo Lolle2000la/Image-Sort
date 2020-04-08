@@ -18,7 +18,15 @@ namespace ImageSort.WPF.UiTests
 
             CopyFolder(Path.GetFullPath("MockState"), currentPath);
 
-            var app = Application.Launch(new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\""));
+            // ensure previous config file is removed
+            if (File.Exists(@".\ui_test_config.json")) File.Delete(@".\ui_test_config.json");
+
+            var procInfo = new ProcessStartInfo("Image Sort.exe", $"\"{currentPath}\"");
+
+            // ensures the app is not affected by and does not affect global config file
+            procInfo.EnvironmentVariables.Add("UI_TEST", "true");
+
+            var app = Application.Launch(procInfo);
             var automation = new UIA3Automation();
 
             app.WaitWhileBusy();
