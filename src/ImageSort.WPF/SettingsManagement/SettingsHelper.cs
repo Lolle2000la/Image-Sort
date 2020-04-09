@@ -37,7 +37,12 @@ namespace ImageSort.WPF.SettingsManagement
 
             using var file = File.Create(ConfigFileLocation);
 
-            await JsonSerializer.SerializeAsync(file, settings.AsDictionary()).ConfigureAwait(false);
+            var serializerOptions = new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            await JsonSerializer.SerializeAsync(file, settings.AsDictionary(), options: serializerOptions).ConfigureAwait(false);
         }
 
         public static void Restore(this SettingsViewModel settings)
@@ -52,18 +57,16 @@ namespace ImageSort.WPF.SettingsManagement
             {
                 foreach (var config in new Dictionary<string, object>(configGroup.Value))
                 {
-                    var everyPossibleGetterMethod = typeof(JsonElement).GetMethods().Where(m => m.Name.StartsWith("TryGet", StringComparison.Ordinal));
-
-                    object JsonElementToValue(JsonElement element)
+                    static object JsonElementToValue(JsonElement element)
                     {
                         return element switch
                         {
-                            JsonElement { ValueKind: JsonValueKind.False } => false,
-                            JsonElement { ValueKind: JsonValueKind.True } => true,
-                            JsonElement { ValueKind: JsonValueKind.String } e => e.GetString(),
-                            JsonElement { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
-                            JsonElement { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
-                            JsonElement { ValueKind: JsonValueKind.Object } e => new Hotkey(
+                            { ValueKind: JsonValueKind.False } => false,
+                            { ValueKind: JsonValueKind.True } => true,
+                            { ValueKind: JsonValueKind.String } e => e.GetString(),
+                            { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
+                            { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
+                            { ValueKind: JsonValueKind.Object } e => new Hotkey(
                                 (Key) Enum.ToObject(typeof(Key), e.EnumerateObject().First(o => o.Name == "Key").Value.GetInt32()),
                                 (ModifierKeys) Enum.ToObject(typeof(ModifierKeys), e.EnumerateObject().First(o => o.Name == "Modifiers").Value.GetInt32())),
                             _ => null
