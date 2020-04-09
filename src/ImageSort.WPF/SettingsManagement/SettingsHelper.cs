@@ -57,7 +57,7 @@ namespace ImageSort.WPF.SettingsManagement
             {
                 foreach (var config in new Dictionary<string, object>(configGroup.Value))
                 {
-                    object JsonElementToValue(JsonElement element)
+                    static object JsonElementToValue(JsonElement element)
                     {
                         return element switch
                         {
