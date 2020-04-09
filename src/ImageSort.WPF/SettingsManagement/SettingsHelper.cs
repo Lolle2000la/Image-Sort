@@ -57,8 +57,6 @@ namespace ImageSort.WPF.SettingsManagement
             {
                 foreach (var config in new Dictionary<string, object>(configGroup.Value))
                 {
-                    var everyPossibleGetterMethod = typeof(JsonElement).GetMethods().Where(m => m.Name.StartsWith("TryGet", StringComparison.Ordinal));
-
                     object JsonElementToValue(JsonElement element)
                     {
                         return element switch
