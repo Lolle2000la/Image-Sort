@@ -23,7 +23,7 @@
         </StackPanel.Resources>
         
         <GroupBox Header="{x:Static text:Text.Appearance}">
-            <ToggleButton Content="{x:Static text:Text.DarkMode}" x:Name="DarkMode" Margin="{adonisUi:Space 1}" />
+            <ToggleButton Content="{x:Static text:Text.DarkMode}" x:Name="DarkMode" Margin="{adonisUi:Space 1}" Style="{DynamicResource {x:Static adonisUi:Styles.DefaultToAccentToggleButton}}"/>
         </GroupBox>
 
         <GroupBox Header="{x:Static text:Text.Updates}">
