@@ -208,7 +208,7 @@ namespace ImageSort.WPF
         {
             interceptReservedKeys = false;
 
-            var target = Folders.Folders/*.ItemContainerGenerator.ContainerFromItem(Folders.Folders.Items[0]) as System.Windows.Controls.TreeViewItem*/;
+            var target = Folders.Folders;
             var routedEvent = Keyboard.PreviewKeyDownEvent; // Event to send
 
             target.Focus();
@@ -243,6 +243,7 @@ namespace ImageSort.WPF
 
             keyBindings.Show();
 
+            // this opens the window on the same screen and makes sure it is not higher than the screen (out of bounds)
             var windowInteropHelper = new WindowInteropHelper(this);
             var screen = System.Windows.Forms.Screen.FromHandle(windowInteropHelper.Handle);
 
