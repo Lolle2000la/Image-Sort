@@ -24,7 +24,7 @@
     <PackageReference Include="ReactiveUI" Version="11.4.1" />
     <PackageReference Include="ReactiveUI.Events.WPF" Version="11.4.1" />
     <PackageReference Include="ReactiveUI.WPF" Version="11.4.1" />
-    <PackageReference Include="GitVersionTask" Version="5.3.3">
+    <PackageReference Include="GitVersionTask" Version="5.3.4">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
   </ItemGroup>
