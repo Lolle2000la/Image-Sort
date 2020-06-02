@@ -7,7 +7,6 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
@@ -56,6 +55,9 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> Pin { get; }
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
+
+        public ReactiveCommand<Unit, Unit> MoveSelectedPinnedFolderUp { get; }
+        public ReactiveCommand<Unit, Unit> MoveSelectedPinnedFolderDown { get; }
 
         public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
@@ -117,6 +119,28 @@ namespace ImageSort.ViewModels
 
                 if (pinned != null) pinnedFolders.Remove(pinned);
             }, canUnpinSelectedExecute);
+
+            var canMovePinnedFolderUp = this.WhenAnyValue(x => x.Selected)
+                .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) > 0);
+
+            MoveSelectedPinnedFolderUp = ReactiveCommand.Create(() =>
+            {
+                int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
+
+                pinnedFolders.Remove(Selected);
+                pinnedFolders.Insert(pinnedIndex - 1, Selected);
+            }, canMovePinnedFolderUp);
+
+            var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
+                .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 2);
+
+            MoveSelectedPinnedFolderDown = ReactiveCommand.Create(() =>
+            {
+                int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
+
+                pinnedFolders.Remove(Selected);
+                pinnedFolders.Insert(pinnedIndex + 1, Selected);
+            }, canMovePinnedFolderDown);
 
             // make many above queries work
             pinnedFolders.Add(null);
