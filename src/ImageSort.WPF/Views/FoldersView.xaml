@@ -28,8 +28,8 @@
             <Button x:Name="Unpin" Content="{x:Static text:Text.Unpin}" />
             <Button x:Name="CreateFolder" Content="{x:Static text:Text.CreateFolder}" />
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="MoveSelectedPinnedFolderUp" Content="↑"/>
-                <Button x:Name="MoveSelectedPinnedFolderDown" Content="↓"/>
+                <Button x:Name="MoveSelectedPinnedFolderUp" Content="↑" ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderUp}" />
+                <Button x:Name="MoveSelectedPinnedFolderDown" Content="↓" ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderDown}" />
             </StackPanel>
         </WrapPanel>
 

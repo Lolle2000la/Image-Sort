@@ -273,4 +273,10 @@ Wollen Sie updaten?</value>
   <data name="Appearance" xml:space="preserve">
     <value>Aussehen</value>
   </data>
+  <data name="MoveSelectedPinnedFolderDown" xml:space="preserve">
+    <value>Den ausgewählten, angepinnten Ordner nach unten verschieben</value>
+  </data>
+  <data name="MoveSelectedPinnedFolderUp" xml:space="preserve">
+    <value>Den ausgewählten, angepinnten Ordner nach oben verschieben</value>
+  </data>
 </root>

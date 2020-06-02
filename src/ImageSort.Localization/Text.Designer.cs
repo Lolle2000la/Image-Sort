@@ -287,6 +287,24 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Move the selected pinned folder down.
+        /// </summary>
+        public static string MoveSelectedPinnedFolderDown {
+            get {
+                return ResourceManager.GetString("MoveSelectedPinnedFolderDown", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Move the selected pinned folder up.
+        /// </summary>
+        public static string MoveSelectedPinnedFolderUp {
+            get {
+                return ResourceManager.GetString("MoveSelectedPinnedFolderUp", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to What name should the folder have?.
         /// </summary>
         public static string NewFolderPromptText {
