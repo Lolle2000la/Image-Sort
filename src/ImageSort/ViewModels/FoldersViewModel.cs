@@ -126,7 +126,7 @@ namespace ImageSort.ViewModels
             {
                 int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
-                pinnedFolders.Move(pinnedIndex, pinnedIndex - 1);
+                if (pinnedIndex > 0) pinnedFolders.Move(pinnedIndex, pinnedIndex - 1);
             }, canMovePinnedFolderUp);
 
             var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
@@ -136,7 +136,7 @@ namespace ImageSort.ViewModels
             {
                 int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
-                pinnedFolders.Move(pinnedIndex, pinnedIndex + 1);
+                if (pinnedIndex < pinnedFolders.Count - 1) pinnedFolders.Move(pinnedIndex, pinnedIndex + 1);
             }, canMovePinnedFolderDown);
 
             // make many above queries work
