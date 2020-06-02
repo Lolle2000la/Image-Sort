@@ -117,24 +117,14 @@ namespace ImageSort.WPF.Views
                 ViewModel.PinnedFolders.ActOnEveryObject(f =>
                 {
                     if (f == null) return;
-                    if (pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
-
-                    pinnedFolders.Add(f.Path);
-
-                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
+                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
                 },
                 f =>
                 {
                     if (f == null) return;
-                    if (!pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
-
-                    pinnedFolders.Remove(f.Path);
-
-                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
+                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
                 });
             });
         }
