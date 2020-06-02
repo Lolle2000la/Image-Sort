@@ -91,6 +91,16 @@ namespace ImageSort.WPF.Views
                     view => view.CreateFolder)
                     .DisposeWith(disposableRegistration);
 
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderUp,
+                    view => view.MoveSelectedPinnedFolderUp)
+                    .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderDown,
+                    view => view.MoveSelectedPinnedFolderDown)
+                    .DisposeWith(disposableRegistration);
+
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)
                     .Select(_ => Unit.Default)

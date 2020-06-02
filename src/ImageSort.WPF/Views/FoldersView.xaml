@@ -27,6 +27,10 @@
             <Button x:Name="PinSelected" Content="{x:Static text:Text.PinSelected}" />
             <Button x:Name="Unpin" Content="{x:Static text:Text.Unpin}" />
             <Button x:Name="CreateFolder" Content="{x:Static text:Text.CreateFolder}" />
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="MoveSelectedPinnedFolderUp" Content="↑"/>
+                <Button x:Name="MoveSelectedPinnedFolderDown" Content="↓"/>
+            </StackPanel>
         </WrapPanel>
 
         <TreeView x:Name="Folders" Grid.Row="1">
