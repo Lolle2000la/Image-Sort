@@ -120,6 +120,7 @@ namespace ImageSort.ViewModels
             }, canUnpinSelectedExecute);
 
             var canMovePinnedFolderUp = this.WhenAnyValue(x => x.Selected)
+                .CombineLatest(PinnedFolders.ToObservableChangeSet(), (f, _) => f)
                 .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) > 0);
 
             MoveSelectedPinnedFolderUp = ReactiveCommand.Create(() =>
@@ -130,6 +131,7 @@ namespace ImageSort.ViewModels
             }, canMovePinnedFolderUp);
 
             var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
+                .CombineLatest(PinnedFolders.ToObservableChangeSet(), (f, _) => f)
                 .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 1);
 
             MoveSelectedPinnedFolderDown = ReactiveCommand.Create(() =>
