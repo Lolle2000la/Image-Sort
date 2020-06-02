@@ -273,4 +273,10 @@ Do you want to update?</value>
   <data name="Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
+  <data name="MoveSelectedPinnedFolderDown" xml:space="preserve">
+    <value>Move the selected pinned folder down</value>
+  </data>
+  <data name="MoveSelectedPinnedFolderUp" xml:space="preserve">
+    <value>Move the selected pinned folder up</value>
+  </data>
 </root>

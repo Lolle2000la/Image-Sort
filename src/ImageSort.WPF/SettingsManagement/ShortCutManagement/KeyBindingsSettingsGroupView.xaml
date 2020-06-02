@@ -61,6 +61,8 @@
                         <local:HotkeyEditor Description="{x:Static text:Text.Pin}" x:Name="Pin"/>
                         <local:HotkeyEditor Description="{x:Static text:Text.PinSelected}" x:Name="PinSelected"/>
                         <local:HotkeyEditor Description="{x:Static text:Text.Unpin}" x:Name="Unpin"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderUp}" x:Name="MoveSelectedPinnedFolderUp"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderDown}" x:Name="MoveSelectedPinnedFolderDown"/>
                     </StackPanel>
                 </GroupBox>
 

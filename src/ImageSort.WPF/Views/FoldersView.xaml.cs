@@ -91,6 +91,16 @@ namespace ImageSort.WPF.Views
                     view => view.CreateFolder)
                     .DisposeWith(disposableRegistration);
 
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderUp,
+                    view => view.MoveSelectedPinnedFolderUp)
+                    .DisposeWith(disposableRegistration);
+
+                this.BindCommand(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderDown,
+                    view => view.MoveSelectedPinnedFolderDown)
+                    .DisposeWith(disposableRegistration);
+
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)
                     .Select(_ => Unit.Default)
@@ -107,24 +117,14 @@ namespace ImageSort.WPF.Views
                 ViewModel.PinnedFolders.ActOnEveryObject(f =>
                 {
                     if (f == null) return;
-                    if (pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
-
-                    pinnedFolders.Add(f.Path);
-
-                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
+                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
                 },
                 f =>
                 {
                     if (f == null) return;
-                    if (!pinnedFolderSettings.PinnedFolders.Contains(f.Path)) return;
 
-                    var pinnedFolders = new List<string>(pinnedFolderSettings.PinnedFolders);
-
-                    pinnedFolders.Remove(f.Path);
-
-                    pinnedFolderSettings.PinnedFolders = pinnedFolders;
+                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
                 });
             });
         }

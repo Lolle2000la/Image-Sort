@@ -159,6 +159,22 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             set => this.RaiseAndSetIfChanged(ref _unpin, value);
         }
 
+        private Hotkey _moveSelectedPinnedFolderUp = new Hotkey(Key.W, ModifierKeys.Control);
+
+        public Hotkey MoveSelectedPinnedFolderUp
+        {
+            get => _moveSelectedPinnedFolderUp;
+            set => this.RaiseAndSetIfChanged(ref _moveSelectedPinnedFolderUp, value);
+        }
+
+        private Hotkey _moveSelectedPinnedFolderDown = new Hotkey(Key.S, ModifierKeys.Control);
+
+        public Hotkey MoveSelectedPinnedFolderDown
+        {
+            get => _moveSelectedPinnedFolderDown;
+            set => this.RaiseAndSetIfChanged(ref _moveSelectedPinnedFolderDown, value);
+        }
+
         // focus image search box
         private Hotkey _searchImages = new Hotkey(Key.I, ModifierKeys.None);
 

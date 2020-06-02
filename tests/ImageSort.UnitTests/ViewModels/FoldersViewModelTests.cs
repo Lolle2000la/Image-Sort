@@ -1,6 +1,7 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.ViewModels;
 using Moq;
+using System;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -11,12 +12,19 @@ namespace ImageSort.UnitTests.ViewModels
     public class FoldersViewModelTests
     {
         private const string MockPath = @"C:\SomePath\";
+        private readonly IFileSystem fileSystemMock;
+
+        public FoldersViewModelTests()
+        {
+            var fsMock = new Mock<IFileSystem>();
+            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Array.Empty<string>());
+
+            fileSystemMock = fsMock.Object;
+        }
 
         private FolderTreeItemViewModel CreateMock(string path)
         {
-            var fsMock = new Mock<IFileSystem>();
-
-            return new FolderTreeItemViewModel(fsMock.Object)
+            return new FolderTreeItemViewModel(fileSystemMock)
             {
                 Path = path
             };
@@ -185,6 +193,72 @@ namespace ImageSort.UnitTests.ViewModels
             };
 
             Assert.True(foldersVM.CurrentFolder.IsCurrentFolder);
+        }
+
+        [Fact(DisplayName = "Moves the selected pinned folder up correctly if possible")]
+        public async Task MovesSelectedFolderUp()
+        {
+            var foldersVM = new FoldersViewModel(fileSystemMock)
+            {
+                CurrentFolder = CreateMock(MockPath)
+            };
+
+            var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+
+            foreach (var pinnedFolder in pinnedFolders)
+            {
+                var handler = foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
+
+                await foldersVM.Pin.Execute();
+
+                handler.Dispose();
+            }
+
+            foldersVM.Selected = foldersVM.PinnedFolders.ElementAt(0);
+
+            Assert.False(await foldersVM.MoveSelectedPinnedFolderUp.CanExecute.FirstAsync());
+
+            var selected = foldersVM.PinnedFolders.ElementAt(1);
+            foldersVM.Selected = selected;
+
+            Assert.True(await foldersVM.MoveSelectedPinnedFolderUp.CanExecute.FirstAsync());
+
+            await foldersVM.MoveSelectedPinnedFolderUp.Execute();
+
+            Assert.Equal(selected, foldersVM.PinnedFolders.ElementAt(0));
+        }
+
+        [Fact(DisplayName = "Moves the selected pinned folder down correctly if possible")]
+        public async Task MovesSelectedFolderDown()
+        {
+            var foldersVM = new FoldersViewModel(fileSystemMock)
+            {
+                CurrentFolder = CreateMock(MockPath)
+            };
+
+            var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+
+            foreach (var pinnedFolder in pinnedFolders)
+            {
+                var handler = foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
+
+                await foldersVM.Pin.Execute();
+
+                handler.Dispose();
+            }
+
+            foldersVM.Selected = foldersVM.PinnedFolders.ElementAt(2);
+
+            Assert.False(await foldersVM.MoveSelectedPinnedFolderDown.CanExecute.FirstAsync());
+
+            var selected = foldersVM.PinnedFolders.ElementAt(1);
+            foldersVM.Selected = selected;
+
+            Assert.True(await foldersVM.MoveSelectedPinnedFolderDown.CanExecute.FirstAsync());
+
+            await foldersVM.MoveSelectedPinnedFolderDown.Execute();
+
+            Assert.Equal(selected, foldersVM.PinnedFolders.ElementAt(2));
         }
     }
 }

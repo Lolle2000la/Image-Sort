@@ -104,6 +104,16 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
                     view => view.Unpin.Hotkey)
                     .DisposeWith(disposableRegistration);
 
+                this.Bind(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderUp,
+                    view => view.MoveSelectedPinnedFolderUp.Hotkey)
+                    .DisposeWith(disposableRegistration);
+
+                this.Bind(ViewModel,
+                    vm => vm.MoveSelectedPinnedFolderDown,
+                    view => view.MoveSelectedPinnedFolderDown.Hotkey)
+                    .DisposeWith(disposableRegistration);
+
                 // folder selection
                 this.Bind(ViewModel,
                     vm => vm.FolderUp,

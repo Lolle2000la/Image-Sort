@@ -187,6 +187,14 @@ namespace ImageSort.WPF
                     .InvokeCommand(ViewModel.Folders.UnpinSelected)
                     .DisposeWith(disposableRegistration);
 
+                KeyPressed(() => keyBindings.MoveSelectedPinnedFolderUp)
+                    .InvokeCommand(ViewModel.Folders.MoveSelectedPinnedFolderUp)
+                    .DisposeWith(disposableRegistration);
+
+                KeyPressed(() => keyBindings.MoveSelectedPinnedFolderDown)
+                    .InvokeCommand(ViewModel.Folders.MoveSelectedPinnedFolderDown)
+                    .DisposeWith(disposableRegistration);
+
                 // bind 'i' to focusing the images search box
                 KeyPressed(() => keyBindings.SearchImages)
                     .Subscribe(_ => Images.SearchTerm.Focus())
