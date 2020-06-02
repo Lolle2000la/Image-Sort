@@ -130,8 +130,7 @@ namespace ImageSort.ViewModels
             }, canMovePinnedFolderUp);
 
             var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
-                .Select(s => pinnedFolders.Items.Contains(s) 
-                && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 2);
+                .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 1);
 
             MoveSelectedPinnedFolderDown = ReactiveCommand.Create(() =>
             {

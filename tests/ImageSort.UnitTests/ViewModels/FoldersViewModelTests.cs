@@ -249,14 +249,14 @@ namespace ImageSort.UnitTests.ViewModels
 
             foldersVM.Selected = foldersVM.PinnedFolders.ElementAt(2);
 
-            Assert.False(await foldersVM.MoveSelectedPinnedFolderUp.CanExecute.FirstAsync());
+            Assert.False(await foldersVM.MoveSelectedPinnedFolderDown.CanExecute.FirstAsync());
 
             var selected = foldersVM.PinnedFolders.ElementAt(1);
             foldersVM.Selected = selected;
 
-            Assert.True(await foldersVM.MoveSelectedPinnedFolderUp.CanExecute.FirstAsync());
+            Assert.True(await foldersVM.MoveSelectedPinnedFolderDown.CanExecute.FirstAsync());
 
-            await foldersVM.MoveSelectedPinnedFolderUp.Execute();
+            await foldersVM.MoveSelectedPinnedFolderDown.Execute();
 
             Assert.Equal(selected, foldersVM.PinnedFolders.ElementAt(2));
         }
