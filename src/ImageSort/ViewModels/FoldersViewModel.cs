@@ -70,7 +70,6 @@ namespace ImageSort.ViewModels
             pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
                 .ObserveOn(RxApp.MainThreadScheduler)
-                .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
                 .Bind(out _pinnedFolders)
                 .Subscribe();
 
@@ -127,19 +126,18 @@ namespace ImageSort.ViewModels
             {
                 int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
-                pinnedFolders.Remove(Selected);
-                pinnedFolders.Insert(pinnedIndex - 1, Selected);
+                pinnedFolders.Move(pinnedIndex, pinnedIndex - 1);
             }, canMovePinnedFolderUp);
 
             var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
-                .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 2);
+                .Select(s => pinnedFolders.Items.Contains(s) 
+                && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 2);
 
             MoveSelectedPinnedFolderDown = ReactiveCommand.Create(() =>
             {
                 int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
-                pinnedFolders.Remove(Selected);
-                pinnedFolders.Insert(pinnedIndex + 1, Selected);
+                pinnedFolders.Move(pinnedIndex, pinnedIndex + 1);
             }, canMovePinnedFolderDown);
 
             // make many above queries work
