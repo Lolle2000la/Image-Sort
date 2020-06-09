@@ -11,7 +11,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="ReactiveUI" Version="11.4.1" />
+    <PackageReference Include="ReactiveUI" Version="11.4.17" />
     <PackageReference Include="GitVersionTask" Version="5.3.5">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
