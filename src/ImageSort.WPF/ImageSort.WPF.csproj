@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AdonisUI" Version="1.15.0" />
-    <PackageReference Include="AdonisUI.ClassicTheme" Version="1.15.0" />
+    <PackageReference Include="AdonisUI" Version="1.16.0" />
+    <PackageReference Include="AdonisUI.ClassicTheme" Version="1.16.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.0.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
