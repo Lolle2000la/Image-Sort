@@ -51,7 +51,6 @@ namespace ImageSort.WPF
             Startup += OnStartup;
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
-
         }
 
         private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
