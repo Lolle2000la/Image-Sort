@@ -2,7 +2,6 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 using System;
-using Xunit;
 
 namespace ImageSort.WPF.UiTests
 {
@@ -32,11 +31,5 @@ namespace ImageSort.WPF.UiTests
             automation = Automation;
             mainWindow = MainWindow;
         }
-    }
-
-    [CollectionDefinition("App collection", DisableParallelization = true)]
-    public class AppCollection : ICollectionFixture<AppFixture>
-    {
-
     }
 }
