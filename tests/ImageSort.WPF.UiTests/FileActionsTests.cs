@@ -1,14 +1,11 @@
 ﻿using FlaUI.UIA3;
 using FlaUI.Core;
 using System;
-using System.Collections.Generic;
 using System.Text;
 using Xunit;
 using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Tools;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
-using System.Threading.Tasks;
 using System.Linq;
 using System.IO;
 

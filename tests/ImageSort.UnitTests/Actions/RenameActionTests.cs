@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using ImageSort.Actions;
 using ImageSort.FileSystem;
 using Moq;

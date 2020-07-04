@@ -3,7 +3,6 @@ using ImageSort.Localization;
 using ImageSort.ViewModels;
 using ReactiveUI;
 using System;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Reactive;

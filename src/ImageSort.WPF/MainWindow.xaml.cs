@@ -1,5 +1,4 @@
-﻿using AdonisUI;
-using AdonisUI.Controls;
+﻿using AdonisUI.Controls;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
@@ -16,7 +15,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;

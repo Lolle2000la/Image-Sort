@@ -1,8 +1,5 @@
 ﻿using ImageSort.SettingsManagement;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows;
 
 namespace ImageSort.WPF.SettingsManagement.WindowPosition

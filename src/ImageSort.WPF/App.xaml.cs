@@ -4,7 +4,6 @@ using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Linq;
 using System.Reflection;
 using Application = System.Windows.Application;
 using ImageSort.WPF.SettingsManagement;

@@ -1,8 +1,6 @@
 ﻿using FlaUI.Core.AutomationElements;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ImageSort.WPF.UiTests
 {
