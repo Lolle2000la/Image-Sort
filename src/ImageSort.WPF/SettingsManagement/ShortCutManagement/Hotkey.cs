@@ -17,8 +17,6 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             Modifiers = modifiers;
         }
 
-        
-
         public override string ToString()
         {
             var str = new StringBuilder();
