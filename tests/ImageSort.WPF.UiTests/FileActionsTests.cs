@@ -1,5 +1,4 @@
-﻿using FlaUI.UIA3;
-using FlaUI.Core;
+﻿using FlaUI.Core;
 using Xunit;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
@@ -15,13 +14,12 @@ namespace ImageSort.WPF.UiTests
     public class FileActionsTests
     {
         private readonly Application app;
-        private readonly UIA3Automation automation;
         private readonly string currentPath;
         private readonly Window mainWindow;
 
         public FileActionsTests(AppFixture appFixture)
         {
-            (currentPath, app, automation, mainWindow) = appFixture;
+            (currentPath, app, _, mainWindow) = appFixture;
         }
 
         [Fact(DisplayName = "Can move image, undo and redo")]
