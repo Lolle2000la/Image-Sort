@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;

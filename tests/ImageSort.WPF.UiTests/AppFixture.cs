@@ -2,7 +2,6 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.UIA3;
 using System;
-using System.Text;
 using Xunit;
 
 namespace ImageSort.WPF.UiTests

@@ -1,8 +1,5 @@
 ﻿using ReactiveUI;
 using System.Reactive.Disposables;
-using System.Windows;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ImageSort.WPF.SettingsManagement
 {

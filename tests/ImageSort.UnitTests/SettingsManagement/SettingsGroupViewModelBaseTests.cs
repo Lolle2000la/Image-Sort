@@ -1,7 +1,5 @@
 ﻿using ImageSort.SettingsManagement;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
 using Xunit;
 
 namespace ImageSort.UnitTests.SettingsManagement

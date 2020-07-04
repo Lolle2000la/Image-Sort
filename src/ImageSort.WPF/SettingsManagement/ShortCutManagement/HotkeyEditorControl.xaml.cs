@@ -2,8 +2,6 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {

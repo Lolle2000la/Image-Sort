@@ -88,8 +88,12 @@ namespace ImageSort.ViewModels
 
                         return await Task.Run(() => fileSystem.GetSubFolders(p)).ConfigureAwait(false);
                     }
+#pragma warning disable CA1031 // Do not catch general exception types
                     catch
+#pragma warning restore CA1031 // Do not catch general exception types
                     {
+                        // If a sub folder cannot be accessed, then ignore it, no matter the reasons.
+                        // Otherwise, only lots and lots of crashes ensue, for reasons that could not be handled otherwise anyway.
                         return null;
                     }
                 })

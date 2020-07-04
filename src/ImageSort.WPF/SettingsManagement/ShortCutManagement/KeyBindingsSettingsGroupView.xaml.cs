@@ -4,8 +4,6 @@ using Splat;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {

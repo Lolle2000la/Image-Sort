@@ -1,7 +1,5 @@
 ﻿using FlaUI.UIA3;
 using FlaUI.Core;
-using System;
-using System.Text;
 using Xunit;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
