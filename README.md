@@ -2,6 +2,7 @@
 Sorts your image at high speed
 
 [![Build status](https://ci.appveyor.com/api/projects/status/i72q6f479ah9d4vw/branch/master?svg=true)](https://ci.appveyor.com/project/Lolle2000la/image-sort/branch/master)
+[![CodeFactor](https://www.codefactor.io/repository/github/lolle2000la/image-sort/badge)](https://www.codefactor.io/repository/github/lolle2000la/image-sort)
 
 <a href='//www.microsoft.com/store/apps/9PGDK9WN8HG6?ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="200"/></a>
 
