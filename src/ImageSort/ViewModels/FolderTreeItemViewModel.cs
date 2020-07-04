@@ -142,7 +142,13 @@ namespace ImageSort.ViewModels
                         folderWatcher.Deleted += OnFolderDeleted;
                         folderWatcher.Renamed += OnFolderRenamed;
                     }
-                    catch { }
+#pragma warning disable CA1031 // Do not catch general exception types
+                    catch
+#pragma warning restore CA1031 // Do not catch general exception types
+                    { 
+                        // FileSystemWatcher can throw all kinds of exceptions, which are completely irrelevant, 
+                        // because if they happen, nothing can be done anyway
+                    }
                 });
         }
 

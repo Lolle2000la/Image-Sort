@@ -92,9 +92,11 @@ namespace ImageSort.ViewModels
                             Path = folderToPin
                         });
                 }
-                // an exception is ignored, because it only means that the
-                // user has canceled the dialog.
-                catch (UnhandledInteractionException<Unit, string>) { }
+                catch (UnhandledInteractionException<Unit, string>) 
+                {
+                    // an exception is ignored, because it only means that the
+                    // user has canceled the dialog.                
+                }
             });
 
             var canPinSelectedExecute = this.WhenAnyValue(x => x.Selected, x => x.PinnedFolders.Count, (s, _) => s)
@@ -168,6 +170,7 @@ namespace ImageSort.ViewModels
                 });
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1031:Do not catch general exception types", Justification = "There are many sorts of reasons why a folder cannot be accessed, but all of them can be ignored.")]
         public void AddPinnedFoldersFromPaths(IEnumerable<string> paths)
         {
             pinnedFolders.AddRange(paths.Select(p =>
