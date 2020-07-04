@@ -19,6 +19,7 @@ using AdonisUI.Controls;
 using ImageSort.Localization;
 using Octokit;
 using ImageSort.WindowsUpdater;
+using System.Linq;
 
 #endif
 
