@@ -4,7 +4,6 @@ using ImageSort.ViewModels;
 using System.Linq;
 using ImageSort.FileSystem;
 using Moq;
-using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using System.Reactive.Linq;
 using System.Reactive;

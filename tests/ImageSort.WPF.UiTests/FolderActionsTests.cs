@@ -2,11 +2,7 @@
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
-using FlaUI.UIA3;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Xunit;
 
 namespace ImageSort.WPF.UiTests
@@ -15,13 +11,12 @@ namespace ImageSort.WPF.UiTests
     public class FolderActionsTests
     {
         private readonly Application app;
-        private readonly UIA3Automation automation;
         private readonly string currentPath;
         private readonly Window mainWindow;
 
         public FolderActionsTests(AppFixture appFixture)
         {
-            (currentPath, app, automation, mainWindow) = appFixture;
+            (currentPath, app, _, mainWindow) = appFixture;
         }
 
         [Fact(DisplayName = "Can create folders and reacts to its deletion")]

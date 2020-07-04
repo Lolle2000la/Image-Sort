@@ -5,7 +5,6 @@ using Moq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using System;
-using System.Threading;
 using System.Reactive;
 
 namespace ImageSort.UnitTests.ViewModels

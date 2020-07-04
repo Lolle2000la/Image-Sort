@@ -5,7 +5,6 @@ using ImageSort.Helpers;
 using ReactiveUI;
 using Splat;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -89,8 +88,12 @@ namespace ImageSort.ViewModels
 
                         return await Task.Run(() => fileSystem.GetSubFolders(p)).ConfigureAwait(false);
                     }
+#pragma warning disable CA1031 // Do not catch general exception types
                     catch
+#pragma warning restore CA1031 // Do not catch general exception types
                     {
+                        // If a sub folder cannot be accessed, then ignore it, no matter the reasons.
+                        // Otherwise, only lots and lots of crashes ensue, for reasons that could not be handled otherwise anyway.
                         return null;
                     }
                 })
@@ -142,7 +145,13 @@ namespace ImageSort.ViewModels
                         folderWatcher.Deleted += OnFolderDeleted;
                         folderWatcher.Renamed += OnFolderRenamed;
                     }
-                    catch { }
+#pragma warning disable CA1031 // Do not catch general exception types
+                    catch
+#pragma warning restore CA1031 // Do not catch general exception types
+                    { 
+                        // FileSystemWatcher can throw all kinds of exceptions, which are completely irrelevant, 
+                        // because if they happen, nothing can be done anyway
+                    }
                 });
         }
 

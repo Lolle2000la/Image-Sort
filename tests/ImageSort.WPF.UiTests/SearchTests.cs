@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
-using System.Text;
-using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
-using FlaUI.UIA3;
 using Xunit;
 
 namespace ImageSort.WPF.UiTests
@@ -14,14 +8,11 @@ namespace ImageSort.WPF.UiTests
     [Collection("App collection")]
     public class SearchTests
     {
-        private readonly Application app;
-        private readonly UIA3Automation automation;
-        private readonly string currentPath;
         private readonly Window mainWindow;
 
         public SearchTests(AppFixture appFixture)
         {
-            (currentPath, app, automation, mainWindow) = appFixture;
+            (_, _, _, mainWindow) = appFixture;
         }
 
         [Fact(DisplayName = "Filters out images correctly")]
@@ -35,11 +26,6 @@ namespace ImageSort.WPF.UiTests
                 .Select(n => Path.GetFileName(n));
 
             Assert.DoesNotContain("mock 4.png", images);
-        }
-
-        public void Dispose()
-        {
-            SetupTeardownHelper.TearDown(currentPath, app, automation);
         }
     }
 }

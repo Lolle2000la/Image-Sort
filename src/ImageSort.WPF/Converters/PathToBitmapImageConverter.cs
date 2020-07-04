@@ -1,10 +1,5 @@
-﻿using AdonisUI.Controls;
-using ImageSort.Localization;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Globalization;
-using System.IO;
-using System.Text;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
 

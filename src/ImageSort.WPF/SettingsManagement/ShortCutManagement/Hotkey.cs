@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Windows.Input;
@@ -17,8 +16,6 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             Key = key;
             Modifiers = modifiers;
         }
-
-        
 
         public override string ToString()
         {

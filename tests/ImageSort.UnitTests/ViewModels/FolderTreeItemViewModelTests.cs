@@ -2,7 +2,6 @@
 using ImageSort.ViewModels;
 using Microsoft.Reactive.Testing;
 using Moq;
-using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.IO;
