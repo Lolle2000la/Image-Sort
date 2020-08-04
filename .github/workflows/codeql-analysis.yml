@@ -53,7 +53,7 @@ jobs:
     #    uses a compiled language
 
     - run: |
-       dotnet build
+       dotnet build ./src/ImageSort/ImageSort.csproj
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
