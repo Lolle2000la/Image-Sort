@@ -12,6 +12,10 @@
     <ScrollViewer>
         <StackPanel>
             <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="16" Margin="{adonisUi:Space 1, 1, 2, 1}"/>
+
+            <local:UsedLibraryView LibraryName=".NET Core"
+                                   ProjectUrl="https://dotnet.microsoft.com/"
+                                   LicenseUrl="https://github.com/dotnet/core/blob/master/LICENSE.TXT"/>
         </StackPanel>
     </ScrollViewer>
 </adonisControls:AdonisWindow>
