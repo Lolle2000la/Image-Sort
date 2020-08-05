@@ -37,28 +37,27 @@ namespace ImageSort.WPF.Views.Credits
             DependencyProperty.Register("LibraryName", typeof(string), typeof(UsedLibraryView), new PropertyMetadata("Library Name"));
 
 
-
-        public Uri ProjectUrl
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Uris are not easily bindable to literal strings in xaml.")]
+        public string ProjectUrl
         {
-            get { return (Uri)GetValue(ProjectUrlProperty); }
+            get { return (string)GetValue(ProjectUrlProperty); }
             set { SetValue(ProjectUrlProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for ProjectUrl.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty ProjectUrlProperty =
-            DependencyProperty.Register("ProjectUrl", typeof(Uri), typeof(UsedLibraryView), new PropertyMetadata("https://example.com/"));
+            DependencyProperty.Register("ProjectUrl", typeof(string), typeof(UsedLibraryView), new PropertyMetadata("https://example.com/"));
 
-
-
-        public Uri LicenseUrl
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Uris are not easily bindable to literal strings in xaml.")]
+        public string LicenseUrl
         {
-            get { return (Uri)GetValue(LicenseUrlProperty); }
+            get { return (string)GetValue(LicenseUrlProperty); }
             set { SetValue(LicenseUrlProperty, value); }
         }
 
         // Using a DependencyProperty as the backing store for LicenseUrl.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty LicenseUrlProperty =
-            DependencyProperty.Register("LicenseUrl", typeof(Uri), typeof(UsedLibraryView), new PropertyMetadata("https://example.com/"));
+            DependencyProperty.Register("LicenseUrl", typeof(string), typeof(UsedLibraryView), new PropertyMetadata("https://example.com/"));
 
         private void OnRequestNavigate(object sender, RequestNavigateEventArgs e)
         {
