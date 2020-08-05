@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Policy;
-using System.Text;
+﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace ImageSort.WPF.Views.Credits
 {
@@ -35,7 +25,6 @@ namespace ImageSort.WPF.Views.Credits
         // Using a DependencyProperty as the backing store for LibraryName.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty LibraryNameProperty =
             DependencyProperty.Register("LibraryName", typeof(string), typeof(UsedLibraryView), new PropertyMetadata("Library Name"));
-
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:Uri properties should not be strings", Justification = "Uris are not easily bindable to literal strings in xaml.")]
         public string ProjectUrl
