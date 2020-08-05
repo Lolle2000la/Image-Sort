@@ -13,9 +13,49 @@
         <StackPanel>
             <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="16" Margin="{adonisUi:Space 1, 1, 2, 1}"/>
 
+            <local:UsedLibraryView LibraryName="AdonisUI"
+                                   ProjectUrl="https://github.com/benruehl/adonis-ui"
+                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="AdonisUI.ClassicTheme"
+                                   ProjectUrl="https://github.com/benruehl/adonis-ui"
+                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="DynamicData"
+                                   ProjectUrl="https://dynamic-data.org/"
+                                   LicenseUrl="https://github.com/reactiveui/DynamicData/blob/main/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="GitVersion(Task)"
+                                   ProjectUrl="https://github.com/GitTools/GitVersion"
+                                   LicenseUrl="https://github.com/GitTools/GitVersion/blob/master/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="Microsoft.CodeAnalysis.FxCopAnalyzers"
+                                   ProjectUrl="https://github.com/dotnet/roslyn-analyzers"
+                                   LicenseUrl="https://github.com/dotnet/roslyn-analyzers/blob/master/License.txt"/>
+
+            <local:UsedLibraryView LibraryName="Microsoft.Extensions.DependencyInjection"
+                                   ProjectUrl="https://asp.net"
+                                   LicenseUrl="https://github.com/dotnet/aspnetcore/blob/master/LICENSE.txt"/>
+
             <local:UsedLibraryView LibraryName=".NET Core"
                                    ProjectUrl="https://dotnet.microsoft.com/"
                                    LicenseUrl="https://github.com/dotnet/core/blob/master/LICENSE.TXT"/>
+
+            <local:UsedLibraryView LibraryName="Octokit"
+                                   ProjectUrl="https://github.com/octokit/octokit.net"
+                                   LicenseUrl="https://github.com/octokit/octokit.net/blob/main/LICENSE.txt"/>
+
+            <local:UsedLibraryView LibraryName="ReactiveUI"
+                                   ProjectUrl="https://www.reactiveui.net/"
+                                   LicenseUrl="https://github.com/reactiveui/ReactiveUI/blob/main/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="Semver"
+                                   ProjectUrl="https://github.com/maxhauser/semver"
+                                   LicenseUrl="https://github.com/maxhauser/semver/blob/master/License.txt"/>
+
+            <local:UsedLibraryView LibraryName="WIX TOOLSET"
+                                   ProjectUrl="https://wixtoolset.org/"
+                                   LicenseUrl="https://wixtoolset.org/about/license/"/>
         </StackPanel>
     </ScrollViewer>
 </adonisControls:AdonisWindow>
