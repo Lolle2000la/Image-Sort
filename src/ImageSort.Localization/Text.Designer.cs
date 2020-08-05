@@ -143,6 +143,42 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to License.
+        /// </summary>
+        public static string CreditsLicenseLink {
+            get {
+                return ResourceManager.GetString("CreditsLicenseLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Project.
+        /// </summary>
+        public static string CreditsProjectLink {
+            get {
+                return ResourceManager.GetString("CreditsProjectLink", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to These open source projects made Image Sort possible:.
+        /// </summary>
+        public static string CreditsWindowLeadingText {
+            get {
+                return ResourceManager.GetString("CreditsWindowLeadingText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Credits.
+        /// </summary>
+        public static string CreditsWindowTitle {
+            get {
+                return ResourceManager.GetString("CreditsWindowTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Dark Mode.
         /// </summary>
         public static string DarkMode {

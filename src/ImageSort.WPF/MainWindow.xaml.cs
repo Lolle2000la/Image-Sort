@@ -5,6 +5,7 @@ using ImageSort.ViewModels;
 using ImageSort.WPF.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ImageSort.WPF.Views;
+using ImageSort.WPF.Views.Credits;
 using ReactiveUI;
 using Splat;
 using System;
@@ -273,6 +274,12 @@ namespace ImageSort.WPF
             base.OnClosed(e);
 
             Application.Current.Shutdown();
+        }
+
+        private void OnCreditsClicked(object sender, RoutedEventArgs e)
+        {
+            CreditsWindow.Window.Show();
+            CreditsWindow.Window.Activate(); // make sure the window ends up in the foreground when already open to avoid confusion
         }
 
         #region IViewFor implementation

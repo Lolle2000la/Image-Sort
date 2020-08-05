@@ -44,6 +44,7 @@
                     <StackPanel>
                         <Button Content="{x:Static text:Text.Open}" Click="OnOpenSettingsClicked"/>
                         <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}" Click="OnOpenKeybindingsClicked"/>
+                        <Button Content="{x:Static text:Text.CreditsWindowTitle}" Click="OnCreditsClicked"/>
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

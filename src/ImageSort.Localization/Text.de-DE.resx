@@ -279,4 +279,16 @@ Wollen Sie updaten?</value>
   <data name="MoveSelectedPinnedFolderUp" xml:space="preserve">
     <value>Den ausgewählten, angepinnten Ordner nach oben verschieben</value>
   </data>
+  <data name="CreditsLicenseLink" xml:space="preserve">
+    <value>Lizenz</value>
+  </data>
+  <data name="CreditsProjectLink" xml:space="preserve">
+    <value>Projekt</value>
+  </data>
+  <data name="CreditsWindowLeadingText" xml:space="preserve">
+    <value>Diese Open Source Projekte haben Image Sort möglich gemacht:</value>
+  </data>
+  <data name="CreditsWindowTitle" xml:space="preserve">
+    <value>Credits</value>
+  </data>
 </root>
