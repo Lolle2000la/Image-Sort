@@ -161,6 +161,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to These open source projects made Image Sort possible:.
+        /// </summary>
+        public static string CreditsWindowLeadingText {
+            get {
+                return ResourceManager.GetString("CreditsWindowLeadingText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Credits.
         /// </summary>
         public static string CreditsWindowTitle {

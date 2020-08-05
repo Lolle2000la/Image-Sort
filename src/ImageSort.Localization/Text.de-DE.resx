@@ -285,6 +285,9 @@ Wollen Sie updaten?</value>
   <data name="CreditsProjectLink" xml:space="preserve">
     <value>Projekt</value>
   </data>
+  <data name="CreditsWindowLeadingText" xml:space="preserve">
+    <value>Diese Open Source Projekte haben Image Sort möglich gemacht:</value>
+  </data>
   <data name="CreditsWindowTitle" xml:space="preserve">
     <value>Credits</value>
   </data>

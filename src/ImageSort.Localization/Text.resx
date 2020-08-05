@@ -288,4 +288,7 @@ Do you want to update?</value>
   <data name="CreditsWindowTitle" xml:space="preserve">
     <value>Credits</value>
   </data>
+  <data name="CreditsWindowLeadingText" xml:space="preserve">
+    <value>These open source projects made Image Sort possible:</value>
+  </data>
 </root>
