@@ -8,10 +8,11 @@
                              xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                              xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                              mc:Ignorable="d"
-                             Title="{x:Static text:Text.CreditsWindowTitle}" Height="450" Width="800">
+                             Title="{x:Static text:Text.CreditsWindowTitle}"
+                             SizeToContent="WidthAndHeight" ResizeMode="CanMinimize">
     <ScrollViewer>
         <StackPanel>
-            <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="16" Margin="{adonisUi:Space 1, 1, 2, 1}"/>
+            <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="24" Margin="{adonisUi:Space 1, 1, 1, 3}"/>
 
             <local:UsedLibraryView LibraryName="AdonisUI"
                                    ProjectUrl="https://github.com/benruehl/adonis-ui"
