@@ -279,4 +279,13 @@ Do you want to update?</value>
   <data name="MoveSelectedPinnedFolderUp" xml:space="preserve">
     <value>Move the selected pinned folder up</value>
   </data>
+  <data name="CreditsLicenseLink" xml:space="preserve">
+    <value>License</value>
+  </data>
+  <data name="CreditsProjectLink" xml:space="preserve">
+    <value>Project</value>
+  </data>
+  <data name="CreditsWindowTitle" xml:space="preserve">
+    <value>Credits</value>
+  </data>
 </root>

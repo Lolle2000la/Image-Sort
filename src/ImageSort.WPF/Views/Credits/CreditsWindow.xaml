@@ -5,9 +5,10 @@
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                              xmlns:local="clr-namespace:ImageSort.WPF.Views.Credits"
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+                             xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                              mc:Ignorable="d"
-                             Title="Credits" Height="450" Width="800">
-    <Grid>
+                             Title="{x:Static text:Text.CreditsWindowTitle}" Height="450" Width="800">
+    <StackPanel>
         
-    </Grid>
+    </StackPanel>
 </adonisControls:AdonisWindow>
