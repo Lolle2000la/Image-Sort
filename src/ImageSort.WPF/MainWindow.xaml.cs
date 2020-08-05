@@ -278,7 +278,8 @@ namespace ImageSort.WPF
 
         private void OnCreditsClicked(object sender, RoutedEventArgs e)
         {
-            new CreditsWindow().Show();
+            CreditsWindow.Window.Show();
+            CreditsWindow.Window.Activate(); // make sure the window ends up in the foreground when already open to avoid confusion
         }
 
         #region IViewFor implementation

@@ -7,7 +7,29 @@ namespace ImageSort.WPF.Views.Credits
     /// </summary>
     public partial class CreditsWindow : AdonisWindow
     {
-        public CreditsWindow()
+        private static CreditsWindow openWindow;
+
+        public static CreditsWindow Window
+        {
+            get
+            {
+                if (openWindow == null)
+                {
+                    openWindow = new CreditsWindow();
+                    openWindow.Closed += OnExistingWindowClosed;
+                }
+
+                return openWindow;
+            }
+        }
+
+        private static void OnExistingWindowClosed(object sender, System.EventArgs e)
+        {
+            openWindow = null;
+            (sender as CreditsWindow).Closed -= OnExistingWindowClosed;
+        }
+
+        private CreditsWindow()
         {
             InitializeComponent();
         }
