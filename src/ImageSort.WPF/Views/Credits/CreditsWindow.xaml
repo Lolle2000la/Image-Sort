@@ -22,9 +22,17 @@
                                    ProjectUrl="https://github.com/benruehl/adonis-ui"
                                    LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE"/>
 
+            <local:UsedLibraryView LibraryName="coverlet.collector"
+                                   ProjectUrl="https://github.com/coverlet-coverage/coverlet"
+                                   LicenseUrl="https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE"/>
+
             <local:UsedLibraryView LibraryName="DynamicData"
                                    ProjectUrl="https://dynamic-data.org/"
                                    LicenseUrl="https://github.com/reactiveui/DynamicData/blob/main/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="FlaUI"
+                                   ProjectUrl="https://github.com/FlaUI/FlaUI"
+                                   LicenseUrl="https://github.com/FlaUI/FlaUI/blob/master/LICENSE.txt"/>
 
             <local:UsedLibraryView LibraryName="GitVersion(Task)"
                                    ProjectUrl="https://github.com/GitTools/GitVersion"
@@ -37,6 +45,14 @@
             <local:UsedLibraryView LibraryName="Microsoft.Extensions.DependencyInjection"
                                    ProjectUrl="https://asp.net"
                                    LicenseUrl="https://github.com/dotnet/aspnetcore/blob/master/LICENSE.txt"/>
+
+            <local:UsedLibraryView LibraryName="Microsoft.NET.Test.Sdk"
+                                   ProjectUrl="https://github.com/microsoft/vstest/"
+                                   LicenseUrl="https://github.com/microsoft/vstest/blob/master/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="Moq"
+                                   ProjectUrl="https://github.com/moq/moq4"
+                                   LicenseUrl="https://github.com/moq/moq4/blob/master/License.txt"/>
 
             <local:UsedLibraryView LibraryName=".NET Core"
                                    ProjectUrl="https://dotnet.microsoft.com/"
@@ -57,6 +73,14 @@
             <local:UsedLibraryView LibraryName="WIX TOOLSET"
                                    ProjectUrl="https://wixtoolset.org/"
                                    LicenseUrl="https://wixtoolset.org/about/license/"/>
+
+            <local:UsedLibraryView LibraryName="xunit"
+                                   ProjectUrl="https://github.com/xunit/xunit"
+                                   LicenseUrl="https://github.com/xunit/xunit/blob/main/LICENSE"/>
+
+            <local:UsedLibraryView LibraryName="xunit.runner.visualstudio"
+                                   ProjectUrl="https://github.com/xunit/visualstudio.xunit"
+                                   LicenseUrl="https://github.com/xunit/visualstudio.xunit/blob/main/License.txt"/>
         </StackPanel>
     </ScrollViewer>
 </adonisControls:AdonisWindow>
