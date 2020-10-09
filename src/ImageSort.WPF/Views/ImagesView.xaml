@@ -2,10 +2,8 @@
                                 x:TypeArguments="vm:ImagesViewModel"
                                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                                xmlns:system="system"
                                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                                xmlns:local="clr-namespace:ImageSort.WPF.Views"
                                 xmlns:System="clr-namespace:System;assembly=System.Runtime"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
@@ -26,7 +24,7 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}"/>
+                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}" />
 
                 <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1" />
             </Grid>
@@ -39,7 +37,7 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
 
-        <Image x:Name="SelectedImage" Grid.Row="0" Source="/Icons/Image Sort.png" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
+        <Image x:Name="SelectedImage" Grid.Row="0" Source="/Icons/Image Sort.png" Margin="{adonisUi:Space 0, 0, 0, 1}" />
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
@@ -62,15 +60,17 @@
                         <ColumnDefinition Width="auto" />
                     </Grid.ColumnDefinitions>
 
-                    <TextBox x:Name="SearchTerm" adonisExtensions:WatermarkExtension.Watermark="{x:Static text:Text.SearchTermWatermark}" />
+                    <TextBox x:Name="SearchTerm"
+                             adonisExtensions:WatermarkExtension.Watermark="{x:Static text:Text.SearchTermWatermark}" />
 
                     <Button x:Name="Rename" Content="{x:Static text:Text.Rename}" Grid.Column="1" />
                 </Grid>
 
-                <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}" SelectionChanged="OnSelectedImageChanged">
+                <ListBox x:Name="Images" Grid.Row="1" ItemTemplate="{StaticResource ImageEntry}"
+                         SelectionChanged="OnSelectedImageChanged">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Orientation="Horizontal"></VirtualizingStackPanel>
+                            <VirtualizingStackPanel Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                 </ListBox>

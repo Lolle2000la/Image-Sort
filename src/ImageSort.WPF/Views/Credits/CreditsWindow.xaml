@@ -12,75 +12,76 @@
                              SizeToContent="WidthAndHeight" ResizeMode="CanMinimize">
     <ScrollViewer>
         <StackPanel>
-            <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="24" Margin="{adonisUi:Space 1, 1, 1, 3}"/>
+            <TextBlock Text="{x:Static text:Text.CreditsWindowLeadingText}" FontSize="24"
+                       Margin="{adonisUi:Space 1, 1, 1, 3}" />
 
             <local:UsedLibraryView LibraryName="AdonisUI"
                                    ProjectUrl="https://github.com/benruehl/adonis-ui"
-                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE"/>
+                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE" />
 
             <local:UsedLibraryView LibraryName="AdonisUI.ClassicTheme"
                                    ProjectUrl="https://github.com/benruehl/adonis-ui"
-                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE"/>
+                                   LicenseUrl="https://github.com/benruehl/adonis-ui/blob/master/LICENSE" />
 
             <local:UsedLibraryView LibraryName="coverlet.collector"
                                    ProjectUrl="https://github.com/coverlet-coverage/coverlet"
-                                   LicenseUrl="https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE"/>
+                                   LicenseUrl="https://github.com/coverlet-coverage/coverlet/blob/master/LICENSE" />
 
             <local:UsedLibraryView LibraryName="DynamicData"
                                    ProjectUrl="https://dynamic-data.org/"
-                                   LicenseUrl="https://github.com/reactiveui/DynamicData/blob/main/LICENSE"/>
+                                   LicenseUrl="https://github.com/reactiveui/DynamicData/blob/main/LICENSE" />
 
             <local:UsedLibraryView LibraryName="FlaUI"
                                    ProjectUrl="https://github.com/FlaUI/FlaUI"
-                                   LicenseUrl="https://github.com/FlaUI/FlaUI/blob/master/LICENSE.txt"/>
+                                   LicenseUrl="https://github.com/FlaUI/FlaUI/blob/master/LICENSE.txt" />
 
             <local:UsedLibraryView LibraryName="GitVersion(Task)"
                                    ProjectUrl="https://github.com/GitTools/GitVersion"
-                                   LicenseUrl="https://github.com/GitTools/GitVersion/blob/master/LICENSE"/>
+                                   LicenseUrl="https://github.com/GitTools/GitVersion/blob/master/LICENSE" />
 
             <local:UsedLibraryView LibraryName="Microsoft.CodeAnalysis.FxCopAnalyzers"
                                    ProjectUrl="https://github.com/dotnet/roslyn-analyzers"
-                                   LicenseUrl="https://github.com/dotnet/roslyn-analyzers/blob/master/License.txt"/>
+                                   LicenseUrl="https://github.com/dotnet/roslyn-analyzers/blob/master/License.txt" />
 
             <local:UsedLibraryView LibraryName="Microsoft.Extensions.DependencyInjection"
                                    ProjectUrl="https://asp.net"
-                                   LicenseUrl="https://github.com/dotnet/aspnetcore/blob/master/LICENSE.txt"/>
+                                   LicenseUrl="https://github.com/dotnet/aspnetcore/blob/master/LICENSE.txt" />
 
             <local:UsedLibraryView LibraryName="Microsoft.NET.Test.Sdk"
                                    ProjectUrl="https://github.com/microsoft/vstest/"
-                                   LicenseUrl="https://github.com/microsoft/vstest/blob/master/LICENSE"/>
+                                   LicenseUrl="https://github.com/microsoft/vstest/blob/master/LICENSE" />
 
             <local:UsedLibraryView LibraryName="Moq"
                                    ProjectUrl="https://github.com/moq/moq4"
-                                   LicenseUrl="https://github.com/moq/moq4/blob/master/License.txt"/>
+                                   LicenseUrl="https://github.com/moq/moq4/blob/master/License.txt" />
 
             <local:UsedLibraryView LibraryName=".NET Core"
                                    ProjectUrl="https://dotnet.microsoft.com/"
-                                   LicenseUrl="https://github.com/dotnet/core/blob/master/LICENSE.TXT"/>
+                                   LicenseUrl="https://github.com/dotnet/core/blob/master/LICENSE.TXT" />
 
             <local:UsedLibraryView LibraryName="Octokit"
                                    ProjectUrl="https://github.com/octokit/octokit.net"
-                                   LicenseUrl="https://github.com/octokit/octokit.net/blob/main/LICENSE.txt"/>
+                                   LicenseUrl="https://github.com/octokit/octokit.net/blob/main/LICENSE.txt" />
 
             <local:UsedLibraryView LibraryName="ReactiveUI"
                                    ProjectUrl="https://www.reactiveui.net/"
-                                   LicenseUrl="https://github.com/reactiveui/ReactiveUI/blob/main/LICENSE"/>
+                                   LicenseUrl="https://github.com/reactiveui/ReactiveUI/blob/main/LICENSE" />
 
             <local:UsedLibraryView LibraryName="Semver"
                                    ProjectUrl="https://github.com/maxhauser/semver"
-                                   LicenseUrl="https://github.com/maxhauser/semver/blob/master/License.txt"/>
+                                   LicenseUrl="https://github.com/maxhauser/semver/blob/master/License.txt" />
 
             <local:UsedLibraryView LibraryName="WIX TOOLSET"
                                    ProjectUrl="https://wixtoolset.org/"
-                                   LicenseUrl="https://wixtoolset.org/about/license/"/>
+                                   LicenseUrl="https://wixtoolset.org/about/license/" />
 
             <local:UsedLibraryView LibraryName="xunit"
                                    ProjectUrl="https://github.com/xunit/xunit"
-                                   LicenseUrl="https://github.com/xunit/xunit/blob/main/LICENSE"/>
+                                   LicenseUrl="https://github.com/xunit/xunit/blob/main/LICENSE" />
 
             <local:UsedLibraryView LibraryName="xunit.runner.visualstudio"
                                    ProjectUrl="https://github.com/xunit/visualstudio.xunit"
-                                   LicenseUrl="https://github.com/xunit/visualstudio.xunit/blob/main/License.txt"/>
+                                   LicenseUrl="https://github.com/xunit/visualstudio.xunit/blob/main/License.txt" />
         </StackPanel>
     </ScrollViewer>
 </adonisControls:AdonisWindow>

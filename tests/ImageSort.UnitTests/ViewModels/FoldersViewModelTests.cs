@@ -1,10 +1,10 @@
-﻿using ImageSort.FileSystem;
-using ImageSort.ViewModels;
-using Moq;
-using System;
+﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using ImageSort.FileSystem;
+using ImageSort.ViewModels;
+using Moq;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
@@ -55,10 +55,7 @@ namespace ImageSort.UnitTests.ViewModels
                 CurrentFolder = CreateMock(MockPath)
             };
 
-            foldersVM.SelectFolder.RegisterHandler(interaction =>
-            {
-                interaction.SetOutput(mockPathToPin);
-            });
+            foldersVM.SelectFolder.RegisterHandler(interaction => { interaction.SetOutput(mockPathToPin); });
 
             await foldersVM.Pin.Execute();
 
@@ -116,10 +113,7 @@ namespace ImageSort.UnitTests.ViewModels
                 CurrentFolder = CreateMock(MockPath)
             };
 
-            foldersVM.SelectFolder.RegisterHandler(interaction =>
-            {
-                interaction.SetOutput(mockPathToPin);
-            });
+            foldersVM.SelectFolder.RegisterHandler(interaction => { interaction.SetOutput(mockPathToPin); });
 
             await foldersVM.Pin.Execute();
 
@@ -170,15 +164,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             foreach (var mockFolder in mockFolders)
             {
-                foldersVM.SelectFolder.RegisterHandler(interaction =>
-                {
-                    interaction.SetOutput(mockFolder);
-                });
+                foldersVM.SelectFolder.RegisterHandler(interaction => { interaction.SetOutput(mockFolder); });
 
                 await foldersVM.Pin.Execute();
             }
 
-            Assert.Equal(new[] { currentFolder.Path }.Concat(mockFolders),
+            Assert.Equal(new[] {currentFolder.Path}.Concat(mockFolders),
                 foldersVM.AllFoldersTracked.Select(f => f.Path));
         }
 
@@ -203,7 +194,7 @@ namespace ImageSort.UnitTests.ViewModels
                 CurrentFolder = CreateMock(MockPath)
             };
 
-            var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+            var pinnedFolders = new[] {@"C:\folder 1", @"C:\folder 2", @"C:\folder 3"};
 
             foreach (var pinnedFolder in pinnedFolders)
             {
@@ -236,7 +227,7 @@ namespace ImageSort.UnitTests.ViewModels
                 CurrentFolder = CreateMock(MockPath)
             };
 
-            var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+            var pinnedFolders = new[] {@"C:\folder 1", @"C:\folder 2", @"C:\folder 3"};
 
             foreach (var pinnedFolder in pinnedFolders)
             {

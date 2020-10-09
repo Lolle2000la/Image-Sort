@@ -2,10 +2,9 @@
 {
     public interface IReversibleAction
     {
+        string DisplayName { get; }
         void Act();
 
         void Revert();
-
-        string DisplayName { get; }
     }
 }

@@ -1,14 +1,14 @@
-﻿using ImageSort.SettingsManagement;
-using ReactiveUI;
-using Splat;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Disposables;
+using ImageSort.SettingsManagement;
+using ReactiveUI;
+using Splat;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {
     /// <summary>
-    /// Interaction logic for KeyBindingsSettingsGroupView.xaml
+    ///     Interaction logic for KeyBindingsSettingsGroupView.xaml
     /// </summary>
     public partial class KeyBindingsSettingsGroupView : ReactiveUserControl<KeyBindingsSettingsGroupViewModel>
     {
@@ -23,116 +23,116 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
                     .FirstOrDefault();
 
                 this.BindCommand(ViewModel,
-                    vm => vm.RestoreDefaultBindings,
-                    view => view.RestoreDefault)
+                        vm => vm.RestoreDefaultBindings,
+                        view => view.RestoreDefault)
                     .DisposeWith(disposableRegistration);
 
                 // image management
                 this.Bind(ViewModel,
-                    vm => vm.Move,
-                    view => view.Move.Hotkey)
+                        vm => vm.Move,
+                        view => view.Move.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.Delete,
-                    view => view.Delete.Hotkey)
+                        vm => vm.Delete,
+                        view => view.Delete.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.Rename,
-                    view => view.Rename.Hotkey)
+                        vm => vm.Rename,
+                        view => view.Rename.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // image selection
                 this.Bind(ViewModel,
-                    vm => vm.GoLeft,
-                    view => view.GoLeft.Hotkey)
+                        vm => vm.GoLeft,
+                        view => view.GoLeft.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.GoRight,
-                    view => view.GoRight.Hotkey)
+                        vm => vm.GoRight,
+                        view => view.GoRight.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // search images
                 this.Bind(ViewModel,
-                    vm => vm.SearchImages,
-                    view => view.SearchImages.Hotkey)
+                        vm => vm.SearchImages,
+                        view => view.SearchImages.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // folder management
                 this.Bind(ViewModel,
-                    vm => vm.CreateFolder,
-                    view => view.CreateFolder.Hotkey)
+                        vm => vm.CreateFolder,
+                        view => view.CreateFolder.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // folder opening
                 this.Bind(ViewModel,
-                    vm => vm.OpenFolder,
-                    view => view.OpenFolder.Hotkey)
+                        vm => vm.OpenFolder,
+                        view => view.OpenFolder.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.OpenSelectedFolder,
-                    view => view.OpenSelectedFolder.Hotkey)
+                        vm => vm.OpenSelectedFolder,
+                        view => view.OpenSelectedFolder.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // folder pinning
                 this.Bind(ViewModel,
-                    vm => vm.Pin,
-                    view => view.Pin.Hotkey)
+                        vm => vm.Pin,
+                        view => view.Pin.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.PinSelected,
-                    view => view.PinSelected.Hotkey)
+                        vm => vm.PinSelected,
+                        view => view.PinSelected.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.Unpin,
-                    view => view.Unpin.Hotkey)
+                        vm => vm.Unpin,
+                        view => view.Unpin.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.MoveSelectedPinnedFolderUp,
-                    view => view.MoveSelectedPinnedFolderUp.Hotkey)
+                        vm => vm.MoveSelectedPinnedFolderUp,
+                        view => view.MoveSelectedPinnedFolderUp.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.MoveSelectedPinnedFolderDown,
-                    view => view.MoveSelectedPinnedFolderDown.Hotkey)
+                        vm => vm.MoveSelectedPinnedFolderDown,
+                        view => view.MoveSelectedPinnedFolderDown.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // folder selection
                 this.Bind(ViewModel,
-                    vm => vm.FolderUp,
-                    view => view.FolderUp.Hotkey)
+                        vm => vm.FolderUp,
+                        view => view.FolderUp.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.FolderLeft,
-                    view => view.FolderLeft.Hotkey)
+                        vm => vm.FolderLeft,
+                        view => view.FolderLeft.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.FolderDown,
-                    view => view.FolderDown.Hotkey)
+                        vm => vm.FolderDown,
+                        view => view.FolderDown.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.FolderRight,
-                    view => view.FolderRight.Hotkey)
+                        vm => vm.FolderRight,
+                        view => view.FolderRight.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 // history
                 this.Bind(ViewModel,
-                    vm => vm.Undo,
-                    view => view.Undo.Hotkey)
+                        vm => vm.Undo,
+                        view => view.Undo.Hotkey)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.Redo,
-                    view => view.Redo.Hotkey)
+                        vm => vm.Redo,
+                        view => view.Redo.Hotkey)
                     .DisposeWith(disposableRegistration);
             });
         }

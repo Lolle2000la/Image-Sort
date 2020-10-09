@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace ImageSort.Helpers
 {
@@ -9,12 +10,7 @@ namespace ImageSort.Helpers
             StringComparison comparisonType,
             params string[] atEnd)
         {
-            foreach (var end in atEnd)
-            {
-                if (@string.EndsWith(end, comparisonType)) return true;
-            }
-
-            return false;
+            return atEnd.Any(end => @string.EndsWith(end, comparisonType));
         }
     }
 }

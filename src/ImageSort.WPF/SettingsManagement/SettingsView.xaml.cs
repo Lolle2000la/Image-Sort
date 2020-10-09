@@ -1,16 +1,16 @@
-﻿using AdonisUI.Controls;
-using ImageSort.SettingsManagement;
-using ReactiveUI;
-using Splat;
-using System;
+﻿using System;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Windows;
+using AdonisUI.Controls;
+using ImageSort.SettingsManagement;
+using ReactiveUI;
+using Splat;
 
 namespace ImageSort.WPF.SettingsManagement
 {
     /// <summary>
-    /// Interaction logic for SettingsView.xaml
+    ///     Interaction logic for SettingsView.xaml
     /// </summary>
     public partial class SettingsView : AdonisWindow, IViewFor<SettingsViewModel>
     {
@@ -38,14 +38,14 @@ namespace ImageSort.WPF.SettingsManagement
 
         public SettingsViewModel ViewModel
         {
-            get => (SettingsViewModel)GetValue(ViewModelProperty);
+            get => (SettingsViewModel) GetValue(ViewModelProperty);
             set => SetValue(ViewModelProperty, value);
         }
 
         object IViewFor.ViewModel
         {
             get => ViewModel;
-            set => ViewModel = (SettingsViewModel)value;
+            set => ViewModel = (SettingsViewModel) value;
         }
 
         #endregion IViewFor implementation

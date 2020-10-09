@@ -1,8 +1,8 @@
-﻿using FlaUI.Core;
+﻿using System.IO;
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
-using System.IO;
 using Xunit;
 
 namespace ImageSort.WPF.UiTests

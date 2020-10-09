@@ -1,21 +1,24 @@
-﻿using AdonisUI.Controls;
-using ImageSort.Localization;
-using ImageSort.ViewModels;
-using ReactiveUI;
-using System;
+﻿using System;
 using System.Globalization;
 using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AdonisUI.Controls;
+using ImageSort.Localization;
+using ImageSort.ViewModels;
+using ReactiveUI;
+using MessageBox = AdonisUI.Controls.MessageBox;
+using MessageBoxImage = AdonisUI.Controls.MessageBoxImage;
 
 namespace ImageSort.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for ImagesView.xaml
+    ///     Interaction logic for ImagesView.xaml
     /// </summary>
     public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
     {
@@ -26,39 +29,39 @@ namespace ImageSort.WPF.Views
             this.WhenActivated(disposableRegistration =>
             {
                 this.OneWayBind(ViewModel,
-                    vm => vm.SelectedImage,
-                    view => view.SelectedImage.Source,
-                    PathToImage)
+                        vm => vm.SelectedImage,
+                        view => view.SelectedImage.Source,
+                        PathToImage)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
-                    vm => vm.Images,
-                    view => view.Images.ItemsSource)
+                        vm => vm.Images,
+                        view => view.Images.ItemsSource)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.SelectedIndex,
-                    view => view.Images.SelectedIndex)
+                        vm => vm.SelectedIndex,
+                        view => view.Images.SelectedIndex)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.SearchTerm,
-                    view => view.SearchTerm.Text)
+                        vm => vm.SearchTerm,
+                        view => view.SearchTerm.Text)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.GoLeft,
-                    view => view.GoLeft)
+                        vm => vm.GoLeft,
+                        view => view.GoLeft)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.GoRight,
-                    view => view.GoRight)
+                        vm => vm.GoRight,
+                        view => view.GoRight)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.RenameImage,
-                    view => view.Rename)
+                        vm => vm.RenameImage,
+                        view => view.Rename)
                     .DisposeWith(disposableRegistration);
 
                 ViewModel.PromptForNewFileName.RegisterHandler(ic =>
@@ -75,7 +78,7 @@ namespace ImageSort.WPF.Views
                     {
                         Caption = Text.Error,
                         Text = ic.Input,
-                        Buttons = new[] { MessageBoxButtons.Ok(Text.OK) },
+                        Buttons = new[] {MessageBoxButtons.Ok(Text.OK)},
                         Icon = MessageBoxImage.Error
                     };
 
@@ -89,9 +92,7 @@ namespace ImageSort.WPF.Views
                     .Subscribe(_ =>
                     {
                         if (Images.ItemContainerGenerator.ContainerFromItem(Images.SelectedItem) is ListBoxItem item)
-                        {
                             item.Focus();
-                        }
                     })
                     .DisposeWith(disposableRegistration);
             });
@@ -114,32 +115,33 @@ namespace ImageSort.WPF.Views
             }
             catch (Exception ex)
             {
-                var textDrawing = new GeometryDrawing()
+                var textDrawing = new GeometryDrawing
                 {
-                    Geometry = new GeometryGroup()
+                    Geometry = new GeometryGroup
                     {
                         Children = new GeometryCollection(new[]
-                            {
-                                new FormattedText(Text.CouldNotLoadImageErrorText
+                        {
+                            new FormattedText(Text.CouldNotLoadImageErrorText
                                         .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                                        .Replace("{FileName}", Path.GetFileName(path), StringComparison.OrdinalIgnoreCase),
+                                        .Replace("{FileName}", Path.GetFileName(path),
+                                            StringComparison.OrdinalIgnoreCase),
                                     CultureInfo.CurrentCulture,
-                                    System.Windows.FlowDirection.LeftToRight,
+                                    FlowDirection.LeftToRight,
                                     new Typeface("Segoe UI"),
                                     16,
-                                    System.Windows.Media.Brushes.Black, 1)
-                                .BuildGeometry(new System.Windows.Point(8, 8))
-                            })
+                                    Brushes.Black, 1)
+                                .BuildGeometry(new Point(8, 8))
+                        })
                     },
-                    Brush = System.Windows.Media.Brushes.Black,
-                    Pen = new System.Windows.Media.Pen(System.Windows.Media.Brushes.White, 0.5)
+                    Brush = Brushes.Black,
+                    Pen = new Pen(Brushes.White, 0.5)
                 };
 
                 return new DrawingImage(textDrawing);
             }
         }
 
-        private void OnSelectedImageChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void OnSelectedImageChanged(object sender, SelectionChangedEventArgs e)
         {
             if (e.AddedItems.Count > 0)
                 Images.ScrollIntoView(e.AddedItems[0]);

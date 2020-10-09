@@ -6,7 +6,6 @@
                                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                                 xmlns:reactiveui="http://reactiveui.net"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
-                                xmlns:local="clr-namespace:ImageSort.WPF.Views"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 mc:Ignorable="d"
@@ -28,17 +27,22 @@
             <Button x:Name="Unpin" Content="{x:Static text:Text.Unpin}" />
             <Button x:Name="CreateFolder" Content="{x:Static text:Text.CreateFolder}" />
             <StackPanel Orientation="Horizontal">
-                <Button x:Name="MoveSelectedPinnedFolderUp" Content="↑" ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderUp}" />
-                <Button x:Name="MoveSelectedPinnedFolderDown" Content="↓" ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderDown}" />
+                <Button x:Name="MoveSelectedPinnedFolderUp" Content="↑"
+                        ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderUp}" />
+                <Button x:Name="MoveSelectedPinnedFolderDown" Content="↓"
+                        ToolTip="{x:Static text:Text.MoveSelectedPinnedFolderDown}" />
             </StackPanel>
         </WrapPanel>
 
         <TreeView x:Name="Folders" Grid.Row="1">
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}" ItemsSource="{Binding Children}">
+                <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}"
+                                          ItemsSource="{Binding Children}">
                     <StackPanel Orientation="Horizontal" Margin="3">
-                        <Image Source="{Binding Path, Converter={StaticResource PathToFolderIconConverter}}" Margin="0 0 5 0" />
-                        <TextBlock Text="{Binding FolderName}" FontWeight="{Binding IsCurrentFolder, Converter={StaticResource BoolToFontWeightConverter}}" />
+                        <Image Source="{Binding Path, Converter={StaticResource PathToFolderIconConverter}}"
+                               Margin="0 0 5 0" />
+                        <TextBlock Text="{Binding FolderName}"
+                                   FontWeight="{Binding IsCurrentFolder, Converter={StaticResource BoolToFontWeightConverter}}" />
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

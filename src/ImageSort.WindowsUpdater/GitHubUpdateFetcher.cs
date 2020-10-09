@@ -1,11 +1,11 @@
-﻿using Octokit;
-using Semver;
-using System;
+﻿using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Octokit;
+using Semver;
 
 namespace ImageSort.WindowsUpdater
 {
@@ -22,7 +22,8 @@ namespace ImageSort.WindowsUpdater
         {
             var assembly = Assembly.GetAssembly(typeof(GitHubUpdateFetcher));
             var gitVersionInformationType = assembly.GetType("GitVersionInformation");
-            var versionTag = (string)gitVersionInformationType.GetFields().First(f => f.Name == "SemVer").GetValue(null);
+            var versionTag =
+                (string) gitVersionInformationType?.GetFields().First(f => f.Name == "SemVer").GetValue(null);
             var version = SemVersion.Parse(versionTag);
 
             Release latestFitting;
@@ -76,7 +77,10 @@ namespace ImageSort.WindowsUpdater
             {
                 return await httpClient.GetStreamAsync(asset.BrowserDownloadUrl);
             }
-            catch (HttpRequestException) { return null; }
+            catch (HttpRequestException)
+            {
+                return null;
+            }
         }
     }
 }

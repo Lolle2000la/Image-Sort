@@ -1,10 +1,10 @@
-﻿using FlaUI.Core;
-using Xunit;
+﻿using System.IO;
+using System.Linq;
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
 using FlaUI.Core.WindowsAPI;
-using System.Linq;
-using System.IO;
+using Xunit;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 

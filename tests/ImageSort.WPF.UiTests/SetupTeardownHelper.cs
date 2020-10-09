@@ -1,18 +1,19 @@
-﻿using FlaUI.Core;
+﻿using System;
+using System.Diagnostics;
+using System.IO;
+using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Tools;
 using FlaUI.UIA3;
-using System;
-using System.Diagnostics;
-using System.IO;
 
 namespace ImageSort.WPF.UiTests
 {
-    static class SetupTeardownHelper
+    internal static class SetupTeardownHelper
     {
         public static (string, Application, UIA3Automation, Window) Setup()
         {
-            var currentPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temporary State", Guid.NewGuid().ToString());
+            var currentPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Temporary State",
+                Guid.NewGuid().ToString());
 
             CopyFolder(Path.GetFullPath("MockState"), currentPath);
 
@@ -44,7 +45,9 @@ namespace ImageSort.WPF.UiTests
 
             mainWindow.Focus();
 
-            while (currentPath == null || app == null || automation == null || mainWindow == null) { }
+            while (currentPath == null || app == null || automation == null || mainWindow == null)
+            {
+            }
 
             ControlHelper.App = app;
             ControlHelper.MainWindow = mainWindow;
@@ -67,19 +70,19 @@ namespace ImageSort.WPF.UiTests
 
             var files = Directory.GetFiles(sourceFolder);
 
-            foreach (string file in files)
+            foreach (var file in files)
             {
-                string name = Path.GetFileName(file);
-                string dest = Path.Combine(destFolder, name);
+                var name = Path.GetFileName(file);
+                var dest = Path.Combine(destFolder, name);
                 File.Copy(file, dest);
             }
 
             var folders = Directory.GetDirectories(sourceFolder);
 
-            foreach (string folder in folders)
+            foreach (var folder in folders)
             {
-                string name = Path.GetFileName(folder);
-                string dest = Path.Combine(destFolder, name);
+                var name = Path.GetFileName(folder);
+                var dest = Path.Combine(destFolder, name);
                 CopyFolder(folder, dest);
             }
         }

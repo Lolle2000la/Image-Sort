@@ -1,10 +1,10 @@
-﻿using ReactiveUI;
-using System.Reactive.Disposables;
+﻿using System.Reactive.Disposables;
+using ReactiveUI;
 
 namespace ImageSort.WPF.SettingsManagement
 {
     /// <summary>
-    /// Interaction logic for GeneralSettingsGroupView.xaml
+    ///     Interaction logic for GeneralSettingsGroupView.xaml
     /// </summary>
     public partial class GeneralSettingsGroupView : ReactiveUserControl<GeneralSettingsGroupViewModel>
     {
@@ -15,23 +15,23 @@ namespace ImageSort.WPF.SettingsManagement
             this.WhenActivated(disposableRegistration =>
             {
                 this.Bind(ViewModel,
-                    vm => vm.DarkMode,
-                    view => view.DarkMode.IsChecked)
+                        vm => vm.DarkMode,
+                        view => view.DarkMode.IsChecked)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.CheckForUpdatesOnStartup,
-                    view => view.CheckForUpdates.IsChecked)
+                        vm => vm.CheckForUpdatesOnStartup,
+                        view => view.CheckForUpdates.IsChecked)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.InstallPrereleaseBuilds,
-                    view => view.InstallPrereleaseBuilds.IsChecked)
+                        vm => vm.InstallPrereleaseBuilds,
+                        view => view.InstallPrereleaseBuilds.IsChecked)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
-                    vm => vm.CheckForUpdatesOnStartup,
-                    view => view.InstallPrereleaseBuilds.IsEnabled)
+                        vm => vm.CheckForUpdatesOnStartup,
+                        view => view.InstallPrereleaseBuilds.IsEnabled)
                     .DisposeWith(disposableRegistration);
             });
         }

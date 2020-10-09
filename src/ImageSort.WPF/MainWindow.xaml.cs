@@ -1,4 +1,16 @@
-﻿using AdonisUI.Controls;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Forms;
+using System.Windows.Input;
+using System.Windows.Interop;
+using System.Windows.Media;
+using AdonisUI.Controls;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
@@ -8,22 +20,14 @@ using ImageSort.WPF.Views;
 using ImageSort.WPF.Views.Credits;
 using ReactiveUI;
 using Splat;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reactive;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
+using Application = System.Windows.Application;
+using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using TextBox = System.Windows.Controls.TextBox;
 
 namespace ImageSort.WPF
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    ///     Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
     {
@@ -32,14 +36,15 @@ namespace ImageSort.WPF
         public MainWindow()
         {
             InitializeComponent();
-            ViewModel = new MainViewModel()
+            ViewModel = new MainViewModel
             {
-                Folders = new FoldersViewModel()
+                Folders = new FoldersViewModel
                 {
-                    CurrentFolder = new FolderTreeItemViewModel()
+                    CurrentFolder = new FolderTreeItemViewModel
                     {
                         // will be replaced with the default path or something
-                        Path = Environment.GetCommandLineArgs().ElementAtOrDefault(1) ?? Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
+                        Path = Environment.GetCommandLineArgs().ElementAtOrDefault(1) ??
+                               Environment.GetFolderPath(Environment.SpecialFolder.MyPictures)
                     }
                 },
                 Images = new ImagesViewModel(),
@@ -59,51 +64,51 @@ namespace ImageSort.WPF
                 Closing += (o, e) => this.SaveWindowState();
 
                 this.Bind(ViewModel,
-                    vm => vm.Folders,
-                    view => view.Folders.ViewModel)
+                        vm => vm.Folders,
+                        view => view.Folders.ViewModel)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
-                    vm => vm.Images,
-                    view => view.Images.ViewModel)
+                        vm => vm.Images,
+                        view => view.Images.ViewModel)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
-                    vm => vm.Actions,
-                    view => view.Actions.ViewModel)
+                        vm => vm.Actions,
+                        view => view.Actions.ViewModel)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.OpenFolder,
-                    view => view.OpenFolder)
+                        vm => vm.OpenFolder,
+                        view => view.OpenFolder)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.OpenCurrentlySelectedFolder,
-                    view => view.OpenSelectedFolder)
+                        vm => vm.OpenCurrentlySelectedFolder,
+                        view => view.OpenSelectedFolder)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.MoveImageToFolder,
-                    view => view.Move)
+                        vm => vm.MoveImageToFolder,
+                        view => view.Move)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.DeleteImage,
-                    view => view.Delete)
+                        vm => vm.DeleteImage,
+                        view => view.Delete)
                     .DisposeWith(disposableRegistration);
 
                 ViewModel.PickFolder.RegisterHandler(ic =>
-                {
-                    var folderBrowser = new System.Windows.Forms.FolderBrowserDialog()
                     {
-                        ShowNewFolderButton = true
-                    };
+                        var folderBrowser = new FolderBrowserDialog
+                        {
+                            ShowNewFolderButton = true
+                        };
 
-                    if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                        ic.SetOutput(folderBrowser.SelectedPath);
-                })
-                .DisposeWith(disposableRegistration);
+                        if (folderBrowser.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                            ic.SetOutput(folderBrowser.SelectedPath);
+                    })
+                    .DisposeWith(disposableRegistration);
 
                 var keyBindings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
                     .OfType<KeyBindingsSettingsGroupViewModel>()
@@ -120,9 +125,11 @@ namespace ImageSort.WPF
                     .Do(k => k.Handled = true)
                     .Select(k => new Hotkey(k.Key, Keyboard.Modifiers));
 
-                IObservable<Unit> KeyPressed(Func<Hotkey> key) =>
-                    reservedKeysPressed.Where(k => k == key())
-                    .Select(_ => Unit.Default);
+                IObservable<Unit> KeyPressed(Func<Hotkey> key)
+                {
+                    return reservedKeysPressed.Where(k => k == key())
+                        .Select(_ => Unit.Default);
+                }
 
                 // bind arrow keys
                 KeyPressed(() => keyBindings.GoLeft)
@@ -143,8 +150,8 @@ namespace ImageSort.WPF
 
                 // bind Q and E to undo and redo
                 KeyPressed(() => keyBindings.Undo)
-                   .InvokeCommand(ViewModel.Actions.Undo)
-                   .DisposeWith(disposableRegistration);
+                    .InvokeCommand(ViewModel.Actions.Undo)
+                    .DisposeWith(disposableRegistration);
 
                 KeyPressed(() => keyBindings.Redo)
                     .InvokeCommand(ViewModel.Actions.Redo)
@@ -152,8 +159,9 @@ namespace ImageSort.WPF
 
                 // bind WASD to traversing the folders
                 reservedKeysPressed
-                    .Where(k => k == keyBindings.FolderUp || k == keyBindings.FolderLeft || k == keyBindings.FolderDown || k == keyBindings.FolderRight)
-                    .Select(k => 
+                    .Where(k => k == keyBindings.FolderUp || k == keyBindings.FolderLeft ||
+                                k == keyBindings.FolderDown || k == keyBindings.FolderRight)
+                    .Select(k =>
                     {
                         if (k == keyBindings.FolderUp) return Key.Up;
                         if (k == keyBindings.FolderLeft) return Key.Left;
@@ -220,12 +228,12 @@ namespace ImageSort.WPF
 
             target.Focus();
 
-            InputManager.Current.ProcessInput(new System.Windows.Input.KeyEventArgs(
-                Keyboard.PrimaryDevice,
-                PresentationSource.FromVisual(target),
-                0,
-                key)
-            { RoutedEvent = routedEvent });
+            InputManager.Current.ProcessInput(new KeyEventArgs(
+                    Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(target),
+                    0,
+                    key)
+                {RoutedEvent = routedEvent});
 
             interceptReservedKeys = true;
         }
@@ -239,10 +247,10 @@ namespace ImageSort.WPF
         {
             const int distanceFromTop = 50;
 
-            var keyBindings = new AdonisWindow() 
-            { 
+            var keyBindings = new AdonisWindow
+            {
                 Title = Text.KeyBindingsSettingsHeader,
-                Content = new ScrollViewer() { Content = new KeyBindingsSettingsGroupView() },
+                Content = new ScrollViewer {Content = new KeyBindingsSettingsGroupView()},
                 Width = 640,
                 SizeToContent = SizeToContent.Height,
                 Top = distanceFromTop
@@ -252,7 +260,7 @@ namespace ImageSort.WPF
 
             // this opens the window on the same screen and makes sure it is not higher than the screen (out of bounds)
             var windowInteropHelper = new WindowInteropHelper(this);
-            var screen = System.Windows.Forms.Screen.FromHandle(windowInteropHelper.Handle);
+            var screen = Screen.FromHandle(windowInteropHelper.Handle);
 
             var dpiScale = VisualTreeHelper.GetDpi(keyBindings);
 
@@ -262,7 +270,7 @@ namespace ImageSort.WPF
             {
                 keyBindings.SizeToContent = SizeToContent.Manual;
 
-                keyBindings.Height = realHeight - (distanceFromTop * 2);
+                keyBindings.Height = realHeight - distanceFromTop * 2;
             }
 
             keyBindings.Left = screen.WorkingArea.Left + keyBindings.Left;
@@ -279,7 +287,8 @@ namespace ImageSort.WPF
         private void OnCreditsClicked(object sender, RoutedEventArgs e)
         {
             CreditsWindow.Window.Show();
-            CreditsWindow.Window.Activate(); // make sure the window ends up in the foreground when already open to avoid confusion
+            CreditsWindow.Window
+                .Activate(); // make sure the window ends up in the foreground when already open to avoid confusion
         }
 
         #region IViewFor implementation
@@ -289,14 +298,14 @@ namespace ImageSort.WPF
 
         public MainViewModel ViewModel
         {
-            get => (MainViewModel)GetValue(ViewModelProperty);
+            get => (MainViewModel) GetValue(ViewModelProperty);
             set => SetValue(ViewModelProperty, value);
         }
 
         object IViewFor.ViewModel
         {
             get => ViewModel;
-            set => ViewModel = (MainViewModel)value;
+            set => ViewModel = (MainViewModel) value;
         }
 
         #endregion IViewFor implementation
