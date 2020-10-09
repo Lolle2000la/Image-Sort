@@ -1,8 +1,8 @@
-﻿using ReactiveUI;
-using Splat;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using ReactiveUI;
+using Splat;
 
 namespace ImageSort.SettingsManagement
 {
@@ -10,7 +10,7 @@ namespace ImageSort.SettingsManagement
     {
         public IEnumerable<SettingsGroupViewModelBase> SettingsGroups { get; }
 
-        public SettingsViewModel(IEnumerable<SettingsGroupViewModelBase> settingsGroups = null)
+public SettingsViewModel(IEnumerable<SettingsGroupViewModelBase> settingsGroups = null)
         {
             SettingsGroups = settingsGroups ?? Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
         }
@@ -23,28 +23,20 @@ namespace ImageSort.SettingsManagement
 
         public Dictionary<string, Dictionary<string, object>> AsDictionary()
         {
-            var dict = new Dictionary<string, Dictionary<string, object>>();
-
-            foreach (var group in SettingsGroups)
-            {
-                dict.Add(group.Name, group.SettingsStore);
-            }
-
-            return dict;
+            return SettingsGroups.ToDictionary(@group => @group.Name, @group => @group.SettingsStore);
         }
 
         public void RestoreFromDictionary(Dictionary<string, Dictionary<string, object>> dictionary)
         {
             if (dictionary == null) throw new ArgumentNullException(nameof(dictionary));
 
-            foreach (var storedGroup in dictionary)
+            foreach (var (group, store) in dictionary)
             {
-                var settingsGroup = SettingsGroups.FirstOrDefault(g => g.Name == storedGroup.Key);
+                var settingsGroup = SettingsGroups.FirstOrDefault(g => g.Name == group);
 
-                foreach (var setting in storedGroup.Value)
-                {
-                    settingsGroup.SettingsStore[setting.Key] = setting.Value;
-                }
+                if (settingsGroup == null) continue;
+
+                foreach (var (storeKey, storeValue) in store) settingsGroup.SettingsStore[storeKey] = storeValue;
 
                 settingsGroup.UpdatePropertiesFromStore();
             }

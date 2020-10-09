@@ -1,17 +1,19 @@
-﻿using ImageSort.ViewModels;
-using ImageSort.Actions;
-using Xunit;
-using Moq;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using System;
-using System.Reactive;
+using ImageSort.Actions;
+using ImageSort.ViewModels;
+using Moq;
+using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
 {
     public class ActionsViewModelTest
     {
-        [Fact(DisplayName = "Executes an action, adds it to the history, allows it to be undone and allows it to be redone and makes the last un-/done visible, also checking if clearing works.")]
+        [Fact(DisplayName =
+            "Executes an action, adds it to the history, allows it to be undone and allows it to be redone and makes the last un-/done visible, also checking if clearing works.")]
         public async Task WorksCorrectly()
         {
             const string actionDisplayName = "Test action display name";
@@ -53,7 +55,8 @@ namespace ImageSort.UnitTests.ViewModels
         }
 
         [Fact(DisplayName = "Notifies user of errors during acting, undo and redo")]
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "Unit tests do not require localization for exception messages.")]
+        [SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters",
+            Justification = "Unit tests do not require localization for exception messages.")]
         public async Task NotifiesUserOfErrors()
         {
             // configure an action that fails when executed
@@ -84,7 +87,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var timesFailureWasReported = 0;
 
-            actionsVM.NotifyUserOfError.RegisterHandler(ic => 
+            actionsVM.NotifyUserOfError.RegisterHandler(ic =>
             {
                 timesFailureWasReported++;
 

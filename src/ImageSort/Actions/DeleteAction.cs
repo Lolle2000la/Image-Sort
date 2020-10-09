@@ -1,20 +1,20 @@
-﻿using ImageSort.FileSystem;
-using ImageSort.Localization;
-using System;
+﻿using System;
 using System.IO;
+using ImageSort.FileSystem;
+using ImageSort.Localization;
 
 namespace ImageSort.Actions
 {
     /// <summary>
-    /// Deletes a file. Only a file, not a directory.
+    ///     Deletes a file. Only a file, not a directory.
     /// </summary>
     public class DeleteAction : IReversibleAction
     {
+        private readonly Action<string> notifyAct;
+        private readonly Action<string> notifyRevert;
         private readonly string oldPath;
         private readonly IRecycleBin recycleBin;
         private IDisposable deletedFile;
-        private readonly Action<string> notifyAct;
-        private readonly Action<string> notifyRevert;
 
         public DeleteAction(string path, IFileSystem fileSystem, IRecycleBin recycleBin,
             Action<string> notifyAct = null, Action<string> notifyRevert = null)

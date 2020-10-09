@@ -357,3 +357,6 @@ MigrationBackup/
 
 # GitVersion wix version file
 GitVersion_WixVersion.wxi
+
+# Rider temp files
+.idea/

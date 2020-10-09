@@ -61,7 +61,8 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
-        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null, bool noParallel = false)
+        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null,
+            bool noParallel = false)
         {
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             backgroundScheduler ??= RxApp.TaskpoolScheduler;
@@ -75,7 +76,7 @@ namespace ImageSort.ViewModels
 
             _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder)
                 .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
-                .Select(folders => new[] { folders.c }.Concat(folders.Items))
+                .Select(folders => new[] {folders.c}.Concat(folders.Items))
                 .ToProperty(this, vm => vm.AllFoldersTracked);
 
             Pin = ReactiveCommand.CreateFromTask(async () =>
@@ -92,7 +93,7 @@ namespace ImageSort.ViewModels
                             Path = folderToPin
                         });
                 }
-                catch (UnhandledInteractionException<Unit, string>) 
+                catch (UnhandledInteractionException<Unit, string>)
                 {
                     // an exception is ignored, because it only means that the
                     // user has canceled the dialog.                
@@ -127,18 +128,19 @@ namespace ImageSort.ViewModels
 
             MoveSelectedPinnedFolderUp = ReactiveCommand.Create(() =>
             {
-                int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
+                var pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
                 if (pinnedIndex > 0) pinnedFolders.Move(pinnedIndex, pinnedIndex - 1);
             }, canMovePinnedFolderUp);
 
             var canMovePinnedFolderDown = this.WhenAnyValue(x => x.Selected)
                 .CombineLatest(PinnedFolders.ToObservableChangeSet(), (f, _) => f)
-                .Select(s => pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 1);
+                .Select(s =>
+                    pinnedFolders.Items.Contains(s) && pinnedFolders.Items.IndexOf(s) < pinnedFolders.Count - 1);
 
             MoveSelectedPinnedFolderDown = ReactiveCommand.Create(() =>
             {
-                int pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
+                var pinnedIndex = pinnedFolders.Items.IndexOf(Selected);
 
                 if (pinnedIndex < pinnedFolders.Count - 1) pinnedFolders.Move(pinnedIndex, pinnedIndex + 1);
             }, canMovePinnedFolderDown);

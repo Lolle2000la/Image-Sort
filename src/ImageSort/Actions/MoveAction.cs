@@ -1,7 +1,7 @@
-﻿using ImageSort.FileSystem;
-using ImageSort.Localization;
-using System;
+﻿using System;
 using System.IO;
+using ImageSort.FileSystem;
+using ImageSort.Localization;
 
 namespace ImageSort.Actions
 {
@@ -20,8 +20,10 @@ namespace ImageSort.Actions
             if (toFolder == null) throw new ArgumentNullException(nameof(toFolder));
             if (fileSystem == null) throw new ArgumentNullException(nameof(fileSystem));
             if (!fileSystem.FileExists(file)) throw new FileNotFoundException(null, file);
-            if (!fileSystem.DirectoryExists(toFolder)) throw new DirectoryNotFoundException(
-                Text.DirectoryNotFoundExceptionMessage.Replace("{Directory}", toFolder, StringComparison.OrdinalIgnoreCase));
+            if (!fileSystem.DirectoryExists(toFolder))
+                throw new DirectoryNotFoundException(
+                    Text.DirectoryNotFoundExceptionMessage.Replace("{Directory}", toFolder,
+                        StringComparison.OrdinalIgnoreCase));
 
             this.fileSystem = fileSystem;
 

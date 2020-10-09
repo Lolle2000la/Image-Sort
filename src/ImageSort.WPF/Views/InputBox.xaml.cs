@@ -1,11 +1,11 @@
-﻿using AdonisUI.Controls;
-using System;
+﻿using System;
 using System.Windows;
+using AdonisUI.Controls;
 
 namespace ImageSort.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for InputBox.xaml
+    ///     Interaction logic for InputBox.xaml
     /// </summary>
     public partial class InputBox : AdonisWindow
     {
@@ -16,9 +16,11 @@ namespace ImageSort.WPF.Views
             Title = title;
         }
 
+        public string Answer => AnswerBox.Text;
+
         private void btnDialogOk_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true;
+            DialogResult = true;
         }
 
         private void Window_ContentRendered(object sender, EventArgs e)
@@ -26,7 +28,5 @@ namespace ImageSort.WPF.Views
             AnswerBox.SelectAll();
             AnswerBox.Focus();
         }
-
-        public string Answer => AnswerBox.Text;
     }
 }

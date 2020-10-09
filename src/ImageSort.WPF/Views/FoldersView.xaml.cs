@@ -1,10 +1,4 @@
-﻿using ImageSort.Localization;
-using ImageSort.SettingsManagement;
-using ImageSort.ViewModels;
-using ImageSort.WPF.SettingsManagement;
-using ReactiveUI;
-using Splat;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
@@ -13,11 +7,17 @@ using System.Reactive.Linq;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Forms;
+using ImageSort.Localization;
+using ImageSort.SettingsManagement;
+using ImageSort.ViewModels;
+using ImageSort.WPF.SettingsManagement;
+using ReactiveUI;
+using Splat;
 
 namespace ImageSort.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for FoldersView.xaml
+    ///     Interaction logic for FoldersView.xaml
     /// </summary>
     public partial class FoldersView : ReactiveUserControl<FoldersViewModel>
     {
@@ -29,7 +29,7 @@ namespace ImageSort.WPF.Views
             {
                 ViewModel.SelectFolder.RegisterHandler(ic =>
                 {
-                    var folderBrowser = new FolderBrowserDialog()
+                    var folderBrowser = new FolderBrowserDialog
                     {
                         ShowNewFolderButton = true
                     };
@@ -57,47 +57,47 @@ namespace ImageSort.WPF.Views
                     })
                     .DisposeWith(disposableRegistration);
 
-                var compositeCollection = new CompositeCollection()
+                var compositeCollection = new CompositeCollection
                 {
-                    new CollectionContainer() { Collection = currentFolder },
-                    new CollectionContainer() { Collection = ViewModel.PinnedFolders }
+                    new CollectionContainer {Collection = currentFolder},
+                    new CollectionContainer {Collection = ViewModel.PinnedFolders}
                 };
 
                 Folders.ItemsSource = compositeCollection;
 
                 this.Bind(ViewModel,
-                    vm => vm.Selected,
-                    view => view.Folders.SelectedItem)
+                        vm => vm.Selected,
+                        view => view.Folders.SelectedItem)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.Pin,
-                    view => view.Pin)
+                        vm => vm.Pin,
+                        view => view.Pin)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.PinSelected,
-                    view => view.PinSelected)
+                        vm => vm.PinSelected,
+                        view => view.PinSelected)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.UnpinSelected,
-                    view => view.Unpin)
+                        vm => vm.UnpinSelected,
+                        view => view.Unpin)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.CreateFolderUnderSelected,
-                    view => view.CreateFolder)
+                        vm => vm.CreateFolderUnderSelected,
+                        view => view.CreateFolder)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.MoveSelectedPinnedFolderUp,
-                    view => view.MoveSelectedPinnedFolderUp)
+                        vm => vm.MoveSelectedPinnedFolderUp,
+                        view => view.MoveSelectedPinnedFolderUp)
                     .DisposeWith(disposableRegistration);
 
                 this.BindCommand(ViewModel,
-                    vm => vm.MoveSelectedPinnedFolderDown,
-                    view => view.MoveSelectedPinnedFolderDown)
+                        vm => vm.MoveSelectedPinnedFolderDown,
+                        view => view.MoveSelectedPinnedFolderDown)
                     .DisposeWith(disposableRegistration);
 
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
@@ -114,17 +114,17 @@ namespace ImageSort.WPF.Views
 
                 // save pinned folders
                 ViewModel.PinnedFolders.ActOnEveryObject(f =>
-                {
-                    if (f == null) return;
+                    {
+                        if (f == null) return;
 
-                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
-                },
-                f =>
-                {
-                    if (f == null) return;
+                        pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
+                    },
+                    f =>
+                    {
+                        if (f == null) return;
 
-                    pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
-                });
+                        pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
+                    });
             });
         }
 

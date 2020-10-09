@@ -3,7 +3,7 @@ using FlaUI.Core.AutomationElements;
 
 namespace ImageSort.WPF.UiTests
 {
-    static class ControlHelper
+    internal static class ControlHelper
     {
         public static Application App { get; set; }
         public static Window MainWindow { get; set; }

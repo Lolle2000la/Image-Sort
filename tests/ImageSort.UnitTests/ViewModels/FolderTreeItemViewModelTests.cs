@@ -1,13 +1,13 @@
-﻿using ImageSort.FileSystem;
-using ImageSort.ViewModels;
-using Microsoft.Reactive.Testing;
-using Moq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using ImageSort.FileSystem;
+using ImageSort.ViewModels;
+using Microsoft.Reactive.Testing;
+using Moq;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
@@ -21,12 +21,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             var resultingPaths =
                 new[]
-                {
-                    @"\folder 1",
-                    @"\folder 2",
-                    @"\folder 3"
-                }
-                .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+                    {
+                        @"\folder 1",
+                        @"\folder 2",
+                        @"\folder 3"
+                    }
+                    .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
 
             var fsMock = new Mock<IFileSystem>();
 
@@ -42,7 +42,8 @@ namespace ImageSort.UnitTests.ViewModels
             Assert.Equal(resultingPaths, folderTreeItem.Children.Select(vm => vm.Path).ToArray());
         }
 
-        [Fact(DisplayName = "Handles an tried access to an unauthorized file (UnauthorizedAccessException) gracefully.")]
+        [Fact(DisplayName =
+            "Handles an tried access to an unauthorized file (UnauthorizedAccessException) gracefully.")]
         public void HandlesUnauthorizedAccessExceptionGracefully()
         {
             const string pathToUnauthorisedFolder = @"C:\UnauthorizedFolder";
@@ -61,7 +62,7 @@ namespace ImageSort.UnitTests.ViewModels
         public async Task CanCreateFolders()
         {
             const string currentFolder = @"C:\current_folder";
-            var subfolders = new []
+            var subfolders = new[]
             {
                 "sub1", "sub2", "sub3"
             }.Select(s => Path.Combine(currentFolder, s));

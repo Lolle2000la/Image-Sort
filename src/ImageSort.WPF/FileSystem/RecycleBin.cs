@@ -1,9 +1,9 @@
-﻿using ImageSort.FileSystem;
-using Shell32;
-using System;
+﻿using System;
 using System.IO;
 using System.Reactive.Disposables;
+using ImageSort.FileSystem;
 using ImageSort.Helpers;
+using Shell32;
 
 namespace ImageSort.WPF.FileSystem
 {
@@ -32,7 +32,7 @@ namespace ImageSort.WPF.FileSystem
 
         private void RestoreFileFromRecycleBin(string path)
         {
-            Folder recycler = shell.NameSpace(10);
+            var recycler = shell.NameSpace(10);
 
             foreach (FolderItem item in recycler.Items())
             {

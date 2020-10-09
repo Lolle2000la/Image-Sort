@@ -6,38 +6,36 @@ using System.Windows.Input;
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {
     /// <summary>
-    /// Interaction logic for HotkeyEditorControl.xaml
+    ///     Interaction logic for HotkeyEditorControl.xaml
     /// </summary>
     public partial class HotkeyEditorControl : UserControl
     {
-        public static readonly DependencyProperty HotkeyProperty =
-        DependencyProperty.Register(nameof(Hotkey), typeof(Hotkey),
-            typeof(HotkeyEditorControl),
-            new FrameworkPropertyMetadata(default(Hotkey),
-                FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
-                OnHotkeyChanged));
-
-        private static void OnHotkeyChanged(DependencyObject @object, DependencyPropertyChangedEventArgs args)
-        {
-            if (@object is HotkeyEditorControl hotkeyEditorControl)
-            {
-                hotkeyEditorControl.HotkeyChanged?.Invoke(hotkeyEditorControl, new EventArgs());
-            }
-        }
-
-        public Hotkey Hotkey
-        {
-            get => (Hotkey)GetValue(HotkeyProperty);
-            set => SetValue(HotkeyProperty, value);
-        }
-
-        public event EventHandler HotkeyChanged;
-
         public HotkeyEditorControl()
         {
             InitializeComponent();
             DataContext = this;
         }
+
+        public static readonly DependencyProperty HotkeyProperty =
+            DependencyProperty.Register(nameof(Hotkey), typeof(Hotkey),
+                typeof(HotkeyEditorControl),
+                new FrameworkPropertyMetadata(default(Hotkey),
+                    FrameworkPropertyMetadataOptions.BindsTwoWayByDefault,
+                    OnHotkeyChanged));
+
+        public Hotkey Hotkey
+        {
+            get => (Hotkey) GetValue(HotkeyProperty);
+            set => SetValue(HotkeyProperty, value);
+        }
+
+        private static void OnHotkeyChanged(DependencyObject @object, DependencyPropertyChangedEventArgs args)
+        {
+            if (@object is HotkeyEditorControl hotkeyEditorControl)
+                hotkeyEditorControl.HotkeyChanged?.Invoke(hotkeyEditorControl, new EventArgs());
+        }
+
+        public event EventHandler HotkeyChanged;
 
         private void HotkeyTextBox_PreviewKeyDown(object sender, KeyEventArgs e)
         {
@@ -50,10 +48,7 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             var key = e.Key;
 
             // When Alt is pressed, SystemKey is used instead
-            if (key == Key.System)
-            {
-                key = e.SystemKey;
-            }
+            if (key == Key.System) key = e.SystemKey;
 
             // Pressing delete, backspace or escape without modifiers clears the current value
             if (modifiers == ModifierKeys.None &&
@@ -75,9 +70,7 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
                 key == Key.Clear ||
                 key == Key.OemClear ||
                 key == Key.Apps)
-            {
                 return;
-            }
 
             // Update the value
             Hotkey = new Hotkey(key, modifiers);

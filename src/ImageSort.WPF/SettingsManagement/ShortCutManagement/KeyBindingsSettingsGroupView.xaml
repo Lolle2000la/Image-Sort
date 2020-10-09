@@ -1,44 +1,45 @@
-﻿<reactiveui:ReactiveUserControl x:Class="ImageSort.WPF.SettingsManagement.ShortCutManagement.KeyBindingsSettingsGroupView"
-                                x:TypeArguments="local:KeyBindingsSettingsGroupViewModel"
-                                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-                                xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-                                xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement.ShortCutManagement"
-                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
-                                xmlns:reactiveui="http://reactiveui.net"
-                                xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
-                                xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI"
-                                mc:Ignorable="d" 
-                                d:DesignHeight="450" d:DesignWidth="800">
+﻿<reactiveui:ReactiveUserControl
+    x:Class="ImageSort.WPF.SettingsManagement.ShortCutManagement.KeyBindingsSettingsGroupView"
+    x:TypeArguments="local:KeyBindingsSettingsGroupViewModel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement.ShortCutManagement"
+    xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
+    xmlns:reactiveui="http://reactiveui.net"
+    xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
+    mc:Ignorable="d"
+    d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
         <StackPanel.Resources>
             <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
-                <Setter Property="Margin" Value="{adonisUi:Space 0, 1, 0, 0}"/>
+                <Setter Property="Margin" Value="{adonisUi:Space 0, 1, 0, 0}" />
             </Style>
         </StackPanel.Resources>
-        
-        <Button Content="{x:Static text:Text.RestoreDefaultKeyBindings}" x:Name="RestoreDefault" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
+
+        <Button Content="{x:Static text:Text.RestoreDefaultKeyBindings}" x:Name="RestoreDefault"
+                Margin="{adonisUi:Space 0, 0, 0, 1}" />
 
         <GroupBox Header="{x:Static text:KeyBindingNames.ImagesHeader}">
             <StackPanel>
                 <GroupBox Header="{x:Static text:KeyBindingNames.ImageManagementHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Move}" x:Name="Move"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Delete}" x:Name="Delete"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Rename}" x:Name="Rename"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.Move}" x:Name="Move" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.Delete}" x:Name="Delete" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.Rename}" x:Name="Rename" />
                     </StackPanel>
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:KeyBindingNames.ImageSelectionHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoLeft}" x:Name="GoLeft"/>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoRight}" x:Name="GoRight"/>
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoLeft}" x:Name="GoLeft" />
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.GoRight}" x:Name="GoRight" />
                     </StackPanel>
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:KeyBindingNames.SearchImagesHeader}">
-                    <local:HotkeyEditor Description="{x:Static text:Text.SearchTermWatermark}" x:Name="SearchImages"/>
+                    <local:HotkeyEditor Description="{x:Static text:Text.SearchTermWatermark}" x:Name="SearchImages" />
                 </GroupBox>
             </StackPanel>
         </GroupBox>
@@ -46,32 +47,38 @@
         <GroupBox Header="{x:Static text:KeyBindingNames.FoldersHeader}">
             <StackPanel>
                 <GroupBox Header="{x:Static text:KeyBindingNames.FolderManagementHeader}">
-                    <local:HotkeyEditor Description="{x:Static text:Text.CreateFolder}" x:Name="CreateFolder"/>
+                    <local:HotkeyEditor Description="{x:Static text:Text.CreateFolder}" x:Name="CreateFolder" />
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:KeyBindingNames.OpenFolderHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.OpenSelectedFolder}" x:Name="OpenSelectedFolder"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.OpenSelectedFolder}"
+                                            x:Name="OpenSelectedFolder" />
                     </StackPanel>
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:KeyBindingNames.PinnedFoldersHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Pin}" x:Name="Pin"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.PinSelected}" x:Name="PinSelected"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Unpin}" x:Name="Unpin"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderUp}" x:Name="MoveSelectedPinnedFolderUp"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderDown}" x:Name="MoveSelectedPinnedFolderDown"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.Pin}" x:Name="Pin" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.PinSelected}" x:Name="PinSelected" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.Unpin}" x:Name="Unpin" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderUp}"
+                                            x:Name="MoveSelectedPinnedFolderUp" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.MoveSelectedPinnedFolderDown}"
+                                            x:Name="MoveSelectedPinnedFolderDown" />
                     </StackPanel>
                 </GroupBox>
 
                 <GroupBox Header="{x:Static text:KeyBindingNames.FolderSelectionHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderUp}" x:Name="FolderUp"/>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderLeft}" x:Name="FolderLeft"/>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderDown}" x:Name="FolderDown"/>
-                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderRight}" x:Name="FolderRight"/>
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderUp}" x:Name="FolderUp" />
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderLeft}"
+                                            x:Name="FolderLeft" />
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderDown}"
+                                            x:Name="FolderDown" />
+                        <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.FolderRight}"
+                                            x:Name="FolderRight" />
                     </StackPanel>
                 </GroupBox>
             </StackPanel>
@@ -81,8 +88,8 @@
             <StackPanel>
                 <GroupBox Header="{x:Static text:KeyBindingNames.HistoryHeader}">
                     <StackPanel>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Undo}" x:Name="Undo"/>
-                        <local:HotkeyEditor Description="{x:Static text:Text.Redo}" x:Name="Redo"/>
+                        <local:HotkeyEditor Description="{x:Static text:Text.Undo}" x:Name="Undo" />
+                        <local:HotkeyEditor Description="{x:Static text:Text.Redo}" x:Name="Redo" />
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

@@ -2,6 +2,6 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:adonisExtensions="clr-namespace:AdonisUI.Extensions;assembly=AdonisUI">
     <Style TargetType="GroupBox" BasedOn="{StaticResource {x:Type GroupBox}}">
-        <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="8"/>
+        <Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="8" />
     </Style>
 </ResourceDictionary>

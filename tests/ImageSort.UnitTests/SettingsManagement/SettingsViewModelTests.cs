@@ -6,28 +6,6 @@ namespace ImageSort.UnitTests.SettingsManagement
 {
     public class SettingsViewModelTests
     {
-        private class FirstGroupMock : SettingsGroupViewModelBase
-        {
-            public override string Name => "FirstGroup";
-            public override string Header => "First group";
-
-            public FirstGroupMock()
-            {
-                SettingsStore["some_setting"] = "fake value 1";
-            }
-        }
-
-        private class SecondGroupMock : SettingsGroupViewModelBase
-        {
-            public override string Name => "SecondGroup";
-            public override string Header => "Second group";
-
-            public SecondGroupMock()
-            {
-                SettingsStore["some_setting"] = "fake value 2";
-            }
-        }
-
         [Fact(DisplayName = "Can retrieve a specific settings group")]
         public void CanRetrieveSpecificSettingsGroup()
         {
@@ -86,21 +64,45 @@ namespace ImageSort.UnitTests.SettingsManagement
 
             settingsVM.RestoreFromDictionary(new Dictionary<string, Dictionary<string, object>>
             {
-                {firstGroup.Name, new Dictionary<string, object>
+                {
+                    firstGroup.Name, new Dictionary<string, object>
                     {
                         {"some_setting", fakeValue1}
                     }
                 },
-                {secondGroup.Name, new Dictionary<string, object>
+                {
+                    secondGroup.Name, new Dictionary<string, object>
                     {
                         {"some_setting", fakeValue2}
-                    } 
+                    }
                 }
             });
 
             Assert.Equal(fakeValue1, firstGroup.SettingsStore["some_setting"]);
 
             Assert.Equal(fakeValue2, secondGroup.SettingsStore["some_setting"]);
+        }
+
+        private class FirstGroupMock : SettingsGroupViewModelBase
+        {
+            public FirstGroupMock()
+            {
+                SettingsStore["some_setting"] = "fake value 1";
+            }
+
+            public override string Name => "FirstGroup";
+            public override string Header => "First group";
+        }
+
+        private class SecondGroupMock : SettingsGroupViewModelBase
+        {
+            public SecondGroupMock()
+            {
+                SettingsStore["some_setting"] = "fake value 2";
+            }
+
+            public override string Name => "SecondGroup";
+            public override string Header => "Second group";
         }
     }
 }

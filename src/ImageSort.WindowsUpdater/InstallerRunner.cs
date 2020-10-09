@@ -29,7 +29,8 @@ namespace ImageSort.WindowsUpdater
 
         private static void RunSetup(string path)
         {
-            var processStartInfo = new ProcessStartInfo("msiexec", $"/i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive")
+            var processStartInfo = new ProcessStartInfo("msiexec",
+                $"/i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive")
             {
                 Verb = "runas",
                 UseShellExecute = true
@@ -40,7 +41,8 @@ namespace ImageSort.WindowsUpdater
 
         public static void CleanUpInstaller()
         {
-            var setupPath = Path.Combine(Path.GetTempPath(), "Image Sort", $"ImageSort.{(Environment.Is64BitProcess ? "x64" : "x86")}.msi");
+            var setupPath = Path.Combine(Path.GetTempPath(), "Image Sort",
+                $"ImageSort.{(Environment.Is64BitProcess ? "x64" : "x86")}.msi");
 
             if (File.Exists(setupPath)) File.Delete(setupPath);
         }

@@ -1,18 +1,21 @@
-﻿using ImageSort.SettingsManagement;
-using ImageSort.WPF.SettingsManagement.WindowPosition;
-using Splat;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
+using System.Windows.Forms;
+using ImageSort.SettingsManagement;
+using ImageSort.WPF.SettingsManagement.WindowPosition;
+using Splat;
 
 namespace ImageSort.WPF.Views
 {
-    static class WindowHelper
+    internal static class WindowHelper
     {
         private static WindowPositionSettingsViewModel<TWindow> GetWindowPostion<TWindow>() where TWindow : Window
-            => Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        {
+            return Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
                 .OfType<WindowPositionSettingsViewModel<TWindow>>()
                 .FirstOrDefault();
+        }
 
         public static void RestoreWindowState<TWindow>(this TWindow window) where TWindow : Window
         {
@@ -20,7 +23,7 @@ namespace ImageSort.WPF.Views
 
             if (windowPosition == null) return;
 
-            var screenCount = System.Windows.Forms.Screen.AllScreens.Length;
+            var screenCount = Screen.AllScreens.Length;
 
             // ensure when the number of screen was changed the window will still be visible
             if (windowPosition.ScreenCount != screenCount)
@@ -54,7 +57,7 @@ namespace ImageSort.WPF.Views
             windowPosition.Width = (int) window.Width;
 
             // record the screen count at the time.
-            windowPosition.ScreenCount = System.Windows.Forms.Screen.AllScreens.Length;
+            windowPosition.ScreenCount = Screen.AllScreens.Length;
         }
     }
 }

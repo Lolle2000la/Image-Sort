@@ -6,29 +6,6 @@ namespace ImageSort.UnitTests.SettingsManagement
 {
     public class SettingsGroupViewModelBaseTests
     {
-        private class TestSettingsGroup : SettingsGroupViewModelBase
-        {
-            private bool _testProperty = false;
-
-            public bool TestProperty
-            {
-                get => _testProperty;
-                set => this.RaiseAndSetIfChanged(ref _testProperty, value);
-            }
-
-            private string _testString;
-
-            public string TestString
-            {
-                get => _testString;
-                set => this.RaiseAndSetIfChanged(ref _testString, value);
-            }
-
-            public override string Name => "TestGroup";
-
-            public override string Header => "Test Group";
-        }
-
         [Fact(DisplayName = "Saves changed properties in settings storage")]
         public void SavesChangedProperties()
         {
@@ -40,14 +17,14 @@ namespace ImageSort.UnitTests.SettingsManagement
             testSettingsGroup.TestProperty = true;
             testSettingsGroup.TestString = "first test value";
 
-            Assert.True((bool)testSettingsGroup.SettingsStore["TestProperty"]);
-            Assert.Equal("first test value", (string)testSettingsGroup.SettingsStore["TestString"]);
+            Assert.True((bool) testSettingsGroup.SettingsStore["TestProperty"]);
+            Assert.Equal("first test value", (string) testSettingsGroup.SettingsStore["TestString"]);
 
             testSettingsGroup.TestProperty = false;
             testSettingsGroup.TestString = "second test value";
 
-            Assert.False((bool)testSettingsGroup.SettingsStore["TestProperty"]);
-            Assert.Equal("second test value", (string)testSettingsGroup.SettingsStore["TestString"]);
+            Assert.False((bool) testSettingsGroup.SettingsStore["TestProperty"]);
+            Assert.Equal("second test value", (string) testSettingsGroup.SettingsStore["TestString"]);
 
             testSettingsGroup.TestString = null;
 
@@ -57,8 +34,8 @@ namespace ImageSort.UnitTests.SettingsManagement
         [Fact(DisplayName = "Updates properties based on the what is in store")]
         public void UpdatesPropertiesBasedOnWhatIsStored()
         {
-            var testSettingsGroup = new TestSettingsGroup() 
-            { 
+            var testSettingsGroup = new TestSettingsGroup
+            {
                 TestProperty = false,
                 TestString = "test value"
             };
@@ -70,6 +47,29 @@ namespace ImageSort.UnitTests.SettingsManagement
 
             Assert.True(testSettingsGroup.TestProperty);
             Assert.Equal("new test value", testSettingsGroup.TestString);
+        }
+
+        private class TestSettingsGroup : SettingsGroupViewModelBase
+        {
+            private bool _testProperty;
+
+            private string _testString;
+
+            public bool TestProperty
+            {
+                get => _testProperty;
+                set => this.RaiseAndSetIfChanged(ref _testProperty, value);
+            }
+
+            public string TestString
+            {
+                get => _testString;
+                set => this.RaiseAndSetIfChanged(ref _testString, value);
+            }
+
+            public override string Name => "TestGroup";
+
+            public override string Header => "Test Group";
         }
     }
 }

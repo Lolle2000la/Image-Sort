@@ -3,7 +3,6 @@
                              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-                             xmlns:local="clr-namespace:ImageSort.WPF.SettingsManagement"
                              xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                              xmlns:settings="clr-namespace:ImageSort.SettingsManagement;assembly=ImageSort"
                              xmlns:adonisControls="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
@@ -13,13 +12,13 @@
     <TabControl x:Name="Groups" SelectedIndex="0">
         <TabControl.ItemTemplate>
             <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
-                <TextBlock Text="{Binding Header}"/>
+                <TextBlock Text="{Binding Header}" />
             </DataTemplate>
         </TabControl.ItemTemplate>
         <TabControl.ContentTemplate>
             <DataTemplate DataType="{x:Type settings:SettingsGroupViewModelBase}">
                 <ScrollViewer>
-                    <reactiveUi:ViewModelViewHost ViewModel="{Binding}" HorizontalContentAlignment="Stretch"/>
+                    <reactiveUi:ViewModelViewHost ViewModel="{Binding}" HorizontalContentAlignment="Stretch" />
                 </ScrollViewer>
             </DataTemplate>
         </TabControl.ContentTemplate>

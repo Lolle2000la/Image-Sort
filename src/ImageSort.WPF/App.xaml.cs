@@ -1,19 +1,20 @@
-﻿using ImageSort.DependencyManagement;
-using ImageSort.FileSystem;
-using ImageSort.WPF.FileSystem;
-using ReactiveUI;
-using Splat;
-using System;
-using System.Reflection;
-using Application = System.Windows.Application;
-using ImageSort.WPF.SettingsManagement;
-using ImageSort.SettingsManagement;
+﻿using System;
+using System.Globalization;
 using System.Reactive.Concurrency;
+using System.Reflection;
+using System.Threading;
+using System.Windows;
+using ImageSort.DependencyManagement;
+using ImageSort.FileSystem;
+using ImageSort.SettingsManagement;
+using ImageSort.WPF.FileSystem;
+using ImageSort.WPF.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ImageSort.WPF.SettingsManagement.WindowPosition;
+using ReactiveUI;
+using Splat;
 
 #if !DO_NOT_INCLUDE_UPDATER
-
 using System.Collections.Generic;
 using AdonisUI.Controls;
 using ImageSort.Localization;
@@ -26,15 +27,15 @@ using System.Linq;
 namespace ImageSort.WPF
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    ///     Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
         public App()
         {
 #if DEBUG && !DEBUG_LOCALIZATION
-            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en");
-            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("en");
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("en");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("en");
 #endif
 
             Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
@@ -54,7 +55,7 @@ namespace ImageSort.WPF
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
         }
 
-        private async void OnStartup(object sender, System.Windows.StartupEventArgs e)
+        private async void OnStartup(object sender, StartupEventArgs e)
         {
             RxApp.MainThreadScheduler.Schedule(async () =>
             {
@@ -74,7 +75,8 @@ namespace ImageSort.WPF
 
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
-            (var success, var release) = await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
+            (var success, var release) = 
+                await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
 
             if (success)
             {
@@ -87,10 +89,10 @@ namespace ImageSort.WPF
                         MessageBoxButtons.Yes(Text.Update),
                         MessageBoxButtons.No(Text.DoNotUpdate)
                     },
-                    Icon = MessageBoxImage.Question
+                    Icon = AdonisUI.Controls.MessageBoxImage.Question
                 };
 
-                if (MessageBox.Show(messageBox) == MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
+                if (AdonisUI.Controls.MessageBox.Show(messageBox) == AdonisUI.Controls.MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {
                     var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(false);
 

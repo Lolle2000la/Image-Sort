@@ -15,8 +15,8 @@ namespace ImageSort.UnitTests.Actions
             const string newFolder = @"C:\SomeOtherFolder\SomeOtherFolderAsWell\";
             const string newPath = newFolder + "SomeFile.png";
 
-            bool notifedOfAction = false;
-            bool notifiedOfReversion = false;
+            var notifedOfAction = false;
+            var notifiedOfReversion = false;
 
             var fsMock = new Mock<IFileSystem>();
 
@@ -25,9 +25,9 @@ namespace ImageSort.UnitTests.Actions
             fsMock.Setup(fs => fs.FileExists(oldPath)).Returns(true);
             fsMock.Setup(fs => fs.DirectoryExists(newFolder)).Returns(true);
 
-            var moveAction = new MoveAction(oldPath, newFolder, fsMock.Object, 
-                (f,t) => notifedOfAction = true,
-                (f,t) => notifiedOfReversion = true);
+            var moveAction = new MoveAction(oldPath, newFolder, fsMock.Object,
+                (f, t) => notifedOfAction = true,
+                (f, t) => notifiedOfReversion = true);
 
             fsMock.Verify(fs => fs.FileExists(oldPath));
             fsMock.Verify(fs => fs.DirectoryExists(newFolder));
