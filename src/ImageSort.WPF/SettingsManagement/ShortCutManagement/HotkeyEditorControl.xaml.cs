@@ -10,7 +10,6 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
     /// </summary>
     public partial class HotkeyEditorControl : UserControl
     {
-
         public HotkeyEditorControl()
         {
             InitializeComponent();

@@ -270,7 +270,7 @@ namespace ImageSort.WPF
             {
                 keyBindings.SizeToContent = SizeToContent.Manual;
 
-                keyBindings.Height = realHeight - distanceFromTop * 2;
+                keyBindings.Height = realHeight - (distanceFromTop * 2);
             }
 
             keyBindings.Left = screen.WorkingArea.Left + keyBindings.Left;
