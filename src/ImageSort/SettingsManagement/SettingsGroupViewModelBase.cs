@@ -29,23 +29,17 @@ namespace ImageSort.SettingsManagement
 
             foreach (var property in properties)
             {
-                if (SettingsStore.TryGetValue(property.Name, out var setting))
+                if (!SettingsStore.TryGetValue(property.Name, out var setting)) continue;
+                if (setting is object[] objects)
                 {
-                    if (setting is object[] objects)
-                    {
-                        property.SetValue(this, objects.OfType<string>());
-                    }
-                    else
-                    {
-                        if (typeof(Enum).IsAssignableFrom(property.PropertyType))
-                        {
-                            property.SetValue(this, Enum.ToObject(property.PropertyType, setting));
-                        }
-                        else
-                        {
-                            property.SetValue(this, setting);
-                        }
-                    }
+                    property.SetValue(this, objects.OfType<string>());
+                }
+                else
+                {
+                    property.SetValue(this,
+                        typeof(Enum).IsAssignableFrom(property.PropertyType)
+                            ? Enum.ToObject(property.PropertyType, setting)
+                            : setting);
                 }
             }
         }
