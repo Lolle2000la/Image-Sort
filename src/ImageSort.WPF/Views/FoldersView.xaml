@@ -8,13 +8,9 @@
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels;assembly=ImageSort"
                                 xmlns:converters="clr-namespace:ImageSort.WPF.Converters"
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
+                                xmlns:views="clr-namespace:ImageSort.WPF.Views"
                                 mc:Ignorable="d"
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <UserControl.Resources>
-        <converters:PathToFolderIconConverter x:Key="PathToFolderIconConverter" />
-        <converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
-    </UserControl.Resources>
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto" />
@@ -38,12 +34,7 @@
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}"
                                           ItemsSource="{Binding Children}">
-                    <StackPanel Orientation="Horizontal" Margin="3">
-                        <Image Source="{Binding Path, Converter={StaticResource PathToFolderIconConverter}}"
-                               Margin="0 0 5 0" />
-                        <TextBlock Text="{Binding FolderName}"
-                                   FontWeight="{Binding IsCurrentFolder, Converter={StaticResource BoolToFontWeightConverter}}" />
-                    </StackPanel>
+                    <views:FolderTreeItemView ViewModel="{Binding}"/>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

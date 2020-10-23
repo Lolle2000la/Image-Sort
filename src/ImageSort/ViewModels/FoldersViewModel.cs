@@ -17,7 +17,7 @@ namespace ImageSort.ViewModels
     public class FoldersViewModel : ReactiveObject
     {
         private readonly IFileSystem fileSystem;
-        private readonly bool noParallel;
+        private readonly IScheduler backgroundScheduler;
 
         private FolderTreeItemViewModel _currentFolder;
 
@@ -61,12 +61,10 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
-        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null,
-            bool noParallel = false)
+        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
         {
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
-            backgroundScheduler ??= RxApp.TaskpoolScheduler;
-            this.noParallel = noParallel;
+            this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
             pinnedFolders = new SourceList<FolderTreeItemViewModel>();
             pinnedFolders.Connect()
@@ -88,7 +86,7 @@ namespace ImageSort.ViewModels
                     if (pinnedFolders.Items.Any(f => f.Path.PathEquals(folderToPin))) return;
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem, noParallel: noParallel)
+                        new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler)
                         {
                             Path = folderToPin
                         });
@@ -181,7 +179,7 @@ namespace ImageSort.ViewModels
 
                     try
                     {
-                        return new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = p };
+                        return new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = p };
                     }
                     catch { return null; }
                 }).Where(f => f != null));
