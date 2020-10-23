@@ -25,12 +25,20 @@ namespace ImageSort.ViewModels
         private readonly FileSystemWatcher folderWatcher;
         private readonly bool noParallel;
 
-        private bool _isCurrentFolder = false;
+        private bool _isCurrentFolder;
 
         public bool IsCurrentFolder
         {
             get => _isCurrentFolder;
             set => this.RaiseAndSetIfChanged(ref _isCurrentFolder, value);
+        }
+
+        private bool _isVisible;
+
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set => this.RaiseAndSetIfChanged(ref _isVisible, value);
         }
 
         private string _path;
@@ -78,7 +86,9 @@ namespace ImageSort.ViewModels
                 })
                 .ToProperty(this, x => x.FolderName);
 
-            this.WhenAnyValue(x => x.Path)
+            this.WhenAnyValue(x => x.Path, x => x.IsVisible)
+                .Where(x => x.Item2) // make sure the item is visible before loading
+                .Select(x => x.Item1)
                 .Where(p => p != null)
                 .SelectMany(async p =>
                 {

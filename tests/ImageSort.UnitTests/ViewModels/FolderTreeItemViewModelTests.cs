@@ -34,7 +34,8 @@ namespace ImageSort.UnitTests.ViewModels
 
             var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
             {
-                Path = path
+                Path = path,
+                IsVisible = true
             };
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
@@ -82,7 +83,8 @@ namespace ImageSort.UnitTests.ViewModels
 
             var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
             {
-                Path = currentFolder
+                Path = currentFolder,
+                IsVisible = true
             };
 
             testScheduler.AdvanceBy(1);
