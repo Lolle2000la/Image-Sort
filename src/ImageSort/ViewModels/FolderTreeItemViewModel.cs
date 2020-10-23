@@ -69,6 +69,7 @@ namespace ImageSort.ViewModels
             subFolders = new SourceList<FolderTreeItemViewModel>();
             subFolders.Connect()
                 .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
+                .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _children)
                 .Subscribe()
                 .DisposeWith(disposableRegistration);
@@ -89,7 +90,7 @@ namespace ImageSort.ViewModels
                 .Select(x => x.Item1)
                 .Where(p => p != null)
                 .ObserveOn(backgroundScheduler)
-                .SelectMany(async p =>
+                .Select(p =>
                 {
                     try
                     {
@@ -119,7 +120,6 @@ namespace ImageSort.ViewModels
                         .Where(f => f != null)
                         .ToList();
                 })
-                .ObserveOn(RxApp.MainThreadScheduler)
                 .Subscribe(folders => subFolders.AddRange(folders))
                 .DisposeWith(disposableRegistration);
 
