@@ -99,5 +99,34 @@ namespace ImageSort.UnitTests.ViewModels
 
             Assert.Equal(result.OrderBy(p => p), folderTreeItem.Children.Select(f => f.Path).OrderBy(p => p));
         }
+
+        [Fact(DisplayName = "Do not load subfolders when not visible")]
+        public async Task DoNotLoadSubfoldersWhenNotVisible()
+        {
+            const string path = @"C:\current folder";
+
+            var resultingPaths =
+                new[]
+                    {
+                        @"\folder 1",
+                        @"\folder 2",
+                        @"\folder 3"
+                    }
+                    .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+
+            var fsMock = new Mock<IFileSystem>();
+
+            fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
+
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+            {
+                Path = path,
+                IsVisible = false
+            };
+
+            fsMock.Verify(fs => fs.GetSubFolders(path), Times.Never());
+
+            Assert.Empty(folderTreeItem.Children.Select(vm => vm.Path).ToArray());
+        }
     }
 }
