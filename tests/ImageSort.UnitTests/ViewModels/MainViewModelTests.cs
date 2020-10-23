@@ -113,7 +113,7 @@ namespace ImageSort.UnitTests.ViewModels
                 Actions = new ActionsViewModel(),
                 Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler, true)
                 {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
                 },
                 Images = new ImagesViewModel(fsMock.Object)
@@ -171,7 +171,7 @@ namespace ImageSort.UnitTests.ViewModels
                 Actions = new ActionsViewModel(),
                 Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
                 {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
                 },
                 Images = new ImagesViewModel(fsMock.Object)

@@ -77,7 +77,7 @@ namespace ImageSort.ViewModels
             {
                 try
                 {
-                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = await PickFolder.Handle(Unit.Default) };
+                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, backgroundScheduler: RxApp.MainThreadScheduler) { Path = await PickFolder.Handle(Unit.Default) };
                 }
                 catch (UnhandledInteractionException<Unit, string>) { }
             });

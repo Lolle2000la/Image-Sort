@@ -4,10 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using Castle.Core.Internal;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
 using Microsoft.Reactive.Testing;
 using Moq;
+using ReactiveUI;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
@@ -32,13 +34,15 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = path,
                 IsVisible = true
             };
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
+
+            while (folderTreeItem.Children.IsNullOrEmpty()) {}
 
             Assert.Equal(resultingPaths, folderTreeItem.Children.Select(vm => vm.Path).ToArray());
         }
@@ -81,7 +85,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             testScheduler.Start();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = currentFolder,
                 IsVisible = true
@@ -118,7 +122,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, noParallel: true)
+            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = path,
                 IsVisible = false

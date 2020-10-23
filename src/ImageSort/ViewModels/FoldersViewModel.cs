@@ -88,7 +88,7 @@ namespace ImageSort.ViewModels
                     if (pinnedFolders.Items.Any(f => f.Path.PathEquals(folderToPin))) return;
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem, noParallel: noParallel)
+                        new FolderTreeItemViewModel(fileSystem, backgroundScheduler: RxApp.MainThreadScheduler)
                         {
                             Path = folderToPin
                         });
@@ -181,7 +181,7 @@ namespace ImageSort.ViewModels
 
                     try
                     {
-                        return new FolderTreeItemViewModel(fileSystem, noParallel: noParallel) { Path = p };
+                        return new FolderTreeItemViewModel(fileSystem, backgroundScheduler: RxApp.MainThreadScheduler) { Path = p };
                     }
                     catch { return null; }
                 }).Where(f => f != null));
