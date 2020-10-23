@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,7 +32,7 @@ namespace ImageSort.WPF.Views
             {
                 this.OneWayBind(ViewModel,
                         vm => vm.FolderName,
-                        view => view.FolderName)
+                        view => view.FolderName.Text)
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
@@ -46,10 +47,10 @@ namespace ImageSort.WPF.Views
                         path => !Directory.Exists(path) ? null : ShellFileLoader.GetThumbnailFromShellForWpf(path))
                     .DisposeWith(disposableRegistration);
 
-                this.Bind(ViewModel,
-                        vm => vm.IsVisible,
-                        view => view.IsVisible)
-                    .DisposeWith(disposableRegistration);
+                this.WhenAnyValue(x => x.ActualHeight, x => x.ActualWidth)
+                    .Select(x => x.Item1 > 0 && x.Item2 > 0)
+                    .Where(_ => ViewModel != null)
+                    .Subscribe(v => ViewModel.IsVisible = v);
             });
         }
     }
