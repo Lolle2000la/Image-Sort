@@ -108,10 +108,10 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
 
-            var otherMainVM = new MainViewModel(fsMock.Object, noParallel: true)
+            var otherMainVM = new MainViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler, true)
+                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
                 {
                     CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
@@ -166,7 +166,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
 
-            var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object)
+            var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object, RxApp.MainThreadScheduler)
             {
                 Actions = new ActionsViewModel(),
                 Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
