@@ -6,20 +6,8 @@ platform: Any CPU
 cache:
   - 'C:\ProgramData\chocolatey\bin -> appveyor.yml'
   - 'C:\ProgramData\chocolatey\lib -> appveyor.yml'
-  
-environment:
-  _DOTNET_VERSION: "5.0.100"
 
 install:
-  - ps: >-
-      "[Net.ServicePointManager]::SecurityProtocol = 'Tls12'";
-      New-Item .\.tmp;
-      Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile ".\.tmp\dotnet-install.ps1";
-      if ((-Not (Test-Path .tmp\dotnet\dotnet.exe)) -or (((.tmp\dotnet\dotnet.exe --version) -Join '') -ne $Env:_DOTNET_VERSION)) { .tmp\dotnet-install.ps1 -Version $Env:_DOTNET_VERSION -InstallDir .tmp\dotnet } else { $Env:path = $Env:APPVEYOR_BUILD_FOLDER + "\.tmp\dotnet\dotnet.exe;" + $Env:path }
-  #- ps: "[Net.ServicePointManager]::SecurityProtocol = 'Tls12'"
-  #- ps: New-Item .\.tmp
-  #- ps: Invoke-WebRequest "https://dot.net/v1/dotnet-install.ps1" -OutFile ".\.tmp\dotnet-install.ps1"
-  #- ps: if ((-Not (Test-Path .tmp\dotnet\dotnet.exe)) -or (((.tmp\dotnet\dotnet.exe --version) -Join '') -ne $Env:_DOTNET_VERSION)) { .tmp\dotnet-install.ps1 -Version $Env:_DOTNET_VERSION -InstallDir .tmp\dotnet } else { $Env:path = $Env:APPVEYOR_BUILD_FOLDER + "\.tmp\dotnet\dotnet.exe;" + $Env:path }
   - choco install gitversion.portable -pre -y
 
 before_build:
