@@ -6,7 +6,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Image Sort</AssemblyName>
     <Configurations>Debug;Release;MSIX</Configurations>
-    <PublishReadyToRun>true</PublishReadyToRun>
+    <!--<PublishReadyToRun>true</PublishReadyToRun>-->
     <Platforms>AnyCPU;x86;x64</Platforms>
   </PropertyGroup>
 
