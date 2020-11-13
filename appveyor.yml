@@ -8,10 +8,6 @@ cache:
   - 'C:\ProgramData\chocolatey\lib -> appveyor.yml'
 
 install:
-  - ps: >-
-      Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
-
-      ./dotnet-install.ps1 --Version 5.0.100 -InstallDir 'C:\Program Files\dotnet'
   - choco install gitversion.portable -pre -y
 
 before_build:
