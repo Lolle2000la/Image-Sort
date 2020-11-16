@@ -5,23 +5,8 @@ using System.Windows.Input;
 
 namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
 {
-    public class Hotkey : IEquatable<Hotkey>
+    public record Hotkey(Key Key, ModifierKeys Modifiers)
     {
-        public Hotkey(Key key, ModifierKeys modifiers)
-        {
-            Key = key;
-            Modifiers = modifiers;
-        }
-
-        public Key Key { get; }
-
-        public ModifierKeys Modifiers { get; }
-
-        public bool Equals([AllowNull] Hotkey other)
-        {
-            return this == other;
-        }
-
         public override string ToString()
         {
             var str = new StringBuilder();
@@ -38,28 +23,6 @@ namespace ImageSort.WPF.SettingsManagement.ShortCutManagement
             str.Append(Key);
 
             return str.ToString();
-        }
-
-        public static bool operator ==(Hotkey first, Hotkey second)
-        {
-            return (first?.Key, first?.Modifiers) == (second?.Key, second?.Modifiers);
-        }
-
-        public static bool operator !=(Hotkey first, Hotkey second)
-        {
-            return (first?.Key, first?.Modifiers) != (second?.Key, second?.Modifiers);
-        }
-
-        public static bool Equals(Hotkey left, Hotkey right)
-        {
-            return left == right;
-        }
-
-        public override bool Equals(object obj)
-        {
-            if (obj is Hotkey hotkey) return this == hotkey;
-
-            return base.Equals(obj);
         }
     }
 }
