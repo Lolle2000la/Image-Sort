@@ -291,4 +291,7 @@ Wollen Sie updaten?</value>
   <data name="CreditsWindowTitle" xml:space="preserve">
     <value>Credits</value>
   </data>
+  <data name="OpenSettings" xml:space="preserve">
+    <value>Einstellungen öffnen</value>
+  </data>
 </root>

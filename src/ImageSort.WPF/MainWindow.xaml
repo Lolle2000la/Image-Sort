@@ -38,7 +38,7 @@
 
                 <GroupBox Header="{x:Static text:Text.Settings}" Margin="{adonisUi:Space 0, 1}">
                     <StackPanel>
-                        <Button Content="{x:Static text:Text.Open}" Click="OnOpenSettingsClicked" />
+                        <Button Content="{x:Static text:Text.OpenSettings}" Click="OnOpenSettingsClicked" />
                         <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}"
                                 Click="OnOpenKeybindingsClicked" />
                         <Button Content="{x:Static text:Text.CreditsWindowTitle}" Click="OnCreditsClicked" />

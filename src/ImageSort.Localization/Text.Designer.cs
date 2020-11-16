@@ -395,6 +395,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Open settings.
+        /// </summary>
+        public static string OpenSettings {
+            get {
+                return ResourceManager.GetString("OpenSettings", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Pin.
         /// </summary>
         public static string Pin {
