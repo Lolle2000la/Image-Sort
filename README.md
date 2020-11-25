@@ -67,6 +67,6 @@ Read the [Privacy Policy](https://imagesort.org/privacy_policy.html) page for de
 * Windows 7 Service Pack 1 or higher
 
 ## Build-Prerequisites
-* [.NET Core SDK 3.1](https://dotnet.microsoft.com/download/dotnet-core/3.1)
-* (optional) Visual Studio 2019
+* [.NET 5 SDK](https://dotnet.microsoft.com/download/dotnet/5.0)
+* (optional) Visual Studio 2019 Version 16.8 or higher
 * (optional) For building the installer, you need [WiX Toolset](https://wixtoolset.org/) 3.11 or higher
