@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using ImageSort.FileSystem;
 using ImageSort.SettingsManagement;
+using ImageSort.ViewModels;
+using ReactiveUI;
 using Splat;
 
 namespace ImageSort.DependencyManagement
@@ -13,6 +15,7 @@ namespace ImageSort.DependencyManagement
         {
             dependencyResolver.Register<IFileSystem>(() => new FullAccessFileSystem());
             dependencyResolver.Register(() => new FileSystemWatcher());
+            dependencyResolver.RegisterConstant(new FolderViewModelFactory(new FullAccessFileSystem(), () => new FileSystemWatcher(), RxApp.TaskpoolScheduler));
         }
 
         /// <summary>
