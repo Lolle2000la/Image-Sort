@@ -14,7 +14,7 @@ using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
 {
-    public class FolderTreeItemViewModelTests
+    public class FolderViewModelTests
     {
         [Fact(DisplayName = "Obtains the child folders of the current folder correctly")]
         public void ObtainsChildrenCorrectly()
