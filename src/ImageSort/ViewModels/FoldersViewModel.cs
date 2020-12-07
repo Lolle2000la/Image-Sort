@@ -3,21 +3,19 @@ using DynamicData.Binding;
 using ImageSort.FileSystem;
 using ImageSort.Helpers;
 using ReactiveUI;
-using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace ImageSort.ViewModels
 {
     public class FoldersViewModel : ReactiveObject
     {
+        private readonly FolderViewModelFactory folderFactory;
         private readonly IFileSystem fileSystem;
-        private readonly IScheduler backgroundScheduler;
 
         private FolderViewModel _currentFolder;
 
@@ -55,16 +53,16 @@ namespace ImageSort.ViewModels
         public ReactiveCommand<Unit, Unit> Pin { get; }
         public ReactiveCommand<Unit, Unit> PinSelected { get; }
         public ReactiveCommand<Unit, Unit> UnpinSelected { get; }
-
+        
         public ReactiveCommand<Unit, Unit> MoveSelectedPinnedFolderUp { get; }
         public ReactiveCommand<Unit, Unit> MoveSelectedPinnedFolderDown { get; }
 
         public ReactiveCommand<Unit, Unit> CreateFolderUnderSelected { get; }
 
-        public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
+        public FoldersViewModel(FolderViewModelFactory folderFactory, IFileSystem fileSystem)
         {
-            this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
-            this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
+            this.folderFactory = folderFactory;
+            this.fileSystem = fileSystem;
 
             pinnedFolders = new SourceList<FolderViewModel>();
             pinnedFolders.Connect()
@@ -85,11 +83,7 @@ namespace ImageSort.ViewModels
 
                     if (pinnedFolders.Items.Any(f => f.Path.PathEquals(folderToPin))) return;
 
-                    pinnedFolders.Add(
-                        new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler)
-                        {
-                            Path = folderToPin
-                        });
+                    pinnedFolders.Add(folderFactory.GetFor(folderToPin));
                 }
                 catch (UnhandledInteractionException<Unit, string>)
                 {
@@ -179,7 +173,7 @@ namespace ImageSort.ViewModels
 
                     try
                     {
-                        return new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = p };
+                        return folderFactory.GetFor(p);
                     }
                     catch { return null; }
                 }).Where(f => f != null));

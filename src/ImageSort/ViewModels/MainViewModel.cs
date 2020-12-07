@@ -5,7 +5,6 @@ using Splat;
 using System;
 using System.Linq;
 using System.Reactive;
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
 namespace ImageSort.ViewModels
@@ -45,11 +44,10 @@ namespace ImageSort.ViewModels
 
         public ReactiveCommand<Unit, Unit> DeleteImage { get; }
 
-        public MainViewModel(IFileSystem fileSystem = null, IRecycleBin recycleBin = null, IScheduler backgroundScheduler = null)
+        public MainViewModel(FolderViewModelFactory folderFactory, IFileSystem fileSystem = null, IRecycleBin recycleBin = null)
         {
             fileSystem ??= Locator.Current.GetService<IFileSystem>();
             recycleBin ??= Locator.Current.GetService<IRecycleBin>();
-            backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
             this.WhenAnyValue(x => x.Images)
                 .Where(i => i != null)
@@ -79,7 +77,7 @@ namespace ImageSort.ViewModels
             {
                 try
                 {
-                    Folders.CurrentFolder = new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = await PickFolder.Handle(Unit.Default) };
+                    Folders.CurrentFolder = folderFactory.GetFor(await PickFolder.Handle(Unit.Default));
                 }
                 catch (UnhandledInteractionException<Unit, string>) { }
             });
