@@ -38,20 +38,24 @@ namespace ImageSort.WPF.Views
                         view => view.Redo.ToolTip)
                     .DisposeWith(disposableRegistration);
 
-                ViewModel.NotifyUserOfError.RegisterHandler(ic =>
+                this.WaitForViewModel(vm =>
                 {
-                    var messageBox = new MessageBoxModel
+                    vm.NotifyUserOfError.RegisterHandler(ic =>
                     {
-                        Caption = Text.Error,
-                        Text = ic.Input,
-                        Icon = MessageBoxImage.Error,
-                        Buttons = new[] {MessageBoxButtons.Ok(Text.OK)}
-                    };
+                        var messageBox = new MessageBoxModel
+                        {
+                            Caption = Text.Error,
+                            Text = ic.Input,
+                            Icon = MessageBoxImage.Error,
+                            Buttons = new[] { MessageBoxButtons.Ok(Text.OK) }
+                        };
 
-                    MessageBox.Show(messageBox);
+                        MessageBox.Show(messageBox);
 
-                    ic.SetOutput(Unit.Default);
-                });
+                        ic.SetOutput(Unit.Default);
+                    }).DisposeWith(disposableRegistration);
+                })
+                .DisposeWith(disposableRegistration);            
             });
         }
     }

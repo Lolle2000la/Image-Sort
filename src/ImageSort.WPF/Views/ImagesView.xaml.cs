@@ -64,37 +64,43 @@ namespace ImageSort.WPF.Views
                         view => view.Rename)
                     .DisposeWith(disposableRegistration);
 
-                ViewModel.PromptForNewFileName.RegisterHandler(ic =>
+                this.WaitForViewModel(vm =>
                 {
-                    var inputBox = new InputBox(Text.RenameImagePromptText, Text.RenameImagePromptTitle);
-
-                    if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
-                    else ic.SetOutput(null);
-                });
-
-                ViewModel.NotifyUserOfError.RegisterHandler(ic =>
-                {
-                    var messageBox = new MessageBoxModel
+                    vm.PromptForNewFileName.RegisterHandler(ic =>
                     {
-                        Caption = Text.Error,
-                        Text = ic.Input,
-                        Buttons = new[] {MessageBoxButtons.Ok(Text.OK)},
-                        Icon = MessageBoxImage.Error
-                    };
+                        var inputBox = new InputBox(Text.RenameImagePromptText, Text.RenameImagePromptTitle);
 
-                    MessageBox.Show(messageBox);
-
-                    ic.SetOutput(Unit.Default);
-                });
-
-                ViewModel.GoLeft
-                    .Merge(ViewModel.GoRight)
-                    .Subscribe(_ =>
-                    {
-                        if (Images.ItemContainerGenerator.ContainerFromItem(Images.SelectedItem) is ListBoxItem item)
-                            item.Focus();
+                        if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
+                        else ic.SetOutput(null);
                     })
                     .DisposeWith(disposableRegistration);
+
+                    vm.NotifyUserOfError.RegisterHandler(ic =>
+                    {
+                        var messageBox = new MessageBoxModel
+                        {
+                            Caption = Text.Error,
+                            Text = ic.Input,
+                            Buttons = new[] { MessageBoxButtons.Ok(Text.OK) },
+                            Icon = MessageBoxImage.Error
+                        };
+
+                        MessageBox.Show(messageBox);
+
+                        ic.SetOutput(Unit.Default);
+                    })
+                    .DisposeWith(disposableRegistration);
+
+                    vm.GoLeft
+                        .Merge(vm.GoRight)
+                        .Subscribe(_ =>
+                        {
+                            if (Images.ItemContainerGenerator.ContainerFromItem(Images.SelectedItem) is ListBoxItem item)
+                                item.Focus();
+                        })
+                        .DisposeWith(disposableRegistration);
+                })
+                .DisposeWith(disposableRegistration);
             });
         }
 

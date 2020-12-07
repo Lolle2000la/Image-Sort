@@ -27,43 +27,72 @@ namespace ImageSort.WPF.Views
 
             this.WhenActivated(disposableRegistration =>
             {
-                ViewModel.SelectFolder.RegisterHandler(ic =>
+                this.WaitForViewModel(vm =>
                 {
-                    var folderBrowser = new FolderBrowserDialog
+                    vm.SelectFolder.RegisterHandler(ic =>
                     {
-                        ShowNewFolderButton = true
+                        var folderBrowser = new FolderBrowserDialog
+                        {
+                            ShowNewFolderButton = true
+                        };
+
+                        if (folderBrowser.ShowDialog() == DialogResult.OK)
+                            ic.SetOutput(folderBrowser.SelectedPath);
+                    }).DisposeWith(disposableRegistration);
+
+                    vm.PromptForName.RegisterHandler(ic =>
+                    {
+                        var inputBox = new InputBox(Text.NewFolderPromptText, Text.NewFolderPromptTitle);
+
+                        if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
+                        else ic.SetOutput(null);
+                    }).DisposeWith(disposableRegistration);
+
+                    var currentFolder = new ObservableCollection<FolderViewModel>();
+
+                    vm.WhenAnyValue(x => x.CurrentFolder)
+                        .Where(c => c != null)
+                        .Subscribe(f =>
+                        {
+                            currentFolder.Clear();
+                            currentFolder.Add(f);
+                        })
+                        .DisposeWith(disposableRegistration);
+
+                    var compositeCollection = new CompositeCollection
+                    {
+                        new CollectionContainer {Collection = currentFolder},
+                        new CollectionContainer {Collection = vm.PinnedFolders}
                     };
 
-                    if (folderBrowser.ShowDialog() == DialogResult.OK)
-                        ic.SetOutput(folderBrowser.SelectedPath);
-                }).DisposeWith(disposableRegistration);
+                    Folders.ItemsSource = compositeCollection;
 
-                ViewModel.PromptForName.RegisterHandler(ic =>
-                {
-                    var inputBox = new InputBox(Text.NewFolderPromptText, Text.NewFolderPromptTitle);
+                    vm.WhenAnyValue(x => x.CurrentFolder)
+                        .Where(c => c != null)
+                        .Select(_ => Unit.Default)
+                        .Subscribe(_ => SelectCurrentFolder())
+                        .DisposeWith(disposableRegistration);
 
-                    if (inputBox.ShowDialog() == true) ic.SetOutput(inputBox.Answer);
-                    else ic.SetOutput(null);
-                }).DisposeWith(disposableRegistration);
+                    var settings = Locator.Current.GetService<SettingsViewModel>();
+                    var pinnedFolderSettings = settings.GetGroup<PinnedFolderSettingsViewModel>();
 
-                var currentFolder = new ObservableCollection<FolderViewModel>();
+                    // restore pinned folders
+                    vm.AddPinnedFoldersFromPaths(pinnedFolderSettings.PinnedFolders);
 
-                ViewModel.WhenAnyValue(x => x.CurrentFolder)
-                    .Where(c => c != null)
-                    .Subscribe(f =>
+                    // save pinned folders
+                    vm.PinnedFolders.ActOnEveryObject(f =>
                     {
-                        currentFolder.Clear();
-                        currentFolder.Add(f);
-                    })
-                    .DisposeWith(disposableRegistration);
+                        if (f == null) return;
 
-                var compositeCollection = new CompositeCollection
-                {
-                    new CollectionContainer {Collection = currentFolder},
-                    new CollectionContainer {Collection = ViewModel.PinnedFolders}
-                };
-
-                Folders.ItemsSource = compositeCollection;
+                        pinnedFolderSettings.PinnedFolders = vm.PinnedFolders.Select(p => p.Path);
+                    },
+                    f =>
+                    {
+                        if (f == null) return;
+                    
+                        pinnedFolderSettings.PinnedFolders = vm.PinnedFolders.Select(p => p.Path);
+                    });
+                });
 
                 this.Bind(ViewModel,
                         vm => vm.Selected,
@@ -99,32 +128,6 @@ namespace ImageSort.WPF.Views
                         vm => vm.MoveSelectedPinnedFolderDown,
                         view => view.MoveSelectedPinnedFolderDown)
                     .DisposeWith(disposableRegistration);
-
-                ViewModel.WhenAnyValue(x => x.CurrentFolder)
-                    .Where(c => c != null)
-                    .Select(_ => Unit.Default)
-                    .Subscribe(_ => SelectCurrentFolder())
-                    .DisposeWith(disposableRegistration);
-
-                var settings = Locator.Current.GetService<SettingsViewModel>();
-                var pinnedFolderSettings = settings.GetGroup<PinnedFolderSettingsViewModel>();
-
-                // restore pinned folders
-                ViewModel.AddPinnedFoldersFromPaths(pinnedFolderSettings.PinnedFolders);
-
-                // save pinned folders
-                ViewModel.PinnedFolders.ActOnEveryObject(f =>
-                    {
-                        if (f == null) return;
-
-                        pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
-                    },
-                    f =>
-                    {
-                        if (f == null) return;
-
-                        pinnedFolderSettings.PinnedFolders = ViewModel.PinnedFolders.Select(p => p.Path);
-                    });
             });
         }
 
