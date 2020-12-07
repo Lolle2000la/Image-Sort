@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
 using Moq;
+using ReactiveUI;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels
@@ -13,6 +14,7 @@ namespace ImageSort.UnitTests.ViewModels
     {
         private const string MockPath = @"C:\SomePath\";
         private readonly IFileSystem fileSystemMock;
+        private readonly FolderViewModelFactory folderFactory;
 
         public FoldersViewModelTests()
         {
@@ -20,20 +22,19 @@ namespace ImageSort.UnitTests.ViewModels
             fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Array.Empty<string>());
 
             fileSystemMock = fsMock.Object;
+
+            folderFactory = new(fileSystemMock, () => null, RxApp.MainThreadScheduler);
         }
 
         private FolderViewModel CreateMock(string path)
         {
-            return new FolderViewModel(fileSystemMock)
-            {
-                Path = path
-            };
+            return folderFactory.GetFor(path);
         }
 
         [Fact(DisplayName = "The currently loaded folder can be changed.")]
         public void CurrentFolderCanBeChanged()
         {
-            var foldersVM = new FoldersViewModel
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -50,7 +51,9 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
 
-            var foldersVM = new FoldersViewModel(fsMock.Object)
+            FolderViewModelFactory _folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            var foldersVM = new FoldersViewModel(_folderFactory, fsMock.Object)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -68,7 +71,7 @@ namespace ImageSort.UnitTests.ViewModels
         {
             const string mockPathToPin = @"C:\SomeOtherPath\";
 
-            var foldersVM = new FoldersViewModel
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -86,7 +89,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             var mockToPin = CreateMock(mockPathToPin);
 
-            var foldersVM = new FoldersViewModel
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -108,7 +111,9 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
 
-            var foldersVM = new FoldersViewModel(fsMock.Object)
+            FolderViewModelFactory _folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            var foldersVM = new FoldersViewModel(_folderFactory, fsMock.Object)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -132,7 +137,7 @@ namespace ImageSort.UnitTests.ViewModels
         {
             var mockItem = CreateMock(MockPath);
 
-            var foldersVM = new FoldersViewModel
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = mockItem,
                 Selected = mockItem
@@ -150,7 +155,9 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
 
-            var foldersVM = new FoldersViewModel(fsMock.Object)
+            FolderViewModelFactory _folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            var foldersVM = new FoldersViewModel(_folderFactory, fsMock.Object)
             {
                 CurrentFolder = currentFolder
             };
@@ -178,7 +185,7 @@ namespace ImageSort.UnitTests.ViewModels
         {
             var currentFolder = CreateMock(MockPath);
 
-            var foldersVM = new FoldersViewModel
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = currentFolder
             };
@@ -189,7 +196,7 @@ namespace ImageSort.UnitTests.ViewModels
         [Fact(DisplayName = "Moves the selected pinned folder up correctly if possible")]
         public async Task MovesSelectedFolderUp()
         {
-            var foldersVM = new FoldersViewModel(fileSystemMock)
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = CreateMock(MockPath)
             };
@@ -222,7 +229,7 @@ namespace ImageSort.UnitTests.ViewModels
         [Fact(DisplayName = "Moves the selected pinned folder down correctly if possible")]
         public async Task MovesSelectedFolderDown()
         {
-            var foldersVM = new FoldersViewModel(fileSystemMock)
+            var foldersVM = new FoldersViewModel(folderFactory, fileSystemMock)
             {
                 CurrentFolder = CreateMock(MockPath)
             };

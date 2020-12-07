@@ -25,15 +25,17 @@ namespace ImageSort.UnitTests.ViewModels
             fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>()))
                 .Returns(new[] {@"c:\img.png"}); // just so that no exception is thrown
 
-            mainVM = new MainViewModel(fsMock.Object)
+            FolderViewModelFactory folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            mainVM = new MainViewModel(folderFactory)
             {
                 Images = new ImagesViewModel(fsMock.Object)
                 {
                     CurrentFolder = @"C:\"
                 },
-                Folders = new FoldersViewModel(fsMock.Object)
+                Folders = new FoldersViewModel(folderFactory, fsMock.Object)
                 {
-                    CurrentFolder = new FolderViewModel(fsMock.Object) {Path = @"C:\"},
+                    CurrentFolder = folderFactory.GetFor(@"C:\"),
                     Selected = new FolderViewModel(fsMock.Object) {Path = @"C:\folder"}
                 }
             };
@@ -108,10 +110,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
 
-            var otherMainVM = new MainViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+            FolderViewModelFactory folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            var otherMainVM = new MainViewModel(folderFactory, fsMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
+                Folders = new FoldersViewModel(folderFactory, fsMock.Object)
                 {
                     CurrentFolder = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
@@ -166,10 +170,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
 
-            var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object, RxApp.MainThreadScheduler)
+            FolderViewModelFactory folderFactory = new(fsMock.Object, () => null, RxApp.MainThreadScheduler);
+
+            var otherMainVM = new MainViewModel(folderFactory, fsMock.Object, rbMock.Object)
             {
                 Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
+                Folders = new FoldersViewModel(folderFactory, fsMock.Object)
                 {
                     CurrentFolder = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
