@@ -57,7 +57,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(pathToUnauthorisedFolder)).Throws(new UnauthorizedAccessException());
 
-            var folderTreeItem = new FolderViewModel(fsMock.Object)
+            _ = new FolderViewModel(fsMock.Object)
             {
                 Path = pathToUnauthorisedFolder
             };
