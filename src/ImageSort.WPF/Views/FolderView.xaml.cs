@@ -20,11 +20,11 @@ using ReactiveUI;
 namespace ImageSort.WPF.Views
 {
     /// <summary>
-    /// Interaction logic for FolderTreeItemView.xaml
+    /// Interaction logic for FolderView.xaml
     /// </summary>
-    public partial class FolderTreeItemView : ReactiveUserControl<FolderTreeItemViewModel>
+    public partial class FolderView : ReactiveUserControl<FolderViewModel>
     {
-        public FolderTreeItemView()
+        public FolderView()
         {
             InitializeComponent();
 

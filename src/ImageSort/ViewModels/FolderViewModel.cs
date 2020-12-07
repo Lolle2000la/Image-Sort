@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace ImageSort.ViewModels
 {
-    public class FolderTreeItemViewModel : ReactiveObject
+    public class FolderViewModel : ReactiveObject
     {
         private readonly CompositeDisposable disposableRegistration = new CompositeDisposable();
         private readonly IFileSystem fileSystem;
@@ -51,14 +51,14 @@ namespace ImageSort.ViewModels
         private readonly ObservableAsPropertyHelper<string> _folderName;
         public string FolderName => _folderName.Value;
 
-        private readonly SourceList<FolderTreeItemViewModel> subFolders;
+        private readonly SourceList<FolderViewModel> subFolders;
 
-        private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _children;
-        public ReadOnlyObservableCollection<FolderTreeItemViewModel> Children => _children;
+        private readonly ReadOnlyObservableCollection<FolderViewModel> _children;
+        public ReadOnlyObservableCollection<FolderViewModel> Children => _children;
 
         public ReactiveCommand<string, Unit> CreateFolder { get; }
 
-        public FolderTreeItemViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, IScheduler backgroundScheduler = null)
+        public FolderViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, IScheduler backgroundScheduler = null)
         {
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
@@ -66,9 +66,9 @@ namespace ImageSort.ViewModels
             folderWatcher = folderWatcherFactory();
             folderWatcher?.DisposeWith(disposableRegistration);
 
-            subFolders = new SourceList<FolderTreeItemViewModel>();
+            subFolders = new SourceList<FolderViewModel>();
             subFolders.Connect()
-                .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
+                .Sort(SortExpressionComparer<FolderViewModel>.Ascending(f => f.Path))
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _children)
                 .Subscribe()
@@ -113,7 +113,7 @@ namespace ImageSort.ViewModels
                         {
                             try
                             {
-                                return new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = p };
+                                return new FolderViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = p };
                             }
                             catch (UnauthorizedAccessException) { return null; }
                         })
@@ -131,7 +131,7 @@ namespace ImageSort.ViewModels
 
                     fileSystem.CreateFolder(newFolderPath);
 
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = newFolderPath });
+                    subFolders.Add(new FolderViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = newFolderPath });
 
                     return Unit.Default;
                 });
@@ -168,7 +168,7 @@ namespace ImageSort.ViewModels
             {
                 if (!subFolders.Items.Any(f => f.Path.PathEquals(e.FullPath)))
                 {
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
+                    subFolders.Add(new FolderViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
                 }
             });
         }
@@ -193,12 +193,12 @@ namespace ImageSort.ViewModels
                 {
                     subFolders.Remove(item);
 
-                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
+                    subFolders.Add(new FolderViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
                 }
             });
         }
 
-        ~FolderTreeItemViewModel()
+        ~FolderViewModel()
         {
             if (folderWatcher != null)
             {

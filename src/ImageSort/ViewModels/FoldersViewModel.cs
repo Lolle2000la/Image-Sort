@@ -19,25 +19,25 @@ namespace ImageSort.ViewModels
         private readonly IFileSystem fileSystem;
         private readonly IScheduler backgroundScheduler;
 
-        private FolderTreeItemViewModel _currentFolder;
+        private FolderViewModel _currentFolder;
 
-        public FolderTreeItemViewModel CurrentFolder
+        public FolderViewModel CurrentFolder
         {
             get => _currentFolder;
             set => this.RaiseAndSetIfChanged(ref _currentFolder, value);
         }
 
-        private readonly SourceList<FolderTreeItemViewModel> pinnedFolders;
+        private readonly SourceList<FolderViewModel> pinnedFolders;
 
-        private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _pinnedFolders;
-        public ReadOnlyObservableCollection<FolderTreeItemViewModel> PinnedFolders => _pinnedFolders;
+        private readonly ReadOnlyObservableCollection<FolderViewModel> _pinnedFolders;
+        public ReadOnlyObservableCollection<FolderViewModel> PinnedFolders => _pinnedFolders;
 
-        private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _allFoldersTracked;
-        public IEnumerable<FolderTreeItemViewModel> AllFoldersTracked => _allFoldersTracked.Value;
+        private readonly ObservableAsPropertyHelper<IEnumerable<FolderViewModel>> _allFoldersTracked;
+        public IEnumerable<FolderViewModel> AllFoldersTracked => _allFoldersTracked.Value;
 
-        private FolderTreeItemViewModel _selected;
+        private FolderViewModel _selected;
 
-        public FolderTreeItemViewModel Selected
+        public FolderViewModel Selected
         {
             get => _selected;
             set => this.RaiseAndSetIfChanged(ref _selected, value);
@@ -66,7 +66,7 @@ namespace ImageSort.ViewModels
             this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
             this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
-            pinnedFolders = new SourceList<FolderTreeItemViewModel>();
+            pinnedFolders = new SourceList<FolderViewModel>();
             pinnedFolders.Connect()
                 .ObserveOn(RxApp.MainThreadScheduler)
                 .Bind(out _pinnedFolders)
@@ -86,7 +86,7 @@ namespace ImageSort.ViewModels
                     if (pinnedFolders.Items.Any(f => f.Path.PathEquals(folderToPin))) return;
 
                     pinnedFolders.Add(
-                        new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler)
+                        new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler)
                         {
                             Path = folderToPin
                         });
@@ -156,7 +156,7 @@ namespace ImageSort.ViewModels
                 return await Selected.CreateFolder.Execute(name);
             });
 
-            FolderTreeItemViewModel oldFolder = null;
+            FolderViewModel oldFolder = null;
 
             this.WhenAnyValue(x => x.CurrentFolder)
                 .Where(f => f != null)
@@ -179,7 +179,7 @@ namespace ImageSort.ViewModels
 
                     try
                     {
-                        return new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = p };
+                        return new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = p };
                     }
                     catch { return null; }
                 }).Where(f => f != null));

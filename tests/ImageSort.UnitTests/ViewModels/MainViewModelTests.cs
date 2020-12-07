@@ -33,8 +33,8 @@ namespace ImageSort.UnitTests.ViewModels
                 },
                 Folders = new FoldersViewModel(fsMock.Object)
                 {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\"},
-                    Selected = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\folder"}
+                    CurrentFolder = new FolderViewModel(fsMock.Object) {Path = @"C:\"},
+                    Selected = new FolderViewModel(fsMock.Object) {Path = @"C:\folder"}
                 }
             };
         }
@@ -113,7 +113,7 @@ namespace ImageSort.UnitTests.ViewModels
                 Actions = new ActionsViewModel(),
                 Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
                 {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+                    CurrentFolder = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
                 },
                 Images = new ImagesViewModel(fsMock.Object)
@@ -171,7 +171,7 @@ namespace ImageSort.UnitTests.ViewModels
                 Actions = new ActionsViewModel(),
                 Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
                 {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+                    CurrentFolder = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
                         {Path = currentDirectory}
                 },
                 Images = new ImagesViewModel(fsMock.Object)

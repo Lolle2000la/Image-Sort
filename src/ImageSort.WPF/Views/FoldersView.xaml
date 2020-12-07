@@ -32,9 +32,9 @@
 
         <TreeView x:Name="Folders" Grid.Row="1">
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type vm:FolderTreeItemViewModel}"
+                <HierarchicalDataTemplate DataType="{x:Type vm:FolderViewModel}"
                                           ItemsSource="{Binding Children}">
-                    <views:FolderTreeItemView ViewModel="{Binding}"/>
+                    <views:FolderView ViewModel="{Binding}"/>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
         </TreeView>

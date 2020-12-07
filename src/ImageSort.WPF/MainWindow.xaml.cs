@@ -40,7 +40,7 @@ namespace ImageSort.WPF
             {
                 Folders = new FoldersViewModel
                 {
-                    CurrentFolder = new FolderTreeItemViewModel
+                    CurrentFolder = new FolderViewModel
                     {
                         // will be replaced with the default path or something
                         Path = Environment.GetCommandLineArgs().ElementAtOrDefault(1) ??

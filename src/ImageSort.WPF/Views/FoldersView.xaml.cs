@@ -46,7 +46,7 @@ namespace ImageSort.WPF.Views
                     else ic.SetOutput(null);
                 }).DisposeWith(disposableRegistration);
 
-                var currentFolder = new ObservableCollection<FolderTreeItemViewModel>();
+                var currentFolder = new ObservableCollection<FolderViewModel>();
 
                 ViewModel.WhenAnyValue(x => x.CurrentFolder)
                     .Where(c => c != null)

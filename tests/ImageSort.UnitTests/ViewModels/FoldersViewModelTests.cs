@@ -22,9 +22,9 @@ namespace ImageSort.UnitTests.ViewModels
             fileSystemMock = fsMock.Object;
         }
 
-        private FolderTreeItemViewModel CreateMock(string path)
+        private FolderViewModel CreateMock(string path)
         {
-            return new FolderTreeItemViewModel(fileSystemMock)
+            return new FolderViewModel(fileSystemMock)
             {
                 Path = path
             };

@@ -79,7 +79,7 @@ namespace ImageSort.ViewModels
             {
                 try
                 {
-                    Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = await PickFolder.Handle(Unit.Default) };
+                    Folders.CurrentFolder = new FolderViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = await PickFolder.Handle(Unit.Default) };
                 }
                 catch (UnhandledInteractionException<Unit, string>) { }
             });

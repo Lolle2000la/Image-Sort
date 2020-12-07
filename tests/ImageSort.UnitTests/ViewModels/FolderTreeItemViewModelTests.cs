@@ -34,7 +34,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+            var folderTreeItem = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = path,
                 IsVisible = true
@@ -57,7 +57,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(pathToUnauthorisedFolder)).Throws(new UnauthorizedAccessException());
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+            var folderTreeItem = new FolderViewModel(fsMock.Object)
             {
                 Path = pathToUnauthorisedFolder
             };
@@ -85,7 +85,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             testScheduler.Start();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+            var folderTreeItem = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = currentFolder,
                 IsVisible = true
@@ -122,7 +122,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
 
-            var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+            var folderTreeItem = new FolderViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
             {
                 Path = path,
                 IsVisible = false
