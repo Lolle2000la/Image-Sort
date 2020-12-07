@@ -23,12 +23,12 @@ namespace ImageSort.UnitTests.ViewModels
 
             var resultingPaths =
                 new[]
-                    {
-                        @"\folder 1",
-                        @"\folder 2",
-                        @"\folder 3"
-                    }
-                    .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+                {
+                    @"\folder 1",
+                    @"\folder 2",
+                    @"\folder 3"
+                }
+                .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
 
             var fsMock = new Mock<IFileSystem>();
 
