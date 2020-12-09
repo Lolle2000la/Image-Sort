@@ -20,10 +20,10 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.0" />
-    <PackageReference Include="ReactiveUI" Version="12.1.5" />
-    <PackageReference Include="ReactiveUI.Events.WPF" Version="12.1.5" />
-    <PackageReference Include="ReactiveUI.WPF" Version="12.1.5" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.1" />
+    <PackageReference Include="ReactiveUI" Version="13.0.1" />
+    <PackageReference Include="ReactiveUI.Events.WPF" Version="13.0.1" />
+    <PackageReference Include="ReactiveUI.WPF" Version="13.0.1" />
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
