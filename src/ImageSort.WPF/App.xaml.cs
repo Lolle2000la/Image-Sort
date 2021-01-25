@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Globalization;
+using System.Linq;
 using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
@@ -9,6 +11,7 @@ using ImageSort.FileSystem;
 using ImageSort.SettingsManagement;
 using ImageSort.WPF.FileSystem;
 using ImageSort.WPF.SettingsManagement;
+using ImageSort.WPF.SettingsManagement.LanguageSelection;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ImageSort.WPF.SettingsManagement.WindowPosition;
 using ReactiveUI;
@@ -47,6 +50,16 @@ namespace ImageSort.WPF
                 settings.Add(new PinnedFolderSettingsViewModel());
                 settings.Add(new KeyBindingsSettingsGroupViewModel());
                 settings.Add(new WindowPositionSettingsViewModel<MainWindow>());
+
+                var languageSettings = new LanguageSettingsGroupViewModel();
+
+                languageSettings.WhenAnyValue(x => x.Language)
+                    .Where(l => l is not null)
+                    .Select(l => CultureInfo.GetCultureInfo(l))
+                    .Where(c => c is not null)
+                    .Subscribe(c => CultureInfo.CurrentCulture = c);
+
+                settings.Add(languageSettings);
             });
             Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
 
@@ -62,6 +75,8 @@ namespace ImageSort.WPF
                 var settings = Locator.Current.GetService<SettingsViewModel>();
 
                 settings.Restore();
+
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(settings.SettingsGroups.OfType<LanguageSettingsGroupViewModel>().FirstOrDefault().Language);
             });
 
 #if !DO_NOT_INCLUDE_UPDATER

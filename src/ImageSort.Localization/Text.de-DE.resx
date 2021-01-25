@@ -294,4 +294,7 @@ Wollen Sie updaten?</value>
   <data name="Language" xml:space="preserve">
     <value>Sprache</value>
   </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Anwenden</value>
+  </data>
 </root>
