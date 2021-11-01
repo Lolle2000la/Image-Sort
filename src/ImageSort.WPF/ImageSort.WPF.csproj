@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="5.0.2" />
     <PackageReference Include="ReactiveUI" Version="16.2.6" />
     <PackageReference Include="ReactiveUI.Events.WPF" Version="15.1.1" />
-    <PackageReference Include="ReactiveUI.WPF" Version="16.2.6" />
+    <PackageReference Include="ReactiveUI.WPF" Version="16.3.5" />
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
