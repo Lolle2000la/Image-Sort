@@ -37,7 +37,6 @@ namespace ImageSort.WPF.UiTests
 
             Assert.True(Retry.WhileFalse(() => Directory.Exists(newFolderPath), timeout: TimeSpan.FromSeconds(5), interval: TimeSpan.FromMilliseconds(50)).Result);
 
-
             Assert.True(Directory.Exists(newFolderPath));
 
             // clean-up
