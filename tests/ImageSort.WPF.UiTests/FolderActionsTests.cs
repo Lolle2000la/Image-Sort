@@ -1,7 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Input;
+using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
 using Xunit;
 
@@ -32,6 +34,8 @@ namespace ImageSort.WPF.UiTests
 
             app.WaitWhileBusy();
             mainWindow.WaitUntilClickable();
+
+            Assert.True(Retry.WhileFalse(() => Directory.Exists(newFolderPath), timeout: TimeSpan.FromSeconds(5), interval: TimeSpan.FromMilliseconds(50)).Result);
 
             Assert.True(Directory.Exists(newFolderPath));
 

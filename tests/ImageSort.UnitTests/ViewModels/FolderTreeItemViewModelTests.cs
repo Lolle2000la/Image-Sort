@@ -42,7 +42,7 @@ namespace ImageSort.UnitTests.ViewModels
 
             fsMock.Verify(fs => fs.GetSubFolders(path));
 
-            while (folderTreeItem.Children.IsNullOrEmpty()) {}
+            while (folderTreeItem.Children.Count == 0) {}
 
             Assert.Equal(resultingPaths, folderTreeItem.Children.Select(vm => vm.Path).ToArray());
         }

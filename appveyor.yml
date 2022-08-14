@@ -1,4 +1,4 @@
-image: Visual Studio 2019
+image: Visual Studio 2022
 configuration: Release
 
 platform: Any CPU
@@ -18,6 +18,9 @@ build:
   project: Image-Sort.sln
   parallel: true
   verbosity: minimal
+
+environment:
+  IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
 
 after_test:
   - ps: >-
