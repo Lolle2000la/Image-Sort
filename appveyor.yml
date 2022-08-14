@@ -19,6 +19,9 @@ build:
   parallel: true
   verbosity: minimal
 
+environment:
+  IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
+
 after_test:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
