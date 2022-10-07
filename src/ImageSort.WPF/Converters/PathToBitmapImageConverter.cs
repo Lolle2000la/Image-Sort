@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ImageSort.WPF.FileSystem;
+using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Windows.Data;
@@ -18,22 +19,7 @@ namespace ImageSort.WPF.Converters
             if (value == null) return null;
 
             if (value is string path)
-                try
-                {
-                    var bitmapImage = new BitmapImage();
-
-                    bitmapImage.BeginInit();
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.UriSource = new Uri(path);
-                    if (LoadWidth != null && LoadWidth.HasValue) bitmapImage.DecodePixelWidth = LoadWidth.Value;
-                    bitmapImage.EndInit();
-
-                    return bitmapImage;
-                }
-                catch
-                {
-                    return null;
-                }
+                return ImageLoading.GetImageFromPath(path);
 
             return null;
         }
