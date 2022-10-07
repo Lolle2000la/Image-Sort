@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -31,7 +32,14 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                         vm => vm.SelectedImage,
                         view => view.SelectedImage.Source,
-                        PathToImage)
+                        GetImageFromPath)
+                    .DisposeWith(disposableRegistration);
+
+                // for gif support
+                ViewModel.WhenAnyValue(x => x.SelectedImage)
+                    .Select(GetImageFromPath)
+                    .Subscribe(x => {
+                        WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, x); })
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
@@ -98,7 +106,7 @@ namespace ImageSort.WPF.Views
             });
         }
 
-        private static ImageSource PathToImage(string path)
+        private ImageSource GetImageFromPath(string path)
         {
             if (path == null) return null;
 
