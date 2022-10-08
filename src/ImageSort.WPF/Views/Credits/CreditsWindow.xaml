@@ -39,6 +39,10 @@
                                    ProjectUrl="https://github.com/GitTools/GitVersion"
                                    LicenseUrl="https://github.com/GitTools/GitVersion/blob/master/LICENSE" />
 
+            <local:UsedLibraryView LibraryName="Lazy Cache"
+                                   ProjectUrl="https://github.com/alastairtree/LazyCache"
+                                   LicenseUrl="https://github.com/alastairtree/LazyCache/blob/master/LICENSE" />
+
             <local:UsedLibraryView LibraryName="Microsoft.CodeAnalysis.FxCopAnalyzers"
                                    ProjectUrl="https://github.com/dotnet/roslyn-analyzers"
                                    LicenseUrl="https://github.com/dotnet/roslyn-analyzers/blob/master/License.txt" />
@@ -74,6 +78,10 @@
             <local:UsedLibraryView LibraryName="WIX TOOLSET"
                                    ProjectUrl="https://wixtoolset.org/"
                                    LicenseUrl="https://wixtoolset.org/about/license/" />
+
+            <local:UsedLibraryView LibraryName="WPF Animated GIF"
+                                   ProjectUrl="https://github.com/XamlAnimatedGif/WpfAnimatedGif"
+                                   LicenseUrl="https://github.com/XamlAnimatedGif/WpfAnimatedGif/blob/master/LICENSE.txt"/>
 
             <local:UsedLibraryView LibraryName="xunit"
                                    ProjectUrl="https://github.com/xunit/xunit"

@@ -4,6 +4,7 @@ using System.IO;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,6 +12,7 @@ using System.Windows.Media.Imaging;
 using AdonisUI.Controls;
 using ImageSort.Localization;
 using ImageSort.ViewModels;
+using ImageSort.WPF.FileSystem;
 using ReactiveUI;
 using MessageBox = AdonisUI.Controls.MessageBox;
 using MessageBoxImage = AdonisUI.Controls.MessageBoxImage;
@@ -31,7 +33,13 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                         vm => vm.SelectedImage,
                         view => view.SelectedImage.Source,
-                        PathToImage)
+                        ImageLoading.GetImageFromPath)
+                    .DisposeWith(disposableRegistration);
+
+                // for gif support
+                ViewModel.WhenAnyValue(x => x.SelectedImage)
+                    .Select(ImageLoading.GetImageFromPath)
+                    .Subscribe(x => WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, x))
                     .DisposeWith(disposableRegistration);
 
                 this.OneWayBind(ViewModel,
@@ -96,49 +104,6 @@ namespace ImageSort.WPF.Views
                     })
                     .DisposeWith(disposableRegistration);
             });
-        }
-
-        private static ImageSource PathToImage(string path)
-        {
-            if (path == null) return null;
-
-            try
-            {
-                var bitmapImage = new BitmapImage();
-
-                bitmapImage.BeginInit();
-                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                bitmapImage.UriSource = new Uri(path);
-                bitmapImage.EndInit();
-
-                return bitmapImage;
-            }
-            catch (Exception ex)
-            {
-                var textDrawing = new GeometryDrawing
-                {
-                    Geometry = new GeometryGroup
-                    {
-                        Children = new GeometryCollection(new[]
-                        {
-                            new FormattedText(Text.CouldNotLoadImageErrorText
-                                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                                        .Replace("{FileName}", Path.GetFileName(path),
-                                            StringComparison.OrdinalIgnoreCase),
-                                    CultureInfo.CurrentCulture,
-                                    FlowDirection.LeftToRight,
-                                    new Typeface("Segoe UI"),
-                                    16,
-                                    Brushes.Black, 1)
-                                .BuildGeometry(new Point(8, 8))
-                        })
-                    },
-                    Brush = Brushes.Black,
-                    Pen = new Pen(Brushes.White, 0.5)
-                };
-
-                return new DrawingImage(textDrawing);
-            }
         }
 
         private void OnSelectedImageChanged(object sender, SelectionChangedEventArgs e)
