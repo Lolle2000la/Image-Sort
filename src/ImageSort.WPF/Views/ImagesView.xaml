@@ -27,7 +27,7 @@
 
                 <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}" gif:ImageBehavior.AnimatedSource="{Binding Converter={StaticResource PathToBitmapImageConverter}}"/>
 
-                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1" />
+                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1"/>
             </Grid>
         </DataTemplate>
     </UserControl.Resources>
