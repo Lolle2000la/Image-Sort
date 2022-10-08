@@ -57,12 +57,10 @@ namespace ImageSort.WPF
 
         private async void OnStartup(object sender, StartupEventArgs e)
         {
-            RxApp.MainThreadScheduler.Schedule(async () =>
-            {
-                var settings = Locator.Current.GetService<SettingsViewModel>();
+            var settings = Locator.Current.GetService<SettingsViewModel>();
 
-                settings.Restore();
-            });
+            settings.Restore();
+            
 
 #if !DO_NOT_INCLUDE_UPDATER
             InstallerRunner.CleanUpInstaller();
