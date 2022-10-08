@@ -20,6 +20,22 @@ namespace ImageSort.WPF.SettingsManagement
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,
+                        vm => vm.AnimateGifs,
+                        view => view.ActivateAnimatedGifs.IsChecked)
+                    .DisposeWith(disposableRegistration);
+                
+                this.Bind(ViewModel,
+                        vm => vm.AnimateGifThumbnails,
+                        view => view.ActivateAnimatedGifsInThumbnails.IsChecked)
+                    .DisposeWith(disposableRegistration);
+
+                // disable the animated gif thumbnail checkbox if animated gifs are disabled
+                this.Bind(ViewModel,
+                        vm => vm.AnimateGifs,
+                        view => view.ActivateAnimatedGifsInThumbnails.IsEnabled)
+                    .DisposeWith(disposableRegistration);
+
+                this.Bind(ViewModel,
                         vm => vm.CheckForUpdatesOnStartup,
                         view => view.CheckForUpdates.IsChecked)
                     .DisposeWith(disposableRegistration);

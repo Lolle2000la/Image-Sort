@@ -26,6 +26,15 @@
                           Style="{DynamicResource {x:Static adonisUi:Styles.DefaultToAccentToggleButton}}" />
         </GroupBox>
 
+        <GroupBox Header="{x:Static text:Text.AnimatedGifs}">
+            <StackPanel>
+                <CheckBox Content="{x:Static text:Text.ActivateAnimatedGifs}" x:Name="ActivateAnimatedGifs"
+                          Margin="{adonisUi:Space 1}" />
+                <CheckBox Content="{x:Static text:Text.ActivateAnimatedGifsInThumbnails}" x:Name="ActivateAnimatedGifsInThumbnails"
+                          Margin="{adonisUi:Space 1}" />
+            </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="{x:Static text:Text.Updates}">
             <StackPanel>
                 <CheckBox Content="{x:Static text:Text.CheckForUpdatesOnStartup}" x:Name="CheckForUpdates"

@@ -37,6 +37,22 @@ namespace ImageSort.WPF.SettingsManagement
             set => this.RaiseAndSetIfChanged(ref _installPrereleaseBuilds, value);
         }
 
+        private bool _animateGifs = true;
+
+        public bool AnimateGifs
+        {
+            get => _animateGifs;
+            set => this.RaiseAndSetIfChanged(ref _animateGifs, value);
+        }
+
+        private bool _animateGifThumbnails = true;
+
+        public bool AnimateGifThumbnails
+        {
+            get => _animateGifThumbnails;
+            set => this.RaiseAndSetIfChanged(ref _animateGifThumbnails, value);
+        }
+
         public GeneralSettingsGroupViewModel()
         {
             void SetDarkMode(bool darkMode)
