@@ -291,4 +291,16 @@ Do you want to update?</value>
   <data name="CreditsWindowLeadingText" xml:space="preserve">
     <value>These open source projects made Image Sort possible:</value>
   </data>
+  <data name="AnimatedGifs" xml:space="preserve">
+    <value>Animated Gifs</value>
+  </data>
+  <data name="ActivateAnimatedGifs" xml:space="preserve">
+    <value>Play animated gifs</value>
+  </data>
+  <data name="ActivateAnimatedGifsInThumbnails" xml:space="preserve">
+    <value>Preview animated gifs in thumbnails</value>
+  </data>
+  <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
+    <value>Note: Changing settings regarding animated gifs will not affect already loaded gifs.</value>
+  </data>
 </root>

@@ -291,4 +291,16 @@ Wollen Sie updaten?</value>
   <data name="CreditsWindowTitle" xml:space="preserve">
     <value>Credits</value>
   </data>
+  <data name="AnimatedGifs" xml:space="preserve">
+    <value>Animierte Gifs</value>
+  </data>
+  <data name="ActivateAnimatedGifs" xml:space="preserve">
+    <value>Animierte Gifs abspielen</value>
+  </data>
+  <data name="ActivateAnimatedGifsInThumbnails" xml:space="preserve">
+    <value>Animierte Gifs in der Vorschau abspielen</value>
+  </data>
+  <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
+    <value>Hinweis: Das Ändern der Einstellungen für animierte Gifs hat keine Auswirkungen auf bereits geladene Gifs.</value>
+  </data>
 </root>

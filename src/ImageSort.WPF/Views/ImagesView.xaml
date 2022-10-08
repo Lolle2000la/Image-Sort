@@ -17,6 +17,7 @@
     <UserControl.Resources>
         <converters:PathToFilenameConverter x:Key="PathToFilenameConverter" />
         <converters:PathToBitmapImageConverter x:Key="PathToBitmapImageConverter" LoadWidth="120" />
+        <converters:PathToBitmapImageConverter x:Key="GifPathToBitmapImageConverter" LoadWidth="120" ForGifThumbnails="True"/>
 
         <DataTemplate x:Key="ImageEntry" DataType="{x:Type System:String}">
             <Grid Height="100" Width="120">
@@ -25,9 +26,9 @@
                     <RowDefinition Height="auto" />
                 </Grid.RowDefinitions>
 
-                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}" gif:ImageBehavior.AnimatedSource="{Binding Converter={StaticResource PathToBitmapImageConverter}}"/>
+                <Image Source="{Binding Converter={StaticResource PathToBitmapImageConverter}}" gif:ImageBehavior.AnimatedSource="{Binding Converter={StaticResource GifPathToBitmapImageConverter}}"/>
 
-                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1" />
+                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Grid.Row="1"/>
             </Grid>
         </DataTemplate>
     </UserControl.Resources>

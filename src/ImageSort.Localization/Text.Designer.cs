@@ -19,7 +19,7 @@ namespace ImageSort.Localization {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Text {
@@ -57,6 +57,42 @@ namespace ImageSort.Localization {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Play animated gifs.
+        /// </summary>
+        public static string ActivateAnimatedGifs {
+            get {
+                return ResourceManager.GetString("ActivateAnimatedGifs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Preview animated gifs in thumbnails.
+        /// </summary>
+        public static string ActivateAnimatedGifsInThumbnails {
+            get {
+                return ResourceManager.GetString("ActivateAnimatedGifsInThumbnails", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Animated Gifs.
+        /// </summary>
+        public static string AnimatedGifs {
+            get {
+                return ResourceManager.GetString("AnimatedGifs", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Note: Changing settings regarding animated gifs will not affect already loaded gifs..
+        /// </summary>
+        public static string AnimatedGifsSettingsChangeNotice {
+            get {
+                return ResourceManager.GetString("AnimatedGifsSettingsChangeNotice", resourceCulture);
             }
         }
         

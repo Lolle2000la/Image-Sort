@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -11,9 +13,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AdonisUI.Controls;
 using ImageSort.Localization;
+using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
 using ImageSort.WPF.FileSystem;
+using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;
+using Splat;
 using MessageBox = AdonisUI.Controls.MessageBox;
 using MessageBoxImage = AdonisUI.Controls.MessageBoxImage;
 
@@ -28,6 +33,10 @@ namespace ImageSort.WPF.Views
         {
             InitializeComponent();
 
+            var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                .Select(s => s as GeneralSettingsGroupViewModel)
+                .First(s => s != null);
+
             this.WhenActivated(disposableRegistration =>
             {
                 this.OneWayBind(ViewModel,
@@ -39,6 +48,7 @@ namespace ImageSort.WPF.Views
                 // for gif support
                 ViewModel.WhenAnyValue(x => x.SelectedImage)
                     .Select(ImageLoading.GetImageFromPath)
+                    .Select(i => generalSettings.AnimateGifs ? i : null)
                     .Subscribe(x => WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, x))
                     .DisposeWith(disposableRegistration);
 
