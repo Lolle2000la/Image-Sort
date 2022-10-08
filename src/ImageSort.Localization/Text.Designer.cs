@@ -88,6 +88,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Note: Changing settings regarding animated gifs will not affect already loaded gifs..
+        /// </summary>
+        public static string AnimatedGifsSettingsChangeNotice {
+            get {
+                return ResourceManager.GetString("AnimatedGifsSettingsChangeNotice", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Appearance.
         /// </summary>
         public static string Appearance {

@@ -300,4 +300,7 @@ Wollen Sie updaten?</value>
   <data name="ActivateAnimatedGifsInThumbnails" xml:space="preserve">
     <value>Animierte Gifs in der Vorschau abspielen</value>
   </data>
+  <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
+    <value>Hinweis: Das Ändern der Einstellungen für animierte Gifs hat keine Auswirkungen auf bereits geladene Gifs.</value>
+  </data>
 </root>

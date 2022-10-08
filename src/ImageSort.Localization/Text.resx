@@ -300,4 +300,7 @@ Do you want to update?</value>
   <data name="ActivateAnimatedGifsInThumbnails" xml:space="preserve">
     <value>Preview animated gifs in thumbnails</value>
   </data>
+  <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
+    <value>Note: Changing settings regarding animated gifs will not affect already loaded gifs.</value>
+  </data>
 </root>
