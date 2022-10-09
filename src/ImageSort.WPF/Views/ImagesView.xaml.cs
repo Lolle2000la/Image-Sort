@@ -47,6 +47,7 @@ namespace ImageSort.WPF.Views
 
                 // for gif support
                 ViewModel.WhenAnyValue(x => x.SelectedImage)
+                    .Select(s => Path.GetExtension(s)?.ToUpperInvariant() == ".GIF" ? s : null)
                     .Select(ImageLoading.GetImageFromPath)
                     .Select(i => generalSettings.AnimateGifs ? i : null)
                     .Subscribe(x => WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, x))
