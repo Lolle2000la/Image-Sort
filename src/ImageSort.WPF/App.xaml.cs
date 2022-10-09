@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Reactive.Concurrency;
 using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 using ImageSort.DependencyManagement;
 using ImageSort.FileSystem;
 using ImageSort.SettingsManagement;
@@ -53,6 +55,28 @@ namespace ImageSort.WPF
             Startup += OnStartup;
 
             Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+            DispatcherUnhandledException += UnhandledDispatcherException;
+            TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
+           
+        }
+
+        private void UnhandledDispatcherException(Object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            System.Diagnostics.Trace.WriteLine(e.Exception);
+            e.Handled = true; // Ex is now handled and will not crash your app
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            System.Diagnostics.Trace.WriteLine(e.ExceptionObject);
+        }
+
+        private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
+        {
+            System.Diagnostics.Trace.WriteLine(e.Exception);
         }
 
         private async void OnStartup(object sender, StartupEventArgs e)
