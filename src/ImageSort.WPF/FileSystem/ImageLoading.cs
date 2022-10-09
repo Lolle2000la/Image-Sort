@@ -36,12 +36,15 @@ namespace ImageSort.WPF.FileSystem
                 try
                 {
                     var bitmapImage = new BitmapImage();
-
+                    
                     bitmapImage.BeginInit();
                     bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                     bitmapImage.UriSource = new Uri(path);
                     bitmapImage.EndInit();
 
+                    if (bitmapImage.Width <= 0 || bitmapImage.Height <= 0)
+                        throw new BadImageFormatException($"Image {Path.GetFileName(path)} has invalid dimensions.", path);
+                    
                     return bitmapImage;
                 }
                 catch (Exception ex)

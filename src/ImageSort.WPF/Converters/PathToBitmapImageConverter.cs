@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows.Data;
 using System.Windows.Media.Imaging;
@@ -30,7 +31,10 @@ namespace ImageSort.WPF.Converters
             if (ForGifThumbnails && (!generalSettings.AnimateGifThumbnails || !generalSettings.AnimateGifs)) return null; // prevent gifs from loading when disabled.
 
             if (value is string path)
+            {
+                if (ForGifThumbnails && Path.GetExtension(path).ToUpperInvariant() != ".GIF") return null;
                 return ImageLoading.GetImageFromPath(path);
+            }
 
             return null;
         }
