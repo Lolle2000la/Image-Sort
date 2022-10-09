@@ -59,8 +59,6 @@ namespace ImageSort.WPF
             DispatcherUnhandledException += UnhandledDispatcherException;
             TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
-
-           
         }
 
         private void UnhandledDispatcherException(Object sender, DispatcherUnhandledExceptionEventArgs e)
