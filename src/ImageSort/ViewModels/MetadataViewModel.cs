@@ -55,6 +55,7 @@ namespace ImageSort.ViewModels
                 }
             }
 #pragma warning disable CA1031 // Do not catch general exception types
+            // since we don't want an exception to take down the application and instead pass it on, we catch all of them here
             catch (Exception ex)
             {
                 return new MetadataResult()
