@@ -21,8 +21,8 @@ namespace ImageSort.ViewModels
             set => this.RaiseAndSetIfChanged(ref _imagePath, value);
         }
 
-        private ObservableAsPropertyHelper<Dictionary<string, Dictionary<string, string>>> _metadata;
-        public Dictionary<string, Dictionary<string, string>> Metadata => _metadata.Value;
+        private ObservableAsPropertyHelper<MetadataResult> _metadata;
+        public MetadataResult Metadata => _metadata.Value;
 
         public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem)
         {
@@ -30,8 +30,54 @@ namespace ImageSort.ViewModels
             this.fileSystem = fileSystem;
 
             _metadata = this.WhenAnyValue(x => x.ImagePath)
-                .Select(x => fileSystem.FileExists(x) ? extractor.Extract(x) : null)
+                .Select(ExtractSafely)
                 .ToProperty(this, x => x.Metadata);
         }
+
+        private MetadataResult ExtractSafely(string path)
+        {
+            try
+            {
+                if (fileSystem.FileExists(path))
+                {
+                    return new()
+                    {
+                        Type = MetadataResultType.Success,
+                        Metadata = extractor.Extract(path)
+                    };
+                }
+                else
+                {
+                    return new MetadataResult()
+                    {
+                        Type = MetadataResultType.FileDoesNotExist
+                    };
+                }
+            }
+#pragma warning disable CA1031 // Do not catch general exception types
+            catch (Exception ex)
+            {
+                return new MetadataResult()
+                {
+                    Type = MetadataResultType.UnexpectedError,
+                    Exception = ex
+                };
+            }
+#pragma warning restore CA1031 // Do not catch general exception types
+        }
+    }
+
+    public record MetadataResult
+    {
+        public MetadataResultType Type { get; init; }
+        public Dictionary<string, Dictionary<string, string>> Metadata { get; init; }
+        public Exception Exception { get; init; }
+    }
+
+    public enum MetadataResultType
+    {
+        Success,
+        FileDoesNotExist,
+        UnexpectedError
     }
 }
