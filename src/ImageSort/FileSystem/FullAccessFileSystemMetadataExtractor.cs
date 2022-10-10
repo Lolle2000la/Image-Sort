@@ -7,7 +7,7 @@ using MetadataExtractor;
 
 namespace ImageSort.FileSystem
 {
-    public class MetadataExtractor : IMetadataExtractor
+    public class FullAccessFileSystemMetadataExtractor : IMetadataExtractor
     {
         public Dictionary<string, Dictionary<string, string>> Extract(string x)
         {
