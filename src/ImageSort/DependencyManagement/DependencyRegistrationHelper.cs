@@ -13,6 +13,7 @@ public static class DependencyRegistrationHelper
     {
         dependencyResolver.Register<IFileSystem>(() => new FullAccessFileSystem());
         dependencyResolver.Register(() => new FileSystemWatcher());
+        dependencyResolver.Register<IMetadataExtractor>(() => new FullAccessFileSystemMetadataExtractor());
     }
 
     /// <summary>
