@@ -27,70 +27,77 @@ namespace ImageSort.UnitTests.ViewModels
         public void ExtractsMetadataWhenPathIsSet()
         {
             // setup mocks and view model
-            string mockPath = "C:\\test.jpg";
-            var mockExtractedMetadata = new Dictionary<string, Dictionary<string, string>>(){
+            string thisFileExists = "C:\\test.jpg";
+            var extractableMetadata = new Dictionary<string, Dictionary<string, string>>(){
                 { "test", new Dictionary<string, string>(){
                         { "test", "test" },
                     }
                 }
             };
             
-            fileSystem.Setup(x => x.FileExists(mockPath)).Returns(true)
-                .Verifiable("Should check wheter or not the file exists");
+            fileSystem.Setup(x => x.FileExists(thisFileExists)).Returns(true)
+                .Verifiable("Should check whether or not the file exists");
 
-            metadataExtractor.Setup(x => x.Extract(mockPath))
-                .Returns(mockExtractedMetadata)
+            metadataExtractor.Setup(x => x.Extract(thisFileExists))
+                .Returns(extractableMetadata)
                 .Verifiable("Should extract metadata from image");
 
             
 
             // this should cause the extraction of metadata
-            metadataViewModel.ImagePath = mockPath;
+            metadataViewModel.ImagePath = thisFileExists;
 
-            Assert.Equal(mockExtractedMetadata, metadataViewModel.Metadata);
+            Assert.Equal(MetadataResultType.Success, metadataViewModel.Metadata.Type);
+            Assert.Equal(extractableMetadata, metadataViewModel.Metadata.Metadata);
 
-            metadataExtractor.Verify(x => x.Extract(mockPath));
-            fileSystem.Verify(x => x.FileExists(mockPath));
+            fileSystem.Verify(x => x.FileExists(thisFileExists));
+            metadataExtractor.Verify(x => x.Extract(thisFileExists));
         }
 
         [Fact(DisplayName = "MetadataViewModel should not extract metadata from image when file does not exist")]
         public void DoesNotExtractMetadataWhenPathIsSetAndFileDoesNotExist()
         {
             // setup mocks and view model
-            string thisFileExists = "C:\\test.jpg";
             string thisFileDoesNotExist = "C:\\test2.jpg";
             
-            var mockExtractedMetadata = new Dictionary<string, Dictionary<string, string>>(){
-                { "test", new Dictionary<string, string>(){
-                        { "test", "test" },
-                    }
-                }
-            };
-
-            fileSystem.Setup(x => x.FileExists(thisFileExists)).Returns(true)
-                .Verifiable("Should check wheter or not the file exists");
             fileSystem.Setup(x => x.FileExists(thisFileDoesNotExist)).Returns(false)
-                .Verifiable("Should check wheter or not the file exists");
-
-            metadataExtractor.Setup(x => x.Extract(thisFileExists))
-                .Returns(mockExtractedMetadata)
-                .Verifiable("Should extract metadata from image");
+                .Verifiable("Should check whether or not the file exists");
+            
             metadataExtractor.Setup(x => x.Extract(thisFileDoesNotExist))
                 .Throws(new Exception("Should not extract metadata from image when file does not exist"))
-                .Verifiable("Should not extract metadata from image when file does not exist");
-
-            metadataViewModel.ImagePath = thisFileExists;
-
-            Assert.NotNull(metadataViewModel.Metadata);
+                .Verifiable("Should not extract metadata from image when the file does not exist");
 
             metadataViewModel.ImagePath = thisFileDoesNotExist;
 
-            Assert.Null(metadataViewModel.Metadata);
-
-            metadataExtractor.Verify(x => x.Extract(thisFileExists));
-            metadataExtractor.Verify(x => x.Extract(thisFileDoesNotExist), Times.Never);
-            fileSystem.Verify(x => x.FileExists(thisFileExists));
+            Assert.Equal(MetadataResultType.FileDoesNotExist, metadataViewModel.Metadata.Type);
+            Assert.Null(metadataViewModel.Metadata.Metadata);
+            
             fileSystem.Verify(x => x.FileExists(thisFileDoesNotExist));
+            metadataExtractor.Verify(x => x.Extract(thisFileDoesNotExist), Times.Never);
+        }
+
+        [Fact(DisplayName = "Correctly reports unhandled exceptions that occur when trying to extract metadata")]
+        public void CorrectlyReportsIssuesWithTheExtractionOfMetadata()
+        {
+            // setup mocks and view model
+            string thisFileHasInvalidMetadata = "C:\\test3.jpg";
+            Exception invalidMetadata = new("Invalid metadata could not be loaded");
+            
+            fileSystem.Setup(x => x.FileExists(thisFileHasInvalidMetadata)).Returns(true)
+                .Verifiable("Should check whether or not the file exists");
+
+            metadataExtractor.Setup(x => x.Extract(thisFileHasInvalidMetadata))
+                .Throws(invalidMetadata)
+                .Verifiable("Should extract metadata from image when the file does exist");
+            
+            metadataViewModel.ImagePath = thisFileHasInvalidMetadata;
+
+            Assert.Equal(MetadataResultType.UnexpectedError, metadataViewModel.Metadata.Type);
+            Assert.Null(metadataViewModel.Metadata.Metadata);
+            Assert.Equal(invalidMetadata, metadataViewModel.Metadata.Exception);
+
+            fileSystem.Verify(x => x.FileExists(thisFileHasInvalidMetadata));
+            metadataExtractor.Verify(x => x.Extract(thisFileHasInvalidMetadata));
         }
     }
 }
