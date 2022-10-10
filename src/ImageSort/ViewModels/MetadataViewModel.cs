@@ -30,8 +30,7 @@ namespace ImageSort.ViewModels
             this.fileSystem = fileSystem;
 
             _metadata = this.WhenAnyValue(x => x.ImagePath)
-                .Where(x => fileSystem.FileExists(x))
-                .Select(x => extractor.Extract(x))
+                .Select(x => fileSystem.FileExists(x) ? extractor.Extract(x) : null)
                 .ToProperty(this, x => x.Metadata);
         }
     }
