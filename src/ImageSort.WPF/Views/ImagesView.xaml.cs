@@ -42,14 +42,19 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                         vm => vm.SelectedImage,
                         view => view.SelectedImage.Source,
-                        ImageLoading.GetImageFromPath)
+                        s =>
+                        {
+                            if (Path.GetExtension(s)?.ToUpperInvariant() != ".GIF")
+                                WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, null);
+                            return ImageLoading.GetImageFromPath(s);
+                        })
                     .DisposeWith(disposableRegistration);
 
                 // for gif support
                 ViewModel.WhenAnyValue(x => x.SelectedImage)
-                    .Select(s => Path.GetExtension(s)?.ToUpperInvariant() == ".GIF" ? s : null)
+                    .Where(s => Path.GetExtension(s)?.ToUpperInvariant() == ".GIF")
+                    .Where(_ => generalSettings.AnimateGifs)
                     .Select(ImageLoading.GetImageFromPath)
-                    .Select(i => generalSettings.AnimateGifs ? i : null)
                     .Subscribe(x => WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, x))
                     .DisposeWith(disposableRegistration);
 
