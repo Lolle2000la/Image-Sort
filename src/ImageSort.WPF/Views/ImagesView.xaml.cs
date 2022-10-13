@@ -16,6 +16,7 @@ using ImageSort.FileSystem;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
+using ImageSort.ViewModels.Metadata;
 using ImageSort.WPF.FileSystem;
 using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;

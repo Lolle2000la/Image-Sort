@@ -7,7 +7,7 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImageSort.ViewModels;
+namespace ImageSort.ViewModels.Metadata;
 
 public class MetadataViewModel : ReactiveObject
 {

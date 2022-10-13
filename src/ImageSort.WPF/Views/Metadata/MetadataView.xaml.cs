@@ -1,4 +1,4 @@
-﻿using ImageSort.ViewModels;
+﻿using ImageSort.ViewModels.Metadata;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;

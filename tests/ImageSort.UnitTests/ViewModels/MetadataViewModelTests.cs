@@ -1,5 +1,5 @@
 ﻿using ImageSort.FileSystem;
-using ImageSort.ViewModels;
+using ImageSort.ViewModels.Metadata;
 using Moq;
 using System;
 using System.Collections.Generic;
