@@ -24,7 +24,10 @@ public class MetadataViewModel : ReactiveObject
     private ObservableAsPropertyHelper<MetadataResult> _metadata;
     public MetadataResult Metadata => _metadata.Value;
 
-    public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem)
+    private ObservableAsPropertyHelper<IEnumerable<MetadataSectionViewModel>> _sectionViewModels;
+    public IEnumerable<MetadataSectionViewModel> SectionViewModels => _sectionViewModels.Value;
+
+    public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem, MetadataSectionViewModelFactory metadataSectionFactory)
     {
         this.extractor = extractor;
         this.fileSystem = fileSystem;
@@ -32,6 +35,12 @@ public class MetadataViewModel : ReactiveObject
         _metadata = this.WhenAnyValue(x => x.ImagePath)
             .Select(ExtractSafely)
             .ToProperty(this, x => x.Metadata);
+
+        _sectionViewModels = this.WhenAnyValue(x => x.Metadata)
+            .Where(x => x.Type == MetadataResultType.Success)
+            .Select(m => m.Metadata)
+            .Select(m => m.Select(d => metadataSectionFactory.Create(d.Key, d.Value)))
+            .ToProperty(this, x => x.SectionViewModels);
     }
 
     private MetadataResult ExtractSafely(string path)

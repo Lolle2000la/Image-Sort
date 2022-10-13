@@ -37,9 +37,9 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
 
         var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
             .Select(s => s as GeneralSettingsGroupViewModel)
-            .First(s => s != null);
+            .First(s => s != null); 
 
-        Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>());
+        Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>(), Locator.Current.GetService<MetadataSectionViewModelFactory>());
 
         this.WhenActivated(disposableRegistration =>
         {
