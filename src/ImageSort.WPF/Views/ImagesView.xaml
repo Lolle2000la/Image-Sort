@@ -43,15 +43,18 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" />
         </Grid.ColumnDefinitions>
 
         <Image x:Name="SelectedImage" Source="/Icons/Image Sort.png"
                Margin="{adonisUi:Space 0, 0, 0, 1}" />
 
-        <metadata:MetadataView x:Name="Metadata"
-            Grid.Column="1" Width="200"/>
+        <GridSplitter Width="{adonisUi:Space 1}" Grid.Column="1"/>
 
-        <Grid Grid.Row="1" Grid.ColumnSpan="2">
+        <metadata:MetadataView x:Name="Metadata"
+                               Grid.Column="2"/>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />
