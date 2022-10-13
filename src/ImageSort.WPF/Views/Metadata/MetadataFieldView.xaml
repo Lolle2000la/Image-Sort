@@ -9,12 +9,9 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-        <TextBlock x:Name="FieldName"/>
-        <TextBlock x:Name="FieldValue" Grid.Column="1"/>
-    </Grid>
+    <TextBlock>
+        <Run x:Name="FieldName"/>
+        <Run Text=": "/>
+        <Run x:Name="FieldValue"/>
+    </TextBlock>
 </reactiveui:ReactiveUserControl>
