@@ -18,7 +18,7 @@ namespace ImageSort.WPF.Views.Metadata;
 /// <summary>
 /// Interaction logic for MetadataSection.xaml
 /// </summary>
-public partial class MetadataSection : UserControl
+public partial class MetadataSectionView : UserControl
 {
     public string Title
     {
@@ -28,7 +28,7 @@ public partial class MetadataSection : UserControl
 
     // Using a DependencyProperty as the backing store for Title.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty TitleProperty =
-        DependencyProperty.Register("Title", typeof(string), typeof(MetadataSection), new PropertyMetadata("Missing dictionary tile"));
+        DependencyProperty.Register("Title", typeof(string), typeof(MetadataSectionView), new PropertyMetadata("Missing dictionary tile"));
     
     public Dictionary<string, string> Fields
     {
@@ -38,9 +38,9 @@ public partial class MetadataSection : UserControl
 
     // Using a DependencyProperty as the backing store for Fields.  This enables animation, styling, binding, etc...
     public static readonly DependencyProperty FieldsProperty =
-        DependencyProperty.Register("Fields", typeof(Dictionary<string, string>), typeof(MetadataSection), new PropertyMetadata(new Dictionary<string, string>() { { "", "" } }));
+        DependencyProperty.Register("Fields", typeof(Dictionary<string, string>), typeof(MetadataSectionView), new PropertyMetadata(new Dictionary<string, string>() { { "", "" } }));
     
-    public MetadataSection()
+    public MetadataSectionView()
     {
         InitializeComponent();
 

@@ -12,7 +12,7 @@
     <ListView x:Name="Directories">
         <ListView.ItemTemplate>
             <DataTemplate>
-                <local:MetadataSection Title="{Binding Key}" Fields="{Binding Value}"/>
+                <local:MetadataSectionView Title="{Binding Key}" Fields="{Binding Value}"/>
             </DataTemplate>
         </ListView.ItemTemplate>
     </ListView>

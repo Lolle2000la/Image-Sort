@@ -27,7 +27,7 @@ public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
     public MetadataView()
     {
         InitializeComponent();
-
+        
         this.WhenActivated(disposableRegistration =>
         {
             this.OneWayBind(ViewModel,
