@@ -9,9 +9,13 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <Grid>
-        <StackPanel Margin="{adonisUi:Space 0, 0, 0, 1}">
-            <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
+    <Grid Margin="{adonisUi:Space 0, 0, 0, 1}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
+        <ScrollViewer Grid.Row="1">
             <ListView x:Name="Fields">
                 <ListView.View>
                     <GridView>
@@ -20,6 +24,6 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-        </StackPanel>
+        </ScrollViewer>
     </Grid>
 </reactiveui:ReactiveUserControl>
