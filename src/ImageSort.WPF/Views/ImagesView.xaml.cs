@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AdonisUI.Controls;
+using ImageSort.FileSystem;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
@@ -37,6 +38,8 @@ namespace ImageSort.WPF.Views
                 .Select(s => s as GeneralSettingsGroupViewModel)
                 .First(s => s != null);
 
+            Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>());
+
             this.WhenActivated(disposableRegistration =>
             {
                 this.OneWayBind(ViewModel,
@@ -56,6 +59,11 @@ namespace ImageSort.WPF.Views
                 this.OneWayBind(ViewModel,
                         vm => vm.Images,
                         view => view.Images.ItemsSource)
+                    .DisposeWith(disposableRegistration);
+
+                this.OneWayBind(ViewModel,
+                        vm => vm.SelectedImage,
+                        view => view.Metadata.ViewModel.ImagePath)
                     .DisposeWith(disposableRegistration);
 
                 this.Bind(ViewModel,

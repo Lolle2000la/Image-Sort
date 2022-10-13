@@ -3,6 +3,8 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,6 +30,22 @@ namespace ImageSort.WPF.Views.Metadata
 
             this.WhenActivated(disposableRegistration =>
             {
+                //this.OneWayBind(ViewModel,
+                //        vm => vm.Metadata.Metadata,
+                //        view => view.Directories.ItemsSource)
+                //    .DisposeWith(disposableRegistration);
+
+                ViewModel.WhenAnyValue(x => x.Metadata)
+                    .Where(x => x.Type == MetadataResultType.Success)
+                    .Select(x => x.Metadata)
+                    .Subscribe(x =>
+                    {
+                        Directories.Items.Clear();
+                        foreach (var item in x)
+                        {
+                            Directories.Items.Add(item);
+                        }
+                    });
             });
         }
     }
