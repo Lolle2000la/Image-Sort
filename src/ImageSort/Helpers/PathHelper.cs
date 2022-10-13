@@ -1,13 +1,12 @@
 ﻿using System;
 using System.IO;
 
-namespace ImageSort.Helpers
+namespace ImageSort.Helpers;
+
+public static class PathHelper
 {
-    public static class PathHelper
+    public static bool PathEquals(this string path1, string path2)
     {
-        public static bool PathEquals(this string path1, string path2)
-        {
-            return Path.GetFullPath(path1).Equals(Path.GetFullPath(path2), StringComparison.OrdinalIgnoreCase);
-        }
+        return Path.GetFullPath(path1).Equals(Path.GetFullPath(path2), StringComparison.OrdinalIgnoreCase);
     }
 }

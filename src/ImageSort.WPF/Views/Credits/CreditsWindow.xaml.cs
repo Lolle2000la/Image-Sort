@@ -1,38 +1,37 @@
 ﻿using System;
 using AdonisUI.Controls;
 
-namespace ImageSort.WPF.Views.Credits
+namespace ImageSort.WPF.Views.Credits;
+
+/// <summary>
+///     Interaction logic for CreditsWindow.xaml
+/// </summary>
+public partial class CreditsWindow : AdonisWindow
 {
-    /// <summary>
-    ///     Interaction logic for CreditsWindow.xaml
-    /// </summary>
-    public partial class CreditsWindow : AdonisWindow
+    private static CreditsWindow openWindow;
+
+    private CreditsWindow()
     {
-        private static CreditsWindow openWindow;
+        InitializeComponent();
+    }
 
-        private CreditsWindow()
+    public static CreditsWindow Window
+    {
+        get
         {
-            InitializeComponent();
-        }
-
-        public static CreditsWindow Window
-        {
-            get
+            if (openWindow == null)
             {
-                if (openWindow == null)
-                {
-                    openWindow = new CreditsWindow();
-                    openWindow.Closed += OnExistingWindowClosed;
-                }
-
-                return openWindow;
+                openWindow = new CreditsWindow();
+                openWindow.Closed += OnExistingWindowClosed;
             }
-        }
 
-        private static void OnExistingWindowClosed(object sender, EventArgs e)
-        {
-            openWindow = null;
-            (sender as CreditsWindow).Closed -= OnExistingWindowClosed;
+            return openWindow;
         }
+    }
+
+    private static void OnExistingWindowClosed(object sender, EventArgs e)
+    {
+        openWindow = null;
+        (sender as CreditsWindow).Closed -= OnExistingWindowClosed;
     }
 }

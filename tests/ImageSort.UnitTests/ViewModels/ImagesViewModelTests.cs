@@ -8,170 +8,169 @@ using ImageSort.ViewModels;
 using Moq;
 using Xunit;
 
-namespace ImageSort.UnitTests.ViewModels
+namespace ImageSort.UnitTests.ViewModels;
+
+public class ImagesViewModelTests
 {
-    public class ImagesViewModelTests
+    [Fact(DisplayName = "Gets the files correctly, ignoring unsupported files.")]
+    public void GetTheFilesCorrectly()
     {
-        [Fact(DisplayName = "Gets the files correctly, ignoring unsupported files.")]
-        public void GetTheFilesCorrectly()
+        const string basePath = @"C:\";
+        var allFiles = new[] {"image.png", "some.gif", "cat.mp4", "somethingwrong.exe"}
+            .Select(f => basePath + f);
+
+        var expectedFiles = allFiles.Where(f =>
+            f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+            || f.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
+
+        var fsMock = new Mock<IFileSystem>();
+
+        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+
+        var imagesVM = new ImagesViewModel(fsMock.Object)
         {
-            const string basePath = @"C:\";
-            var allFiles = new[] {"image.png", "some.gif", "cat.mp4", "somethingwrong.exe"}
-                .Select(f => basePath + f);
+            CurrentFolder = basePath
+        };
 
-            var expectedFiles = allFiles.Where(f =>
-                f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                || f.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
+        fsMock.Verify(fs => fs.GetFiles(basePath));
 
-            var fsMock = new Mock<IFileSystem>();
+        Assert.Equal(expectedFiles, imagesVM.Images);
+    }
 
-            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+    [Fact(DisplayName = "Selected image is accessible by index and gives out the correct path.")]
+    public void SelectedImageWorksCorrectly()
+    {
+        const string basePath = @"C:\";
+        var allFiles = new[] {"image.png", "some.gif"}
+            .Select(f => basePath + f);
 
-            var imagesVM = new ImagesViewModel(fsMock.Object)
-            {
-                CurrentFolder = basePath
-            };
+        var fsMock = new Mock<IFileSystem>();
 
-            fsMock.Verify(fs => fs.GetFiles(basePath));
+        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
-            Assert.Equal(expectedFiles, imagesVM.Images);
-        }
-
-        [Fact(DisplayName = "Selected image is accessible by index and gives out the correct path.")]
-        public void SelectedImageWorksCorrectly()
+        var imagesVM = new ImagesViewModel(fsMock.Object)
         {
-            const string basePath = @"C:\";
-            var allFiles = new[] {"image.png", "some.gif"}
-                .Select(f => basePath + f);
+            CurrentFolder = basePath
+        };
 
-            var fsMock = new Mock<IFileSystem>();
+        imagesVM.SelectedIndex = 1;
 
-            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        Assert.Equal(allFiles.ElementAt(1), imagesVM.SelectedImage);
 
-            var imagesVM = new ImagesViewModel(fsMock.Object)
-            {
-                CurrentFolder = basePath
-            };
+        imagesVM.SelectedIndex = 0;
 
-            imagesVM.SelectedIndex = 1;
+        Assert.Equal(allFiles.ElementAt(0), imagesVM.SelectedImage);
+    }
 
-            Assert.Equal(allFiles.ElementAt(1), imagesVM.SelectedImage);
+    [Fact(DisplayName = "Can remove and add images externally")]
+    public void CanRemoveAndAddImagesExternally()
+    {
+        const string basePath = @"C:\";
+        var allFiles = new[] {"image.png", "some.gif"}
+            .Select(f => basePath + f);
 
-            imagesVM.SelectedIndex = 0;
+        var fsMock = new Mock<IFileSystem>();
 
-            Assert.Equal(allFiles.ElementAt(0), imagesVM.SelectedImage);
-        }
+        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
-        [Fact(DisplayName = "Can remove and add images externally")]
-        public void CanRemoveAndAddImagesExternally()
+        var imagesVM = new ImagesViewModel(fsMock.Object)
         {
-            const string basePath = @"C:\";
-            var allFiles = new[] {"image.png", "some.gif"}
-                .Select(f => basePath + f);
+            CurrentFolder = basePath
+        };
 
-            var fsMock = new Mock<IFileSystem>();
+        imagesVM.SelectedIndex = 0;
 
-            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        Assert.Equal(allFiles, imagesVM.Images);
 
-            var imagesVM = new ImagesViewModel(fsMock.Object)
-            {
-                CurrentFolder = basePath
-            };
+        imagesVM.RemoveImage(allFiles.ElementAt(1));
 
-            imagesVM.SelectedIndex = 0;
+        Assert.Equal(allFiles.Where(p => p != allFiles.ElementAt(1)), imagesVM.Images);
 
-            Assert.Equal(allFiles, imagesVM.Images);
+        imagesVM.InsertImage(allFiles.ElementAt(1));
 
-            imagesVM.RemoveImage(allFiles.ElementAt(1));
+        Assert.Equal(allFiles, imagesVM.Images);
+    }
 
-            Assert.Equal(allFiles.Where(p => p != allFiles.ElementAt(1)), imagesVM.Images);
+    [Fact(DisplayName = "Search filter works")]
+    public void SearchFilterWorks()
+    {
+        const string basePath = @"C:\";
+        var allFiles = new[] {"image.png", "some.gif"}
+            .Select(f => basePath + f);
 
-            imagesVM.InsertImage(allFiles.ElementAt(1));
+        var fsMock = new Mock<IFileSystem>();
 
-            Assert.Equal(allFiles, imagesVM.Images);
-        }
+        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
 
-        [Fact(DisplayName = "Search filter works")]
-        public void SearchFilterWorks()
+        var imagesVM = new ImagesViewModel(fsMock.Object)
         {
-            const string basePath = @"C:\";
-            var allFiles = new[] {"image.png", "some.gif"}
-                .Select(f => basePath + f);
+            CurrentFolder = basePath
+        };
 
-            var fsMock = new Mock<IFileSystem>();
+        imagesVM.SearchTerm = "image";
 
-            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
 
-            var imagesVM = new ImagesViewModel(fsMock.Object)
-            {
-                CurrentFolder = basePath
-            };
+        Assert.Contains(allFiles.First(), imagesVM.Images);
+    }
 
-            imagesVM.SearchTerm = "image";
+    [Fact(DisplayName = "Can rename images")]
+    public async Task CanRenameImages()
+    {
+        const string basePath = @"C:\";
+        const string oldFilePath = basePath + "image.png";
+        const string newFileName = "other_image";
+        var invalidFileNames = new[] {@"image\ima", "im/age", "imag\n", "imag\t"};
+        var promptedFileName = newFileName;
+        const string newFilePath = basePath + newFileName + ".png";
+        var allFiles = new[] {oldFilePath};
+        var allFilesResulting = new[] {newFilePath};
 
-            Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
+        var notifiesUserOfError = false;
 
-            Assert.Contains(allFiles.First(), imagesVM.Images);
-        }
+        var fsMock = new Mock<IFileSystem>();
 
-        [Fact(DisplayName = "Can rename images")]
-        public async Task CanRenameImages()
+        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+
+        fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
+
+        fsMock.Setup(fs => fs.FileExists(oldFilePath)).Returns(true);
+
+        var imagesVM = new ImagesViewModel(fsMock.Object)
         {
-            const string basePath = @"C:\";
-            const string oldFilePath = basePath + "image.png";
-            const string newFileName = "other_image";
-            var invalidFileNames = new[] {@"image\ima", "im/age", "imag\n", "imag\t"};
-            var promptedFileName = newFileName;
-            const string newFilePath = basePath + newFileName + ".png";
-            var allFiles = new[] {oldFilePath};
-            var allFilesResulting = new[] {newFilePath};
+            CurrentFolder = basePath
+        };
 
-            var notifiesUserOfError = false;
+        imagesVM.RenameImage.Where(a => a != null)
+            .Subscribe(a => a.Act());
 
-            var fsMock = new Mock<IFileSystem>();
+        Assert.Equal(allFiles, imagesVM.Images);
 
-            fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(promptedFileName));
+        imagesVM.NotifyUserOfError.RegisterHandler(ic =>
+        {
+            notifiesUserOfError = true;
 
-            fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
+            ic.SetOutput(Unit.Default);
+        });
 
-            fsMock.Setup(fs => fs.FileExists(oldFilePath)).Returns(true);
+        await imagesVM.RenameImage.Execute();
 
-            var imagesVM = new ImagesViewModel(fsMock.Object)
-            {
-                CurrentFolder = basePath
-            };
+        fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
 
-            imagesVM.RenameImage.Where(a => a != null)
-                .Subscribe(a => a.Act());
+        await Task.Delay(1);
 
-            Assert.Equal(allFiles, imagesVM.Images);
+        Assert.Equal(allFilesResulting, imagesVM.Images);
 
-            imagesVM.PromptForNewFileName.RegisterHandler(ic => ic.SetOutput(promptedFileName));
-            imagesVM.NotifyUserOfError.RegisterHandler(ic =>
-            {
-                notifiesUserOfError = true;
-
-                ic.SetOutput(Unit.Default);
-            });
+        foreach (var invalidFileName in invalidFileNames)
+        {
+            promptedFileName = invalidFileName;
 
             await imagesVM.RenameImage.Execute();
 
-            fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
-
-            await Task.Delay(1);
-
             Assert.Equal(allFilesResulting, imagesVM.Images);
-
-            foreach (var invalidFileName in invalidFileNames)
-            {
-                promptedFileName = invalidFileName;
-
-                await imagesVM.RenameImage.Execute();
-
-                Assert.Equal(allFilesResulting, imagesVM.Images);
-            }
-
-            Assert.True(notifiesUserOfError);
         }
+
+        Assert.True(notifiesUserOfError);
     }
 }

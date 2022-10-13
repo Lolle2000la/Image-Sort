@@ -2,31 +2,30 @@
 using System.Windows;
 using AdonisUI.Controls;
 
-namespace ImageSort.WPF.Views
+namespace ImageSort.WPF.Views;
+
+/// <summary>
+///     Interaction logic for InputBox.xaml
+/// </summary>
+public partial class InputBox : AdonisWindow
 {
-    /// <summary>
-    ///     Interaction logic for InputBox.xaml
-    /// </summary>
-    public partial class InputBox : AdonisWindow
+    public InputBox(string question, string title)
     {
-        public InputBox(string question, string title)
-        {
-            InitializeComponent();
-            Question.Text = question;
-            Title = title;
-        }
+        InitializeComponent();
+        Question.Text = question;
+        Title = title;
+    }
 
-        public string Answer => AnswerBox.Text;
+    public string Answer => AnswerBox.Text;
 
-        private void btnDialogOk_Click(object sender, RoutedEventArgs e)
-        {
-            DialogResult = true;
-        }
+    private void btnDialogOk_Click(object sender, RoutedEventArgs e)
+    {
+        DialogResult = true;
+    }
 
-        private void Window_ContentRendered(object sender, EventArgs e)
-        {
-            AnswerBox.SelectAll();
-            AnswerBox.Focus();
-        }
+    private void Window_ContentRendered(object sender, EventArgs e)
+    {
+        AnswerBox.SelectAll();
+        AnswerBox.Focus();
     }
 }

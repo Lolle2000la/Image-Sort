@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29806.167
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageSort", "src\ImageSort\ImageSort.csproj", "{7DAF4545-3E6D-4015-8C8F-C312B6D3F465}"
 EndProject
@@ -13,6 +13,7 @@ Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "ImageSort.WindowsSetup", "s
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9550B546-E9B0-45D2-AA67-2B9819BB8BF2}"
 	ProjectSection(SolutionItems) = preProject
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		appveyor.yml = appveyor.yml
 		Image Sort.svg = Image Sort.svg

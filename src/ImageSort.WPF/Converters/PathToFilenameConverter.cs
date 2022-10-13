@@ -3,23 +3,22 @@ using System.Globalization;
 using System.IO;
 using System.Windows.Data;
 
-namespace ImageSort.WPF.Converters
+namespace ImageSort.WPF.Converters;
+
+[ValueConversion(typeof(string), typeof(string))]
+internal class PathToFilenameConverter : IValueConverter
 {
-    [ValueConversion(typeof(string), typeof(string))]
-    internal class PathToFilenameConverter : IValueConverter
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            if (value == null) return "";
+        if (value == null) return "";
 
-            if (value is string path) return Path.GetFileName(path);
+        if (value is string path) return Path.GetFileName(path);
 
-            return "";
-        }
+        return "";
+    }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            throw new NotImplementedException();
-        }
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
     }
 }

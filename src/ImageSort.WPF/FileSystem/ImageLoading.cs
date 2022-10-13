@@ -10,70 +10,69 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace ImageSort.WPF.FileSystem
+namespace ImageSort.WPF.FileSystem;
+
+internal static class ImageLoading
 {
-    internal static class ImageLoading
+    static IAppCache cache = new CachingService(
+        new MemoryCacheProvider(
+            new MemoryCache(
+                new MemoryCacheOptions()
+                {
+                    SizeLimit = 20, // limit the maximum number of 
+                })));
+
+    static MemoryCacheEntryOptions options = new MemoryCacheEntryOptions()
     {
-        static IAppCache cache = new CachingService(
-            new MemoryCacheProvider(
-                new MemoryCache(
-                    new MemoryCacheOptions()
-                    {
-                        SizeLimit = 20, // limit the maximum number of 
-                    })));
+        Size = 1, // the same unit must be used, as MemoryCache itself knows no units. Here, 1 equals 1 element.
+    };
 
-        static MemoryCacheEntryOptions options = new MemoryCacheEntryOptions()
+    public static ImageSource GetImageFromPath(string path)
+    {
+        if (path == null) return null;
+
+        return cache.GetOrAdd<ImageSource>(path, () =>
         {
-            Size = 1, // the same unit must be used, as MemoryCache itself knows no units. Here, 1 equals 1 element.
-        };
-
-        public static ImageSource GetImageFromPath(string path)
-        {
-            if (path == null) return null;
-
-            return cache.GetOrAdd<ImageSource>(path, () =>
+            try
             {
-                try
-                {
-                    var bitmapImage = new BitmapImage();
-                    
-                    bitmapImage.BeginInit();
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.UriSource = new Uri(path);
-                    bitmapImage.EndInit();
+                var bitmapImage = new BitmapImage();
+                
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.UriSource = new Uri(path);
+                bitmapImage.EndInit();
 
-                    if (bitmapImage.Width <= 0 || bitmapImage.Height <= 0)
-                        throw new BadImageFormatException($"Image {Path.GetFileName(path)} has invalid dimensions.", path);
-                    
-                    return bitmapImage;
-                }
-                catch (Exception ex)
+                if (bitmapImage.Width <= 0 || bitmapImage.Height <= 0)
+                    throw new BadImageFormatException($"Image {Path.GetFileName(path)} has invalid dimensions.", path);
+                
+                return bitmapImage;
+            }
+            catch (Exception ex)
+            {
+                var textDrawing = new GeometryDrawing
                 {
-                    var textDrawing = new GeometryDrawing
+                    Geometry = new GeometryGroup
                     {
-                        Geometry = new GeometryGroup
+                        Children = new GeometryCollection(new[]
                         {
-                            Children = new GeometryCollection(new[]
-                            {
-                            new FormattedText(Text.CouldNotLoadImageErrorText
-                                        .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
-                                        .Replace("{FileName}", Path.GetFileName(path),
-                                            StringComparison.OrdinalIgnoreCase),
-                                    CultureInfo.CurrentCulture,
-                                    FlowDirection.LeftToRight,
-                                    new Typeface("Segoe UI"),
-                                    16,
-                                    Brushes.Black, 1)
-                                .BuildGeometry(new Point(8, 8))
-                        })
-                        },
-                        Brush = Brushes.Black,
-                        Pen = new Pen(Brushes.White, 0.5)
-                    };
+                        new FormattedText(Text.CouldNotLoadImageErrorText
+                                    .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
+                                    .Replace("{FileName}", Path.GetFileName(path),
+                                        StringComparison.OrdinalIgnoreCase),
+                                CultureInfo.CurrentCulture,
+                                FlowDirection.LeftToRight,
+                                new Typeface("Segoe UI"),
+                                16,
+                                Brushes.Black, 1)
+                            .BuildGeometry(new Point(8, 8))
+                    })
+                    },
+                    Brush = Brushes.Black,
+                    Pen = new Pen(Brushes.White, 0.5)
+                };
 
-                    return new DrawingImage(textDrawing);
-                }
-            }, options);
-        }
+                return new DrawingImage(textDrawing);
+            }
+        }, options);
     }
 }

@@ -1,20 +1,19 @@
 ﻿using System;
 
-namespace ImageSort.FileSystem
+namespace ImageSort.FileSystem;
+
+public class FileRestorationNotPossibleException : Exception
 {
-    public class FileRestorationNotPossibleException : Exception
+    public FileRestorationNotPossibleException()
     {
-        public FileRestorationNotPossibleException()
-        {
-        }
+    }
 
-        public FileRestorationNotPossibleException(string message) : base(message)
-        {
-        }
+    public FileRestorationNotPossibleException(string message) : base(message)
+    {
+    }
 
-        public FileRestorationNotPossibleException(string message, Exception innerException) 
-            : base(message, innerException)
-        {
-        }
+    public FileRestorationNotPossibleException(string message, Exception innerException) 
+        : base(message, innerException)
+    {
     }
 }

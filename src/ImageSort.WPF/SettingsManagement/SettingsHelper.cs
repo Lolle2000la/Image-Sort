@@ -8,75 +8,74 @@ using System.Windows.Input;
 using ImageSort.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 
-namespace ImageSort.WPF.SettingsManagement
+namespace ImageSort.WPF.SettingsManagement;
+
+internal static class SettingsHelper
 {
-    internal static class SettingsHelper
+    static SettingsHelper()
     {
-        static SettingsHelper()
-        {
-            if (Environment.GetEnvironmentVariable("UI_TEST") is string uiTest)
-                ConfigFileLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_test_config.json");
-        }
+        if (Environment.GetEnvironmentVariable("UI_TEST") is string uiTest)
+            ConfigFileLocation = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ui_test_config.json");
+    }
 
-        public static string ConfigFileLocation { get; } = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort",
+    public static string ConfigFileLocation { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Image Sort",
 #if DEBUG
-            "debug_config.json"
+        "debug_config.json"
 #else
-            "config.json"
+        "config.json"
 #endif
-        );
+    );
 
-        public static async Task SaveAsync(this SettingsViewModel settings)
+    public static async Task SaveAsync(this SettingsViewModel settings)
+    {
+        var dir = Path.GetDirectoryName(ConfigFileLocation);
+
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+        using var file = File.Create(ConfigFileLocation);
+
+        var serializerOptions = new JsonSerializerOptions
         {
-            var dir = Path.GetDirectoryName(ConfigFileLocation);
+            WriteIndented = true
+        };
 
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        await JsonSerializer.SerializeAsync(file, settings.AsDictionary(), serializerOptions).ConfigureAwait(false);
+    }
 
-            using var file = File.Create(ConfigFileLocation);
+    public static void Restore(this SettingsViewModel settings)
+    {
+        if (!File.Exists(ConfigFileLocation)) return;
 
-            var serializerOptions = new JsonSerializerOptions
-            {
-                WriteIndented = true
-            };
+        using var configFile = File.OpenRead(ConfigFileLocation);
 
-            await JsonSerializer.SerializeAsync(file, settings.AsDictionary(), serializerOptions).ConfigureAwait(false);
-        }
+        var configContents = JsonSerializer
+            .DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile).Result;
 
-        public static void Restore(this SettingsViewModel settings)
+        foreach (var configGroup in new Dictionary<string, Dictionary<string, object>>(configContents))
+        foreach (var config in new Dictionary<string, object>(configGroup.Value))
         {
-            if (!File.Exists(ConfigFileLocation)) return;
-
-            using var configFile = File.OpenRead(ConfigFileLocation);
-
-            var configContents = JsonSerializer
-                .DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile).Result;
-
-            foreach (var configGroup in new Dictionary<string, Dictionary<string, object>>(configContents))
-            foreach (var config in new Dictionary<string, object>(configGroup.Value))
+            static object JsonElementToValue(JsonElement element)
             {
-                static object JsonElementToValue(JsonElement element)
+                return element switch
                 {
-                    return element switch
-                    {
-                        { ValueKind: JsonValueKind.False } => false,
-                        { ValueKind: JsonValueKind.True } => true,
-                        { ValueKind: JsonValueKind.String } e => e.GetString(),
-                        { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
-                        { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
-                        { ValueKind: JsonValueKind.Object } e => new Hotkey(
-                            (Key) Enum.ToObject(typeof(Key),
-                                e.EnumerateObject().First(o => o.Name == "Key").Value.GetInt32()),
-                            (ModifierKeys) Enum.ToObject(typeof(ModifierKeys),
-                                e.EnumerateObject().First(o => o.Name == "Modifiers").Value.GetInt32())),
-                        _ => null
-                    };
-                }
-
-                configContents[configGroup.Key][config.Key] = JsonElementToValue((JsonElement) config.Value);
+                    { ValueKind: JsonValueKind.False } => false,
+                    { ValueKind: JsonValueKind.True } => true,
+                    { ValueKind: JsonValueKind.String } e => e.GetString(),
+                    { ValueKind: JsonValueKind.Number } e => e.GetInt32(),
+                    { ValueKind: JsonValueKind.Array } e => e.EnumerateArray().Select(JsonElementToValue).ToArray(),
+                    { ValueKind: JsonValueKind.Object } e => new Hotkey(
+                        (Key) Enum.ToObject(typeof(Key),
+                            e.EnumerateObject().First(o => o.Name == "Key").Value.GetInt32()),
+                        (ModifierKeys) Enum.ToObject(typeof(ModifierKeys),
+                            e.EnumerateObject().First(o => o.Name == "Modifiers").Value.GetInt32())),
+                    _ => null
+                };
             }
 
-            settings.RestoreFromDictionary(configContents);
+            configContents[configGroup.Key][config.Key] = JsonElementToValue((JsonElement) config.Value);
         }
+
+        settings.RestoreFromDictionary(configContents);
     }
 }

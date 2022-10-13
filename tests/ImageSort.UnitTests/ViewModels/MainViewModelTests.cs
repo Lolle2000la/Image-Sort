@@ -9,185 +9,184 @@ using Moq;
 using ReactiveUI;
 using Xunit;
 
-namespace ImageSort.UnitTests.ViewModels
+namespace ImageSort.UnitTests.ViewModels;
+
+public class MainViewModelTests
 {
-    public class MainViewModelTests
+    private readonly MainViewModel mainVM;
+
+    public MainViewModelTests()
     {
-        private readonly MainViewModel mainVM;
+        var fsMock = new Mock<IFileSystem>();
 
-        public MainViewModelTests()
+        fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] {@"C:\folder"});
+        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+
+        fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>()))
+            .Returns(new[] {@"c:\img.png"}); // just so that no exception is thrown
+
+        mainVM = new MainViewModel(fsMock.Object)
         {
-            var fsMock = new Mock<IFileSystem>();
-
-            fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] {@"C:\folder"});
-            fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
-
-            fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>()))
-                .Returns(new[] {@"c:\img.png"}); // just so that no exception is thrown
-
-            mainVM = new MainViewModel(fsMock.Object)
+            Images = new ImagesViewModel(fsMock.Object)
             {
-                Images = new ImagesViewModel(fsMock.Object)
-                {
-                    CurrentFolder = @"C:\"
-                },
-                Folders = new FoldersViewModel(fsMock.Object)
-                {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\"},
-                    Selected = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\folder"}
-                }
-            };
-        }
-
-        [Fact(DisplayName = "Can open the currently selected folder")]
-        public async Task CanOpenCurrentlySelectedFolder()
-        {
-            await mainVM.OpenCurrentlySelectedFolder.Execute();
-
-            Assert.Equal(@"C:\folder", mainVM.Folders.CurrentFolder.Path);
-        }
-
-        [Fact(DisplayName = "Does not open the currently selected folder if there is none or it is the current one.")]
-        public async Task DoesNotOpenCurrentlySelectedFolderWhenItDoesntMakeSense()
-        {
-            Assert.True(await mainVM.OpenCurrentlySelectedFolder.CanExecute
-                .FirstAsync()); // just to make sure the state is correct beforehand.
-
-            mainVM.Folders.Selected = null;
-
-            Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
-
-            mainVM.Folders.Selected = mainVM.Folders.CurrentFolder;
-
-            Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
-        }
-
-        [Fact(DisplayName = "Changes the path in the image view model to the current path when necessary")]
-        public async Task ChangesThePathInImageViewModel()
-        {
-            await mainVM.OpenCurrentlySelectedFolder.Execute();
-
-            Assert.Equal(@"C:\folder", mainVM.Images.CurrentFolder);
-        }
-
-        [Fact(DisplayName = "Properly selects the folder picked by the user when requested")]
-        public async Task ProperlySelectsPickedFolder()
-        {
-            var requestsUserInput = false;
-
-            mainVM.PickFolder.RegisterHandler(ic =>
+                CurrentFolder = @"C:\"
+            },
+            Folders = new FoldersViewModel(fsMock.Object)
             {
-                requestsUserInput = true;
+                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\"},
+                Selected = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\folder"}
+            }
+        };
+    }
 
-                ic.SetOutput(@"C:\SomeFolder");
-            });
+    [Fact(DisplayName = "Can open the currently selected folder")]
+    public async Task CanOpenCurrentlySelectedFolder()
+    {
+        await mainVM.OpenCurrentlySelectedFolder.Execute();
 
-            await mainVM.OpenFolder.Execute();
+        Assert.Equal(@"C:\folder", mainVM.Folders.CurrentFolder.Path);
+    }
 
-            Assert.True(requestsUserInput);
+    [Fact(DisplayName = "Does not open the currently selected folder if there is none or it is the current one.")]
+    public async Task DoesNotOpenCurrentlySelectedFolderWhenItDoesntMakeSense()
+    {
+        Assert.True(await mainVM.OpenCurrentlySelectedFolder.CanExecute
+            .FirstAsync()); // just to make sure the state is correct beforehand.
 
-            Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
-        }
+        mainVM.Folders.Selected = null;
 
-        [Fact(DisplayName =
-            "Can move images to a folder and registers that action, removing the image from the images viewmodel in the process.")]
-        public async Task CanMoveImages()
+        Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
+
+        mainVM.Folders.Selected = mainVM.Folders.CurrentFolder;
+
+        Assert.False(await mainVM.OpenCurrentlySelectedFolder.CanExecute.FirstAsync());
+    }
+
+    [Fact(DisplayName = "Changes the path in the image view model to the current path when necessary")]
+    public async Task ChangesThePathInImageViewModel()
+    {
+        await mainVM.OpenCurrentlySelectedFolder.Execute();
+
+        Assert.Equal(@"C:\folder", mainVM.Images.CurrentFolder);
+    }
+
+    [Fact(DisplayName = "Properly selects the folder picked by the user when requested")]
+    public async Task ProperlySelectsPickedFolder()
+    {
+        var requestsUserInput = false;
+
+        mainVM.PickFolder.RegisterHandler(ic =>
         {
-            const string currentDirectory = @"C:\Some Folder With Pictures";
-            const string image = currentDirectory + @"\some image.png";
-            const string newDirectory = @"C:\Some other folder";
-            const string moveDestination = newDirectory + @"\some image.png";
+            requestsUserInput = true;
 
-            var fsMock = new Mock<IFileSystem>();
+            ic.SetOutput(@"C:\SomeFolder");
+        });
 
-            fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
-            fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
-            fsMock.Setup(fs => fs.DirectoryExists(newDirectory)).Returns(true);
+        await mainVM.OpenFolder.Execute();
 
-            fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
+        Assert.True(requestsUserInput);
 
-            fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
+        Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
+    }
 
-            var otherMainVM = new MainViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
-            {
-                Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
-                {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
-                        {Path = currentDirectory}
-                },
-                Images = new ImagesViewModel(fsMock.Object)
-            };
+    [Fact(DisplayName =
+        "Can move images to a folder and registers that action, removing the image from the images viewmodel in the process.")]
+    public async Task CanMoveImages()
+    {
+        const string currentDirectory = @"C:\Some Folder With Pictures";
+        const string image = currentDirectory + @"\some image.png";
+        const string newDirectory = @"C:\Some other folder";
+        const string moveDestination = newDirectory + @"\some image.png";
 
-            otherMainVM.Images.SelectedIndex = 0;
+        var fsMock = new Mock<IFileSystem>();
 
-            otherMainVM.Folders.SelectFolder.RegisterHandler(ic => ic.SetOutput(newDirectory));
+        fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
+        fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
+        fsMock.Setup(fs => fs.DirectoryExists(newDirectory)).Returns(true);
 
-            await otherMainVM.Folders.Pin.Execute();
+        fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
 
-            otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
+        fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
 
-            var actions = otherMainVM.Actions.Execute.Replay();
-            actions.Connect();
-
-            await otherMainVM.MoveImageToFolder.Execute();
-
-            await actions.FirstAsync();
-
-            Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
-
-            Assert.Contains(Path.GetDirectoryName(moveDestination), otherMainVM.Actions.LastDone,
-                StringComparison.OrdinalIgnoreCase);
-
-            Assert.Empty(otherMainVM.Images.Images);
-
-            fsMock.Verify(fs => fs.Move(image, moveDestination));
-        }
-
-        [Fact(DisplayName =
-            "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
-        public async Task CanDeleteImages()
+        var otherMainVM = new MainViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
         {
-            const string currentDirectory = @"C:\Some Folder With Pictures";
-            const string image = currentDirectory + @"\some image.png";
-
-            var fsMock = new Mock<IFileSystem>();
-
-            fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
-            fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
-
-            fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
-
-            var restorerMock = new Mock<IDisposable>();
-
-            restorerMock.Setup(r => r.Dispose()).Verifiable();
-
-            var rbMock = new Mock<IRecycleBin>();
-
-            rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
-
-            var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object, RxApp.MainThreadScheduler)
+            Actions = new ActionsViewModel(),
+            Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
             {
-                Actions = new ActionsViewModel(),
-                Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
-                {
-                    CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
-                        {Path = currentDirectory}
-                },
-                Images = new ImagesViewModel(fsMock.Object)
-            };
+                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+                    {Path = currentDirectory}
+            },
+            Images = new ImagesViewModel(fsMock.Object)
+        };
 
-            otherMainVM.Images.SelectedIndex = 0;
+        otherMainVM.Images.SelectedIndex = 0;
 
-            await otherMainVM.DeleteImage.Execute();
+        otherMainVM.Folders.SelectFolder.RegisterHandler(ic => ic.SetOutput(newDirectory));
 
-            Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
+        await otherMainVM.Folders.Pin.Execute();
 
-            Assert.Empty(otherMainVM.Images.Images);
+        otherMainVM.Folders.Selected = otherMainVM.Folders.PinnedFolders.First();
 
-            await otherMainVM.Actions.Undo.Execute();
+        var actions = otherMainVM.Actions.Execute.Replay();
+        actions.Connect();
 
-            restorerMock.Verify(r => r.Dispose());
-        }
+        await otherMainVM.MoveImageToFolder.Execute();
+
+        await actions.FirstAsync();
+
+        Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Contains(Path.GetDirectoryName(moveDestination), otherMainVM.Actions.LastDone,
+            StringComparison.OrdinalIgnoreCase);
+
+        Assert.Empty(otherMainVM.Images.Images);
+
+        fsMock.Verify(fs => fs.Move(image, moveDestination));
+    }
+
+    [Fact(DisplayName =
+        "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
+    public async Task CanDeleteImages()
+    {
+        const string currentDirectory = @"C:\Some Folder With Pictures";
+        const string image = currentDirectory + @"\some image.png";
+
+        var fsMock = new Mock<IFileSystem>();
+
+        fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
+        fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
+
+        fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
+
+        var restorerMock = new Mock<IDisposable>();
+
+        restorerMock.Setup(r => r.Dispose()).Verifiable();
+
+        var rbMock = new Mock<IRecycleBin>();
+
+        rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
+
+        var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object, RxApp.MainThreadScheduler)
+        {
+            Actions = new ActionsViewModel(),
+            Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
+            {
+                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+                    {Path = currentDirectory}
+            },
+            Images = new ImagesViewModel(fsMock.Object)
+        };
+
+        otherMainVM.Images.SelectedIndex = 0;
+
+        await otherMainVM.DeleteImage.Execute();
+
+        Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
+
+        Assert.Empty(otherMainVM.Images.Images);
+
+        await otherMainVM.Actions.Undo.Execute();
+
+        restorerMock.Verify(r => r.Dispose());
     }
 }
