@@ -5,24 +5,23 @@ using System.Text;
 using System.Threading.Tasks;
 using MetadataExtractor;
 
-namespace ImageSort.FileSystem
+namespace ImageSort.FileSystem;
+
+public class FullAccessFileSystemMetadataExtractor : IMetadataExtractor
 {
-    public class FullAccessFileSystemMetadataExtractor : IMetadataExtractor
+    public Dictionary<string, Dictionary<string, string>> Extract(string x)
     {
-        public Dictionary<string, Dictionary<string, string>> Extract(string x)
+        var dict = new Dictionary<string, Dictionary<string, string>>();
+        var directories = ImageMetadataReader.ReadMetadata(x);
+        foreach (var directory in directories)
         {
-            var dict = new Dictionary<string, Dictionary<string, string>>();
-            var directories = ImageMetadataReader.ReadMetadata(x);
-            foreach (var directory in directories)
+            var subDict = new Dictionary<string, string>();
+            foreach (var tag in directory.Tags)
             {
-                var subDict = new Dictionary<string, string>();
-                foreach (var tag in directory.Tags)
-                {
-                    subDict.Add(tag.Name, tag.Description);
-                }
-                dict.Add(directory.Name, subDict);
+                subDict.Add(tag.Name, tag.Description);
             }
-            return dict;
+            dict.Add(directory.Name, subDict);
         }
+        return dict;
     }
 }

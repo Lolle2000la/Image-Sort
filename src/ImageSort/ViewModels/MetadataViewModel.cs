@@ -7,78 +7,77 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ImageSort.ViewModels
+namespace ImageSort.ViewModels;
+
+public class MetadataViewModel : ReactiveObject
 {
-    public class MetadataViewModel : ReactiveObject
+    private readonly IMetadataExtractor extractor;
+    private readonly IFileSystem fileSystem;
+
+    private string _imagePath;
+    public string ImagePath
     {
-        private readonly IMetadataExtractor extractor;
-        private readonly IFileSystem fileSystem;
+        get => _imagePath;
+        set => this.RaiseAndSetIfChanged(ref _imagePath, value);
+    }
 
-        private string _imagePath;
-        public string ImagePath
+    private ObservableAsPropertyHelper<MetadataResult> _metadata;
+    public MetadataResult Metadata => _metadata.Value;
+
+    public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem)
+    {
+        this.extractor = extractor;
+        this.fileSystem = fileSystem;
+
+        _metadata = this.WhenAnyValue(x => x.ImagePath)
+            .Select(ExtractSafely)
+            .ToProperty(this, x => x.Metadata);
+    }
+
+    private MetadataResult ExtractSafely(string path)
+    {
+        try
         {
-            get => _imagePath;
-            set => this.RaiseAndSetIfChanged(ref _imagePath, value);
-        }
-
-        private ObservableAsPropertyHelper<MetadataResult> _metadata;
-        public MetadataResult Metadata => _metadata.Value;
-
-        public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem)
-        {
-            this.extractor = extractor;
-            this.fileSystem = fileSystem;
-
-            _metadata = this.WhenAnyValue(x => x.ImagePath)
-                .Select(ExtractSafely)
-                .ToProperty(this, x => x.Metadata);
-        }
-
-        private MetadataResult ExtractSafely(string path)
-        {
-            try
+            if (fileSystem.FileExists(path))
             {
-                if (fileSystem.FileExists(path))
+                return new()
                 {
-                    return new()
-                    {
-                        Type = MetadataResultType.Success,
-                        Metadata = extractor.Extract(path)
-                    };
-                }
-                else
-                {
-                    return new MetadataResult()
-                    {
-                        Type = MetadataResultType.FileDoesNotExist
-                    };
-                }
+                    Type = MetadataResultType.Success,
+                    Metadata = extractor.Extract(path)
+                };
             }
-#pragma warning disable CA1031 // Do not catch general exception types
-            // since we don't want an exception to take down the application and instead pass it on, we catch all of them here
-            catch (Exception ex)
+            else
             {
                 return new MetadataResult()
                 {
-                    Type = MetadataResultType.UnexpectedError,
-                    Exception = ex
+                    Type = MetadataResultType.FileDoesNotExist
                 };
             }
-#pragma warning restore CA1031 // Do not catch general exception types
         }
+#pragma warning disable CA1031 // Do not catch general exception types
+        // since we don't want an exception to take down the application and instead pass it on, we catch all of them here
+        catch (Exception ex)
+        {
+            return new MetadataResult()
+            {
+                Type = MetadataResultType.UnexpectedError,
+                Exception = ex
+            };
+        }
+#pragma warning restore CA1031 // Do not catch general exception types
     }
+}
 
-    public record MetadataResult
-    {
-        public MetadataResultType Type { get; init; }
-        public Dictionary<string, Dictionary<string, string>> Metadata { get; init; }
-        public Exception Exception { get; init; }
-    }
+public record MetadataResult
+{
+    public MetadataResultType Type { get; init; }
+    public Dictionary<string, Dictionary<string, string>> Metadata { get; init; }
+    public Exception Exception { get; init; }
+}
 
-    public enum MetadataResultType
-    {
-        Success,
-        FileDoesNotExist,
-        UnexpectedError
-    }
+public enum MetadataResultType
+{
+    Success,
+    FileDoesNotExist,
+    UnexpectedError
 }

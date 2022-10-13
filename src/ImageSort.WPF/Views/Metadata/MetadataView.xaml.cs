@@ -17,36 +17,23 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace ImageSort.WPF.Views.Metadata
+namespace ImageSort.WPF.Views.Metadata;
+
+/// <summary>
+/// Interaction logic for MetadataView.xaml
+/// </summary>
+public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
 {
-    /// <summary>
-    /// Interaction logic for MetadataView.xaml
-    /// </summary>
-    public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
+    public MetadataView()
     {
-        public MetadataView()
+        InitializeComponent();
+
+        this.WhenActivated(disposableRegistration =>
         {
-            InitializeComponent();
-
-            this.WhenActivated(disposableRegistration =>
-            {
-                //this.OneWayBind(ViewModel,
-                //        vm => vm.Metadata.Metadata,
-                //        view => view.Directories.ItemsSource)
-                //    .DisposeWith(disposableRegistration);
-
-                ViewModel.WhenAnyValue(x => x.Metadata)
-                    .Where(x => x.Type == MetadataResultType.Success)
-                    .Select(x => x.Metadata)
-                    .Subscribe(x =>
-                    {
-                        Directories.Items.Clear();
-                        foreach (var item in x)
-                        {
-                            Directories.Items.Add(item);
-                        }
-                    });
-            });
-        }
+            this.OneWayBind(ViewModel,
+                    vm => vm.Metadata.Metadata,
+                    view => view.Directories.ItemsSource)
+                .DisposeWith(disposableRegistration);
+        });
     }
 }
