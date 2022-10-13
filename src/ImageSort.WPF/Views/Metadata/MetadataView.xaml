@@ -9,5 +9,7 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <ItemsControl x:Name="Directories"/>
+    <ScrollViewer HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Visible">
+        <ItemsControl x:Name="Directories"/>
+    </ScrollViewer>
 </reactiveui:ReactiveUserControl>
