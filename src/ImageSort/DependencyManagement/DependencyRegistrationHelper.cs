@@ -15,7 +15,7 @@ public static class DependencyRegistrationHelper
         dependencyResolver.Register<IFileSystem>(() => new FullAccessFileSystem());
         dependencyResolver.Register(() => new FileSystemWatcher());
         dependencyResolver.Register<IMetadataExtractor>(() => new FullAccessFileSystemMetadataExtractor());
-        dependencyResolver.Register<MetadataSectionViewModelFactory>(() => new MetadataSectionViewModelFactory());
+        dependencyResolver.Register<MetadataSectionViewModelFactory>(() => new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
     }
 
     /// <summary>

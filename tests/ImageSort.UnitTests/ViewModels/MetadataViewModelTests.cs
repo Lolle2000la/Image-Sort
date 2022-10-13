@@ -19,7 +19,7 @@ public class MetadataViewModelTests
 
     public MetadataViewModelTests()
     {
-        metadataViewModel = new(metadataExtractor.Object, fileSystem.Object);
+        metadataViewModel = new(metadataExtractor.Object, fileSystem.Object, new MetadataSectionViewModelFactory());
     }
 
 
@@ -98,5 +98,34 @@ public class MetadataViewModelTests
 
         fileSystem.Verify(x => x.FileExists(thisFileHasInvalidMetadata));
         metadataExtractor.Verify(x => x.Extract(thisFileHasInvalidMetadata));
+    }
+
+    [Fact(DisplayName = "Correctly creates metadata sections from extracted metadata")]
+    public void CorrectlyCreatesMetadataSectionsFromExtractedMetadata()
+    {
+        // setup mocks and view model
+        string thisFileHasMetadata = "C:\\test4.jpg";
+        var extractableMetadata = new Dictionary<string, Dictionary<string, string>>(){
+            { "test", new Dictionary<string, string>(){
+                    { "test", "test" },
+                }
+            }
+        };
+
+        fileSystem.Setup(x => x.FileExists(thisFileHasMetadata)).Returns(true)
+            .Verifiable("Should check whether or not the file exists");
+
+        metadataExtractor.Setup(x => x.Extract(thisFileHasMetadata))
+            .Returns(extractableMetadata)
+            .Verifiable("Should extract metadata from image when the file does exist");
+
+        metadataViewModel.ImagePath = thisFileHasMetadata;
+
+        Assert.Equal(1, metadataViewModel.SectionViewModels.Count());
+        Assert.Equal("test", metadataViewModel.SectionViewModels.First().Title);
+        Assert.Equal(extractableMetadata["test"], metadataViewModel.SectionViewModels.First().Fields);
+
+        fileSystem.Verify(x => x.FileExists(thisFileHasMetadata));
+        metadataExtractor.Verify(x => x.Extract(thisFileHasMetadata));
     }
 }

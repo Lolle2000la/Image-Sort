@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,5 +21,15 @@ public class MetadataSectionViewModel : ReactiveObject
     {
         get => _fields;
         set => this.RaiseAndSetIfChanged(ref _fields, value);
+    }
+    
+    private ObservableAsPropertyHelper<IEnumerable<MetadataFieldViewModel>> _fieldViewModels;
+    public IEnumerable<MetadataFieldViewModel> FieldViewModels => _fieldViewModels.Value;
+
+    public MetadataSectionViewModel(MetadataFieldViewModelFactory fieldViewModelFactory)
+    {
+        _fieldViewModels = this.WhenAnyValue(x => x.Fields)
+            .Select(f => f.Select(x => fieldViewModelFactory.Create(x.Key, x.Value)))
+            .ToProperty(this, x => x.FieldViewModels);
     }
 }
