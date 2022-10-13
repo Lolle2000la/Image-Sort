@@ -10,9 +10,9 @@
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <StackPanel>
+        <StackPanel Margin="{adonisUi:Space 0, 0, 0, 1}">
             <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
-            <ListBox x:Name="Fields"/>
+            <ItemsControl x:Name="Fields"/>
         </StackPanel>
     </Grid>
 </reactiveui:ReactiveUserControl>

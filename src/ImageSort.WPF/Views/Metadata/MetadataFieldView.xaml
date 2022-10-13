@@ -9,9 +9,13 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <TextBlock>
-        <Run x:Name="FieldName"/>
-        <Run Text=": "/>
-        <Run x:Name="FieldValue"/>
-    </TextBlock>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="{adonisUi:Space 1}"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock x:Name="FieldName"/>
+        <TextBlock x:Name="FieldValue" Grid.Column="2"/>
+    </Grid>
 </reactiveui:ReactiveUserControl>
