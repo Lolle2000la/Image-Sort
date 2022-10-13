@@ -31,6 +31,16 @@ public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
         this.WhenActivated(disposableRegistration =>
         {
             this.OneWayBind(ViewModel,
+                vm => vm.Metadata.Type,
+                view => view.IsEnabled,
+                type => type is MetadataResultType.Success);
+
+            this.OneWayBind(ViewModel,
+                vm => vm.Metadata.Type,
+                view => view.Visibility,
+                type => type is MetadataResultType.Success ? Visibility.Visible : Visibility.Collapsed);
+
+            this.OneWayBind(ViewModel,
                     vm => vm.Metadata.Metadata,
                     view => view.Directories.ItemsSource)
                 .DisposeWith(disposableRegistration);
