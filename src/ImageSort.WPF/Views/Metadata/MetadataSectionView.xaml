@@ -11,19 +11,7 @@
                                 d:DesignHeight="450" d:DesignWidth="800">
     <StackPanel>
         <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
-        <ListView x:Name="Fields">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{Binding Key}" Grid.Column="0"/>
-                        <TextBlock Text="{Binding Value}" Grid.Column="1"/>
-                    </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+        <ListView x:Name="Fields"/>
+
     </StackPanel>
 </reactiveui:ReactiveUserControl>
