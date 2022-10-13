@@ -3,6 +3,7 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Disposables;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,5 +26,18 @@ public partial class MetadataSectionView : ReactiveUserControl<MetadataSectionVi
     public MetadataSectionView()
     {
         InitializeComponent();
+
+        this.WhenActivated(disposableRegistration =>
+        {
+            this.OneWayBind(ViewModel,
+                    vm => vm.Title,
+                    view => view.Titel.Text)
+                .DisposeWith(disposableRegistration);
+
+            this.OneWayBind(ViewModel,
+                    vm => vm.Fields,
+                    view => view.Fields.ItemsSource)
+                .DisposeWith(disposableRegistration);
+        });
     }
 }

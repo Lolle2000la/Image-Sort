@@ -9,6 +9,6 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <ListView x:Name="Directories"/>
+    <ListBox x:Name="Directories"/>
 
 </reactiveui:ReactiveUserControl>
