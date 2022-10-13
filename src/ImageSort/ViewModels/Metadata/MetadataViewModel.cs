@@ -38,7 +38,7 @@ public class MetadataViewModel : ReactiveObject
 
         _sectionViewModels = this.WhenAnyValue(x => x.Metadata)
             .Where(x => x.Type == MetadataResultType.Success)
-            .Select(m => m.Metadata)
+            .Select(m => m.Metadata.OrderBy(x => x.Key))
             .Select(m => m.Select(d => metadataSectionFactory.Create(d.Key, d.Value)))
             .ToProperty(this, x => x.SectionViewModels);
     }
