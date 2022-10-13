@@ -104,7 +104,7 @@ public class ImagesViewModel : ReactiveObject
             });
 
         var canGoLeft = this.WhenAnyValue(x => x.SelectedIndex, x => x.Images.Count, (i, _) => i)
-            .Select(i => 0 < i);
+            .Select(i => i > 0);
 
         GoLeft = ReactiveCommand.Create(() =>
         {

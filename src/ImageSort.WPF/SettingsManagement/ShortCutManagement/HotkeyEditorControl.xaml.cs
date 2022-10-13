@@ -25,7 +25,7 @@ public partial class HotkeyEditorControl : UserControl
 
     public Hotkey Hotkey
     {
-        get => (Hotkey) GetValue(HotkeyProperty);
+        get => (Hotkey)GetValue(HotkeyProperty);
         set => SetValue(HotkeyProperty, value);
     }
 
@@ -59,20 +59,25 @@ public partial class HotkeyEditorControl : UserControl
         }
 
         // If no actual key was pressed - return
-        if (key == Key.LeftCtrl ||
-            key == Key.RightCtrl ||
-            key == Key.LeftAlt ||
-            key == Key.RightAlt ||
-            key == Key.LeftShift ||
-            key == Key.RightShift ||
-            key == Key.LWin ||
-            key == Key.RWin ||
-            key == Key.Clear ||
-            key == Key.OemClear ||
-            key == Key.Apps)
+        if (GetIfNotAnActualKey(key))
             return;
 
         // Update the value
         Hotkey = new Hotkey(key, modifiers);
+    }
+
+    private static bool GetIfNotAnActualKey(Key key)
+    {
+        return key == Key.LeftCtrl ||
+               key == Key.RightCtrl ||
+               key == Key.LeftAlt ||
+               key == Key.RightAlt ||
+               key == Key.LeftShift ||
+               key == Key.RightShift ||
+               key == Key.LWin ||
+               key == Key.RWin ||
+               key == Key.Clear ||
+               key == Key.OemClear ||
+               key == Key.Apps;
     }
 }

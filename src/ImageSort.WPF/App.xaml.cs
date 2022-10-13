@@ -83,7 +83,6 @@ public partial class App : System.Windows.Application
 
         settings.Restore();
         
-
 #if !DO_NOT_INCLUDE_UPDATER
         InstallerRunner.CleanUpInstaller();
 
