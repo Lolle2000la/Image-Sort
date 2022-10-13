@@ -12,6 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AdonisUI.Controls;
+using ImageSort.FileSystem;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
@@ -36,6 +37,8 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
         var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
             .Select(s => s as GeneralSettingsGroupViewModel)
             .First(s => s != null);
+
+        Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>());
 
         this.WhenActivated(disposableRegistration =>
         {
@@ -62,6 +65,11 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                     vm => vm.Images,
                     view => view.Images.ItemsSource)
                 .DisposeWith(disposableRegistration);
+
+            this.OneWayBind(ViewModel,
+                        vm => vm.SelectedImage,
+                        view => view.Metadata.ViewModel.ImagePath)
+                    .DisposeWith(disposableRegistration);
 
             this.Bind(ViewModel,
                     vm => vm.SelectedIndex,
