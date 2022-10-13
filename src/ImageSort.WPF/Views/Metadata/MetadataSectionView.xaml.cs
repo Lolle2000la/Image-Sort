@@ -1,4 +1,6 @@
-﻿using System;
+﻿using ImageSort.ViewModels.Metadata;
+using ReactiveUI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,32 +20,10 @@ namespace ImageSort.WPF.Views.Metadata;
 /// <summary>
 /// Interaction logic for MetadataSection.xaml
 /// </summary>
-public partial class MetadataSectionView : UserControl
+public partial class MetadataSectionView : ReactiveUserControl<MetadataSectionViewModel>
 {
-    public string Title
-    {
-        get { return (string)GetValue(TitleProperty); }
-        set { SetValue(TitleProperty, value); }
-    }
-
-    // Using a DependencyProperty as the backing store for Title.  This enables animation, styling, binding, etc...
-    public static readonly DependencyProperty TitleProperty =
-        DependencyProperty.Register("Title", typeof(string), typeof(MetadataSectionView), new PropertyMetadata("Missing dictionary tile"));
-    
-    public Dictionary<string, string> Fields
-    {
-        get { return (Dictionary<string, string>)GetValue(FieldsProperty); }
-        set { SetValue(FieldsProperty, value); }
-    }
-
-    // Using a DependencyProperty as the backing store for Fields.  This enables animation, styling, binding, etc...
-    public static readonly DependencyProperty FieldsProperty =
-        DependencyProperty.Register("Fields", typeof(Dictionary<string, string>), typeof(MetadataSectionView), new PropertyMetadata(new Dictionary<string, string>() { { "", "" } }));
-    
     public MetadataSectionView()
     {
         InitializeComponent();
-
-        DataContext = this;
     }
 }

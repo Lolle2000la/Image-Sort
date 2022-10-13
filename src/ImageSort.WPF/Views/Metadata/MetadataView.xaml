@@ -9,11 +9,6 @@
                                 xmlns:reactiveui="http://reactiveui.net"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <ListView x:Name="Directories">
-        <ListView.ItemTemplate>
-            <DataTemplate>
-                <local:MetadataSectionView Title="{Binding Key}" Fields="{Binding Value}"/>
-            </DataTemplate>
-        </ListView.ItemTemplate>
-    </ListView>
+    <ListView x:Name="Directories"/>
+
 </reactiveui:ReactiveUserControl>
