@@ -1,22 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 
-namespace ImageSort.FileSystem
+namespace ImageSort.FileSystem;
+
+public interface IFileSystem
 {
-    public interface IFileSystem
-    {
-        IEnumerable<string> GetSubFolders(string path);
+    IEnumerable<string> GetSubFolders(string path);
 
-        IEnumerable<string> GetFiles(string folder);
+    IEnumerable<string> GetFiles(string folder);
 
-        bool IsFolderEmpty(string path);
+    bool IsFolderEmpty(string path);
 
-        bool FileExists(string path) => File.Exists(path);
+    bool FileExists(string path) => File.Exists(path);
 
-        bool DirectoryExists(string path) => Directory.Exists(path);
+    bool DirectoryExists(string path) => Directory.Exists(path);
 
-        void Move(string source, string destination) => File.Move(source, destination);
+    void Move(string source, string destination) => File.Move(source, destination);
 
-        void CreateFolder(string path) => Directory.CreateDirectory(path);
-    }
+    void CreateFolder(string path) => Directory.CreateDirectory(path);
 }

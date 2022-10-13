@@ -1,19 +1,18 @@
 ﻿using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 
-namespace ImageSort.WPF.UiTests
+namespace ImageSort.WPF.UiTests;
+
+internal static class ControlHelper
 {
-    internal static class ControlHelper
+    public static Application App { get; set; }
+    public static Window MainWindow { get; set; }
+
+    public static void ClickButton(this AutomationElement element, string automationId)
     {
-        public static Application App { get; set; }
-        public static Window MainWindow { get; set; }
+        element.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton().Click();
 
-        public static void ClickButton(this AutomationElement element, string automationId)
-        {
-            element.FindFirstDescendant(cf => cf.ByAutomationId(automationId))?.AsButton().Click();
-
-            App.WaitWhileBusy();
-            MainWindow.WaitUntilClickable();
-        }
+        App.WaitWhileBusy();
+        MainWindow.WaitUntilClickable();
     }
 }

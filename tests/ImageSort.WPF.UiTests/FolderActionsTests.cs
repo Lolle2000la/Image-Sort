@@ -7,40 +7,39 @@ using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
 using Xunit;
 
-namespace ImageSort.WPF.UiTests
+namespace ImageSort.WPF.UiTests;
+
+[Collection("App collection")]
+public class FolderActionsTests
 {
-    [Collection("App collection")]
-    public class FolderActionsTests
+    private readonly Application app;
+    private readonly string currentPath;
+    private readonly Window mainWindow;
+
+    public FolderActionsTests(AppFixture appFixture)
     {
-        private readonly Application app;
-        private readonly string currentPath;
-        private readonly Window mainWindow;
+        (currentPath, app, _, mainWindow) = appFixture;
+    }
 
-        public FolderActionsTests(AppFixture appFixture)
-        {
-            (currentPath, app, _, mainWindow) = appFixture;
-        }
+    [Fact(DisplayName = "Can create folders and reacts to its deletion")]
+    public void CanCreateFolders()
+    {
+        const string newFolderName = "new folder";
+        var newFolderPath = Path.Combine(currentPath, newFolderName);
 
-        [Fact(DisplayName = "Can create folders and reacts to its deletion")]
-        public void CanCreateFolders()
-        {
-            const string newFolderName = "new folder";
-            var newFolderPath = Path.Combine(currentPath, newFolderName);
+        mainWindow.ClickButton("CreateFolder");
 
-            mainWindow.ClickButton("CreateFolder");
+        Keyboard.Type(newFolderName);
+        Keyboard.Press(VirtualKeyShort.ENTER);
 
-            Keyboard.Type(newFolderName);
-            Keyboard.Press(VirtualKeyShort.ENTER);
+        app.WaitWhileBusy();
+        mainWindow.WaitUntilClickable();
 
-            app.WaitWhileBusy();
-            mainWindow.WaitUntilClickable();
+        Assert.True(Retry.WhileFalse(() => Directory.Exists(newFolderPath), timeout: TimeSpan.FromSeconds(5), interval: TimeSpan.FromMilliseconds(50)).Result);
 
-            Assert.True(Retry.WhileFalse(() => Directory.Exists(newFolderPath), timeout: TimeSpan.FromSeconds(5), interval: TimeSpan.FromMilliseconds(50)).Result);
+        Assert.True(Directory.Exists(newFolderPath));
 
-            Assert.True(Directory.Exists(newFolderPath));
-
-            // clean-up
-            Directory.Delete(newFolderPath);
-        }
+        // clean-up
+        Directory.Delete(newFolderPath);
     }
 }

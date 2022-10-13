@@ -1,9 +1,8 @@
 ﻿using Xunit;
 
-namespace ImageSort.WPF.UiTests
+namespace ImageSort.WPF.UiTests;
+
+[CollectionDefinition("App collection", DisableParallelization = true)]
+public class AppCollection : ICollectionFixture<AppFixture>
 {
-    [CollectionDefinition("App collection", DisableParallelization = true)]
-    public class AppCollection : ICollectionFixture<AppFixture>
-    {
-    }
 }

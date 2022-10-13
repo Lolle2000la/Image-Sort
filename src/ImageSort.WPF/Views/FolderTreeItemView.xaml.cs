@@ -17,41 +17,40 @@ using ImageSort.ViewModels;
 using ImageSort.WPF.FolderIcons;
 using ReactiveUI;
 
-namespace ImageSort.WPF.Views
+namespace ImageSort.WPF.Views;
+
+/// <summary>
+/// Interaction logic for FolderTreeItemView.xaml
+/// </summary>
+public partial class FolderTreeItemView : ReactiveUserControl<FolderTreeItemViewModel>
 {
-    /// <summary>
-    /// Interaction logic for FolderTreeItemView.xaml
-    /// </summary>
-    public partial class FolderTreeItemView : ReactiveUserControl<FolderTreeItemViewModel>
+    public FolderTreeItemView()
     {
-        public FolderTreeItemView()
+        InitializeComponent();
+
+        this.WhenActivated(disposableRegistration =>
         {
-            InitializeComponent();
+            this.OneWayBind(ViewModel,
+                    vm => vm.FolderName,
+                    view => view.FolderName.Text)
+                .DisposeWith(disposableRegistration);
 
-            this.WhenActivated(disposableRegistration =>
-            {
-                this.OneWayBind(ViewModel,
-                        vm => vm.FolderName,
-                        view => view.FolderName.Text)
-                    .DisposeWith(disposableRegistration);
+            this.OneWayBind(ViewModel,
+                    vm => vm.IsCurrentFolder,
+                    view => view.FolderName.FontWeight,
+                    current => current ? FontWeights.Bold : FontWeights.Normal)
+                .DisposeWith(disposableRegistration);
 
-                this.OneWayBind(ViewModel,
-                        vm => vm.IsCurrentFolder,
-                        view => view.FolderName.FontWeight,
-                        current => current ? FontWeights.Bold : FontWeights.Normal)
-                    .DisposeWith(disposableRegistration);
+            this.OneWayBind(ViewModel,
+                    vm => vm.Path,
+                    view => view.FolderIcon.Source,
+                    path => !Directory.Exists(path) ? null : ShellFileLoader.GetThumbnailFromShellForWpf(path))
+                .DisposeWith(disposableRegistration);
 
-                this.OneWayBind(ViewModel,
-                        vm => vm.Path,
-                        view => view.FolderIcon.Source,
-                        path => !Directory.Exists(path) ? null : ShellFileLoader.GetThumbnailFromShellForWpf(path))
-                    .DisposeWith(disposableRegistration);
-
-                this.WhenAnyValue(x => x.ActualHeight, x => x.ActualWidth)
-                    .Select(x => x.Item1 > 0 && x.Item2 > 0)
-                    .Where(_ => ViewModel != null)
-                    .Subscribe(v => ViewModel.IsVisible = v);
-            });
-        }
+            this.WhenAnyValue(x => x.ActualHeight, x => x.ActualWidth)
+                .Select(x => x.Item1 > 0 && x.Item2 > 0)
+                .Where(_ => ViewModel != null)
+                .Subscribe(v => ViewModel.IsVisible = v);
+        });
     }
 }

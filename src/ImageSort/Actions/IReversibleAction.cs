@@ -1,10 +1,9 @@
-﻿namespace ImageSort.Actions
-{
-    public interface IReversibleAction
-    {
-        string DisplayName { get; }
-        void Act();
+﻿namespace ImageSort.Actions;
 
-        void Revert();
-    }
+public interface IReversibleAction
+{
+    string DisplayName { get; }
+    void Act();
+
+    void Revert();
 }
