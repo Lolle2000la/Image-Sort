@@ -35,7 +35,7 @@ public partial class MetadataSectionView : ReactiveUserControl<MetadataSectionVi
                 .DisposeWith(disposableRegistration);
 
             this.OneWayBind(ViewModel,
-                    vm => vm.FieldViewModels,
+                    vm => vm.Fields,
                     view => view.Fields.ItemsSource)
                 .DisposeWith(disposableRegistration);
         });

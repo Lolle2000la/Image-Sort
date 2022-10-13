@@ -12,7 +12,14 @@
     <Grid>
         <StackPanel Margin="{adonisUi:Space 0, 0, 0, 1}">
             <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
-            <ItemsControl x:Name="Fields"/>
+            <ListView x:Name="Fields">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Key}"/>
+                        <GridViewColumn Header="Value" DisplayMemberBinding="{Binding Value}"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </StackPanel>
     </Grid>
 </reactiveui:ReactiveUserControl>
