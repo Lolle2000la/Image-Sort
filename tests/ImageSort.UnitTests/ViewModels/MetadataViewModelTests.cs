@@ -19,7 +19,7 @@ public class MetadataViewModelTests
 
     public MetadataViewModelTests()
     {
-        metadataViewModel = new(metadataExtractor.Object, fileSystem.Object, new MetadataSectionViewModelFactory());
+        metadataViewModel = new(metadataExtractor.Object, fileSystem.Object, new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
     }
 
 
