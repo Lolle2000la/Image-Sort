@@ -29,7 +29,8 @@ public class MetadataSectionViewModel : ReactiveObject
     public MetadataSectionViewModel(MetadataFieldViewModelFactory fieldViewModelFactory)
     {
         _fieldViewModels = this.WhenAnyValue(x => x.Fields)
-            .Select(f => f.Select(x => fieldViewModelFactory.Create(x.Key, x.Value)))
+            .Select(f => f?.Select(x => fieldViewModelFactory.Create(x.Key, x.Value)))
+            .Where(f => f != null)
             .ToProperty(this, x => x.FieldViewModels);
     }
 }
