@@ -77,7 +77,10 @@ public partial class App : System.Windows.Application
         System.Diagnostics.Trace.WriteLine(e.Exception);
     }
 
+    // Warning is disabled, since async is used when running in release mode for automatic updates.
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private async void OnStartup(object sender, StartupEventArgs e)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         var settings = Locator.Current.GetService<SettingsViewModel>();
 
