@@ -1,8 +1,8 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net7.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <AssemblyName>Image Sort</AssemblyName>
     <Configurations>Debug;Release;MSIX</Configurations>
@@ -17,14 +17,10 @@
     <PackageReference Include="AdonisUI" Version="1.17.1" />
     <PackageReference Include="AdonisUI.ClassicTheme" Version="1.17.1" />
     <PackageReference Include="LazyCache" Version="2.4.0" />
-    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
-    <PackageReference Include="ReactiveUI" Version="18.3.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+    <PackageReference Include="ReactiveUI" Version="18.4.1" />
     <PackageReference Include="ReactiveUI.Events.WPF" Version="15.1.1" />
-    <PackageReference Include="ReactiveUI.WPF" Version="18.3.1" />
+    <PackageReference Include="ReactiveUI.WPF" Version="18.4.1" />
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>

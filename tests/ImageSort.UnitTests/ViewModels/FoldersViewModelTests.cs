@@ -174,7 +174,7 @@ public class FoldersViewModelTests
     }
 
     [Fact(DisplayName = "Marks the current folder as such")]
-    public async Task MarksCurrentFolder()
+    public void MarksCurrentFolder()
     {
         var currentFolder = CreateMock(MockPath);
 

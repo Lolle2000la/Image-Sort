@@ -105,7 +105,7 @@ public class FolderTreeItemViewModelTests
     }
 
     [Fact(DisplayName = "Do not load subfolders when not visible")]
-    public async Task DoNotLoadSubfoldersWhenNotVisible()
+    public void DoNotLoadSubfoldersWhenNotVisible()
     {
         const string path = @"C:\current folder";
 
