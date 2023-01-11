@@ -22,11 +22,6 @@ build:
 environment:
   IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
 
-test_script:
-  - ps: >-
-     %xunit20%\xunit.console' .\tests\ImageSort.UnitTests\bin\Release\net7.0\ImageSort.UnitTests.dll -appveyor
-     %xunit20%\xunit.console' .\tests\ImageSort.WPF.UiTests\bin\Release\net7.0-windows\ImageSort.WPF.UiTests.dll -appveyor
-
 after_test:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
