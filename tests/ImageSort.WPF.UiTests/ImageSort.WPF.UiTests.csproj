@@ -26,7 +26,7 @@
 
   <Target AfterTargets="AfterBuild" Name="IncludeEverythingFromWPFProject">
     <ItemGroup>
-      <_CopyItems Include="$(ProjectDir)\..\..\src\ImageSort.WPF\bin\$(Configuration)\net6.0-windows\*.*" />
+      <_CopyItems Include="$(ProjectDir)\..\..\src\ImageSort.WPF\bin\$(Configuration)\net7.0-windows\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(_CopyItems)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
