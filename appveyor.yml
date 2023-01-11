@@ -22,6 +22,10 @@ build:
 environment:
   IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
 
+test_script:
+  - \%xunit20%\xunit.console .\tests\ImageSort.UnitTests\bin\Release\net7.0\ImageSort.UnitTests.dll -appveyor
+  - \%xunit20%\xunit.console .\tests\ImageSort.WPF.UiTests\bin\Release\net7.0-windows\ImageSort.WPF.UiTests.dll -appveyor
+
 after_test:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
@@ -31,7 +35,6 @@ after_test:
           MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
           cd ..\..;
       }
-
 
 artifacts:
   - path: '.\artifacts\**\*.msi'
