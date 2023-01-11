@@ -1,7 +1,6 @@
 image: Visual Studio 2022
 configuration: Release
 
-platform: Any CPU
 
 cache:
   - 'C:\ProgramData\chocolatey\bin -> appveyor.yml'
