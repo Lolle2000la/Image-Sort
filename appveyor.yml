@@ -21,10 +21,8 @@ build:
 environment:
   IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
 
-test:
-  assemblies:
-    except:
-    - '*ImageSort.WPF.UiTests*'
+test_script:
+  - cmd: dotnet test "C:\projects\image-sort\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj" --configuration Release --no-build
 
 after_test:
   - ps: >-
