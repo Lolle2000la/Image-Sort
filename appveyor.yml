@@ -1,7 +1,6 @@
 image: Visual Studio 2022
 configuration: Release
 
-platform: Any CPU
 
 cache:
   - 'C:\ProgramData\chocolatey\bin -> appveyor.yml'
@@ -22,6 +21,9 @@ build:
 environment:
   IGNORE_NORMALISATION_GIT_HEAD_MOVE: "1"
 
+test_script:
+  - cmd: dotnet test "C:\projects\image-sort\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj" --configuration Release --no-build
+
 after_test:
   - ps: >-
       if ($env:APPVEYOR_REPO_TAG -eq "true") {
@@ -31,7 +33,6 @@ after_test:
           MSBuild /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
           cd ..\..;
       }
-
 
 artifacts:
   - path: '.\artifacts\**\*.msi'

@@ -18,7 +18,7 @@ public partial class SettingsView : AdonisWindow, IViewFor<SettingsViewModel>
     {
         InitializeComponent();
 
-        this.WhenActivated(async disposableRegistration =>
+        this.WhenActivated(disposableRegistration =>
         {
             ViewModel ??= Locator.Current.GetService<SettingsViewModel>();
 
