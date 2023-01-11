@@ -24,8 +24,8 @@ environment:
 
 test_script:
   - ps: >-
-     \%xunit20%\xunit.console' .\tests\ImageSort.UnitTests\bin\Release\net7.0\ImageSort.UnitTests.dll -appveyor
-     \%xunit20%\xunit.console' .\tests\ImageSort.WPF.UiTests\bin\Release\net7.0-windows\ImageSort.WPF.UiTests.dll -appveyor
+     %xunit20%\xunit.console' .\tests\ImageSort.UnitTests\bin\Release\net7.0\ImageSort.UnitTests.dll -appveyor
+     %xunit20%\xunit.console' .\tests\ImageSort.WPF.UiTests\bin\Release\net7.0-windows\ImageSort.WPF.UiTests.dll -appveyor
 
 after_test:
   - ps: >-
