@@ -36,15 +36,17 @@ internal static class ImageLoading
             try
             {
                 var bitmapImage = new BitmapImage();
-                
+                Rotation rotation = GetImageOrientation(path);
+
                 bitmapImage.BeginInit();
                 bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
                 bitmapImage.UriSource = new Uri(path);
+                bitmapImage.Rotation = rotation;
                 bitmapImage.EndInit();
 
                 if (bitmapImage.Width <= 0 || bitmapImage.Height <= 0)
                     throw new BadImageFormatException($"Image {Path.GetFileName(path)} has invalid dimensions.", path);
-                
+
                 return bitmapImage;
             }
             catch (Exception ex)
@@ -74,5 +76,47 @@ internal static class ImageLoading
                 return new DrawingImage(textDrawing);
             }
         }, options);
+    }
+
+    // Required for some images to be displayed in their correct orientation. See https://github.com/Lolle2000la/Image-Sort/issues/445
+    // Solution taken from StackOverflow user Lâm Quang Minh (https://stackoverflow.com/a/63627972/7147000)
+    private static Rotation GetImageOrientation(string path)
+    {
+        const string _orientationQuery = "System.Photo.Orientation";
+        Rotation rotation = Rotation.Rotate0;
+        using (FileStream fileStream = new FileStream(path, FileMode.Open, FileAccess.Read))
+        {
+            BitmapFrame bitmapFrame = BitmapFrame.Create(fileStream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+            BitmapMetadata bitmapMetadata = bitmapFrame.Metadata as BitmapMetadata;
+
+            if ((bitmapMetadata != null) && (bitmapMetadata.ContainsQuery(_orientationQuery)))
+            {
+                object o = bitmapMetadata.GetQuery(_orientationQuery);
+
+                if (o != null)
+                {
+                    switch ((ushort)o)
+                    {
+                        case 6:
+                            {
+                                rotation = Rotation.Rotate90;
+                            }
+                            break;
+                        case 3:
+                            {
+                                rotation = Rotation.Rotate180;
+                            }
+                            break;
+                        case 8:
+                            {
+                                rotation = Rotation.Rotate270;
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+        return rotation;
     }
 }
