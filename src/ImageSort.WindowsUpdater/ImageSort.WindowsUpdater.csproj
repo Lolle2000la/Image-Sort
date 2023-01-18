@@ -9,7 +9,7 @@
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Octokit" Version="4.0.3" />
+    <PackageReference Include="Octokit" Version="4.0.4" />
     <PackageReference Include="Semver" Version="2.2.0" />
   </ItemGroup>
 
