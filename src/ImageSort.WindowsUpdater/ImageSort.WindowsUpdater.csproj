@@ -10,7 +10,7 @@
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Octokit" Version="5.0.0" />
-    <PackageReference Include="Semver" Version="2.2.0" />
+    <PackageReference Include="Semver" Version="2.3.0" />
   </ItemGroup>
 
   <PropertyGroup>
