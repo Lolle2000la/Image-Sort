@@ -43,19 +43,32 @@ jobs:
         MSBuild.exe /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
         MSBuild.exe /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
         cd ..\..;
-    - name: Find MSI files
-      id: find-msi-files
-      if: ${{ github.event_name == 'release' }}
-      run: |
-        Get-ChildItem -Path . -Recurse -Filter *.msi | Select-Object -ExpandProperty FullName > msi-files.txt
-        echo "::set-output name=msi-files::msi-files.txt"
-    - name: Upload MSI files
-      id: upload-msi-files
+    #- name: Find MSI files
+    #  id: find-msi-files
+    #  if: ${{ github.event_name == 'release' }}
+    #  run: |
+    #    Get-ChildItem -Path . -Recurse -Filter *.msi | Select-Object -ExpandProperty FullName > msi-files.txt
+    #    echo "::set-output name=msi-files::msi-files.txt"
+    - name: Upload x86 MSI file
+      id: upload-x86-msi-file
       uses: actions/upload-release-asset@v1.0.2
       if: ${{ github.event_name == 'release' }}
       with:
-        asset_path: ${{ steps.find-msi-files.outputs.msi-files }}
-        asset_name: ${{ basename(steps.find-msi-files.outputs.msi-files) }}
+        asset_path: .\artifacts\x86\ImageSort.x86.msi
+        asset_name: ImageSort.x86.msi
+        #tag_name: ${{ github.ref }}
+        #overwrite: true
+        upload_url: ${{ github.event.release.upload_url }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TIME: ${{ github.run_number }}
+    - name: Upload x64 MSI file
+      id: upload-x64-msi-file
+      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        asset_path: .\artifacts\x64\ImageSort.x86.msi
+        asset_name: ImageSort.x64.msi
         #tag_name: ${{ github.ref }}
         #overwrite: true
         upload_url: ${{ github.event.release.upload_url }}
