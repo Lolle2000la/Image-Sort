@@ -32,6 +32,9 @@ jobs:
       run: dotnet build --configuration Release #--no-restore
     - name: Test
       run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
+    - name: Setup MSBuild.exe
+      if: ${{ github.event_name == 'release' }}
+      uses: microsoft/setup-msbuild@v1
     - name: Build WIX project
       if: ${{ github.event_name == 'release' }}
       run: |
@@ -40,9 +43,6 @@ jobs:
         MSBuild.exe /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
         MSBuild.exe /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
         cd ..\..;
-    - name: Setup MSBuild.exe
-      if: ${{ github.event_name == 'release' }}
-      uses: microsoft/setup-msbuild@v1
     - name: Find MSI files
       id: find-msi-files
       if: ${{ github.event_name == 'release' }}
