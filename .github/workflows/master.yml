@@ -43,3 +43,20 @@ jobs:
           & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
           cd ..\..;
         }
+    - name: Find MSI files
+      id: find-msi-files
+      if: ${{ github.event_name == 'release' }}
+      run: |
+        dir /s /b *.msi > msi-files.txt
+        echo "::set-output name=msi-files::msi-files.txt"
+    - name: Upload MSI files
+      id: upload-msi-files
+      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        asset_path: ${{ steps.find-msi-files.outputs.msi-files }}
+        tag_name: ${{ github.ref }}
+        overwrite: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TIME: ${{ github.run_number }}
