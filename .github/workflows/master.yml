@@ -56,6 +56,7 @@ jobs:
       with:
         asset_path: .\artifacts\x86\ImageSort.x86.msi
         asset_name: ImageSort.x86.msi
+        asset_content_type: application/octet-stream
         #tag_name: ${{ github.ref }}
         #overwrite: true
         upload_url: ${{ github.event.release.upload_url }}
@@ -69,6 +70,7 @@ jobs:
       with:
         asset_path: .\artifacts\x64\ImageSort.x64.msi
         asset_name: ImageSort.x64.msi
+        asset_content_type: application/octet-stream
         #tag_name: ${{ github.ref }}
         #overwrite: true
         upload_url: ${{ github.event.release.upload_url }}
