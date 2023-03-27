@@ -47,7 +47,7 @@ jobs:
       id: find-msi-files
       if: ${{ github.event_name == 'release' }}
       run: |
-        dir /s /b *.msi > msi-files.txt
+        Get-ChildItem -Path . -Recurse -Filter *.msi | Select-Object -ExpandProperty FullName > msi-files.txt
         echo "::set-output name=msi-files::msi-files.txt"
     - name: Upload MSI files
       id: upload-msi-files
