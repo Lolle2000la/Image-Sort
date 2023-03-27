@@ -55,6 +55,7 @@ jobs:
       if: ${{ github.event_name == 'release' }}
       with:
         asset_path: ${{ steps.find-msi-files.outputs.msi-files }}
+        asset_name: ${{ basename(steps.find-msi-files.outputs.msi-files) }}
         #tag_name: ${{ github.ref }}
         #overwrite: true
         upload_url: ${{ github.event.release.upload_url }}
