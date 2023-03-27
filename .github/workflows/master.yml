@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: GitVersion
-      uses: gittools/actions/gitversion/setup@v1.6.5
+      uses: gittools/actions/gitversion/setup@v0.10.2
       with:
         versionSpec: '5.x'
         includePrerelease: true
