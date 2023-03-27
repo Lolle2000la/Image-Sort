@@ -39,8 +39,8 @@ jobs:
       run: |
         cd .\src\ImageSort.WindowsSetup\;
         dotnet gitversion /updatewixversionfile | Out-String;
-        & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
-        & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
+        MSBuild.exe /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
+        MSBuild.exe /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
         cd ..\..;
     - name: Find MSI files
       id: find-msi-files
