@@ -33,7 +33,7 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release #--no-restore
     - name: Test
-      run: dotnet test --configuration Release --no-build
+      run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
     - name: Build WIX project
       run: |
         if ($env:GITHUB_EVENT_NAME -eq "release") {
