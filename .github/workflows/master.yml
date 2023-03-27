@@ -35,6 +35,8 @@ jobs:
       uses: microsoft/setup-msbuild@v1
     - name: Build WIX project
       if: ${{ github.event_name == 'release' }}
+      env:
+        GITHUB_ACTIONS_CI: true
       run: |
         cd .\src\ImageSort.WindowsSetup\;
         dotnet gitversion /updatewixversionfile | Out-String;
