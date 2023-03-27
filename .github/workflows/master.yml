@@ -67,7 +67,7 @@ jobs:
       uses: actions/upload-release-asset@v1.0.2
       if: ${{ github.event_name == 'release' }}
       with:
-        asset_path: .\artifacts\x64\ImageSort.x86.msi
+        asset_path: .\artifacts\x64\ImageSort.x64.msi
         asset_name: ImageSort.x64.msi
         #tag_name: ${{ github.ref }}
         #overwrite: true
