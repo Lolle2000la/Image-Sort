@@ -35,14 +35,13 @@ jobs:
     - name: Test
       run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
     - name: Build WIX project
+      if: ${{ github.event_name == 'release' }}
       run: |
-        if ($env:GITHUB_EVENT_NAME -eq "release") {
-          cd .\src\ImageSort.WindowsSetup\;
-          gitversion /updatewixversionfile | Out-String;
-          & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
-          & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
-          cd ..\..;
-        }
+        cd .\src\ImageSort.WindowsSetup\;
+        gitversion /updatewixversionfile | Out-String;
+        & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
+        & 'C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe' /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
+        cd ..\..;
     - name: Find MSI files
       id: find-msi-files
       if: ${{ github.event_name == 'release' }}
