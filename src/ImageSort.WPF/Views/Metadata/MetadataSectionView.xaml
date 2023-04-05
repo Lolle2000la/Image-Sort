@@ -15,7 +15,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
         <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
-        <ListView x:Name="Fields" Grid.Row="1">
+        <ListView x:Name="Fields" Grid.Row="1" PreviewMouseWheel="Fields_PreviewMouseWheel_BubbleUpToParent">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Key}"/>

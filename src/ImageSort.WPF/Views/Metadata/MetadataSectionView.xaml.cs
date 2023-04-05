@@ -40,4 +40,18 @@ public partial class MetadataSectionView : ReactiveUserControl<MetadataSectionVi
                 .DisposeWith(disposableRegistration);
         });
     }
+
+    private void Fields_PreviewMouseWheel_BubbleUpToParent(object sender, MouseWheelEventArgs e)
+    {
+        if (!e.Handled)
+        {
+            var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = UIElement.MouseWheelEvent,
+                Source = sender
+            };
+            var parent = ((Control)sender).Parent as UIElement;
+            parent.RaiseEvent(eventArg);
+        }
+    }
 }
