@@ -23,7 +23,7 @@ public class MetadataPanelSettings : SettingsGroupViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isExpanded, value); 
     }
 
-    private int _metadataPanelWidth = 100;
+    private int _metadataPanelWidth = 300;
     public int MetadataPanelWidth 
     { 
         get => _metadataPanelWidth; 

@@ -59,10 +59,8 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                 .DisposeWith(disposableRegistration);
 
             // for metadata panel width settings
-            if (metadataSettings.IsExpanded)
-                MetadataColumn.Width = new GridLength((double)metadataSettings.MetadataPanelWidth, GridUnitType.Pixel);
-
             this.WhenAnyValue(x => x.Metadata.ActualWidth)
+                .Skip(1) // initial setting from first layouting can be ignored
                 .Where(_ => metadataSettings.IsExpanded)
                 .Subscribe(x => metadataSettings.MetadataPanelWidth = (int)x)
                 .DisposeWith(disposableRegistration);
@@ -72,7 +70,7 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                 {
                     MetadataColumn.Width = x ? new GridLength((double)metadataSettings.MetadataPanelWidth, GridUnitType.Pixel) : new GridLength(Metadata.ShowMetadataButton.ActualWidth, GridUnitType.Pixel);
                     MetadataColumn.MaxWidth = x ? double.PositiveInfinity : Metadata.ShowMetadataButton.ActualWidth;
-                    MetadataColumn.MinWidth = x ? 100 : Metadata.ShowMetadataButton.ActualWidth;
+                    MetadataColumn.MinWidth = Metadata.ShowMetadataButton.ActualWidth;
                 })
                 .DisposeWith(disposableRegistration);
 
