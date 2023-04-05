@@ -18,7 +18,7 @@ namespace ImageSort.ViewModels;
 
 public class ImagesViewModel : ReactiveObject
 {
-    private static readonly string[] supportedTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".ico" };
+    private static readonly string[] supportedTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".ico", ".webp" };
     private FileSystemWatcher folderWatcher;
 
     private string _currentPath;
