@@ -1,0 +1,69 @@
+name: Image Sort CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.0.x'
+    - name: GitVersion
+      uses: gittools/actions/gitversion/setup@v0.10.2
+      with:
+        versionSpec: '5.x'
+        includePrerelease: true
+    - name: Determine Version
+      uses: gittools/actions/gitversion/execute@v0
+    - name: Build
+      run: dotnet build --configuration Release
+    - name: Test
+      run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
+    - name: Setup MSBuild.exe
+      if: ${{ github.event_name == 'release' }}
+      uses: microsoft/setup-msbuild@v1
+    - name: Build WIX project
+      if: ${{ github.event_name == 'release' }}
+      env:
+        GITHUB_ACTIONS_CI: true
+      run: |
+        cd .\src\ImageSort.WindowsSetup\;
+        dotnet gitversion /updatewixversionfile | Out-String;
+        MSBuild.exe /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
+        MSBuild.exe /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
+        cd ..\..;
+    - name: Upload x86 MSI file
+      id: upload-x86-msi-file
+      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        asset_path: .\artifacts\x86\ImageSort.x86.msi
+        asset_name: ImageSort.x86.msi
+        asset_content_type: application/octet-stream
+        upload_url: ${{ github.event.release.upload_url }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TIME: ${{ github.run_number }}
+    - name: Upload x64 MSI file
+      id: upload-x64-msi-file
+      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        asset_path: .\artifacts\x64\ImageSort.x64.msi
+        asset_name: ImageSort.x64.msi
+        asset_content_type: application/octet-stream
+        upload_url: ${{ github.event.release.upload_url }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TIME: ${{ github.run_number }}

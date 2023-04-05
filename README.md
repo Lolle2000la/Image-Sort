@@ -1,6 +1,7 @@
 # Image Sort 
 Sorts your image at high speed
 
+[![Image Sort CI](https://github.com/Lolle2000la/Image-Sort/actions/workflows/master.yml/badge.svg)](https://github.com/Lolle2000la/Image-Sort/actions/workflows/master.yml)
 [![Build status](https://ci.appveyor.com/api/projects/status/i72q6f479ah9d4vw/branch/master?svg=true)](https://ci.appveyor.com/project/Lolle2000la/image-sort/branch/master)
 [![CodeFactor](https://www.codefactor.io/repository/github/lolle2000la/image-sort/badge)](https://www.codefactor.io/repository/github/lolle2000la/image-sort)
 
