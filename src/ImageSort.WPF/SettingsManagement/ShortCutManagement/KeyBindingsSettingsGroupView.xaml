@@ -41,6 +41,10 @@
                 <GroupBox Header="{x:Static text:KeyBindingNames.SearchImagesHeader}">
                     <local:HotkeyEditor Description="{x:Static text:Text.SearchTermWatermark}" x:Name="SearchImages" />
                 </GroupBox>
+
+                <GroupBox Header="{x:Static text:KeyBindingNames.MetadataHeader}">
+                    <local:HotkeyEditor Description="{x:Static text:KeyBindingNames.ToggleMetadataPanel}" x:Name="ToggleMetadataPanel" />
+                </GroupBox>
             </StackPanel>
         </GroupBox>
 

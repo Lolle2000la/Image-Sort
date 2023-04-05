@@ -39,7 +39,7 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
             .Select(s => s as GeneralSettingsGroupViewModel)
             .First(s => s != null);
 
-        var panelSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        var metadataSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
                 .Select(s => s as MetadataPanelSettings)
                 .First(s => s != null);
 
@@ -59,11 +59,21 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                 .DisposeWith(disposableRegistration);
 
             // for metadata panel width settings
-            MetadataColumn.Width = new GridLength((double)panelSettings.MetadataPanelWidth);
+            if (metadataSettings.IsExpanded)
+                MetadataColumn.Width = new GridLength((double)metadataSettings.MetadataPanelWidth, GridUnitType.Pixel);
 
             this.WhenAnyValue(x => x.Metadata.ActualWidth)
-                .Subscribe(x =>
-                panelSettings.MetadataPanelWidth = (int)x)
+                .Where(_ => metadataSettings.IsExpanded)
+                .Subscribe(x => metadataSettings.MetadataPanelWidth = (int)x)
+                .DisposeWith(disposableRegistration);
+
+            this.WhenAnyValue(x => x.Metadata.ViewModel.IsExpanded)
+                .Subscribe(x => 
+                {
+                    MetadataColumn.Width = x ? new GridLength((double)metadataSettings.MetadataPanelWidth, GridUnitType.Pixel) : new GridLength(Metadata.ShowMetadataButton.ActualWidth, GridUnitType.Pixel);
+                    MetadataColumn.MaxWidth = x ? double.PositiveInfinity : Metadata.ShowMetadataButton.ActualWidth;
+                    MetadataColumn.MinWidth = x ? 100 : Metadata.ShowMetadataButton.ActualWidth;
+                })
                 .DisposeWith(disposableRegistration);
 
             // for gif support

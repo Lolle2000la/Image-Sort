@@ -16,7 +16,14 @@ public class MetadataPanelSettings : SettingsGroupViewModelBase
 
     public override bool IsVisible => false;
 
-    private int _metadataPanelWidth = 300;
+    private bool _isExpanded = false;
+    public bool IsExpanded
+    {
+        get => _isExpanded; 
+        set => this.RaiseAndSetIfChanged(ref _isExpanded, value); 
+    }
+
+    private int _metadataPanelWidth = 100;
     public int MetadataPanelWidth 
     { 
         get => _metadataPanelWidth; 

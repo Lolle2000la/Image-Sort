@@ -3,7 +3,9 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,6 +29,15 @@ public class MetadataViewModel : ReactiveObject
     private ObservableAsPropertyHelper<IEnumerable<MetadataSectionViewModel>> _sectionViewModels;
     public IEnumerable<MetadataSectionViewModel> SectionViewModels => _sectionViewModels.Value;
 
+    private bool _isExpanded = true;
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
+    }
+
+    public ReactiveCommand<Unit, Unit> ToggleIsExpanded { get; }
+
     public MetadataViewModel(IMetadataExtractor extractor, IFileSystem fileSystem, MetadataSectionViewModelFactory metadataSectionFactory)
     {
         this.extractor = extractor;
@@ -41,6 +52,11 @@ public class MetadataViewModel : ReactiveObject
             .Select(m => m.Metadata.OrderBy(x => x.Key))
             .Select(m => m.Select(d => metadataSectionFactory.Create(d.Key, d.Value)))
             .ToProperty(this, x => x.SectionViewModels);
+
+        ToggleIsExpanded = ReactiveCommand.Create(() =>
+        {
+            IsExpanded = !IsExpanded;
+        });
     }
 
     private MetadataResult ExtractSafely(string path)

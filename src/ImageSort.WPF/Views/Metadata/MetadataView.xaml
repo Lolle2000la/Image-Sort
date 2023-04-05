@@ -7,9 +7,28 @@
                                 xmlns:local="clr-namespace:ImageSort.WPF.Views.Metadata"
                                 xmlns:vm="clr-namespace:ImageSort.ViewModels.Metadata;assembly=ImageSort"
                                 xmlns:reactiveui="http://reactiveui.net"
+                                xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 mc:Ignorable="d" 
                                 d:DesignHeight="450" d:DesignWidth="800">
-    <ScrollViewer HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
-        <ItemsControl x:Name="Directories"/>
-    </ScrollViewer>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <ToggleButton x:Name="ShowMetadataButton">
+            <TextBlock Text="{x:Static text:Text.MetadataPanelHeader}"
+                   Grid.Column="1" VerticalAlignment="Center"
+                   UseLayoutRounding="True"
+                   TextOptions.TextFormattingMode="Display"
+                   TextOptions.TextRenderingMode="ClearType">
+                <TextBlock.LayoutTransform>
+                    <RotateTransform Angle="90" />
+                </TextBlock.LayoutTransform>
+            </TextBlock>
+        </ToggleButton>
+        <ScrollViewer x:Name="MetadataArea" Grid.Column="1"
+                      HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+            <ItemsControl x:Name="Directories"/>
+        </ScrollViewer>
+    </Grid>
 </reactiveui:ReactiveUserControl>

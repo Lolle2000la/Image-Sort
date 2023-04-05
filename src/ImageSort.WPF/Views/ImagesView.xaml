@@ -49,7 +49,7 @@
         <Image x:Name="SelectedImage" Source="/Icons/Image Sort.png"
                Margin="{adonisUi:Space 0, 0, 0, 1}" />
 
-        <GridSplitter Width="{adonisUi:Space 1}" Grid.Column="1"/>
+        <GridSplitter Grid.Column="1" Width="5"/>
 
         <metadata:MetadataView x:Name="Metadata"
                                Grid.Column="2"/>

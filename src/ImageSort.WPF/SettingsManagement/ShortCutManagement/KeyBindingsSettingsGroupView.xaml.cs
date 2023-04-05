@@ -60,6 +60,12 @@ public partial class KeyBindingsSettingsGroupView : ReactiveUserControl<KeyBindi
                     view => view.SearchImages.Hotkey)
                 .DisposeWith(disposableRegistration);
 
+            // metadata panel
+            this.Bind(ViewModel,
+                    vm => vm.ToggleMetadataPanel,
+                    view => view.ToggleMetadataPanel.Hotkey)
+                .DisposeWith(disposableRegistration);
+
             // folder management
             this.Bind(ViewModel,
                     vm => vm.CreateFolder,
