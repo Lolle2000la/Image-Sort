@@ -43,7 +43,9 @@ public class MetadataViewModel : ReactiveObject
         this.extractor = extractor;
         this.fileSystem = fileSystem;
 
-        _metadata = this.WhenAnyValue(x => x.ImagePath)
+        _metadata = this.WhenAnyValue(x => x.ImagePath, x => x.IsExpanded)
+            .Where(x => x.Item2) // only load metadata if the panel is expanded
+            .Select(x => x.Item1)
             .Select(ExtractSafely)
             .ToProperty(this, x => x.Metadata);
 
