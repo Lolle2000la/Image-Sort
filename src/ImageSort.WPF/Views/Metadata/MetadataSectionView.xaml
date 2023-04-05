@@ -14,8 +14,13 @@
             <RowDefinition Height="auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
         <TextBlock x:Name="Titel" FontSize="18" Margin="{adonisUi:Space 0, 0, 0, 1}"/>
-        <ListView x:Name="Fields" Grid.Row="1" PreviewMouseWheel="Fields_PreviewMouseWheel_BubbleUpToParent">
+        <ListView x:Name="Fields" Grid.Row="1" 
+                      MaxWidth="{Binding RelativeSource={RelativeSource AncestorType={x:Type Grid}}, Path=ActualWidth, Mode=OneWay}" 
+                      PreviewMouseWheel="Fields_PreviewMouseWheel_BubbleUpToParent">
             <ListView.View>
                 <GridView>
                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Key}"/>
