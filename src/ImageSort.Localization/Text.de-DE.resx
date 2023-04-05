@@ -306,4 +306,10 @@ Wollen Sie updaten?</value>
   <data name="MetadataPanelHeader" xml:space="preserve">
     <value>Metadaten</value>
   </data>
+  <data name="MetadataSectionField" xml:space="preserve">
+    <value>Feld</value>
+  </data>
+  <data name="MetadataSectionValue" xml:space="preserve">
+    <value>Wert</value>
+  </data>
 </root>
