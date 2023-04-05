@@ -27,18 +27,20 @@ public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
     public MetadataView()
     {
         InitializeComponent();
-        
+
         this.WhenActivated(disposableRegistration =>
         {
             this.OneWayBind(ViewModel,
-                vm => vm.Metadata.Type,
-                view => view.IsEnabled,
-                type => type is MetadataResultType.Success);
+                    vm => vm.Metadata.Type,
+                    view => view.IsEnabled,
+                    type => type is MetadataResultType.Success)
+                .DisposeWith(disposableRegistration);
 
             this.OneWayBind(ViewModel,
-                vm => vm.Metadata.Type,
-                view => view.Visibility,
-                type => type is MetadataResultType.Success ? Visibility.Visible : Visibility.Collapsed);
+                    vm => vm.Metadata.Type,
+                    view => view.Visibility,
+                    type => type is MetadataResultType.Success ? Visibility.Visible : Visibility.Collapsed)
+                .DisposeWith(disposableRegistration);
 
             this.OneWayBind(ViewModel,
                     vm => vm.SectionViewModels,

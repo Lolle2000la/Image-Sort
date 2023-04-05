@@ -43,7 +43,7 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="auto" />
-            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" x:Name="MetadataColumn"/>
         </Grid.ColumnDefinitions>
 
         <Image x:Name="SelectedImage" Source="/Icons/Image Sort.png"

@@ -37,7 +37,11 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
 
         var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
             .Select(s => s as GeneralSettingsGroupViewModel)
-            .First(s => s != null); 
+            .First(s => s != null);
+
+        var panelSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                .Select(s => s as MetadataPanelSettings)
+                .First(s => s != null);
 
         Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>(), Locator.Current.GetService<MetadataSectionViewModelFactory>());
 
@@ -52,6 +56,14 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                             WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, null);
                         return ImageLoading.GetImageFromPath(s);
                     })
+                .DisposeWith(disposableRegistration);
+
+            // for metadata panel width settings
+            MetadataColumn.Width = new GridLength((double)panelSettings.MetadataPanelWidth);
+
+            this.WhenAnyValue(x => x.Metadata.ActualWidth)
+                .Subscribe(x =>
+                panelSettings.MetadataPanelWidth = (int)x)
                 .DisposeWith(disposableRegistration);
 
             // for gif support

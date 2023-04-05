@@ -303,4 +303,7 @@ Wollen Sie updaten?</value>
   <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
     <value>Hinweis: Das Ändern der Einstellungen für animierte Gifs hat keine Auswirkungen auf bereits geladene Gifs.</value>
   </data>
+  <data name="MetadataPanelHeader" xml:space="preserve">
+    <value>Metadaten</value>
+  </data>
 </root>
