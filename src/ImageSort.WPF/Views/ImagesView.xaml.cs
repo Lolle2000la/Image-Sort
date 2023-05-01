@@ -12,9 +12,11 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AdonisUI.Controls;
+using ImageSort.FileSystem;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
 using ImageSort.ViewModels;
+using ImageSort.ViewModels.Metadata;
 using ImageSort.WPF.FileSystem;
 using ImageSort.WPF.SettingsManagement;
 using ReactiveUI;
@@ -37,6 +39,12 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
             .Select(s => s as GeneralSettingsGroupViewModel)
             .First(s => s != null);
 
+        var metadataSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+                .Select(s => s as MetadataPanelSettings)
+                .First(s => s != null);
+
+        Metadata.ViewModel = new MetadataViewModel(Locator.Current.GetService<IMetadataExtractor>(), Locator.Current.GetService<IFileSystem>(), Locator.Current.GetService<MetadataSectionViewModelFactory>());
+
         this.WhenActivated(disposableRegistration =>
         {
             this.OneWayBind(ViewModel,
@@ -48,6 +56,22 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                             WpfAnimatedGif.ImageBehavior.SetAnimatedSource(SelectedImage, null);
                         return ImageLoading.GetImageFromPath(s);
                     })
+                .DisposeWith(disposableRegistration);
+
+            // for metadata panel width settings
+            this.WhenAnyValue(x => x.Metadata.ActualWidth)
+                .Skip(1) // initial setting from first layouting can be ignored
+                .Where(_ => metadataSettings.IsExpanded)
+                .Subscribe(x => metadataSettings.MetadataPanelWidth = (int)x)
+                .DisposeWith(disposableRegistration);
+
+            this.WhenAnyValue(x => x.Metadata.ViewModel.IsExpanded)
+                .Subscribe(x => 
+                {
+                    MetadataColumn.Width = x ? new GridLength((double)metadataSettings.MetadataPanelWidth, GridUnitType.Pixel) : new GridLength(Metadata.ShowMetadataButton.ActualWidth, GridUnitType.Pixel);
+                    MetadataColumn.MaxWidth = x ? double.PositiveInfinity : Metadata.ShowMetadataButton.ActualWidth;
+                    MetadataColumn.MinWidth = Metadata.ShowMetadataButton.ActualWidth;
+                })
                 .DisposeWith(disposableRegistration);
 
             // for gif support
@@ -62,6 +86,11 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
                     vm => vm.Images,
                     view => view.Images.ItemsSource)
                 .DisposeWith(disposableRegistration);
+
+            this.OneWayBind(ViewModel,
+                        vm => vm.SelectedImage,
+                        view => view.Metadata.ViewModel.ImagePath)
+                    .DisposeWith(disposableRegistration);
 
             this.Bind(ViewModel,
                     vm => vm.SelectedIndex,

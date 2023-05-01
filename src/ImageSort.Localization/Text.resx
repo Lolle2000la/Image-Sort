@@ -303,4 +303,13 @@ Do you want to update?</value>
   <data name="AnimatedGifsSettingsChangeNotice" xml:space="preserve">
     <value>Note: Changing settings regarding animated gifs will not affect already loaded gifs.</value>
   </data>
+  <data name="MetadataPanelHeader" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
+  <data name="MetadataSectionField" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="MetadataSectionValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
 </root>

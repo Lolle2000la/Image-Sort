@@ -182,6 +182,13 @@ public class KeyBindingsSettingsGroupViewModel : SettingsGroupViewModelBase
         set => this.RaiseAndSetIfChanged(ref _searchImages, value);
     }
 
+    private Hotkey _toggleMetadataPanel = new Hotkey(Key.M, ModifierKeys.None);
+    public Hotkey ToggleMetadataPanel
+    {
+        get => _toggleMetadataPanel;
+        set => this.RaiseAndSetIfChanged(ref _toggleMetadataPanel, value);
+    }
+
     public ReactiveCommand<Unit, Unit> RestoreDefaultBindings { get; }
 
     public KeyBindingsSettingsGroupViewModel()

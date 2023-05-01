@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using ImageSort.FileSystem;
 using ImageSort.SettingsManagement;
+using ImageSort.ViewModels.Metadata;
 using Splat;
 
 namespace ImageSort.DependencyManagement;
@@ -13,6 +14,8 @@ public static class DependencyRegistrationHelper
     {
         dependencyResolver.Register<IFileSystem>(() => new FullAccessFileSystem());
         dependencyResolver.Register(() => new FileSystemWatcher());
+        dependencyResolver.Register<IMetadataExtractor>(() => new FullAccessFileSystemMetadataExtractor());
+        dependencyResolver.Register<MetadataSectionViewModelFactory>(() => new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
     }
 
     /// <summary>

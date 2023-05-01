@@ -19,7 +19,7 @@ namespace ImageSort.Localization {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class KeyBindingNames {
@@ -178,6 +178,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Metadata.
+        /// </summary>
+        public static string MetadataHeader {
+            get {
+                return ResourceManager.GetString("MetadataHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Open.
         /// </summary>
         public static string OpenFolderHeader {
@@ -210,6 +219,15 @@ namespace ImageSort.Localization {
         public static string SearchImagesHeader {
             get {
                 return ResourceManager.GetString("SearchImagesHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Open/Close metadata panel.
+        /// </summary>
+        public static string ToggleMetadataPanel {
+            get {
+                return ResourceManager.GetString("ToggleMetadataPanel", resourceCulture);
             }
         }
     }

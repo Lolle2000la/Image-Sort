@@ -12,6 +12,7 @@
                                 xmlns:adonisUi="clr-namespace:AdonisUI;assembly=AdonisUI"
                                 xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
                                 xmlns:gif="http://wpfanimatedgif.codeplex.com"
+                                xmlns:metadata="clr-namespace:ImageSort.WPF.Views.Metadata"
                                 mc:Ignorable="d"
                                 d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -39,9 +40,21 @@
             <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
 
-        <Image x:Name="SelectedImage" Grid.Row="0" Source="/Icons/Image Sort.png" Margin="{adonisUi:Space 0, 0, 0, 1}" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="auto" />
+            <ColumnDefinition Width="auto" x:Name="MetadataColumn"/>
+        </Grid.ColumnDefinitions>
 
-        <Grid Grid.Row="1">
+        <Image x:Name="SelectedImage" Source="/Icons/Image Sort.png"
+               Margin="{adonisUi:Space 0, 0, 0, 1}" />
+
+        <GridSplitter Grid.Column="1" Width="5"/>
+
+        <metadata:MetadataView x:Name="Metadata"
+                               Grid.Column="2"/>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="auto" />
                 <ColumnDefinition Width="*" />

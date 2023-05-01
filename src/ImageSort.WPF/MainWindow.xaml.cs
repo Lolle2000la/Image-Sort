@@ -207,6 +207,11 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
                 .Subscribe(_ => Images.SearchTerm.Focus())
                 .DisposeWith(disposableRegistration);
 
+            // bind 'm' to opening/closing the metadata panel
+            KeyPressed(() => keyBindings.ToggleMetadataPanel)
+                .InvokeCommand(Images.Metadata.ViewModel.ToggleIsExpanded)
+                .DisposeWith(disposableRegistration);
+
             // bind 'c' to folder creation
             KeyPressed(() => keyBindings.CreateFolder)
                 .InvokeCommand(ViewModel.Folders.CreateFolderUnderSelected)

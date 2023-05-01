@@ -49,6 +49,7 @@ public partial class App : System.Windows.Application
             settings.Add(new PinnedFolderSettingsViewModel());
             settings.Add(new KeyBindingsSettingsGroupViewModel());
             settings.Add(new WindowPositionSettingsViewModel<MainWindow>());
+            settings.Add(new MetadataPanelSettings());
         });
         Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
 

@@ -168,4 +168,10 @@
   <data name="OtherHeader" xml:space="preserve">
     <value>Other</value>
   </data>
+  <data name="MetadataHeader" xml:space="preserve">
+    <value>Metadata</value>
+  </data>
+  <data name="ToggleMetadataPanel" xml:space="preserve">
+    <value>Open/Close metadata panel</value>
+  </data>
 </root>
