@@ -97,7 +97,7 @@
 
         <CustomAction Id="EXECUTE_AFTER_FINALIZE"
                       Execute="immediate"
-                      Impersonate="no"
+                      Impersonate="yes"
                       Return="asyncNoWait"
                       FileKey="ImageSortExe"
                       ExeCommand="" />
