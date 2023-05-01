@@ -30,7 +30,7 @@ public static class InstallerRunner
     private static void RunSetup(string path)
     {
         var processStartInfo = new ProcessStartInfo("msiexec",
-            $"/i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive")
+            $"/i \"{path}\" TARGETDIR=\"{AppDomain.CurrentDomain.BaseDirectory}\" /passive AUTOSTART=1")
         {
             Verb = "runas",
             UseShellExecute = true
