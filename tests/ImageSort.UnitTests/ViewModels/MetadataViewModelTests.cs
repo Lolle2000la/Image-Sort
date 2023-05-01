@@ -22,7 +22,6 @@ public class MetadataViewModelTests
         metadataViewModel = new(metadataExtractor.Object, fileSystem.Object, new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
     }
 
-
     [Fact(DisplayName = "MetadataViewModel should extract metadata from image")]
     public void ExtractsMetadataWhenPathIsSet()
     {
@@ -41,8 +40,6 @@ public class MetadataViewModelTests
         metadataExtractor.Setup(x => x.Extract(thisFileExists))
             .Returns(extractableMetadata)
             .Verifiable("Should extract metadata from image");
-
-        
 
         // this should cause the extraction of metadata
         metadataViewModel.ImagePath = thisFileExists;
