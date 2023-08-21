@@ -11,7 +11,7 @@
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="MetadataExtractor" Version="2.8.0" />
+    <PackageReference Include="MetadataExtractor" Version="2.8.1" />
   </ItemGroup>
 
   <ItemGroup>
