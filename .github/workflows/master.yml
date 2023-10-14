@@ -74,4 +74,4 @@ jobs:
     - name: Update and submit Winget manifest
       if: ${{ github.event_name == 'release' }}
       run: |
-        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}"
+        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}" Lolle2000la.ImageSort
