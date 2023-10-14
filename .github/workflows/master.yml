@@ -25,6 +25,7 @@ jobs:
         versionSpec: '5.x'
         includePrerelease: true
     - name: Determine Version
+      id: gitversion
       uses: gittools/actions/gitversion/execute@v0
     - name: Build
       run: dotnet build --configuration Release
@@ -67,3 +68,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TIME: ${{ github.run_number }}
+    - name: Install winget-create
+      if: ${{ github.event_name == 'release' }}
+      run: winget install Microsoft.WingetCreate
+    - name: Update and submit Winget manifest
+      if: ${{ github.event_name == 'release' }}
+      run: |
+        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}"
