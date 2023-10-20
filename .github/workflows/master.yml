@@ -70,7 +70,9 @@ jobs:
         TIME: ${{ github.run_number }}
     - name: Install winget-create
       if: ${{ github.event_name == 'release' }}
-      run: choco install wingetcreate
+      run: |
+        choco install dotnet-6.0-runtime
+        choco install wingetcreate
     - name: Update and submit Winget manifest
       if: ${{ github.event_name == 'release' }}
       run: |
