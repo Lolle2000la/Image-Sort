@@ -69,14 +69,14 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TIME: ${{ github.run_number }}
     - name: Install winget-create
-      if: ${{ github.event_name == 'release' }}
+      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
       run: choco install wingetcreate
     - name: Install .NET 6
       uses: actions/setup-dotnet@v3
-      if: ${{ github.event_name == 'release' }}
+      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
       with:
         dotnet-version: '6.0.x'
     - name: Update and submit Winget manifest
-      if: ${{ github.event_name == 'release' }}
+      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
       run: |
         wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}" Lolle2000la.ImageSort
