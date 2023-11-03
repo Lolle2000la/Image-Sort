@@ -31,9 +31,6 @@ jobs:
       run: dotnet build --configuration Release
     - name: Test
       run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
-    - name: Setup MSBuild.exe
-      if: ${{ github.event_name == 'release' }}
-      uses: microsoft/setup-msbuild@v1
     - name: Build WIX project
       if: ${{ github.event_name == 'release' }}
       env:
@@ -41,8 +38,9 @@ jobs:
       run: |
         cd .\src\ImageSort.WindowsSetup\;
         dotnet gitversion /updatewixversionfile | Out-String;
-        MSBuild.exe /p:Configuration=Release /p:Platform=x64 /p:OutputPath=..\..\artifacts\x64 /p:BuildProjectReferences=false | Out-String;
-        MSBuild.exe /p:Configuration=Release /p:Platform=x86 /p:OutputPath=..\..\artifacts\x86 /p:BuildProjectReferences=false | Out-String;
+        dotnet tool install --global wix
+        dotnet build -c Release -r win-x86 -p:Platform=x86
+        dotnet build -c Release -r win-x64 -p:Platform=x64
         cd ..\..;
     - name: Upload x86 MSI file
       id: upload-x86-msi-file
