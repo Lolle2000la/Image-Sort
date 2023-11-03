@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-    xmlns:wix="http://schemas.microsoft.com/wix/2006/wi"
-    xmlns="http://schemas.microsoft.com/wix/2006/wi"
+    xmlns:wix="http://wixtoolset.org/schemas/v4/wxs"
+    xmlns="http://wixtoolset.org/schemas/v4/wxs"
 
     version="1.0" 
     exclude-result-prefixes="xsl wix">
