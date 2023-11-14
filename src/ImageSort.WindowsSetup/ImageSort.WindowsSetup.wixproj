@@ -19,8 +19,8 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.UI.wixext" Version="4.0.2" />
-    <PackageReference Include="WixToolset.Heat" Version="4.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="4.0.3" />
+    <PackageReference Include="WixToolset.Heat" Version="4.0.3" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="exclude-imagesort.exe.xslt" />
