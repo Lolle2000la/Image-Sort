@@ -1,6 +1,6 @@
 ﻿using ImageSort.FileSystem;
 using ImageSort.ViewModels.Metadata;
-using Moq;
+using NSubstitute;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +14,12 @@ public class MetadataViewModelTests
 {
     private readonly MetadataViewModel metadataViewModel;
 
-    private readonly Mock<IFileSystem> fileSystem = new();
-    private readonly Mock<IMetadataExtractor> metadataExtractor = new();
+    private readonly IFileSystem fileSystem = Substitute.For<IFileSystem>();
+    private readonly IMetadataExtractor metadataExtractor = Substitute.For<IMetadataExtractor>();
 
     public MetadataViewModelTests()
     {
-        metadataViewModel = new(metadataExtractor.Object, fileSystem.Object, new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
+        metadataViewModel = new(metadataExtractor, fileSystem, new MetadataSectionViewModelFactory(new MetadataFieldViewModelFactory()));
     }
 
     [Fact(DisplayName = "MetadataViewModel should extract metadata from image")]
@@ -33,13 +33,10 @@ public class MetadataViewModelTests
                 }
             }
         };
-        
-        fileSystem.Setup(x => x.FileExists(thisFileExists)).Returns(true)
-            .Verifiable("Should check whether or not the file exists");
 
-        metadataExtractor.Setup(x => x.Extract(thisFileExists))
-            .Returns(extractableMetadata)
-            .Verifiable("Should extract metadata from image");
+        fileSystem.FileExists(thisFileExists).Returns(true);
+
+        metadataExtractor.Extract(thisFileExists).Returns(extractableMetadata);
 
         // this should cause the extraction of metadata
         metadataViewModel.ImagePath = thisFileExists;
@@ -47,8 +44,8 @@ public class MetadataViewModelTests
         Assert.Equal(MetadataResultType.Success, metadataViewModel.Metadata.Type);
         Assert.Equal(extractableMetadata, metadataViewModel.Metadata.Metadata);
 
-        fileSystem.Verify(x => x.FileExists(thisFileExists));
-        metadataExtractor.Verify(x => x.Extract(thisFileExists));
+        fileSystem.Received().FileExists(thisFileExists);
+        metadataExtractor.Received().Extract(thisFileExists);
     }
 
     [Fact(DisplayName = "MetadataViewModel should not extract metadata from image when file does not exist")]
@@ -56,21 +53,16 @@ public class MetadataViewModelTests
     {
         // setup mocks and view model
         string thisFileDoesNotExist = "C:\\test2.jpg";
-        
-        fileSystem.Setup(x => x.FileExists(thisFileDoesNotExist)).Returns(false)
-            .Verifiable("Should check whether or not the file exists");
-        
-        metadataExtractor.Setup(x => x.Extract(thisFileDoesNotExist))
-            .Throws(new Exception("Should not extract metadata from image when file does not exist"))
-            .Verifiable("Should not extract metadata from image when the file does not exist");
+
+        fileSystem.FileExists(thisFileDoesNotExist).Returns(false);
 
         metadataViewModel.ImagePath = thisFileDoesNotExist;
 
         Assert.Equal(MetadataResultType.FileDoesNotExist, metadataViewModel.Metadata.Type);
         Assert.Null(metadataViewModel.Metadata.Metadata);
-        
-        fileSystem.Verify(x => x.FileExists(thisFileDoesNotExist));
-        metadataExtractor.Verify(x => x.Extract(thisFileDoesNotExist), Times.Never);
+
+        fileSystem.Received().FileExists(thisFileDoesNotExist);
+        metadataExtractor.DidNotReceive().Extract(thisFileDoesNotExist);
     }
 
     [Fact(DisplayName = "Correctly reports unhandled exceptions that occur when trying to extract metadata")]
@@ -79,22 +71,19 @@ public class MetadataViewModelTests
         // setup mocks and view model
         string thisFileHasInvalidMetadata = "C:\\test3.jpg";
         Exception invalidMetadata = new("Invalid metadata could not be loaded");
-        
-        fileSystem.Setup(x => x.FileExists(thisFileHasInvalidMetadata)).Returns(true)
-            .Verifiable("Should check whether or not the file exists");
 
-        metadataExtractor.Setup(x => x.Extract(thisFileHasInvalidMetadata))
-            .Throws(invalidMetadata)
-            .Verifiable("Should extract metadata from image when the file does exist");
-        
+        fileSystem.FileExists(thisFileHasInvalidMetadata).Returns(true);
+
+        metadataExtractor.Extract(thisFileHasInvalidMetadata).Returns(x => throw invalidMetadata);
+
         metadataViewModel.ImagePath = thisFileHasInvalidMetadata;
 
         Assert.Equal(MetadataResultType.UnexpectedError, metadataViewModel.Metadata.Type);
         Assert.Null(metadataViewModel.Metadata.Metadata);
         Assert.Equal(invalidMetadata, metadataViewModel.Metadata.Exception);
 
-        fileSystem.Verify(x => x.FileExists(thisFileHasInvalidMetadata));
-        metadataExtractor.Verify(x => x.Extract(thisFileHasInvalidMetadata));
+        fileSystem.Received().FileExists(thisFileHasInvalidMetadata);
+        metadataExtractor.Received().Extract(thisFileHasInvalidMetadata);
     }
 
     [Fact(DisplayName = "Correctly creates metadata sections from extracted metadata")]
@@ -109,12 +98,9 @@ public class MetadataViewModelTests
             }
         };
 
-        fileSystem.Setup(x => x.FileExists(thisFileHasMetadata)).Returns(true)
-            .Verifiable("Should check whether or not the file exists");
+        fileSystem.FileExists(thisFileHasMetadata).Returns(true);
 
-        metadataExtractor.Setup(x => x.Extract(thisFileHasMetadata))
-            .Returns(extractableMetadata)
-            .Verifiable("Should extract metadata from image when the file does exist");
+        metadataExtractor.Extract(thisFileHasMetadata).Returns(extractableMetadata);
 
         metadataViewModel.ImagePath = thisFileHasMetadata;
 
@@ -122,7 +108,7 @@ public class MetadataViewModelTests
         Assert.Equal("test", metadataViewModel.SectionViewModels.First().Title);
         Assert.Equal(extractableMetadata["test"], metadataViewModel.SectionViewModels.First().Fields);
 
-        fileSystem.Verify(x => x.FileExists(thisFileHasMetadata));
-        metadataExtractor.Verify(x => x.Extract(thisFileHasMetadata));
+        fileSystem.Received().FileExists(thisFileHasMetadata);
+        metadataExtractor.Received().Extract(thisFileHasMetadata);
     }
 }

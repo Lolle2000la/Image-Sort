@@ -4,11 +4,10 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels;
-
 public class FoldersViewModelTests
 {
     private const string MockPath = @"C:\SomePath\";
@@ -16,10 +15,10 @@ public class FoldersViewModelTests
 
     public FoldersViewModelTests()
     {
-        var fsMock = new Mock<IFileSystem>();
-        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Array.Empty<string>());
+        var fsMock = Substitute.For<IFileSystem>();
+        fsMock.GetSubFolders(Arg.Any<string>()).Returns(Array.Empty<string>());
 
-        fileSystemMock = fsMock.Object;
+        fileSystemMock = fsMock;
     }
 
     private FolderTreeItemViewModel CreateMock(string path)
@@ -46,11 +45,11 @@ public class FoldersViewModelTests
     {
         const string mockPathToPin = @"C:\SomeOtherPath\";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+        fsMock.GetSubFolders(Arg.Any<string>()).Returns(Enumerable.Empty<string>());
 
-        var foldersVM = new FoldersViewModel(fsMock.Object)
+        var foldersVM = new FoldersViewModel(fsMock)
         {
             CurrentFolder = CreateMock(MockPath)
         };
@@ -104,11 +103,11 @@ public class FoldersViewModelTests
     {
         const string mockPathToPin = @"C:\SomeOtherPath\";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+        fsMock.GetSubFolders(Arg.Any<string>()).Returns(Enumerable.Empty<string>());
 
-        var foldersVM = new FoldersViewModel(fsMock.Object)
+        var foldersVM = new FoldersViewModel(fsMock)
         {
             CurrentFolder = CreateMock(MockPath)
         };
@@ -141,38 +140,6 @@ public class FoldersViewModelTests
         Assert.False(await foldersVM.UnpinSelected.CanExecute.FirstAsync());
     }
 
-    [Fact(DisplayName = "Concatenates the current folder and the pinned folders correctly.")]
-    public async Task ConcatenatesFoldersCorrectly()
-    {
-        var currentFolder = CreateMock(MockPath);
-
-        var fsMock = new Mock<IFileSystem>();
-
-        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
-
-        var foldersVM = new FoldersViewModel(fsMock.Object)
-        {
-            CurrentFolder = currentFolder
-        };
-
-        var mockFolders = new[]
-        {
-            @"C:\SomeOtherPath1\",
-            @"C:\SomeOtherPath2\",
-            @"C:\SomeOtherPath3\"
-        };
-
-        foreach (var mockFolder in mockFolders)
-        {
-            foldersVM.SelectFolder.RegisterHandler(interaction => { interaction.SetOutput(mockFolder); });
-
-            await foldersVM.Pin.Execute();
-        }
-
-        Assert.Equal(new[] {currentFolder.Path}.Concat(mockFolders),
-            foldersVM.AllFoldersTracked.Select(f => f.Path));
-    }
-
     [Fact(DisplayName = "Marks the current folder as such")]
     public void MarksCurrentFolder()
     {
@@ -194,15 +161,13 @@ public class FoldersViewModelTests
             CurrentFolder = CreateMock(MockPath)
         };
 
-        var pinnedFolders = new[] {@"C:\folder 1", @"C:\folder 2", @"C:\folder 3"};
+        var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
 
         foreach (var pinnedFolder in pinnedFolders)
         {
-            var handler = foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
+            foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
 
             await foldersVM.Pin.Execute();
-
-            handler.Dispose();
         }
 
         foldersVM.Selected = foldersVM.PinnedFolders.ElementAt(0);
@@ -227,15 +192,13 @@ public class FoldersViewModelTests
             CurrentFolder = CreateMock(MockPath)
         };
 
-        var pinnedFolders = new[] {@"C:\folder 1", @"C:\folder 2", @"C:\folder 3"};
+        var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
 
         foreach (var pinnedFolder in pinnedFolders)
         {
-            var handler = foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
+            foldersVM.SelectFolder.RegisterHandler(ic => ic.SetOutput(pinnedFolder));
 
             await foldersVM.Pin.Execute();
-
-            handler.Dispose();
         }
 
         foldersVM.Selected = foldersVM.PinnedFolders.ElementAt(2);

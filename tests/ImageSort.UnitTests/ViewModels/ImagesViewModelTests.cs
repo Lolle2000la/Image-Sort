@@ -5,7 +5,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels;
@@ -23,16 +23,16 @@ public class ImagesViewModelTests
             f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
             || f.EndsWith(".gif", StringComparison.OrdinalIgnoreCase));
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        fsMock.GetFiles(basePath).Returns(allFiles);
 
-        var imagesVM = new ImagesViewModel(fsMock.Object)
+        var imagesVM = new ImagesViewModel(fsMock)
         {
             CurrentFolder = basePath
         };
 
-        fsMock.Verify(fs => fs.GetFiles(basePath));
+        fsMock.Received().GetFiles(basePath);
 
         Assert.Equal(expectedFiles, imagesVM.Images);
     }
@@ -44,11 +44,11 @@ public class ImagesViewModelTests
         var allFiles = new[] {"image.png", "some.gif"}
             .Select(f => basePath + f);
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        fsMock.GetFiles(basePath).Returns(allFiles);
 
-        var imagesVM = new ImagesViewModel(fsMock.Object)
+        var imagesVM = new ImagesViewModel(fsMock)
         {
             CurrentFolder = basePath
         };
@@ -69,11 +69,11 @@ public class ImagesViewModelTests
         var allFiles = new[] {"image.png", "some.gif"}
             .Select(f => basePath + f);
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        fsMock.GetFiles(basePath).Returns(allFiles);
 
-        var imagesVM = new ImagesViewModel(fsMock.Object)
+        var imagesVM = new ImagesViewModel(fsMock)
         {
             CurrentFolder = basePath
         };
@@ -98,11 +98,11 @@ public class ImagesViewModelTests
         var allFiles = new[] {"image.png", "some.gif"}
             .Select(f => basePath + f);
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        fsMock.GetFiles(basePath).Returns(allFiles);
 
-        var imagesVM = new ImagesViewModel(fsMock.Object)
+        var imagesVM = new ImagesViewModel(fsMock)
         {
             CurrentFolder = basePath
         };
@@ -128,15 +128,15 @@ public class ImagesViewModelTests
 
         var notifiesUserOfError = false;
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetFiles(basePath)).Returns(allFiles);
+        fsMock.GetFiles(basePath).Returns(allFiles);
 
-        fsMock.Setup(fs => fs.Move(oldFilePath, newFilePath)).Verifiable();
+        fsMock.Move(oldFilePath, newFilePath);
 
-        fsMock.Setup(fs => fs.FileExists(oldFilePath)).Returns(true);
+        fsMock.FileExists(oldFilePath).Returns(true);
 
-        var imagesVM = new ImagesViewModel(fsMock.Object)
+        var imagesVM = new ImagesViewModel(fsMock)
         {
             CurrentFolder = basePath
         };
@@ -156,7 +156,7 @@ public class ImagesViewModelTests
 
         await imagesVM.RenameImage.Execute();
 
-        fsMock.Verify(fs => fs.Move(oldFilePath, newFilePath));
+        fsMock.Received().Move(oldFilePath, newFilePath);
 
         await Task.Delay(1);
 

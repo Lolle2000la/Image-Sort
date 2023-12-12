@@ -4,11 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
-using Castle.Core.Internal;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
-using Microsoft.Reactive.Testing;
-using Moq;
+using NSubstitute;
 using ReactiveUI;
 using Xunit;
 
@@ -23,24 +21,24 @@ public class FolderTreeItemViewModelTests
 
         var resultingPaths =
             new[]
-                {
-                    @"\folder 1",
-                    @"\folder 2",
-                    @"\folder 3"
-                }
-                .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+            {
+                @"\folder 1",
+                @"\folder 2",
+                @"\folder 3"
+            }
+            .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
+        fsMock.GetSubFolders(path).Returns(resultingPaths);
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
         {
             Path = path,
             IsVisible = true
         };
 
-        fsMock.Verify(fs => fs.GetSubFolders(path));
+        fsMock.Received().GetSubFolders(path);
 
         while (folderTreeItem.Children.Count == 0) {}
 
@@ -53,11 +51,11 @@ public class FolderTreeItemViewModelTests
     {
         const string pathToUnauthorisedFolder = @"C:\UnauthorizedFolder";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(pathToUnauthorisedFolder)).Throws(new UnauthorizedAccessException());
+        fsMock.GetSubFolders(pathToUnauthorisedFolder).Returns(x => throw new UnauthorizedAccessException());
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock)
         {
             Path = pathToUnauthorisedFolder
         };
@@ -76,30 +74,22 @@ public class FolderTreeItemViewModelTests
         result.AddRange(subfolders);
         result.Add(addedFolder);
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(currentFolder)).Returns(subfolders);
-        fsMock.Setup(fs => fs.CreateFolder(addedFolder)).Verifiable();
+        fsMock.GetSubFolders(currentFolder).Returns(subfolders);
+        fsMock.CreateFolder(addedFolder);
 
-        var testScheduler = new TestScheduler();
-
-        testScheduler.Start();
-
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
         {
             Path = currentFolder,
             IsVisible = true
         };
 
-        testScheduler.AdvanceBy(1);
-
         await folderTreeItem.CreateFolder.Execute(addedFolder);
         // verify that no second folder is created when a folder already exists
         await folderTreeItem.CreateFolder.Execute(addedFolder);
 
-        testScheduler.AdvanceBy(1);
-
-        fsMock.Verify(fs => fs.CreateFolder(addedFolder));
+        fsMock.Received().CreateFolder(addedFolder);
 
         Assert.Equal(result.OrderBy(p => p), folderTreeItem.Children.Select(f => f.Path).OrderBy(p => p));
     }
@@ -111,24 +101,24 @@ public class FolderTreeItemViewModelTests
 
         var resultingPaths =
             new[]
-                {
-                    @"\folder 1",
-                    @"\folder 2",
-                    @"\folder 3"
-                }
-                .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+            {
+                @"\folder 1",
+                @"\folder 2",
+                @"\folder 3"
+            }
+            .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(path)).Returns(resultingPaths).Verifiable();
+        fsMock.GetSubFolders(path).Returns(resultingPaths);
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
         {
             Path = path,
             IsVisible = false
         };
 
-        fsMock.Verify(fs => fs.GetSubFolders(path), Times.Never());
+        fsMock.DidNotReceive().GetSubFolders(path);
 
         Assert.Empty(folderTreeItem.Children.Select(vm => vm.Path).ToArray());
     }
