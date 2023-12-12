@@ -27,8 +27,10 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0
     - name: Build
       run: dotnet build --configuration Release
-    - name: Test
+    - name: Unit Tests
       run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
+    - name: UI Tests
+      run: dotnet test .\tests\ImageSort.WPF.UiTests\ImageSort.WPF.UiTests.csproj --configuration Release --no-build
     - name: Build WIX project
       if: ${{ github.event_name == 'release' }}
       env:
