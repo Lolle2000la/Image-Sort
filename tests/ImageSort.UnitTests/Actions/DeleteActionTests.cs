@@ -2,7 +2,7 @@
 using System.IO;
 using ImageSort.Actions;
 using ImageSort.FileSystem;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace ImageSort.UnitTests.Actions;
@@ -14,28 +14,25 @@ public class DeleteActionTests
     {
         const string fileToDelete = @"C:\Some File.png";
 
-        var fsMock = new Mock<IFileSystem>();
-        var recycleBinMock = new Mock<IRecycleBin>();
-        var fileRestorerMock = new Mock<IDisposable>();
+        var fsMock = Substitute.For<IFileSystem>();
+        var recycleBinMock = Substitute.For<IRecycleBin>();
+        var fileRestorerMock = Substitute.For<IDisposable>();
 
-        fsMock.Setup(fs => fs.FileExists(fileToDelete)).Returns(true).Verifiable();
+        fsMock.FileExists(fileToDelete).Returns(true);
 
-        fileRestorerMock.Setup(fr => fr.Dispose()).Verifiable();
+        recycleBinMock.Send(fileToDelete, false).Returns(fileRestorerMock);
 
-        recycleBinMock.Setup(recycleBin => recycleBin.Send(fileToDelete, false)).Returns(fileRestorerMock.Object)
-            .Verifiable();
+        var deleteAction = new DeleteAction(fileToDelete, fsMock, recycleBinMock);
 
-        var deleteAction = new DeleteAction(fileToDelete, fsMock.Object, recycleBinMock.Object);
-
-        fsMock.Verify(fs => fs.FileExists(fileToDelete));
+        fsMock.Received().FileExists(fileToDelete);
 
         deleteAction.Act();
 
-        recycleBinMock.Verify(recycleBin => recycleBin.Send(fileToDelete, false));
+        recycleBinMock.Received().Send(fileToDelete, false);
 
         deleteAction.Revert();
 
-        fileRestorerMock.Verify(fr => fr.Dispose());
+        fileRestorerMock.Received().Dispose();
     }
 
     [Fact(DisplayName = "Throws when the file to delete does not exist")]
@@ -43,15 +40,14 @@ public class DeleteActionTests
     {
         const string fileThatDoesntExist = @"C:\Fictional File.fake";
 
-        var fsMock = new Mock<IFileSystem>();
-        var recycleBinMock = new Mock<IRecycleBin>();
-        var fileRestorerMock = new Mock<IDisposable>();
+        var fsMock = Substitute.For<IFileSystem>();
+        var recycleBinMock = Substitute.For<IRecycleBin>();
 
-        fsMock.Setup(fs => fs.FileExists(fileThatDoesntExist)).Returns(false).Verifiable();
+        fsMock.FileExists(fileThatDoesntExist).Returns(false);
 
         Assert.Throws<FileNotFoundException>(() =>
-            new DeleteAction(fileThatDoesntExist, fsMock.Object, recycleBinMock.Object));
+            new DeleteAction(fileThatDoesntExist, fsMock, recycleBinMock));
 
-        fsMock.Verify(fs => fs.FileExists(fileThatDoesntExist));
+        fsMock.Received().FileExists(fileThatDoesntExist);
     }
 }

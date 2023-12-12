@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using ImageSort.Actions;
 using ImageSort.FileSystem;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace ImageSort.UnitTests.Actions;
@@ -18,23 +18,21 @@ public class RenameActionTests
         var canAct = false;
         var canRevert = false;
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.FileExists(oldPath)).Returns(true);
-        fsMock.Setup(fs => fs.FileExists(newPath)).Returns(false);
-        fsMock.Setup(fs => fs.Move(oldPath, newPath)).Verifiable();
-        fsMock.Setup(fs => fs.Move(newPath, oldPath)).Verifiable();
+        fsMock.FileExists(oldPath).Returns(true);
+        fsMock.FileExists(newPath).Returns(false);
 
-        var renameAction = new RenameAction(oldPath, newFileName, fsMock.Object,
+        var renameAction = new RenameAction(oldPath, newFileName, fsMock,
             (o, n) => canAct = true, (n, o) => canRevert = true);
 
         renameAction.Act();
 
-        fsMock.Verify(fs => fs.Move(oldPath, newPath));
+        fsMock.Received().Move(oldPath, newPath);
 
         renameAction.Revert();
 
-        fsMock.Verify(fs => fs.Move(newPath, oldPath));
+        fsMock.Received().Move(newPath, oldPath);
 
         Assert.True(canAct);
         Assert.True(canRevert);
@@ -50,18 +48,18 @@ public class RenameActionTests
         const string alreadyExistingName = @"already-exists";
         const string alreadyExistingPath = @"C:\already-exists.png";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.FileExists(oldPath)).Returns(true);
-        fsMock.Setup(fs => fs.FileExists(newPath)).Returns(false);
-        fsMock.Setup(fs => fs.FileExists(invalidOldPath)).Returns(false).Verifiable();
-        fsMock.Setup(fs => fs.FileExists(alreadyExistingPath)).Returns(true).Verifiable();
+        fsMock.FileExists(oldPath).Returns(true);
+        fsMock.FileExists(newPath).Returns(false);
+        fsMock.FileExists(invalidOldPath).Returns(false);
+        fsMock.FileExists(alreadyExistingPath).Returns(true);
 
-        Assert.Throws<FileNotFoundException>(() => new RenameAction(invalidOldPath, newFileName, fsMock.Object));
+        Assert.Throws<FileNotFoundException>(() => new RenameAction(invalidOldPath, newFileName, fsMock));
 
-        Assert.Throws<IOException>(() => new RenameAction(oldPath, alreadyExistingName, fsMock.Object));
+        Assert.Throws<IOException>(() => new RenameAction(oldPath, alreadyExistingName, fsMock));
 
-        fsMock.Verify(fs => fs.FileExists(invalidOldPath));
-        fsMock.Verify(fs => fs.FileExists(alreadyExistingPath));
+        fsMock.Received().FileExists(invalidOldPath);
+        fsMock.Received().FileExists(alreadyExistingPath);
     }
 }

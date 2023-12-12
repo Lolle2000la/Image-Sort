@@ -5,7 +5,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ImageSort.Actions;
 using ImageSort.ViewModels;
-using Moq;
+using NSubstitute;
 using Xunit;
 
 namespace ImageSort.UnitTests.ViewModels;
@@ -20,13 +20,11 @@ public class ActionsViewModelTest
 
         var actionsVM = new ActionsViewModel();
 
-        var actionMock = new Mock<IReversibleAction>();
+        var actionMock = Substitute.For<IReversibleAction>();
 
-        actionMock.Setup(a => a.Act()).Verifiable();
-        actionMock.Setup(a => a.Revert()).Verifiable();
-        actionMock.SetupGet(a => a.DisplayName).Returns(actionDisplayName);
+        actionMock.DisplayName.Returns(actionDisplayName);
 
-        await actionsVM.Execute.Execute(actionMock.Object);
+        await actionsVM.Execute.Execute(actionMock);
 
         Assert.Equal(actionDisplayName, actionsVM.LastDone);
 
@@ -44,8 +42,8 @@ public class ActionsViewModelTest
         Assert.Equal(actionDisplayName, actionsVM.LastDone);
         Assert.NotEqual(actionDisplayName, actionsVM.LastUndone);
 
-        actionMock.Verify(a => a.Act(), Times.Exactly(2));
-        actionMock.Verify(a => a.Revert(), Times.Once);
+        actionMock.Received(2).Act();
+        actionMock.Received(1).Revert();
 
         // make sure clearing works
         await actionsVM.Clear.Execute();
@@ -60,28 +58,28 @@ public class ActionsViewModelTest
     public async Task NotifiesUserOfErrors()
     {
         // configure an action that fails when executed
-        var failingActMock = new Mock<IReversibleAction>();
+        var failingActMock = Substitute.For<IReversibleAction>();
 
-        failingActMock.Setup(a => a.Act()).Throws(new Exception("Act doesn't work"));
+        failingActMock.When(a => a.Act()).Do(x => { throw new Exception("Act doesn't work"); });
 
         // configure an action that fails on reversion (on undo)
-        var failingRevertMock = new Mock<IReversibleAction>();
+        var failingRevertMock = Substitute.For<IReversibleAction>();
 
-        failingRevertMock.Setup(a => a.Revert()).Throws(new Exception("Revert doesn't work"));
-        failingRevertMock.Setup(a => a.Act());
+        failingRevertMock.When(a => a.Revert()).Do(x => { throw new Exception("Revert doesn't work"); });
 
         // configure an action that fails on the second time being executed (on redo)
-        var failingActOnUndoMock = new Mock<IReversibleAction>();
+        var failingActOnUndoMock = Substitute.For<IReversibleAction>();
 
         var timesCalled = 0;
 
-        failingActOnUndoMock.Setup(a => a.Revert());
-        failingActOnUndoMock.Setup(a => a.Act()).Callback(() =>
+        failingActOnUndoMock.When(a => a.Act()).Do(x =>
+        {
             timesCalled = timesCalled switch
             {
                 0 => 1,
                 _ => throw new Exception("Act doesn't work")
-            });
+            };
+        });
 
         var actionsVM = new ActionsViewModel();
 
@@ -95,14 +93,14 @@ public class ActionsViewModelTest
         });
 
         // fails on execute
-        await actionsVM.Execute.Execute(failingActMock.Object);
+        await actionsVM.Execute.Execute(failingActMock);
 
         // fails on undo
-        await actionsVM.Execute.Execute(failingRevertMock.Object);
+        await actionsVM.Execute.Execute(failingRevertMock);
         await actionsVM.Undo.Execute();
 
         // fails on redo
-        await actionsVM.Execute.Execute(failingActOnUndoMock.Object);
+        await actionsVM.Execute.Execute(failingActOnUndoMock);
         await actionsVM.Undo.Execute();
         await actionsVM.Redo.Execute();
 

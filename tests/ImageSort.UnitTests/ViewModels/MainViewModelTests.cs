@@ -5,7 +5,7 @@ using System.Reactive.Linq;
 using System.Threading.Tasks;
 using ImageSort.FileSystem;
 using ImageSort.ViewModels;
-using Moq;
+using NSubstitute;
 using ReactiveUI;
 using Xunit;
 
@@ -17,24 +17,24 @@ public class MainViewModelTests
 
     public MainViewModelTests()
     {
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.GetSubFolders(@"C:\")).Returns(new[] {@"C:\folder"});
-        fsMock.Setup(fs => fs.GetSubFolders(It.IsAny<string>())).Returns(Enumerable.Empty<string>);
+        fsMock.GetSubFolders(@"C:\").Returns(new[] { @"C:\folder" });
+        fsMock.GetSubFolders(Arg.Any<string>()).Returns(Enumerable.Empty<string>());
 
-        fsMock.Setup(fs => fs.GetFiles(It.IsAny<string>()))
-            .Returns(new[] {@"c:\img.png"}); // just so that no exception is thrown
+        fsMock.GetFiles(Arg.Any<string>())
+            .Returns(new[] { @"c:\img.png" }); // just so that no exception is thrown
 
-        mainVM = new MainViewModel(fsMock.Object)
+        mainVM = new MainViewModel(fsMock)
         {
-            Images = new ImagesViewModel(fsMock.Object)
+            Images = new ImagesViewModel(fsMock)
             {
                 CurrentFolder = @"C:\"
             },
-            Folders = new FoldersViewModel(fsMock.Object)
+            Folders = new FoldersViewModel(fsMock)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\"},
-                Selected = new FolderTreeItemViewModel(fsMock.Object) {Path = @"C:\folder"}
+                CurrentFolder = new FolderTreeItemViewModel(fsMock) { Path = @"C:\" },
+                Selected = new FolderTreeItemViewModel(fsMock) { Path = @"C:\folder" }
             }
         };
     }
@@ -98,25 +98,23 @@ public class MainViewModelTests
         const string newDirectory = @"C:\Some other folder";
         const string moveDestination = newDirectory + @"\some image.png";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
-        fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
-        fsMock.Setup(fs => fs.DirectoryExists(newDirectory)).Returns(true);
+        fsMock.DirectoryExists(currentDirectory).Returns(true);
+        fsMock.FileExists(image).Returns(true);
+        fsMock.DirectoryExists(newDirectory).Returns(true);
 
-        fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
+        fsMock.GetFiles(currentDirectory).Returns(new[] {image});
 
-        fsMock.Setup(fs => fs.Move(image, moveDestination)).Verifiable();
-
-        var otherMainVM = new MainViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+        var otherMainVM = new MainViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
         {
             Actions = new ActionsViewModel(),
-            Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
+            Folders = new FoldersViewModel(fsMock, RxApp.MainThreadScheduler)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
+                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
                     {Path = currentDirectory}
             },
-            Images = new ImagesViewModel(fsMock.Object)
+            Images = new ImagesViewModel(fsMock)
         };
 
         otherMainVM.Images.SelectedIndex = 0;
@@ -141,40 +139,37 @@ public class MainViewModelTests
 
         Assert.Empty(otherMainVM.Images.Images);
 
-        fsMock.Verify(fs => fs.Move(image, moveDestination));
+        fsMock.Received().Move(image, moveDestination);
     }
 
-    [Fact(DisplayName =
-        "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
+    [Fact(DisplayName = "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
     public async Task CanDeleteImages()
     {
         const string currentDirectory = @"C:\Some Folder With Pictures";
         const string image = currentDirectory + @"\some image.png";
 
-        var fsMock = new Mock<IFileSystem>();
+        var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.Setup(fs => fs.DirectoryExists(currentDirectory)).Returns(true);
-        fsMock.Setup(fs => fs.FileExists(image)).Returns(true);
+        fsMock.DirectoryExists(currentDirectory).Returns(true);
+        fsMock.FileExists(image).Returns(true);
 
-        fsMock.Setup(fs => fs.GetFiles(currentDirectory)).Returns(new[] {image});
+        fsMock.GetFiles(currentDirectory).Returns(new[] { image });
 
-        var restorerMock = new Mock<IDisposable>();
+        var restorerMock = Substitute.For<IDisposable>();
 
-        restorerMock.Setup(r => r.Dispose()).Verifiable();
+        var rbMock = Substitute.For<IRecycleBin>();
 
-        var rbMock = new Mock<IRecycleBin>();
+        rbMock.Send(image, false).Returns(restorerMock);
 
-        rbMock.Setup(rb => rb.Send(image, false)).Returns(restorerMock.Object);
-
-        var otherMainVM = new MainViewModel(fsMock.Object, rbMock.Object, RxApp.MainThreadScheduler)
+        var otherMainVM = new MainViewModel(fsMock, rbMock, RxApp.MainThreadScheduler)
         {
             Actions = new ActionsViewModel(),
-            Folders = new FoldersViewModel(fsMock.Object, RxApp.MainThreadScheduler)
+            Folders = new FoldersViewModel(fsMock, RxApp.MainThreadScheduler)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock.Object, backgroundScheduler: RxApp.MainThreadScheduler)
-                    {Path = currentDirectory}
+                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+                { Path = currentDirectory }
             },
-            Images = new ImagesViewModel(fsMock.Object)
+            Images = new ImagesViewModel(fsMock)
         };
 
         otherMainVM.Images.SelectedIndex = 0;
@@ -187,6 +182,6 @@ public class MainViewModelTests
 
         await otherMainVM.Actions.Undo.Execute();
 
-        restorerMock.Verify(r => r.Dispose());
+        restorerMock.Received().Dispose();
     }
 }
