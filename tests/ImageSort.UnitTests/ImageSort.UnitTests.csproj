@@ -17,7 +17,7 @@
     </PackageReference>
     <PackageReference Include="ReactiveUI" Version="20.1.52" />
     <PackageReference Include="ReactiveUI.Testing" Version="20.1.52" />
-    <PackageReference Include="xunit" Version="2.9.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
