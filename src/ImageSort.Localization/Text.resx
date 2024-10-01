@@ -312,4 +312,10 @@ Do you want to update?</value>
   <data name="MetadataSectionValue" xml:space="preserve">
     <value>Value</value>
   </data>
+  <data name="WindowsIntegrationHeader" xml:space="preserve">
+    <value>Integration with Windows</value>
+  </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.</value>
+  </data>
 </root>

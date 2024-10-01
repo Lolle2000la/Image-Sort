@@ -312,4 +312,10 @@ Wollen Sie updaten?</value>
   <data name="MetadataSectionValue" xml:space="preserve">
     <value>Wert</value>
   </data>
+  <data name="WindowsIntegrationHeader" xml:space="preserve">
+    <value>Integration mit Windows</value>
+  </data>
+  <data name="ShowInExplorerContextMenu" xml:space="preserve">
+    <value>Verknüpfung zum Öffnen eines Ordners in Image Sort im Kontextmenü des Windows Explorers hinzufügen.</value>
+  </data>
 </root>

@@ -1,6 +1,7 @@
 ﻿using AdonisUI;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
+using Microsoft.Win32;
 using ReactiveUI;
 using System;
 using System.Windows;
@@ -53,6 +54,18 @@ public class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
         set => this.RaiseAndSetIfChanged(ref _animateGifThumbnails, value);
     }
 
+    private bool _showInExplorerContextMenu = CheckForExplorerContextMenu();
+
+    public bool ShowInExplorerContextMenu
+    {
+        get => _showInExplorerContextMenu;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _showInExplorerContextMenu, value);
+            UpdateExplorerContextMenu(value);
+        }
+    }
+
     public GeneralSettingsGroupViewModel()
     {
         void SetDarkMode(bool darkMode)
@@ -62,5 +75,53 @@ public class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
 
         this.WhenAnyValue(vm => vm.DarkMode)
             .Subscribe(SetDarkMode);
+    }
+
+    private void UpdateExplorerContextMenu(bool show)
+    {
+        string[] keys = new[]
+        {
+            @"Software\Classes\Directory\shell\ImageSort",
+            @"Software\Classes\Drive\shell\ImageSort",
+            @"Software\Classes\Folder\shell\ImageSort"
+        };
+
+        foreach (var key in keys)
+        {
+            if (show)
+            {
+                using (var registryKey = Registry.CurrentUser.CreateSubKey(key))
+                {
+                    registryKey.SetValue("", "Open with Image Sort");
+                    registryKey.CreateSubKey("command").SetValue("", $"\"{AppDomain.CurrentDomain.BaseDirectory}Image Sort.exe\" \"%L\"");
+                    registryKey.SetValue("Icon", $"\"{AppDomain.CurrentDomain.BaseDirectory}Image Sort.exe\"");
+                }
+            }
+            else
+            {
+                Registry.CurrentUser.DeleteSubKeyTree(key, false);
+            }
+        }
+    }
+
+    // This is used to grandfather in users who already have the context menu enabled from using it with the installer.
+    private static bool CheckForExplorerContextMenu()
+    {
+        string[] keys = new[]
+        {
+            @"Software\Classes\Directory\shell\ImageSort",
+            @"Software\Classes\Drive\shell\ImageSort",
+            @"Software\Classes\Folder\shell\ImageSort"
+        };
+
+        foreach (var key in keys)
+        {
+            if (Registry.CurrentUser.OpenSubKey(key) != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

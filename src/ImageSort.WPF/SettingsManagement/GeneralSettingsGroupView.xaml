@@ -46,5 +46,10 @@
                           Margin="{adonisUi:Space 1}" />
             </StackPanel>
         </GroupBox>
+
+        <GroupBox Header="{x:Static text:Text.WindowsIntegrationHeader}">
+            <CheckBox Content="{x:Static text:Text.ShowInExplorerContextMenu}" x:Name="ShowInExplorerContextMenu"
+                      Margin="{adonisUi:Space 1}" />
+        </GroupBox>
     </StackPanel>
 </reactiveui:ReactiveUserControl>

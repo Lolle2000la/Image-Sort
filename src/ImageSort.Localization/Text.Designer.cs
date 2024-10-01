@@ -566,6 +566,15 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer..
+        /// </summary>
+        public static string ShowInExplorerContextMenu {
+            get {
+                return ResourceManager.GetString("ShowInExplorerContextMenu", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Undo.
         /// </summary>
         public static string Undo {
@@ -618,6 +627,15 @@ namespace ImageSort.Localization {
         public static string Updates {
             get {
                 return ResourceManager.GetString("Updates", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Integration with Windows.
+        /// </summary>
+        public static string WindowsIntegrationHeader {
+            get {
+                return ResourceManager.GetString("WindowsIntegrationHeader", resourceCulture);
             }
         }
     }

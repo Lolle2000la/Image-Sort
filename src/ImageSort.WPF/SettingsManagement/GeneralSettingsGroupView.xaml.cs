@@ -58,6 +58,11 @@ public partial class GeneralSettingsGroupView : ReactiveUserControl<GeneralSetti
                     vm => vm.CheckForUpdatesOnStartup,
                     view => view.InstallPrereleaseBuilds.IsEnabled)
                 .DisposeWith(disposableRegistration);
+
+            this.Bind(ViewModel,
+                    vm => vm.ShowInExplorerContextMenu,
+                    view => view.ShowInExplorerContextMenu.IsChecked)
+                .DisposeWith(disposableRegistration);
         });
     }
 }
