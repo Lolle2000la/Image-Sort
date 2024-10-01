@@ -59,11 +59,7 @@ public class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
     public bool ShowInExplorerContextMenu
     {
         get => _showInExplorerContextMenu;
-        set
-        {
-            this.RaiseAndSetIfChanged(ref _showInExplorerContextMenu, value);
-            UpdateExplorerContextMenu(value);
-        }
+        set => this.RaiseAndSetIfChanged(ref _showInExplorerContextMenu, value);
     }
 
     public GeneralSettingsGroupViewModel()
@@ -75,6 +71,11 @@ public class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
 
         this.WhenAnyValue(vm => vm.DarkMode)
             .Subscribe(SetDarkMode);
+
+#if !DEBUG
+        this.WhenAnyValue(vm => vm.ShowInExplorerContextMenu)
+            .Subscribe(UpdateExplorerContextMenu);
+#endif
     }
 
     private void UpdateExplorerContextMenu(bool show)
