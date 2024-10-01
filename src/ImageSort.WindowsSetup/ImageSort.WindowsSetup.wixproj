@@ -19,6 +19,7 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.1" />
     <PackageReference Include="WixToolset.UI.wixext" Version="5.0.1" />
     <PackageReference Include="WixToolset.Heat" Version="5.0.1" />
   </ItemGroup>
@@ -26,6 +27,9 @@
     <Content Include="exclude-imagesort.exe.xslt" />
     <Content Include="Image Sort.ico" />
     <Content Include="License.rtf" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="delete_explorer_context_menu.bat" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.WPF\ImageSort.WPF.csproj">
