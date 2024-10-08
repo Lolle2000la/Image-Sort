@@ -41,6 +41,7 @@ jobs:
         dotnet tool install --global wix
         dotnet build -c Release -r win-x86 -p:Platform=x86
         dotnet build -c Release -r win-x64 -p:Platform=x64
+        dotnet build -c Release -r win-arm64 -p:Platform=ARM64
         cd ..\..;
     - name: Upload x86 MSI file
       id: upload-x86-msi-file
@@ -66,6 +67,18 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         TIME: ${{ github.run_number }}
+    - name: Upload ARM64 MSI file
+      id: upload-arm64-msi-file
+      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ github.event_name == 'release' }}
+      with:
+        asset_path: .\artifacts\ARM64\ImageSort.ARM64.msi
+        asset_name: ImageSort.ARM64.msi
+        asset_content_type: application/octet-stream
+        upload_url: ${{ github.event.release.upload_url }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TIME: ${{ github.run_number }}
     - name: Install winget-create
       if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
       run: choco install wingetcreate
@@ -77,4 +90,4 @@ jobs:
     - name: Update and submit Winget manifest
       if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
       run: |
-        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}" Lolle2000la.ImageSort
+        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" "${{ steps.upload-arm64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}" Lolle2000la.ImageSort

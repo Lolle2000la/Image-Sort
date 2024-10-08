@@ -4,10 +4,13 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <PropertyGroup>
-    <Platform Condition=" '$(Platform)' == 'Any CPU' ">x86</Platform>
-    <Platform Condition=" '$(Platform)' == 'AnyCPU' ">x86</Platform>
+    <!--<Platform Condition=" '$(Platform)' == 'Any CPU' ">x86</Platform>-->
+    <!--<Platform Condition=" '$(Platform)' == 'AnyCPU' ">x86</Platform>-->
     <OutputName>ImageSort.$(Platform)</OutputName>
     <InstallerPlatform>$(Platform)</InstallerPlatform>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(Platform)' != 'ARM64'">win-$(Platform)</RuntimeIdentifier>
+    <DefineConstants>RuntimeIdentifier=$(RuntimeIdentifier);</DefineConstants>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>..\..\artifacts\$(Platform)</OutputPath>
@@ -41,7 +44,7 @@
       <RefTargetDir>INSTALLFOLDER</RefTargetDir>
       <IsDotnetSDKProject>True</IsDotnetSDKProject>
       <TargetFrameworkIdentifier>net8.0-windows</TargetFrameworkIdentifier>
-      <Runtime>win-$(Platform)</Runtime>
+      <Runtime>$(RuntimeIdentifier)</Runtime>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup>

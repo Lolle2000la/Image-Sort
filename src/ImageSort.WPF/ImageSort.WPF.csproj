@@ -1,3 +1,4 @@
+
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
@@ -6,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <AssemblyName>Image Sort</AssemblyName>
     <Configurations>Debug;Release;MSIX</Configurations>
-    <Platforms>AnyCPU;x86;x64</Platforms>
+    <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
       <PublishReadyToRun>true</PublishReadyToRun>
   </PropertyGroup>
 
