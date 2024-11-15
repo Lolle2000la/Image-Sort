@@ -1,5 +1,5 @@
 <Project>
-  <Import Project="Sdk.props" Sdk="WixToolset.Sdk" Version="5.0.1" />
+  <Import Project="Sdk.props" Sdk="WixToolset.Sdk" Version="5.0.2" />
   <PropertyGroup>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
@@ -22,9 +22,9 @@
     <Compile Include="Product.wxs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.1" />
-    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.1" />
-    <PackageReference Include="WixToolset.Heat" Version="5.0.1" />
+    <PackageReference Include="WixToolset.Netfx.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Heat" Version="5.0.2" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="exclude-imagesort.exe.xslt" />
