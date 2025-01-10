@@ -5,7 +5,8 @@ Sorts your image at high speed
 [![Build status](https://ci.appveyor.com/api/projects/status/i72q6f479ah9d4vw/branch/master?svg=true)](https://ci.appveyor.com/project/Lolle2000la/image-sort/branch/master)
 [![CodeFactor](https://www.codefactor.io/repository/github/lolle2000la/image-sort/badge)](https://www.codefactor.io/repository/github/lolle2000la/image-sort)
 
-<a href='//www.microsoft.com/store/apps/9PGDK9WN8HG6?ocid=badge'><img src='/docs/English_get-it-from-MS_InvariantCulture_Default.png' alt='Get it from Microsoft Store' width="200"/></a>
+<!--<a href='//www.microsoft.com/store/apps/9PGDK9WN8HG6?ocid=badge'><img src='/docs/English_get-it-from-MS_InvariantCulture_Default.png' alt='Get it from Microsoft Store' width="200"/></a>-->
+**I can't update the Microsoft Store build anymore. I don't know why and the support isn't helpful, but I will cease development on it. Please install the regular .msi-Version from the releases to keep up with new versions.**
 
 ![Screenshot taken from the user interface of Image Sort](./Image-Sort-Screenshot.gif)
 
