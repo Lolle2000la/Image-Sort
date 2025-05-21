@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DynamicData" Version="9.2.1" />
+    <PackageReference Include="DynamicData" Version="9.2.2" />
     <PackageReference Include="ReactiveUI" Version="20.2.45" />
     <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>All</PrivateAssets>
