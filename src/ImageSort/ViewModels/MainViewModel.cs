@@ -12,29 +12,9 @@ namespace ImageSort.ViewModels;
 
 public class MainViewModel : ReactiveObject
 {
-    private ActionsViewModel actions;
-
-    public ActionsViewModel Actions
-    {
-        get => actions;
-        set => this.RaiseAndSetIfChanged(ref actions, value);
-    }
-
-    private FoldersViewModel _foldersViewModel;
-
-    public FoldersViewModel Folders
-    {
-        get => _foldersViewModel;
-        set => this.RaiseAndSetIfChanged(ref _foldersViewModel, value);
-    }
-
-    private ImagesViewModel _images;
-
-    public ImagesViewModel Images
-    {
-        get => _images;
-        set => this.RaiseAndSetIfChanged(ref _images, value);
-    }
+    public ActionsViewModel Actions { get; }
+    public FoldersViewModel Folders { get; }
+    public ImagesViewModel Images { get; }
 
     public Interaction<Unit, string> PickFolder { get; } = new Interaction<Unit, string>();
 
@@ -45,30 +25,29 @@ public class MainViewModel : ReactiveObject
 
     public ReactiveCommand<Unit, Unit> DeleteImage { get; }
 
-    public MainViewModel(IFileSystem fileSystem = null, IRecycleBin recycleBin = null, IScheduler backgroundScheduler = null)
+    public MainViewModel(FoldersViewModel foldersViewModel, ImagesViewModel imagesViewModel, ActionsViewModel actionsViewModel,
+                         IFileSystem fileSystem = null, IRecycleBin recycleBin = null, IScheduler backgroundScheduler = null)
     {
+        Folders = foldersViewModel ?? throw new ArgumentNullException(nameof(foldersViewModel));
+        Images = imagesViewModel ?? throw new ArgumentNullException(nameof(imagesViewModel));
+        Actions = actionsViewModel ?? throw new ArgumentNullException(nameof(actionsViewModel));
+
         fileSystem ??= Locator.Current.GetService<IFileSystem>();
         recycleBin ??= Locator.Current.GetService<IRecycleBin>();
         backgroundScheduler ??= RxApp.TaskpoolScheduler;
 
-        this.WhenAnyValue(x => x.Images)
-            .Where(i => i != null)
-            .Subscribe(i =>
+        // This subscription ensures ImagesViewModel.CurrentFolder is updated when FoldersViewModel.CurrentFolder changes.
+        this.WhenAnyValue(x => x.Folders.CurrentFolder)
+            .Where(f => f != null)
+            .Select(f => f.Path)
+            .Subscribe(folderPath =>
             {
-                this.WhenAnyValue(x => x.Folders.CurrentFolder)
-                    .Where(f => f != null)
-                    .Select(f => f.Path)
-                    .Subscribe(f =>
-                    {
-                        i.CurrentFolder = f;
-                    });
+                if (Images != null) Images.CurrentFolder = folderPath;
             });
 
-        var canOpenCurrentlySelectedFolder = this.WhenAnyValue(x => x.Folders)
-            .Where(f => f != null)
-            .SelectMany(f => f.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => new { Selected = s, CurrentFolder = c }))
-            .Where(f => f != null)
-            .Select(f => f.Selected != null && f.Selected != f.CurrentFolder);
+        var canOpenCurrentlySelectedFolder = this.WhenAnyValue(x => x.Folders.Selected, x => x.Folders.CurrentFolder, 
+                (s, c) => s != null && c != null && s != c && s.Path != c.Path) // Added s.Path != c.Path for clarity
+            .DistinctUntilChanged();
 
         OpenCurrentlySelectedFolder = ReactiveCommand.Create(() =>
         {
@@ -84,10 +63,14 @@ public class MainViewModel : ReactiveObject
             catch (UnhandledInteractionException<Unit, string>) { }
         });
 
-        var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
-            .Where(fi => fi.Folders != null && fi.Images != null)
-            .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
-                .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
+        var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders.Selected, x => x.Folders.CurrentFolder, x => x.Images.SelectedImage,
+                (folderSelected, currentFolder, imageSelected) => 
+                    folderSelected != null && 
+                    currentFolder != null && 
+                    folderSelected != currentFolder && 
+                    folderSelected.Path != currentFolder.Path && // ensure paths are different
+                    !string.IsNullOrEmpty(imageSelected))
+            .DistinctUntilChanged();
 
         MoveImageToFolder = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -102,10 +85,9 @@ public class MainViewModel : ReactiveObject
             else if (Images.Images.Any()) Images.SelectedIndex = 0;
         }, canMoveImageToFolderExecute);
 
-        var canDeleteImageExecute = this.WhenAnyValue(x => x.Images)
-            .Where(i => i != null)
-            .SelectMany(i => i.WhenAnyValue(x => x.SelectedImage))
-            .Select(i => !string.IsNullOrEmpty(i));
+        var canDeleteImageExecute = this.WhenAnyValue(x => x.Images.SelectedImage)
+            .Select(i => !string.IsNullOrEmpty(i))
+            .DistinctUntilChanged();
 
         DeleteImage = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -120,16 +102,16 @@ public class MainViewModel : ReactiveObject
             else if (Images.Images.Any()) Images.SelectedIndex = 0;
         }, canDeleteImageExecute);
 
-        this.WhenAnyValue(x => x.Folders, x => x.Actions)
-            .Where(models => models.Item1 != null && models.Item2 != null)
-            .SelectMany(_ => Folders.WhenAnyValue(x => x.CurrentFolder))
+        this.WhenAnyValue(x => x.Folders.CurrentFolder)
             .Select(_ => Unit.Default)
+            .ObserveOn(RxApp.MainThreadScheduler) // Ensure clear happens on UI thread if it affects UI
             .Subscribe(async _ => await Actions.Clear.Execute());
 
-        this.WhenAnyValue(x => x.Images, x => x.Actions)
-            .Where(i => i.Item1 != null && i.Item2 != null)
-            .SelectMany(_ => Images.RenameImage)
+        // When a rename action is created by ImagesViewModel, execute it through ActionsViewModel
+        Images.RenameImage
             .Where(a => a != null)
-            .Subscribe(async a => await Actions.Execute.Execute(a));
+            .ObserveOn(RxApp.MainThreadScheduler) // Ensure execute happens on UI thread
+            .SelectMany(action => Actions.Execute.Execute(action))
+            .Subscribe();
     }
 }

@@ -18,6 +18,9 @@ using ImageSort.SettingsManagement;
 using ReactiveUI;
 using Splat;
 using ImageSort.Avalonia.SettingsManagement; // For the new SettingsHelper and Restore extension
+using ImageSort.ViewModels; // Added for core ViewModels
+using System.IO; // Required for FileSystemWatcher
+using ImageSort.Avalonia.FileSystem; // Added for TemporaryRecycleBin
 
 #if !DO_NOT_INCLUDE_UPDATER
 #endif
@@ -48,6 +51,7 @@ public partial class App : Application
             settings.Add(new MetadataPanelSettings());
         });
         Locator.CurrentMutable.RegisterLazySingleton(() => new SettingsViewModel());
+        Locator.CurrentMutable.Register<IRecycleBin>(() => new TemporaryRecycleBin()); // Register TemporaryRecycleBin
 
         Environment.CurrentDirectory = AppDomain.CurrentDomain.BaseDirectory;
 
@@ -57,7 +61,34 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             DisableAvaloniaDataAnnotationValidation();
-            var mainWindowViewModel = new MainWindowViewModel(); // Create the ViewModel instance
+            var fileSystem = Locator.Current.GetService<IFileSystem>();
+            if (fileSystem == null)
+            {
+                throw new InvalidOperationException("IFileSystem service not registered.");
+            }
+
+            var recycleBin = Locator.Current.GetService<IRecycleBin>();
+            if (recycleBin == null)
+            {
+                throw new InvalidOperationException("IRecycleBin service not registered.");
+            }
+
+            var backgroundScheduler = RxApp.TaskpoolScheduler;
+            var mainThreadScheduler = RxApp.MainThreadScheduler;
+
+            var foldersViewModel = new FoldersViewModel(fileSystem, backgroundScheduler);
+            // Correctly instantiate ImagesViewModel with its actual constructor signature
+            var imagesViewModel = new ImagesViewModel(fileSystem, null); // Pass fileSystem and null for the optional folderWatcherFactory
+            var actionsViewModel = new ActionsViewModel();
+
+            var mainWindowViewModel = new MainWindowViewModel(
+                foldersViewModel,
+                imagesViewModel,
+                actionsViewModel,
+                fileSystem,
+                recycleBin,
+                backgroundScheduler);
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = mainWindowViewModel, // Set DataContext

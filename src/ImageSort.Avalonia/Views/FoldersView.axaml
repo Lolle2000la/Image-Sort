@@ -1,0 +1,27 @@
+<UserControl x:Class="ImageSort.Avalonia.Views.FoldersView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="using:ImageSort.ViewModels"
+             xmlns:views="using:ImageSort.Avalonia.Views"
+             x:DataType="vm:FoldersViewModel"
+             mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
+    <Design.DataContext>
+        <vm:FoldersViewModel />
+    </Design.DataContext>
+    <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Command="{Binding PinSelected}">Pin Selected</Button>
+            <Button Command="{Binding UnpinSelected}">Unpin Selected</Button>
+            <Button Command="{Binding CreateFolderUnderSelected}">Create Folder in Selected</Button>
+        </StackPanel>
+        <TreeView ItemsSource="{Binding PinnedFolders}" SelectedItem="{Binding Selected, Mode=TwoWay}">
+            <TreeView.ItemTemplate>
+                <TreeDataTemplate ItemsSource="{Binding Children}">
+                    <views:FolderTreeItemView />
+                </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+        </TreeView>
+    </DockPanel>
+</UserControl>

@@ -3,60 +3,54 @@
         xmlns:vm="using:ImageSort.Avalonia.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:views="using:ImageSort.Avalonia.Views" 
-        xmlns:text="using:ImageSort.Localization"
         xmlns:gb="using:GroupBox.Avalonia.Controls"
+        xmlns:views="using:ImageSort.Avalonia.Views"
+        xmlns:text="using:ImageSort.Localization"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
         x:Class="ImageSort.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
-        Title="Image Sort" MinWidth="800" MinHeight="520">
+        Title="Image Sort (Avalonia)">
 
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-    <Grid ColumnDefinitions="300,auto,auto,*">
-        <!-- FoldersView Placeholder -->
-        <!-- <views:FoldersView Grid.Column="0" x:Name="Folders" /> -->
-        <TextBlock Text="FoldersView Placeholder" Grid.Column="0"/>
+    <Grid ColumnDefinitions="300,Auto,Auto,*">
+        <views:FoldersView Grid.Column="0" DataContext="{Binding Folders}" />
 
-        <GridSplitter Grid.Column="1" Width="1" /> <!-- Adjusted for Avalonia -->
+        <GridSplitter Grid.Column="1" Width="8" Background="LightGray" />
 
-        <Panel Grid.Column="2" Margin="0,8,8,8"> <!-- Using Panel instead of GroupBox for layout -->
-            <StackPanel VerticalAlignment="Center">
+        <gb:GroupBox Grid.Column="2" Margin="0,8,8,8">
+            <StackPanel VerticalAlignment="Stretch">
 
                 <gb:GroupBox Header="{x:Static text:Text.Folder}" Margin="0,8">
                     <StackPanel>
-                        <Button Content="{x:Static text:Text.OpenFolder}" Name="OpenFolder" />
-                        <Button Content="{x:Static text:Text.OpenSelectedFolder}" Name="OpenSelectedFolder" />
+                        <Button Content="{x:Static text:Text.OpenFolder}" Command="{Binding OpenFolder}" Margin="4"/>
+                        <Button Content="{x:Static text:Text.OpenSelectedFolder}" Command="{Binding OpenCurrentlySelectedFolder}" Margin="4"/>
                     </StackPanel>
                 </gb:GroupBox>
 
                 <gb:GroupBox Header="{x:Static text:Text.History}" Margin="0,8">
-                    <!-- ActionsView Placeholder -->
-                    <!-- <views:ActionsView Name="Actions" HorizontalAlignment="Stretch" /> -->
-                    <TextBlock Text="ActionsView Placeholder"/>
+                    <views:ActionsView DataContext="{Binding Actions}" HorizontalAlignment="Stretch" />
                 </gb:GroupBox>
 
                 <gb:GroupBox Header="{x:Static text:Text.Settings}" Margin="0,8">
                     <StackPanel>
-                        <Button Content="{x:Static text:Text.Open}" Name="OpenSettingsButton" />
-                        <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}" Name="OpenKeybindingsButton" />
-                        <Button Content="{x:Static text:Text.CreditsWindowTitle}" Name="CreditsButton" />
+                        <Button Content="{x:Static text:Text.Open}" Command="{Binding OpenSettings}" Margin="4"/>
+                        <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}" Command="{Binding OpenKeybindings}" Margin="4"/>
+                        <Button Content="{x:Static text:Text.CreditsWindowTitle}" Command="{Binding OpenCredits}" Margin="4"/>
                     </StackPanel>
                 </gb:GroupBox>
             </StackPanel>
-        </Panel>
+        </gb:GroupBox>
 
-        <Grid Grid.Column="3" RowDefinitions="auto,*,auto">
-            <Button Name="MoveButton" Content="{x:Static text:Text.Move}" Grid.Row="0" Margin="0,0,0,8" />
+        <Grid Grid.Column="3" RowDefinitions="Auto,*,Auto">
+            <Button Content="{x:Static text:Text.Move}" Command="{Binding MoveImageToFolder}" Grid.Row="0" Margin="0,0,0,8" HorizontalAlignment="Stretch"/>
 
-            <!-- ImagesView Placeholder -->
-            <!-- <views:ImagesView Name="Images" Grid.Row="1" /> -->
-            <TextBlock Text="ImagesView Placeholder" Grid.Row="1"/>
+            <views:ImagesView Grid.Row="1" DataContext="{Binding Images}" />
 
-            <Button Name="DeleteButton" Content="{x:Static text:Text.Delete}" Grid.Row="2" Margin="0,8,0,0" />
+            <Button Content="{x:Static text:Text.Delete}" Command="{Binding DeleteImage}" Grid.Row="2" Margin="0,8,0,0" HorizontalAlignment="Stretch"/>
         </Grid>
     </Grid>
 </Window>
