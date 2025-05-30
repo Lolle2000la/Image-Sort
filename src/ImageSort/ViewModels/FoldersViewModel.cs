@@ -11,6 +11,8 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Collections.Generic; // Required for List<T>
+using DynamicData.Binding; // Required for ToCollection()
 
 namespace ImageSort.ViewModels;
 
@@ -31,6 +33,9 @@ public class FoldersViewModel : ReactiveObject
 
     private readonly ReadOnlyObservableCollection<FolderTreeItemViewModel> _pinnedFolders;
     public ReadOnlyObservableCollection<FolderTreeItemViewModel> PinnedFolders => _pinnedFolders;
+
+    private readonly ObservableAsPropertyHelper<IReadOnlyList<FolderTreeItemViewModel>> _displayedFolderItems;
+    public IReadOnlyList<FolderTreeItemViewModel> DisplayedFolderItems => _displayedFolderItems.Value;
 
     private readonly ObservableAsPropertyHelper<IEnumerable<FolderTreeItemViewModel>> _allFoldersTracked;
     public IEnumerable<FolderTreeItemViewModel> AllFoldersTracked => _allFoldersTracked.Value;
@@ -72,10 +77,42 @@ public class FoldersViewModel : ReactiveObject
             .Bind(out _pinnedFolders)
             .Subscribe();
 
+        // Setup for DisplayedFolderItems
+        var pinnedFoldersObservable = pinnedFolders.Connect()
+            .ToCollection(); // IObservable<IReadOnlyCollection<FolderTreeItemViewModel>>
+
+        _displayedFolderItems = this.WhenAnyValue(x => x.CurrentFolder)
+            .CombineLatest(pinnedFoldersObservable,
+                           (current, pinned) => (Current: current, Pinned: pinned))
+            .Select(data =>
+            {
+                var list = new List<FolderTreeItemViewModel>();
+                if (data.Current != null)
+                {
+                    list.Add(data.Current);
+                }
+                // Add pinned folders, ensuring not to add CurrentFolder again if it's also in PinnedFolders,
+                // and filter out any nulls from the pinned collection.
+                list.AddRange(data.Pinned.Where(pf => pf != null && pf != data.Current));
+                return (IReadOnlyList<FolderTreeItemViewModel>)list;
+            })
+            .ToProperty(this, vm => vm.DisplayedFolderItems, initialValue: new List<FolderTreeItemViewModel>(), scheduler: RxApp.MainThreadScheduler);
+
+
         _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder)
-            .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
-            .Select(folders => new[] {folders.c}.Concat(folders.Items))
-            .ToProperty(this, vm => vm.AllFoldersTracked);
+            // Corrected CombineLatest for _allFoldersTracked as well, using pinnedFoldersObservable
+            .CombineLatest(pinnedFoldersObservable, (c, pItems) => (Current: c, PinnedItems: pItems))
+            .Select(folders =>
+            {
+                var list = new List<FolderTreeItemViewModel>();
+                if (folders.Current != null) list.Add(folders.Current);
+                // Add all pinned items, potentially including CurrentFolder if it's pinned.
+                // This behavior might differ slightly from DisplayedFolderItems if CurrentFolder can be pinned.
+                // For AllFoldersTracked, it seems it was intended to include CurrentFolder and then all pinned items.
+                list.AddRange(folders.PinnedItems.Where(pf => pf != null));
+                return (IEnumerable<FolderTreeItemViewModel>)list.Distinct(); // Ensure distinct if Current can be in Pinned
+            })
+            .ToProperty(this, vm => vm.AllFoldersTracked, initialValue: Enumerable.Empty<FolderTreeItemViewModel>(), scheduler: RxApp.MainThreadScheduler);
 
         Pin = ReactiveCommand.CreateFromTask(async () =>
         {

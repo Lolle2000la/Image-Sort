@@ -13,16 +13,28 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace ImageSort.ViewModels;
 
-public class FolderTreeItemViewModel : ReactiveObject
+public class FolderTreeItemViewModel : ReactiveObject, IDisposable
 {
     private readonly CompositeDisposable disposableRegistration = new CompositeDisposable();
     private readonly IFileSystem fileSystem;
     private readonly IScheduler backgroundScheduler;
     private readonly Func<FileSystemWatcher> folderWatcherFactory;
     private readonly FileSystemWatcher folderWatcher;
+
+    private bool _isExpanded;
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => this.RaiseAndSetIfChanged(ref _isExpanded, value);
+    }
+
+    private bool _childrenLoaded = false;
+
+    public bool IsPlaceholder { get; init; } = false;
 
     private bool _isCurrentFolder;
 
@@ -63,18 +75,56 @@ public class FolderTreeItemViewModel : ReactiveObject
         this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
         this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
         this.folderWatcherFactory = folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
-        folderWatcher = folderWatcherFactory();
+        folderWatcher = this.folderWatcherFactory(); 
         folderWatcher?.DisposeWith(disposableRegistration);
 
         subFolders = new SourceList<FolderTreeItemViewModel>();
         subFolders.Connect()
-            .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
+            .Sort(Comparer<FolderTreeItemViewModel>.Create((a, b) =>
+            {
+                if (a == null && b == null) return 0;
+                if (a == null) return -1; // Nulls first
+                if (b == null) return 1;  // Real items after nulls
+                // For actual ViewModels, sort by Path
+                if (a.Path == null && b.Path == null) return 0;
+                if (a.Path == null) return -1;
+                if (b.Path == null) return 1;
+                return string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase);
+            }))
             .ObserveOn(RxApp.MainThreadScheduler)
             .Bind(out _children)
             .Subscribe()
             .DisposeWith(disposableRegistration);
 
         subFolders.DisposeWith(disposableRegistration);
+
+        // Conditionally add a placeholder item if subfolders exist, to enable the expander.
+        // This will be cleared when children are actually loaded.
+        this.WhenAnyValue(x => x.Path)
+            .Where(p => !string.IsNullOrEmpty(p) && !_childrenLoaded)
+            .ObserveOn(backgroundScheduler) // Perform filesystem check on background thread
+            .Subscribe(async p =>
+            {
+                bool hasAnySubfolders = false;
+                try
+                {
+                    hasAnySubfolders = await Task.Run(() => this.fileSystem.GetSubFolders(p).Any());
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error checking for subfolders in {p} for placeholder: {ex.Message}");
+                }
+
+                // Switch back to main thread to modify subFolders collection if needed
+                RxApp.MainThreadScheduler.Schedule(() =>
+                {
+                    if (hasAnySubfolders && !_childrenLoaded && subFolders.Count == 0 && !IsPlaceholder) // Don't add placeholder to a placeholder
+                    {
+                        subFolders.Add(new FolderTreeItemViewModel(this.fileSystem, this.folderWatcherFactory, this.backgroundScheduler) { IsPlaceholder = true }); // Add placeholder
+                    }
+                });
+            })
+            .DisposeWith(disposableRegistration);
 
         _folderName = this.WhenAnyValue(x => x.Path)
             .Select(p =>
@@ -85,128 +135,180 @@ public class FolderTreeItemViewModel : ReactiveObject
             })
             .ToProperty(this, x => x.FolderName);
 
-        this.WhenAnyValue(x => x.Path, x => x.IsVisible)
-            .Where(x => x.Item2) // make sure the item is visible before loading
-            .Select(x => x.Item1)
-            .Where(p => p != null)
+        // Load children when expanded for the first time and path is valid
+        this.WhenAnyValue(x => x.IsExpanded, x => x.Path)
+            .Where(x => x.Item1 && !_childrenLoaded && !string.IsNullOrEmpty(x.Item2))
             .ObserveOn(backgroundScheduler)
-            .Select(p =>
+            .Select(x => x.Item2) // Select the path
+            .Subscribe(async path =>
             {
-                try
-                {
-                    return fileSystem.GetSubFolders(p);
-                }
-#pragma warning disable CA1031 // Do not catch general exception types
-                catch
-#pragma warning restore CA1031 // Do not catch general exception types
-                {
-                    // If a sub folder cannot be accessed, then ignore it, no matter the reasons.
-                    // Otherwise, only lots and lots of crashes ensue, for reasons that could not be handled otherwise anyway.
-                    return null;
-                }
+                await LoadChildrenAsync(path);
+                // _childrenLoaded is set within LoadChildrenAsync
             })
-            .Where(p => p != null)
-            .Select(paths =>
-            {
-                return paths.Where(p => p != null)
-                    .Select(p =>
-                    {
-                        try
-                        {
-                            return new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = p };
-                        }
-                        catch (UnauthorizedAccessException) { return null; }
-                    })
-                    .Where(f => f != null)
-                    .ToList();
-            })
-            .Subscribe(folders => subFolders.AddRange(folders))
             .DisposeWith(disposableRegistration);
 
-        CreateFolder = ReactiveCommand.Create<string, Unit>(name =>
-            {
-                var newFolderPath = System.IO.Path.Combine(Path, name);
-
-                if (Children.Select(f => f.Path).Any(s => s.PathEquals(newFolderPath))) return Unit.Default;
-
-                fileSystem.CreateFolder(newFolderPath);
-
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = newFolderPath });
-
-                return Unit.Default;
-            });
-
+        // Setup FileSystemWatcher when Path changes
         this.WhenAnyValue(x => x.Path)
-            .Where(p => !string.IsNullOrEmpty(p))
-            .Where(_ => folderWatcher != null)
+            .Where(p => !string.IsNullOrEmpty(p) && folderWatcher != null)
+            .ObserveOn(RxApp.MainThreadScheduler) // Watcher setup might need main thread if it interacts with UI state directly
             .Subscribe(p =>
             {
-                folderWatcher.Path = p;
-                folderWatcher.IncludeSubdirectories = false;
-                folderWatcher.NotifyFilter = NotifyFilters.DirectoryName;
                 try
                 {
+                    folderWatcher.Path = p;
+                    folderWatcher.IncludeSubdirectories = false; // Only watch direct children
                     folderWatcher.EnableRaisingEvents = true;
-
-                    folderWatcher.Created += OnFolderAdded;
-                    folderWatcher.Deleted += OnFolderDeleted;
-                    folderWatcher.Renamed += OnFolderRenamed;
                 }
-#pragma warning disable CA1031 // Do not catch general exception types
-                catch
-#pragma warning restore CA1031 // Do not catch general exception types
-                { 
-                    // FileSystemWatcher can throw all kinds of exceptions, which are completely irrelevant, 
-                    // because if they happen, nothing can be done anyway
+                catch (Exception ex) // Catch potential errors during watcher setup (e.g. path not found)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error setting up watcher for {p}: {ex.Message}");
                 }
-            });
-    }
+            })
+            .DisposeWith(disposableRegistration);
 
-    private void OnFolderAdded(object sender, FileSystemEventArgs e)
-    {
-        RxApp.MainThreadScheduler.Schedule(() =>
-        {
-            if (!subFolders.Items.Any(f => f.Path.PathEquals(e.FullPath)))
-            {
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
-            }
-        });
-    }
-
-    private void OnFolderDeleted(object sender, FileSystemEventArgs e)
-    {
-        RxApp.MainThreadScheduler.Schedule(() =>
-        {
-            var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.FullPath));
-
-            if (item != null) subFolders.Remove(item);
-        });
-    }
-
-    private void OnFolderRenamed(object sender, RenamedEventArgs e)
-    {
-        RxApp.MainThreadScheduler.Schedule(() =>
-        {
-            var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.OldFullPath));
-
-            if (item != null)
-            {
-                subFolders.Remove(item);
-
-                subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = e.FullPath });
-            }
-        });
-    }
-
-    ~FolderTreeItemViewModel()
-    {
         if (folderWatcher != null)
         {
-            folderWatcher.Created -= OnFolderAdded;
-            folderWatcher.Deleted -= OnFolderDeleted;
-            folderWatcher.Renamed -= OnFolderRenamed;
+            Observable.FromEventPattern<FileSystemEventHandler, FileSystemEventArgs>(
+                h => folderWatcher.Created += h, h => folderWatcher.Created -= h)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(e => AddSubFolder(e.EventArgs.FullPath))
+                .DisposeWith(disposableRegistration);
+
+            Observable.FromEventPattern<FileSystemEventHandler, FileSystemEventArgs>(
+                h => folderWatcher.Deleted += h, h => folderWatcher.Deleted -= h)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(e => RemoveSubFolder(e.EventArgs.FullPath))
+                .DisposeWith(disposableRegistration);
+
+            Observable.FromEventPattern<RenamedEventHandler, RenamedEventArgs>(
+                h => folderWatcher.Renamed += h, h => folderWatcher.Renamed -= h)
+                .ObserveOn(RxApp.MainThreadScheduler)
+                .Subscribe(e => RenameSubFolder(e.EventArgs.OldFullPath, e.EventArgs.FullPath))
+                .DisposeWith(disposableRegistration);
         }
 
+        CreateFolder = ReactiveCommand.CreateFromTask<string, Unit>(async (name) =>
+        {
+            var newPath = System.IO.Path.Combine(Path, name);
+            await Task.Run(() => fileSystem.CreateFolder(newPath));
+            return Unit.Default;
+        });
+
+        CreateFolder.ThrownExceptions.Subscribe(ex => {
+            // Log or handle folder creation errors
+            System.Diagnostics.Debug.WriteLine($"Error creating folder: {ex.Message}");
+        }).DisposeWith(disposableRegistration);
+    }
+
+    private async Task LoadChildrenAsync(string path)
+    {
+        if (IsPlaceholder) // Do not load children for a placeholder itself
+        {
+            _childrenLoaded = true; // Mark as loaded to prevent further attempts on this placeholder
+            return;
+        }
+
+        if (_childrenLoaded && !string.IsNullOrEmpty(path)) // If already loaded for this path, don't reload unless forced
+        {
+            // Potentially add logic here if re-loading is ever needed.
+            // For now, if _childrenLoaded is true, we assume content is up-to-date or handled by FileSystemWatcher.
+            return;
+        }
+
+        // Clear existing items (including the placeholder) before loading new ones
+        // This ensures that if children are removed, the UI updates correctly.
+        subFolders.Edit(update => 
+        {
+            update.Clear();
+        });
+
+        if (string.IsNullOrEmpty(path))
+        {
+            _childrenLoaded = true; // Mark as loaded even if path is empty/invalid
+            return;
+        }
+
+        try
+        {
+            var newSubFolders = (await Task.Run(() => fileSystem.GetSubFolders(path)))
+                .Select(p => new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = p, IsVisible = true });
+            
+            subFolders.AddRange(newSubFolders); // Add the actual children
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error loading children for {path}: {ex.Message}");
+        }
+        finally
+        {
+            _childrenLoaded = true; // Mark as loaded regardless of success or failure to prevent re-loading
+        }
+    }
+
+    private void AddSubFolder(string path)
+    {
+        // Ensure this runs on the main thread if subFolders modification needs it
+        RxApp.MainThreadScheduler.Schedule(() =>
+        {
+            if (fileSystem.DirectoryExists(path) && !subFolders.Items.Any(f => f != null && !f.IsPlaceholder && f.Path.PathEquals(path)))
+            {
+                if (_childrenLoaded) 
+                {
+                    // Remove placeholder if it exists and we are adding a real item
+                    var placeholder = subFolders.Items.FirstOrDefault(i => i != null && i.IsPlaceholder);
+                    if (placeholder != null) subFolders.Remove(placeholder);
+
+                    subFolders.Add(new FolderTreeItemViewModel(fileSystem, folderWatcherFactory, backgroundScheduler) { Path = path, IsVisible = true });
+                }
+                // If not _childrenLoaded, expansion will handle it.
+                // Or, if a placeholder was needed, the creation logic for the parent should handle it.
+            }
+        });
+    }
+
+    private void RemoveSubFolder(string path)
+    {
+        RxApp.MainThreadScheduler.Schedule(() =>
+        {
+            var existing = subFolders.Items.FirstOrDefault(f => f != null && !f.IsPlaceholder && f.Path.PathEquals(path));
+            if (existing != null) 
+            {
+                subFolders.Remove(existing);
+                existing.Dispose(); // Clean up the child ViewModel
+            }
+
+            // If all real children are removed and a placeholder was appropriate, it should be re-added.
+            // This might require re-evaluating the placeholder condition for the parent.
+            // For now, focus on removal. Adding placeholder on empty is handled by initial load logic.
+        });
+    }
+
+    private void RenameSubFolder(string oldPath, string newPath)
+    {
+        RxApp.MainThreadScheduler.Schedule(() =>
+        {
+            var existing = subFolders.Items.FirstOrDefault(f => f != null && !f.IsPlaceholder && f.Path.PathEquals(oldPath));
+            if (existing != null)
+            {
+                existing.Path = newPath; 
+            }
+            else 
+            {
+                if (_childrenLoaded) AddSubFolder(newPath);
+            }
+        });
+    }
+
+    public void Dispose()
+    {
         disposableRegistration.Dispose();
+        folderWatcher?.Dispose(); // Ensure watcher is disposed
+        // Dispose children if any to prevent resource leaks from their watchers
+        foreach (var child in Children.ToList()) // ToList to avoid modification issues if child.Dispose removes itself
+        {
+            child?.Dispose();
+        }
+        subFolders.Clear(); // Clear the source list
+        subFolders.Dispose(); // Dispose the source list itself
     }
 }
