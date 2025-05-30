@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ImageSort.Avalonia.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:views="using:ImageSort.Avalonia.Views" 
+        xmlns:text="using:ImageSort.Localization"
+        xmlns:gb="using:GroupBox.Avalonia.Controls"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+        x:Class="ImageSort.Avalonia.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Image Sort" MinWidth="800" MinHeight="520">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Grid ColumnDefinitions="300,auto,auto,*">
+        <!-- FoldersView Placeholder -->
+        <!-- <views:FoldersView Grid.Column="0" x:Name="Folders" /> -->
+        <TextBlock Text="FoldersView Placeholder" Grid.Column="0"/>
+
+        <GridSplitter Grid.Column="1" Width="1" /> <!-- Adjusted for Avalonia -->
+
+        <Panel Grid.Column="2" Margin="0,8,8,8"> <!-- Using Panel instead of GroupBox for layout -->
+            <StackPanel VerticalAlignment="Center">
+
+                <gb:GroupBox Header="{x:Static text:Text.Folder}" Margin="0,8">
+                    <StackPanel>
+                        <Button Content="{x:Static text:Text.OpenFolder}" Name="OpenFolder" />
+                        <Button Content="{x:Static text:Text.OpenSelectedFolder}" Name="OpenSelectedFolder" />
+                    </StackPanel>
+                </gb:GroupBox>
+
+                <gb:GroupBox Header="{x:Static text:Text.History}" Margin="0,8">
+                    <!-- ActionsView Placeholder -->
+                    <!-- <views:ActionsView Name="Actions" HorizontalAlignment="Stretch" /> -->
+                    <TextBlock Text="ActionsView Placeholder"/>
+                </gb:GroupBox>
+
+                <gb:GroupBox Header="{x:Static text:Text.Settings}" Margin="0,8">
+                    <StackPanel>
+                        <Button Content="{x:Static text:Text.Open}" Name="OpenSettingsButton" />
+                        <Button Content="{x:Static text:Text.KeyBindingsSettingsHeader}" Name="OpenKeybindingsButton" />
+                        <Button Content="{x:Static text:Text.CreditsWindowTitle}" Name="CreditsButton" />
+                    </StackPanel>
+                </gb:GroupBox>
+            </StackPanel>
+        </Panel>
+
+        <Grid Grid.Column="3" RowDefinitions="auto,*,auto">
+            <Button Name="MoveButton" Content="{x:Static text:Text.Move}" Grid.Row="0" Margin="0,0,0,8" />
+
+            <!-- ImagesView Placeholder -->
+            <!-- <views:ImagesView Name="Images" Grid.Row="1" /> -->
+            <TextBlock Text="ImagesView Placeholder" Grid.Row="1"/>
+
+            <Button Name="DeleteButton" Content="{x:Static text:Text.Delete}" Grid.Row="2" Margin="0,8,0,0" />
+        </Grid>
+    </Grid>
+</Window>

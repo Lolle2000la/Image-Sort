@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\" />
+    <AvaloniaResource Include="Assets\**" />
+    <AvaloniaResource Include="Styles\**" />
+    <Folder Include="Styles\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.0.10" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.0.10" />
+    <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.0.10">
+      <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
+      <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="11.0.10" />
+    <PackageReference Include="ReactiveUI.Fody" Version="19.5.41" />
+    <PackageReference Include="System.Reactive" Version="6.0.1" /> 
+    <PackageReference Include="BinToss.GroupBox.Avalonia" Version="1.0.0" />
+    <!-- Add AdonisUI packages if you plan to use them -->
+    <!-- <PackageReference Include="AdonisUI.Avalonia" Version="X.Y.Z" /> -->
+    <!-- <PackageReference Include="AdonisUI.ClassicTheme.Avalonia" Version="X.Y.Z" /> -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
+    <ProjectReference Include="..\ImageSort\ImageSort.csproj" />
+  </ItemGroup>
+
+</Project>

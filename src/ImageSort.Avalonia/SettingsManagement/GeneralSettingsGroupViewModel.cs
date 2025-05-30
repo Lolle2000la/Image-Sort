@@ -1,0 +1,47 @@
+using ImageSort.SettingsManagement;
+using ImageSort.Localization;
+using ReactiveUI;
+
+namespace ImageSort.Avalonia.SettingsManagement
+{
+    public class GeneralSettingsGroupViewModel : SettingsGroupViewModelBase
+    {
+        public override string Name => "General";
+        public override string Header => Text.GeneralSettingsHeader;
+
+        private bool _darkMode = false;
+        public bool DarkMode
+        {
+            get => _darkMode;
+            set => this.RaiseAndSetIfChanged(ref _darkMode, value);
+        }
+
+        private bool _checkForUpdatesOnStartup = true;
+        public bool CheckForUpdatesOnStartup
+        {
+            get => _checkForUpdatesOnStartup;
+            set => this.RaiseAndSetIfChanged(ref _checkForUpdatesOnStartup, value);
+        }
+
+        private bool _installPrereleaseBuilds = false;
+        public bool InstallPrereleaseBuilds
+        {
+            get => _installPrereleaseBuilds;
+            set => this.RaiseAndSetIfChanged(ref _installPrereleaseBuilds, value);
+        }
+
+        private bool _animateGifs = true;
+        public bool AnimateGifs
+        {
+            get => _animateGifs;
+            set => this.RaiseAndSetIfChanged(ref _animateGifs, value);
+        }
+
+        private bool _animateGifThumbnails = true;
+        public bool AnimateGifThumbnails
+        {
+            get => _animateGifThumbnails;
+            set => this.RaiseAndSetIfChanged(ref _animateGifThumbnails, value);
+        }
+    }
+}

@@ -4,23 +4,20 @@
     <TargetFramework>net8.0</TargetFramework>
     <Configurations>Debug;Release;MSIX</Configurations>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
+    <!-- Nerdbank.GitVersioning will handle versioning -->
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.6.133">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="DynamicData" Version="9.2.2" />
     <PackageReference Include="ReactiveUI" Version="20.2.45" />
-    <PackageReference Include="GitVersionTask" Version="5.5.1">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\ImageSort.Localization\ImageSort.Localization.csproj" />
   </ItemGroup>
-   
-   <PropertyGroup>
-     <WriteVersionInfoToBuildLog>false</WriteVersionInfoToBuildLog>
-   </PropertyGroup>
 
 </Project>
