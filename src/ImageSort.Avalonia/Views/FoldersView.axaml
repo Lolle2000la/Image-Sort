@@ -12,6 +12,7 @@
     </Design.DataContext>
     <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Command="{Binding Pin}">Pin Folder...</Button> <!-- Added this button -->
             <Button Command="{Binding PinSelected}">Pin Selected</Button>
             <Button Command="{Binding UnpinSelected}">Unpin Selected</Button>
             <Button Command="{Binding CreateFolderUnderSelected}">Create Folder in Selected</Button>

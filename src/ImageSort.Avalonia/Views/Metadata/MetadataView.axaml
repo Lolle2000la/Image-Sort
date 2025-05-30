@@ -1,0 +1,24 @@
+<UserControl x:Class="ImageSort.Avalonia.Views.Metadata.MetadataView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vm="clr-namespace:ImageSort.ViewModels.Metadata;assembly=ImageSort"
+             xmlns:text="clr-namespace:ImageSort.Localization;assembly=ImageSort.Localization"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:DataType="vm:MetadataViewModel">
+    <Grid ColumnDefinitions="Auto,*">
+        <ToggleButton x:Name="ShowMetadataButton" Grid.Column="0">
+            <TextBlock Text="{x:Static text:Text.MetadataPanelHeader}"
+                       VerticalAlignment="Center">
+                <TextBlock.RenderTransform>
+                    <RotateTransform Angle="90" />
+                </TextBlock.RenderTransform>
+            </TextBlock>
+        </ToggleButton>
+        <ScrollViewer x:Name="MetadataArea" Grid.Column="1"
+                      HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
+            <ItemsControl x:Name="Directories" ItemsSource="{Binding Directories}"/>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

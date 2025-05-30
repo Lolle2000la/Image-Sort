@@ -2,8 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ImageSort.Avalonia.App"
              xmlns:local="using:ImageSort.Avalonia"
+             xmlns:converters="using:ImageSort.Avalonia.Converters"
              RequestedThemeVariant="Default">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
+
+    <Application.Resources>
+        <converters:PathToBitmapConverter x:Key="PathToBitmapConverter"/>
+        <converters:PathToFilenameConverter x:Key="PathToFilenameConverter"/>
+    </Application.Resources>
 
     <Application.DataTemplates>
         <local:ViewLocator/>

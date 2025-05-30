@@ -9,6 +9,10 @@ using Avalonia.Controls; // Added for TopLevel
 using Avalonia.Controls.ApplicationLifetimes; // Added for IClassicDesktopStyleApplicationLifetime
 using Application = Avalonia.Application; // Added for Application.Current
 using System.Linq; // Added for .Any()
+using MsBox.Avalonia; // For message boxes
+using MsBox.Avalonia.Enums; // For message box button/icon enums
+using System.Threading.Tasks; // For Task
+using ImageSort.Avalonia.Views; // For InputDialog
 
 namespace ImageSort.Avalonia.ViewModels;
 
@@ -67,9 +71,79 @@ public partial class MainWindowViewModel : MainViewModel
                 interaction.SetOutput(null);
             }
         });
-    }
 
-    // Remove placeholder properties like Greeting and commands,
-    // as they are now inherited from ImageSort.ViewModels.MainViewModel
-    // e.g., public ReactiveCommand<Unit, Unit> OpenFolder { get; } is in MainViewModel
+        // Handler for the FoldersViewModel.SelectFolder interaction (used by Pin command)
+        this.Folders.SelectFolder.RegisterHandler(async interaction =>
+        {
+            var topLevel = TopLevel.GetTopLevel(null); 
+            if (topLevel == null)
+            {
+                if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktopLifetime)
+                {
+                    topLevel = desktopLifetime.MainWindow;
+                }
+
+                if (topLevel == null)
+                {
+                    interaction.SetOutput(null); 
+                    return;
+                }
+            }
+
+            var result = await topLevel.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+            {
+                Title = "Select Folder to Pin",
+                AllowMultiple = false
+            });
+
+            if (result.Any())
+            {
+                interaction.SetOutput(result[0].Path.LocalPath);
+            }
+            else
+            {
+                interaction.SetOutput(null);
+            }
+        });
+
+        // Handler for ImagesViewModel.PromptForNewFileName
+        this.Images.PromptForNewFileName.RegisterHandler(async interaction =>
+        {
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow == null)
+            {
+                interaction.SetOutput(null);
+                return;
+            }
+
+            var dialog = new InputDialog // Assuming we'll create this view
+            {
+                Title = "Rename File",
+                // We can pass the current name as a default or placeholder if needed
+            };
+
+            var result = await dialog.ShowDialog<string>(mainWindow);
+
+            interaction.SetOutput(result);
+        });
+
+        // Handler for ImagesViewModel.NotifyUserOfError
+        this.Images.NotifyUserOfError.RegisterHandler(async interaction =>
+        {
+            var message = interaction.Input;
+            var box = MessageBoxManager.GetMessageBoxStandard("Error", message, ButtonEnum.Ok, Icon.Error);
+            
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await box.ShowWindowDialogAsync(mainWindow);
+            }
+            else
+            {
+                await box.ShowAsync(); // Show as a standalone window if main window not found
+            }
+
+            interaction.SetOutput(Unit.Default);
+        });
+    }
 }

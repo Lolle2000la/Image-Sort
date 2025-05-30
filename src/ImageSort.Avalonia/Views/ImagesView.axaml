@@ -1,13 +1,50 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Class="ImageSort.Avalonia.Views.ImagesView"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vm="using:ImageSort.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="ImageSort.Avalonia.Views.ImagesView"
-             x:DataType="vm:ImagesViewModel">
-  <Design.DataContext>
-    <vm:ImagesViewModel/>
-  </Design.DataContext>
-  <TextBlock Text="Images View Content (Placeholder)" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+             xmlns:metadata="using:ImageSort.Avalonia.Views.Metadata"
+             x:DataType="vm:ImagesViewModel"
+             mc:Ignorable="d" d:DesignHeight="450" d:DesignWidth="800">
+    <Design.DataContext>
+        <vm:ImagesViewModel />
+    </Design.DataContext>
+
+    <Grid RowDefinitions="*, auto" ColumnDefinitions="*, auto, auto">
+        <Image x:Name="SelectedImageDisplay" Source="{Binding SelectedImage, Converter={StaticResource PathToBitmapConverter}}" Grid.Column="0" Margin="0,0,0,4" />
+
+        <GridSplitter Grid.Column="1" Width="5" ResizeBehavior="PreviousAndNext" Background="Gray"/>
+
+        <metadata:MetadataView Grid.Column="2" DataContext="{Binding Metadata}" MinWidth="150"/>
+
+        <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="auto, *, auto" Margin="0,4,0,0">
+            <Button x:Name="GoLeftButton" Content="←" Command="{Binding GoLeft}" Grid.Column="0" VerticalAlignment="Stretch" MinWidth="40"/>
+
+            <Grid Grid.Column="1" RowDefinitions="auto, *" Margin="4,0">
+                <Grid ColumnDefinitions="*, auto">
+                    <TextBox x:Name="SearchTermTextBox" Text="{Binding SearchTerm, Mode=TwoWay}" Watermark="Search..." Grid.Column="0" VerticalAlignment="Center"/>
+                    <Button x:Name="RenameButton" Content="Rename" Command="{Binding RenameImage}" Grid.Column="1" Margin="4,0,0,0"/>
+                </Grid>
+
+                <ListBox x:Name="ImagesListBox" ItemsSource="{Binding Images}" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" Grid.Row="1" Margin="0,4,0,0">
+                    <ListBox.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <VirtualizingStackPanel Orientation="Horizontal" />
+                        </ItemsPanelTemplate>
+                    </ListBox.ItemsPanel>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type x:String}">
+                            <StackPanel Orientation="Vertical" Height="100" Width="120" Spacing="2" ToolTip.Tip="{Binding}">
+                                <Image Source="{Binding Converter={StaticResource PathToBitmapConverter}}" MaxWidth="118" MaxHeight="78" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="118" TextAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <Button x:Name="GoRightButton" Content="→" Command="{Binding GoRight}" Grid.Column="2" VerticalAlignment="Stretch" MinWidth="40"/>
+        </Grid>
+    </Grid>
 </UserControl>
