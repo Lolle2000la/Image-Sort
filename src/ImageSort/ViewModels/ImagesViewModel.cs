@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using ImageSort.ViewModels.Metadata; // Added using
 
 namespace ImageSort.ViewModels;
 
@@ -62,11 +63,18 @@ public class ImagesViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> GoLeft { get; }
     public ReactiveCommand<Unit, Unit> GoRight { get; }
     public ReactiveCommand<Unit, IReversibleAction> RenameImage { get; }
+    public MetadataViewModel Metadata { get; } // Added Metadata property
 
-    public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null)
+    public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, 
+                         IMetadataExtractor metadataExtractor = null, 
+                         MetadataSectionViewModelFactory metadataSectionFactory = null) // Added dependencies for MetadataViewModel
     {
         fileSystem ??= Locator.Current.GetService<IFileSystem>();
         folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
+        metadataExtractor ??= Locator.Current.GetService<IMetadataExtractor>(); // Resolve IMetadataExtractor
+        metadataSectionFactory ??= Locator.Current.GetService<MetadataSectionViewModelFactory>(); // Resolve MetadataSectionViewModelFactory
+
+        Metadata = new MetadataViewModel(metadataExtractor, fileSystem, metadataSectionFactory); // Initialize MetadataViewModel
 
         images = new SourceList<string>();
 
@@ -93,6 +101,16 @@ public class ImagesViewModel : ReactiveObject
         _selectedImage = this.WhenAnyValue(x => x.SelectedIndex)
             .Select(i => Images.ElementAtOrDefault(i))
             .ToProperty(this, x => x.SelectedImage);
+
+        // Update Metadata.ImagePath when SelectedImage changes
+        this.WhenAnyValue(x => x.SelectedImage)
+            .Subscribe(path => 
+            {
+                if (Metadata != null)
+                {
+                    Metadata.ImagePath = path;
+                }
+            });
 
         images.Connect()
             .Subscribe(_ =>

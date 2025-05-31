@@ -18,7 +18,7 @@
         </ToggleButton>
         <ScrollViewer x:Name="MetadataArea" Grid.Column="1"
                       HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Visible">
-            <ItemsControl x:Name="Directories" ItemsSource="{Binding Directories}"/>
+            <ItemsControl x:Name="Directories" ItemsSource="{Binding SectionViewModels}"/>
         </ScrollViewer>
     </Grid>
 </UserControl>

@@ -30,15 +30,12 @@
                 <ListBox x:Name="ImagesListBox" ItemsSource="{Binding Images}" SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}" Grid.Row="1" Margin="0,4,0,0">
                     <ListBox.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <VirtualizingStackPanel Orientation="Horizontal" />
+                            <StackPanel Orientation="Horizontal" />
                         </ItemsPanelTemplate>
                     </ListBox.ItemsPanel>
                     <ListBox.ItemTemplate>
-                        <DataTemplate DataType="{x:Type x:String}">
-                            <StackPanel Orientation="Vertical" Height="100" Width="120" Spacing="2" ToolTip.Tip="{Binding}">
-                                <Image Source="{Binding Converter={StaticResource PathToBitmapConverter}}" MaxWidth="118" MaxHeight="78" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="118" TextAlignment="Center"/>
-                            </StackPanel>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource PathToFilenameConverter}}" Margin="5,0"/>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
