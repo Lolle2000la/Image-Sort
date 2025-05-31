@@ -3,11 +3,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:ImageSort.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="300"
+             xmlns:text="using:ImageSort.Localization"
+             mc:Ignorable="d" d:DesignWidth="200" d:DesignHeight="Auto"
              x:Class="ImageSort.Avalonia.Views.ActionsView"
              x:DataType="vm:ActionsViewModel">
   <Design.DataContext>
     <vm:ActionsViewModel/>
   </Design.DataContext>
-  <TextBlock Text="Actions View Content (Placeholder)" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+  <Grid ColumnDefinitions="*,*" RowDefinitions="Auto">
+    <Button Name="UndoButton" Content="{x:Static text:Text.Undo}" Command="{Binding Undo}" IsEnabled="{Binding CanUndo}" Margin="0,0,2,0" Grid.Column="0"/>
+    <Button Name="RedoButton" Content="{x:Static text:Text.Redo}" Command="{Binding Redo}" IsEnabled="{Binding CanRedo}" Margin="2,0,0,0" Grid.Column="1"/>
+  </Grid>
 </UserControl>

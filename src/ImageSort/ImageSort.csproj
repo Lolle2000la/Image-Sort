@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nerdbank.GitVersioning" Version="3.6.133">
+    <PackageReference Include="Nerdbank.GitVersioning" Version="3.7.115">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="DynamicData" Version="9.2.2" />
+    <PackageReference Include="DynamicData" Version="9.3.2" />
     <PackageReference Include="ReactiveUI" Version="20.2.45" />
     <PackageReference Include="MetadataExtractor" Version="2.8.1" />
   </ItemGroup>

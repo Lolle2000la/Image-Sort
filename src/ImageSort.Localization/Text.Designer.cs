@@ -384,6 +384,15 @@ namespace ImageSort.Localization {
                 return ResourceManager.GetString("MoveActionMessage", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Cannot move the image. A file named "{FileName}" already exists at the destination..
+        /// </summary>
+        public static string MoveActionFileExistsError {
+            get {
+                return ResourceManager.GetString("MoveActionFileExistsError", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Move the selected pinned folder down.

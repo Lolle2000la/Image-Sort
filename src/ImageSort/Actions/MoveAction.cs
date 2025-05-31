@@ -44,6 +44,10 @@ public class MoveAction : IReversibleAction
 
     public void Act()
     {
+        if (fileSystem.FileExists(newDestination))
+        {
+            throw new IOException(Text.MoveActionFileExistsError.Replace("{FileName}", newDestination, StringComparison.OrdinalIgnoreCase));
+        }
         fileSystem.Move(oldDestination, newDestination);
 
         notifyAct?.Invoke(oldDestination, newDestination);

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects; // Added for Subject
 
 namespace ImageSort.ViewModels;
 
@@ -19,6 +20,12 @@ public class ActionsViewModel : ReactiveObject
     private readonly ObservableAsPropertyHelper<string> lastUndone;
     public string LastUndone => lastUndone.Value;
 
+    private readonly ObservableAsPropertyHelper<bool> _canUndo;
+    public bool CanUndo => _canUndo.Value;
+
+    private readonly ObservableAsPropertyHelper<bool> _canRedo;
+    public bool CanRedo => _canRedo.Value;
+
     public Interaction<string, Unit> NotifyUserOfError { get; } = new Interaction<string, Unit>();
 
     public ReactiveCommand<IReversibleAction, Unit> Execute { get; }
@@ -26,26 +33,33 @@ public class ActionsViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> Redo { get; }
     public ReactiveCommand<Unit, Unit> Clear { get; }
 
+    private readonly Subject<Unit> _historyChangedSignal = new Subject<Unit>();
+
     public ActionsViewModel()
     {
+        var canUndoObservable = _historyChangedSignal
+            .Select(_ => done.Count > 0)
+            .StartWith(done.Count > 0);
+
+        var canRedoObservable = _historyChangedSignal
+            .Select(_ => undone.Count > 0)
+            .StartWith(undone.Count > 0);
+
         Execute = ReactiveCommand.CreateFromTask<IReversibleAction>(async action =>
         {
             try
             {
                 action.Act();
+                done.Push(action);
+                undone.Clear(); // Clear redo stack on new action
+                _historyChangedSignal.OnNext(Unit.Default);
             }
             catch (Exception ex)
             {
                 await NotifyUserOfError.Handle(Text.CouldNotActErrorText
                     .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
                     .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
-
-                return;
             }
-
-            done.Push(action);
-
-            undone.Clear();
         });
 
         Undo = ReactiveCommand.CreateFromTask(async () =>
@@ -55,19 +69,19 @@ public class ActionsViewModel : ReactiveObject
                 try
                 {
                     action.Revert();
+                    undone.Push(action);
+                    _historyChangedSignal.OnNext(Unit.Default);
                 }
                 catch (Exception ex)
                 {
                     await NotifyUserOfError.Handle(Text.CouldNotUndoErrorText
                         .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
                         .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
-
-                    return;
+                    // Signal change even if revert fails, because 'done' stack changed.
+                    _historyChangedSignal.OnNext(Unit.Default);
                 }
-
-                undone.Push(action);
             }
-        });
+        }, canUndoObservable);
 
         Redo = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -75,45 +89,39 @@ public class ActionsViewModel : ReactiveObject
             {
                 try
                 {
-                    action.Act();
+                    action.Act(); // Re-apply the action
+                    done.Push(action);
+                    _historyChangedSignal.OnNext(Unit.Default);
                 }
                 catch (Exception ex)
                 {
                     await NotifyUserOfError.Handle(Text.CouldNotRedoErrorText
                         .Replace("{ErrorMessage}", ex.Message, StringComparison.OrdinalIgnoreCase)
                         .Replace("{ActMessage}", action.DisplayName, StringComparison.OrdinalIgnoreCase));
-
-                    return;
+                    // Signal change even if re-act fails, because 'undone' stack changed.
+                    _historyChangedSignal.OnNext(Unit.Default);
                 }
-
-                done.Push(action);
             }
-        });
+        }, canRedoObservable);
 
         Clear = ReactiveCommand.Create(() =>
         {
             done.Clear();
             undone.Clear();
+            _historyChangedSignal.OnNext(Unit.Default);
         });
 
-        var historyChanges = Execute.Merge(Undo).Merge(Redo).Merge(Clear);
+        _canUndo = canUndoObservable.ToProperty(this, vm => vm.CanUndo);
+        _canRedo = canRedoObservable.ToProperty(this, vm => vm.CanRedo);
 
-        lastDone = historyChanges
-            .Select(_ =>
-            {
-                if (done.TryPeek(out var action)) return action.DisplayName;
-
-                return null;
-            })
+        lastDone = _historyChangedSignal
+            .Select(_ => done.TryPeek(out var action) ? action.DisplayName : null)
+            .StartWith(done.TryPeek(out var action) ? action.DisplayName : null)
             .ToProperty(this, vm => vm.LastDone);
 
-        lastUndone = historyChanges
-            .Select(_ =>
-            {
-                if (undone.TryPeek(out var action)) return action.DisplayName;
-
-                return null;
-            })
+        lastUndone = _historyChangedSignal
+            .Select(_ => undone.TryPeek(out var action) ? action.DisplayName : null)
+            .StartWith(undone.TryPeek(out var undoneAction) ? undoneAction.DisplayName : null) // Renamed variable here
             .ToProperty(this, vm => vm.LastUndone);
     }
 }

@@ -175,6 +175,9 @@ Hinweis: In den meisten Fällen ist die Datei beschädigt</value>
   <data name="MoveActionMessage" xml:space="preserve">
     <value>{FileName} nach {Directory} verschieben</value>
   </data>
+  <data name="MoveActionFileExistsError" xml:space="preserve">
+    <value>Das Bild kann nicht verschoben werden. Eine Datei mit dem Namen "{FileName}" existiert bereits am Zielort.</value>
+  </data>
   <data name="NewFolderPromptText" xml:space="preserve">
     <value>Welchen Namen soll der Ordner haben?</value>
   </data>

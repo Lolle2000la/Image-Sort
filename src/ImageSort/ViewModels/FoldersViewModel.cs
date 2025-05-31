@@ -7,12 +7,11 @@ using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO; // Required for Path.GetFileName
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Collections.Generic; // Required for List<T>
-using DynamicData.Binding; // Required for ToCollection()
 
 namespace ImageSort.ViewModels;
 

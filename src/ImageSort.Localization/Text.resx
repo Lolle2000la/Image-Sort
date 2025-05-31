@@ -175,6 +175,9 @@ Note: Usually this is because the file is damaged</value>
   <data name="MoveActionMessage" xml:space="preserve">
     <value>Move {FileName} to {Directory}</value>
   </data>
+  <data name="MoveActionFileExistsError" xml:space="preserve">
+    <value>Cannot move the image. A file named "{FileName}" already exists at the destination.</value>
+  </data>
   <data name="NewFolderPromptText" xml:space="preserve">
     <value>What name should the folder have?</value>
   </data>

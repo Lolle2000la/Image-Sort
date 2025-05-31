@@ -13,6 +13,7 @@ using MsBox.Avalonia; // For message boxes
 using MsBox.Avalonia.Enums; // For message box button/icon enums
 using System.Threading.Tasks; // For Task
 using ImageSort.Avalonia.Views; // For InputDialog
+using ImageSort.Localization; // For Text resource
 
 namespace ImageSort.Avalonia.ViewModels;
 
@@ -133,6 +134,25 @@ public partial class MainWindowViewModel : MainViewModel
             var message = interaction.Input;
             var box = MessageBoxManager.GetMessageBoxStandard("Error", message, ButtonEnum.Ok, Icon.Error);
             
+            var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+            if (mainWindow != null)
+            {
+                await box.ShowWindowDialogAsync(mainWindow);
+            }
+            else
+            {
+                await box.ShowAsync(); // Show as a standalone window if main window not found
+            }
+
+            interaction.SetOutput(Unit.Default);
+        });
+
+        // Handler for ActionsViewModel.NotifyUserOfError
+        this.Actions.NotifyUserOfError.RegisterHandler(async interaction =>
+        {
+            var message = interaction.Input;
+            var box = MessageBoxManager.GetMessageBoxStandard("Error", message, ButtonEnum.Ok, Icon.Error);
+
             var mainWindow = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
             if (mainWindow != null)
             {
