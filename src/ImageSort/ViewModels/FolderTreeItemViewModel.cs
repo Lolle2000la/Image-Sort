@@ -129,11 +129,28 @@ public class FolderTreeItemViewModel : ReactiveObject, IDisposable
         _folderName = this.WhenAnyValue(x => x.Path)
             .Select(p =>
             {
-                var path = System.IO.Path.GetFileName(p);
+                if (string.IsNullOrEmpty(p)) return p;
 
-                return string.IsNullOrEmpty(path) ? p : path; // on a disk path (e.g. C:\, Path.GetFileName() returns an empty string
+                string name = System.IO.Path.GetFileName(p);
+
+                // If GetFileName returns empty (e.g., for "C:\\\" or "/path/to/folder/"),
+                // try trimming trailing separators and getting the name again.
+                if (string.IsNullOrEmpty(name))
+                {
+                    string tempPath = p.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar);
+                    
+                    // If trimming results in an empty string, p was a root like "/" or "//". Use p.
+                    // Or if p was like "C:\\", tempPath is "C:", GetFileName(tempPath) is "", so use original p.
+                    if (string.IsNullOrEmpty(tempPath)) return p; 
+                    
+                    name = System.IO.Path.GetFileName(tempPath);
+
+                    // If name is still empty, p was likely a root like "C:\\", so return original p.
+                    if (string.IsNullOrEmpty(name)) return p;
+                }
+                return name;
             })
-            .ToProperty(this, x => x.FolderName);
+            .ToProperty(this, x => x.FolderName, scheduler: RxApp.MainThreadScheduler);
 
         // Load children when expanded for the first time and path is valid
         this.WhenAnyValue(x => x.IsExpanded, x => x.Path)

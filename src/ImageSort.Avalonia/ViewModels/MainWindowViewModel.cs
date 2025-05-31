@@ -3,6 +3,7 @@ using System.Reactive.Concurrency; // Added: For IScheduler
 using ImageSort.ViewModels;
 using ReactiveUI;
 using Splat;
+using System;
 using System.Reactive;
 using Avalonia.Platform.Storage;
 using Avalonia.Controls; // Added for TopLevel
@@ -65,7 +66,19 @@ public partial class MainWindowViewModel : MainViewModel
 
             if (result.Any())
             {
-                interaction.SetOutput(result[0].Path.LocalPath);
+                var uri = result[0].Path;
+                string path = uri.IsAbsoluteUri ? uri.AbsolutePath : uri.OriginalString;
+                
+                if (Uri.TryCreate(path, UriKind.Absolute, out var fileUri) && fileUri.IsFile)
+                {
+                    path = fileUri.LocalPath;
+                }
+                else if (path.StartsWith("/") && !path.StartsWith("//") && path.Length > 1 && path[1] == ':') // C:/ -> /C:/
+                {
+                    path = path.Substring(1);
+                }
+                // For Unix root, path might already be correct as "/"
+                interaction.SetOutput(path);
             }
             else
             {
@@ -99,7 +112,18 @@ public partial class MainWindowViewModel : MainViewModel
 
             if (result.Any())
             {
-                interaction.SetOutput(result[0].Path.LocalPath);
+                var uri = result[0].Path;
+                string path = uri.IsAbsoluteUri ? uri.AbsolutePath : uri.OriginalString;
+
+                if (Uri.TryCreate(path, UriKind.Absolute, out var fileUri) && fileUri.IsFile)
+                {
+                    path = fileUri.LocalPath;
+                }
+                else if (path.StartsWith("/") && !path.StartsWith("//") && path.Length > 1 && path[1] == ':')
+                {
+                    path = path.Substring(1);
+                }
+                interaction.SetOutput(path);
             }
             else
             {
