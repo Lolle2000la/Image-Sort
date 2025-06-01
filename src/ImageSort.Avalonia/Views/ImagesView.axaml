@@ -16,7 +16,7 @@
 
         <GridSplitter Grid.Column="1" Width="5" ResizeBehavior="PreviousAndNext" Background="Gray"/>
 
-        <metadata:MetadataView Grid.Column="2" DataContext="{Binding Metadata}" MinWidth="150"/>
+        <metadata:MetadataView Grid.Column="2" DataContext="{Binding Metadata}" MinWidth="150" IsVisible="{Binding $parent[UserControl].DataContext.IsMetadataVisible}"/>
 
         <Grid Grid.Row="1" Grid.ColumnSpan="3" ColumnDefinitions="auto, *, auto" Margin="0,4,0,0">
             <Button x:Name="GoLeftButton" Content="←" Command="{Binding GoLeft}" Grid.Column="0" VerticalAlignment="Stretch" MinWidth="40"/>

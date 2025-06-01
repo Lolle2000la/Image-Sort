@@ -79,7 +79,8 @@ public partial class App : Application
             var foldersViewModel = new FoldersViewModel(fileSystem, backgroundScheduler);
             // Correctly instantiate ImagesViewModel with its actual constructor signature
             var imagesViewModel = new ImagesViewModel(fileSystem, null); // Pass fileSystem and null for the optional folderWatcherFactory
-            var actionsViewModel = new ActionsViewModel();
+            // Pass dependencies directly to ActionsViewModel constructor
+            var actionsViewModel = new ActionsViewModel(imagesViewModel, foldersViewModel, fileSystem);
 
             var mainWindowViewModel = new MainWindowViewModel(
                 foldersViewModel,
@@ -128,8 +129,33 @@ public partial class App : Application
 #pragma warning restore CS1998
     {
         var settings = Locator.Current.GetService<SettingsViewModel>();
+        var mainWindowVm = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow?.DataContext as MainWindowViewModel;
 
-        if (settings != null) settings.Restore(); // Now uses the ported Restore extension method
+        if (settings != null)
+        {
+            settings.Restore(); // This should set CurrentFolder (if saved) and PinnedFolder paths
+        }
+
+        if (mainWindowVm != null && settings != null)
+        {
+            var pinnedFolderSettings = settings.GetGroup<PinnedFolderSettingsViewModel>();
+            if (pinnedFolderSettings != null && pinnedFolderSettings.PinnedFolders != null)
+            {
+                mainWindowVm.Folders.AddPinnedFoldersFromPaths(pinnedFolderSettings.PinnedFolders);
+            }
+
+            // After settings are restored and pinned folders loaded, 
+            // if CurrentFolder has been set (e.g., by settings restoration),
+            // force it to re-notify. This might help ensure DisplayedFolderItems updates correctly.
+            if (mainWindowVm.Folders.CurrentFolder != null)
+            {
+                var tempCurrentFolder = mainWindowVm.Folders.CurrentFolder;
+                // Temporarily setting to null and back to the original instance 
+                // to ensure property change notifications are raised.
+                mainWindowVm.Folders.CurrentFolder = null; 
+                mainWindowVm.Folders.CurrentFolder = tempCurrentFolder;
+            }
+        }
 
 #if !DO_NOT_INCLUDE_UPDATER
 #endif

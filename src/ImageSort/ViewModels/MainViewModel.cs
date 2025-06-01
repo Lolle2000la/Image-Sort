@@ -58,7 +58,9 @@ public class MainViewModel : ReactiveObject
         {
             try
             {
-                Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, backgroundScheduler: backgroundScheduler) { Path = await PickFolder.Handle(Unit.Default) };
+                // The constructor for FolderTreeItemViewModel now requires a Func<FileSystemWatcher> and a nullable FolderTreeItemViewModel parent.
+                // Providing null for the watcher factory and parent as this is a new root item.
+                Folders.CurrentFolder = new FolderTreeItemViewModel(fileSystem, () => null, backgroundScheduler, null) { Path = await PickFolder.Handle(Unit.Default) };
             }
             catch (UnhandledInteractionException<Unit, string>) { }
         });

@@ -48,7 +48,7 @@
         <Grid Grid.Column="3" RowDefinitions="Auto,*,Auto">
             <Button Content="{x:Static text:Text.Move}" Command="{Binding MoveImageToFolder}" Grid.Row="0" Margin="0,0,0,8" HorizontalAlignment="Stretch"/>
 
-            <views:ImagesView Grid.Row="1" DataContext="{Binding Images}" />
+            <views:ImagesView Grid.Row="1" DataContext="{Binding Images}" x:Name="ImagesView" />
 
             <Button Content="{x:Static text:Text.Delete}" Command="{Binding DeleteImage}" Grid.Row="2" Margin="0,8,0,0" HorizontalAlignment="Stretch"/>
         </Grid>

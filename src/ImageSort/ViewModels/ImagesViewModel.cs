@@ -14,6 +14,7 @@ using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using ImageSort.ViewModels.Metadata; // Added using
+using ImageSort.Actions; // Required for DeleteAction
 
 namespace ImageSort.ViewModels;
 
@@ -21,6 +22,8 @@ public class ImagesViewModel : ReactiveObject
 {
     private static readonly string[] supportedTypes = new[] { ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tiff", ".tif", ".ico", ".webp" };
     private FileSystemWatcher folderWatcher;
+    private readonly IFileSystem fileSystem; // Store IFileSystem
+    private readonly IRecycleBin recycleBin; // Store IRecycleBin
 
     private string _currentPath;
 
@@ -54,6 +57,13 @@ public class ImagesViewModel : ReactiveObject
         set => this.RaiseAndSetIfChanged(ref _searchTerm, value);
     }
 
+    private bool _isMetadataVisible = true; // Default to true or as per design
+    public bool IsMetadataVisible
+    {
+        get => _isMetadataVisible;
+        set => this.RaiseAndSetIfChanged(ref _isMetadataVisible, value);
+    }
+
     public Interaction<Unit, string> PromptForNewFileName { get; }
         = new Interaction<Unit, string>();
 
@@ -63,18 +73,26 @@ public class ImagesViewModel : ReactiveObject
     public ReactiveCommand<Unit, Unit> GoLeft { get; }
     public ReactiveCommand<Unit, Unit> GoRight { get; }
     public ReactiveCommand<Unit, IReversibleAction> RenameImage { get; }
+
+    // Add new commands based on AppAction
+    public ReactiveCommand<Unit, Unit> SelectNextImage { get; }
+    public ReactiveCommand<Unit, Unit> SelectPreviousImage { get; }
+    public ReactiveCommand<Unit, IReversibleAction> DeleteImageCommand { get; } // To avoid conflict if a DeleteImage method exists
+
     public MetadataViewModel Metadata { get; } // Added Metadata property
 
     public ImagesViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, 
                          IMetadataExtractor metadataExtractor = null, 
-                         MetadataSectionViewModelFactory metadataSectionFactory = null) // Added dependencies for MetadataViewModel
+                         MetadataSectionViewModelFactory metadataSectionFactory = null,
+                         IRecycleBin recycleBin = null) // Added IRecycleBin
     {
-        fileSystem ??= Locator.Current.GetService<IFileSystem>();
+        this.fileSystem = fileSystem ?? Locator.Current.GetService<IFileSystem>();
         folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
         metadataExtractor ??= Locator.Current.GetService<IMetadataExtractor>(); // Resolve IMetadataExtractor
         metadataSectionFactory ??= Locator.Current.GetService<MetadataSectionViewModelFactory>(); // Resolve MetadataSectionViewModelFactory
+        this.recycleBin = recycleBin ?? Locator.Current.GetService<IRecycleBin>(); // Resolve and store IRecycleBin
 
-        Metadata = new MetadataViewModel(metadataExtractor, fileSystem, metadataSectionFactory); // Initialize MetadataViewModel
+        Metadata = new MetadataViewModel(metadataExtractor, this.fileSystem, metadataSectionFactory); // Initialize MetadataViewModel
 
         images = new SourceList<string>();
 
@@ -137,6 +155,9 @@ public class ImagesViewModel : ReactiveObject
             SelectedIndex++;
         }, canGoRight);
 
+        SelectNextImage = GoRight; // Alias GoRight
+        SelectPreviousImage = GoLeft; // Alias GoLeft
+
         var canRenameImage = this.WhenAnyValue(x => x.SelectedImage)
             .Select(p => !string.IsNullOrEmpty(p));
 
@@ -177,6 +198,28 @@ public class ImagesViewModel : ReactiveObject
             return null;
         }, canRenameImage);
 
+        var canDeleteImage = this.WhenAnyValue(x => x.SelectedImage)
+            .Select(p => !string.IsNullOrEmpty(p));
+
+        DeleteImageCommand = ReactiveCommand.Create<IReversibleAction>(() =>
+        {
+            if (string.IsNullOrEmpty(SelectedImage)) return null;
+
+            try
+            {
+                return new DeleteAction(SelectedImage, this.fileSystem, this.recycleBin,
+                    path => images.Remove(path), // onAct: remove from UI
+                    path => images.Add(path)     // onRevert: add back to UI, list will re-sort
+                );
+            }
+            catch (Exception ex)
+            {
+                NotifyUserOfError.Handle(ex.Message).Subscribe();
+                return null;
+            }
+        }, canDeleteImage);
+
+
         this.WhenAnyValue(x => x.CurrentFolder)
             .Where(f => !string.IsNullOrEmpty(f))
             .Subscribe(f =>
@@ -206,6 +249,21 @@ public class ImagesViewModel : ReactiveObject
     public void InsertImage(string image)
     {
         images.Add(image);
+    }
+
+    public void OnImageMoved(string oldPath, string newPath)
+    {
+        if (images.Items.Contains(oldPath))
+        {
+            images.Replace(oldPath, newPath);
+        }
+        else
+        {
+            // If the old path wasn't tracked (e.g., image moved from outside current folder into a subfolder)
+            // and the new path is in the current folder, add it.
+            // This logic might need refinement based on how external moves are handled.
+            // For now, primarily for moves initiated by the app.
+        }
     }
 
     private void OnImageCreated(object sender, FileSystemEventArgs e)
