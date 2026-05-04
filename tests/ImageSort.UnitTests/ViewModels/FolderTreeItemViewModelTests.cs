@@ -32,7 +32,7 @@ public class FolderTreeItemViewModelTests
 
         fsMock.GetSubFolders(path).Returns(resultingPaths);
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
         {
             Path = path,
             IsVisible = true
@@ -79,7 +79,7 @@ public class FolderTreeItemViewModelTests
         fsMock.GetSubFolders(currentFolder).Returns(subfolders);
         fsMock.CreateFolder(addedFolder);
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
         {
             Path = currentFolder,
             IsVisible = true
@@ -112,7 +112,7 @@ public class FolderTreeItemViewModelTests
 
         fsMock.GetSubFolders(path).Returns(resultingPaths);
 
-        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+        var folderTreeItem = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
         {
             Path = path,
             IsVisible = false

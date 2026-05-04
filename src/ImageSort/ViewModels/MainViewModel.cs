@@ -49,7 +49,7 @@ public class MainViewModel : ReactiveObject
     {
         fileSystem ??= Locator.Current.GetService<IFileSystem>();
         recycleBin ??= Locator.Current.GetService<IRecycleBin>();
-        backgroundScheduler ??= RxApp.TaskpoolScheduler;
+        backgroundScheduler ??= RxSchedulers.TaskpoolScheduler;
 
         this.WhenAnyValue(x => x.Images)
             .Where(i => i != null)

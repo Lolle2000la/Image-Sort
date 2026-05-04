@@ -61,7 +61,7 @@ public class FolderTreeItemViewModel : ReactiveObject
     public FolderTreeItemViewModel(IFileSystem fileSystem = null, Func<FileSystemWatcher> folderWatcherFactory = null, IScheduler backgroundScheduler = null)
     {
         this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
-        this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
+        this.backgroundScheduler = backgroundScheduler ??= RxSchedulers.TaskpoolScheduler;
         this.folderWatcherFactory = folderWatcherFactory ??= () => Locator.Current.GetService<FileSystemWatcher>();
         folderWatcher = folderWatcherFactory();
         folderWatcher?.DisposeWith(disposableRegistration);
@@ -69,7 +69,7 @@ public class FolderTreeItemViewModel : ReactiveObject
         subFolders = new SourceList<FolderTreeItemViewModel>();
         subFolders.Connect()
             .Sort(SortExpressionComparer<FolderTreeItemViewModel>.Ascending(f => f.Path))
-            .ObserveOn(RxApp.MainThreadScheduler)
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
             .Bind(out _children)
             .Subscribe()
             .DisposeWith(disposableRegistration);
@@ -164,7 +164,7 @@ public class FolderTreeItemViewModel : ReactiveObject
 
     private void OnFolderAdded(object sender, FileSystemEventArgs e)
     {
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             if (!subFolders.Items.Any(f => f.Path.PathEquals(e.FullPath)))
             {
@@ -175,7 +175,7 @@ public class FolderTreeItemViewModel : ReactiveObject
 
     private void OnFolderDeleted(object sender, FileSystemEventArgs e)
     {
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.FullPath));
 
@@ -185,7 +185,7 @@ public class FolderTreeItemViewModel : ReactiveObject
 
     private void OnFolderRenamed(object sender, RenamedEventArgs e)
     {
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             var item = subFolders.Items.FirstOrDefault(f => f.Path.PathEquals(e.OldFullPath));
 

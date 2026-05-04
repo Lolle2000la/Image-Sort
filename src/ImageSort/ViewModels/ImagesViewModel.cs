@@ -192,7 +192,7 @@ public class ImagesViewModel : ReactiveObject
 
     private void OnImageCreated(object sender, FileSystemEventArgs e)
     {
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             if (e.FullPath.EndsWithAny(StringComparison.OrdinalIgnoreCase, supportedTypes)
                 && !images.Items.Contains(e.FullPath))
@@ -206,7 +206,7 @@ public class ImagesViewModel : ReactiveObject
     {
         var item = images.Items.FirstOrDefault(i => i.PathEquals(e.FullPath));
 
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             if (item != null && images.Items.Contains(item))
             {
@@ -219,7 +219,7 @@ public class ImagesViewModel : ReactiveObject
     {
         var item = images.Items.FirstOrDefault(i => i.PathEquals(e.OldFullPath));
 
-        RxApp.MainThreadScheduler.Schedule(() =>
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             if (item != null && images.Items.Contains(item))
             {
