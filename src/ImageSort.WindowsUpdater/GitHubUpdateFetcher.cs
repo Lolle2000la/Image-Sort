@@ -24,7 +24,7 @@ public class GitHubUpdateFetcher
         var gitVersionInformationType = assembly.GetType("GitVersionInformation");
         var versionTag =
             (string) gitVersionInformationType?.GetFields().First(f => f.Name == "SemVer").GetValue(null);
-        var version = SemVersion.Parse(versionTag);
+        var version = SemVersion.Parse(versionTag, SemVersionStyles.Any);
 
         Release latestFitting;
 
@@ -39,9 +39,9 @@ public class GitHubUpdateFetcher
 
                     var firstIndexOfV = release.TagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
 
-                    var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1));
+                    var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1), SemVersionStyles.Any);
 
-                    var isNewVersion = version.CompareByPrecedence(releaseVersion) < 0;
+                    var isNewVersion = version.ComparePrecedenceTo(releaseVersion) < 0;
 
                     return prereleaseCondition && isNewVersion;
                 });

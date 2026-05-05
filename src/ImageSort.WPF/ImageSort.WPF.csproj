@@ -5,6 +5,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
     <AssemblyName>Image Sort</AssemblyName>
     <Configurations>Debug;Release;MSIX</Configurations>
     <Platforms>AnyCPU;x86;x64;ARM64</Platforms>
