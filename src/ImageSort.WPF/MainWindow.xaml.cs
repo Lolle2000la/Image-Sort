@@ -19,6 +19,7 @@ using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ImageSort.WPF.Views;
 using ImageSort.WPF.Views.Credits;
 using ReactiveUI;
+using ReactiveMarbles.ObservableEvents;
 using Splat;
 using Application = System.Windows.Application;
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
@@ -118,7 +119,7 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
                 .Select(kv => kv.Value)
                 .OfType<Hotkey>();
 
-            var reservedKeysPressed = this.Events.PreviewKeyDown
+            var reservedKeysPressed = this.Events().PreviewKeyDown
                 .Where(_ => interceptReservedKeys)
                 .Where(_ => !(Keyboard.FocusedElement is TextBox))
                 .Where(k => reservedKeys.Contains(new Hotkey(k.Key, Keyboard.Modifiers)))
