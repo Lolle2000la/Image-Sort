@@ -118,7 +118,7 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
                 .Select(kv => kv.Value)
                 .OfType<Hotkey>();
 
-            var reservedKeysPressed = this.Events().PreviewKeyDown
+            var reservedKeysPressed = this.Events.PreviewKeyDown
                 .Where(_ => interceptReservedKeys)
                 .Where(_ => !(Keyboard.FocusedElement is TextBox))
                 .Where(k => reservedKeys.Contains(new Hotkey(k.Key, Keyboard.Modifiers)))
