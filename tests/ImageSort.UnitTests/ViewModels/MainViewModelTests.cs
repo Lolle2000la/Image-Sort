@@ -106,12 +106,12 @@ public class MainViewModelTests
 
         fsMock.GetFiles(currentDirectory).Returns(new[] {image});
 
-        var otherMainVM = new MainViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+        var otherMainVM = new MainViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
         {
             Actions = new ActionsViewModel(),
-            Folders = new FoldersViewModel(fsMock, RxApp.MainThreadScheduler)
+            Folders = new FoldersViewModel(fsMock, RxSchedulers.MainThreadScheduler)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
                     {Path = currentDirectory}
             },
             Images = new ImagesViewModel(fsMock)
@@ -161,12 +161,12 @@ public class MainViewModelTests
 
         rbMock.Send(image, false).Returns(restorerMock);
 
-        var otherMainVM = new MainViewModel(fsMock, rbMock, RxApp.MainThreadScheduler)
+        var otherMainVM = new MainViewModel(fsMock, rbMock, RxSchedulers.MainThreadScheduler)
         {
             Actions = new ActionsViewModel(),
-            Folders = new FoldersViewModel(fsMock, RxApp.MainThreadScheduler)
+            Folders = new FoldersViewModel(fsMock, RxSchedulers.MainThreadScheduler)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxApp.MainThreadScheduler)
+                CurrentFolder = new FolderTreeItemViewModel(fsMock, backgroundScheduler: RxSchedulers.MainThreadScheduler)
                 { Path = currentDirectory }
             },
             Images = new ImagesViewModel(fsMock)

@@ -64,11 +64,11 @@ public class FoldersViewModel : ReactiveObject
     public FoldersViewModel(IFileSystem fileSystem = null, IScheduler backgroundScheduler = null)
     {
         this.fileSystem = fileSystem ??= Locator.Current.GetService<IFileSystem>();
-        this.backgroundScheduler = backgroundScheduler ??= RxApp.TaskpoolScheduler;
+        this.backgroundScheduler = backgroundScheduler ??= RxSchedulers.TaskpoolScheduler;
 
         pinnedFolders = new SourceList<FolderTreeItemViewModel>();
         pinnedFolders.Connect()
-            .ObserveOn(RxApp.MainThreadScheduler)
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
             .Bind(out _pinnedFolders)
             .Subscribe();
 
