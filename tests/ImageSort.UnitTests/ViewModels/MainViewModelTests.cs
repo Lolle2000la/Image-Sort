@@ -19,22 +19,22 @@ public class MainViewModelTests
     {
         var fsMock = Substitute.For<IFileSystem>();
 
-        fsMock.GetSubFolders(@"C:\").Returns(new[] { @"C:\folder" });
+        fsMock.GetSubFolders(Path.GetFullPath("root")).Returns(new[] { Path.GetFullPath(Path.Combine("root", "folder")) });
         fsMock.GetSubFolders(Arg.Any<string>()).Returns(Enumerable.Empty<string>());
 
         fsMock.GetFiles(Arg.Any<string>())
-            .Returns(new[] { @"c:\img.png" }); // just so that no exception is thrown
+            .Returns(new[] { Path.GetFullPath("img.png") }); // just so that no exception is thrown
 
         mainVM = new MainViewModel(fsMock)
         {
             Images = new ImagesViewModel(fsMock)
             {
-                CurrentFolder = @"C:\"
+                CurrentFolder = Path.GetFullPath("root")
             },
             Folders = new FoldersViewModel(fsMock)
             {
-                CurrentFolder = new FolderTreeItemViewModel(fsMock) { Path = @"C:\" },
-                Selected = new FolderTreeItemViewModel(fsMock) { Path = @"C:\folder" }
+                CurrentFolder = new FolderTreeItemViewModel(fsMock) { Path = Path.GetFullPath("root") },
+                Selected = new FolderTreeItemViewModel(fsMock) { Path = Path.GetFullPath(Path.Combine("root", "folder")) }
             }
         };
     }
@@ -44,7 +44,7 @@ public class MainViewModelTests
     {
         await mainVM.OpenCurrentlySelectedFolder.Execute();
 
-        Assert.Equal(@"C:\folder", mainVM.Folders.CurrentFolder.Path);
+        Assert.Equal(Path.GetFullPath(Path.Combine("root", "folder")), mainVM.Folders.CurrentFolder.Path);
     }
 
     [Fact(DisplayName = "Does not open the currently selected folder if there is none or it is the current one.")]
@@ -67,7 +67,7 @@ public class MainViewModelTests
     {
         await mainVM.OpenCurrentlySelectedFolder.Execute();
 
-        Assert.Equal(@"C:\folder", mainVM.Images.CurrentFolder);
+        Assert.Equal(Path.GetFullPath(Path.Combine("root", "folder")), mainVM.Images.CurrentFolder);
     }
 
     [Fact(DisplayName = "Properly selects the folder picked by the user when requested")]
@@ -79,24 +79,24 @@ public class MainViewModelTests
         {
             requestsUserInput = true;
 
-            ic.SetOutput(@"C:\SomeFolder");
+            ic.SetOutput(Path.GetFullPath("SomeFolder"));
         });
 
         await mainVM.OpenFolder.Execute();
 
         Assert.True(requestsUserInput);
 
-        Assert.Equal(@"C:\SomeFolder", mainVM.Folders.CurrentFolder.Path);
+        Assert.Equal(Path.GetFullPath("SomeFolder"), mainVM.Folders.CurrentFolder.Path);
     }
 
     [Fact(DisplayName =
         "Can move images to a folder and registers that action, removing the image from the images viewmodel in the process.")]
     public async Task CanMoveImages()
     {
-        const string currentDirectory = @"C:\Some Folder With Pictures";
-        const string image = currentDirectory + @"\some image.png";
-        const string newDirectory = @"C:\Some other folder";
-        const string moveDestination = newDirectory + @"\some image.png";
+        var currentDirectory = Path.GetFullPath("pictures");
+        var image = Path.Combine(currentDirectory, "some image.png");
+        var newDirectory = Path.GetFullPath("other");
+        var moveDestination = Path.Combine(newDirectory, "some image.png");
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -145,8 +145,8 @@ public class MainViewModelTests
     [Fact(DisplayName = "Can delete images and registers that action, removing the image from the images viewmodel in the process.")]
     public async Task CanDeleteImages()
     {
-        const string currentDirectory = @"C:\Some Folder With Pictures";
-        const string image = currentDirectory + @"\some image.png";
+        var currentDirectory = Path.GetFullPath("pictures_delete");
+        var image = Path.Combine(currentDirectory, "some image.png");
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -175,6 +175,8 @@ public class MainViewModelTests
         otherMainVM.Images.SelectedIndex = 0;
 
         await otherMainVM.DeleteImage.Execute();
+
+        await Task.Delay(1); // Give OAPH time to update
 
         Assert.Contains(Path.GetFileName(image), otherMainVM.Actions.LastDone, StringComparison.OrdinalIgnoreCase);
 

@@ -11,9 +11,9 @@ public class RenameActionTests
     [Fact(DisplayName = "Can rename files and undo")]
     public void CanRenameFilesAndUndo()
     {
-        const string oldPath = @"C:\my-image.png";
+        var oldPath = Path.GetFullPath("my-image.png");
         const string newFileName = "my-renamed-image";
-        const string newPath = @"C:\my-renamed-image.png";
+        var newPath = Path.Combine(Path.GetDirectoryName(oldPath), "my-renamed-image.png");
 
         var canAct = false;
         var canRevert = false;
@@ -41,12 +41,12 @@ public class RenameActionTests
     [Fact(DisplayName = "Throws when the file doesn't exist or the renamed path is already used.")]
     public void ThrowsWhenFileDoesNotExistOrNewPathIsAlreadyUsed()
     {
-        const string oldPath = @"C:\my-image.png";
-        const string invalidOldPath = @"C:\invalid.gif";
+        var oldPath = Path.GetFullPath("my-image.png");
+        var invalidOldPath = Path.GetFullPath("invalid.gif");
         const string newFileName = "my-renamed-image";
-        const string newPath = @"C:\my-renamed-image.png";
+        var newPath = Path.Combine(Path.GetDirectoryName(oldPath), "my-renamed-image.png");
         const string alreadyExistingName = @"already-exists";
-        const string alreadyExistingPath = @"C:\already-exists.png";
+        var alreadyExistingPath = Path.Combine(Path.GetDirectoryName(oldPath), "already-exists.png");
 
         var fsMock = Substitute.For<IFileSystem>();
 

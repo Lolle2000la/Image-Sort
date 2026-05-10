@@ -3,6 +3,7 @@ using ImageSort.ViewModels.Metadata;
 using NSubstitute;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public class MetadataViewModelTests
     public void ExtractsMetadataWhenPathIsSet()
     {
         // setup mocks and view model
-        string thisFileExists = "C:\\test.jpg";
+        var thisFileExists = Path.GetFullPath(@"C:\test.jpg");
         var extractableMetadata = new Dictionary<string, Dictionary<string, string>>(){
             { "test", new Dictionary<string, string>(){
                     { "test", "test" },
@@ -52,7 +53,7 @@ public class MetadataViewModelTests
     public void DoesNotExtractMetadataWhenPathIsSetAndFileDoesNotExist()
     {
         // setup mocks and view model
-        string thisFileDoesNotExist = "C:\\test2.jpg";
+        var thisFileDoesNotExist = Path.GetFullPath(@"C:\test2.jpg");
 
         fileSystem.FileExists(thisFileDoesNotExist).Returns(false);
 
@@ -69,7 +70,7 @@ public class MetadataViewModelTests
     public void CorrectlyReportsIssuesWithTheExtractionOfMetadata()
     {
         // setup mocks and view model
-        string thisFileHasInvalidMetadata = "C:\\test3.jpg";
+        var thisFileHasInvalidMetadata = Path.GetFullPath(@"C:\test3.jpg");
         Exception invalidMetadata = new("Invalid metadata could not be loaded");
 
         fileSystem.FileExists(thisFileHasInvalidMetadata).Returns(true);
@@ -90,7 +91,7 @@ public class MetadataViewModelTests
     public void CorrectlyCreatesMetadataSectionsFromExtractedMetadata()
     {
         // setup mocks and view model
-        string thisFileHasMetadata = "C:\\test4.jpg";
+        var thisFileHasMetadata = Path.GetFullPath(@"C:\test4.jpg");
         var extractableMetadata = new Dictionary<string, Dictionary<string, string>>(){
             { "test", new Dictionary<string, string>(){
                     { "test", "test" },
@@ -104,7 +105,7 @@ public class MetadataViewModelTests
 
         metadataViewModel.ImagePath = thisFileHasMetadata;
 
-        Assert.Equal(1, metadataViewModel.SectionViewModels.Count());
+        Assert.Single(metadataViewModel.SectionViewModels);
         Assert.Equal("test", metadataViewModel.SectionViewModels.First().Title);
         Assert.Equal(extractableMetadata["test"], metadataViewModel.SectionViewModels.First().Fields);
 

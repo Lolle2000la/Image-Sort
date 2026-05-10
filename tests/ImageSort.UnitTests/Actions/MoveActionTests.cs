@@ -11,9 +11,9 @@ public class MoveActionTests
     [Fact(DisplayName = "File gets moved correctly and caller gets notified of change.")]
     public void FileGetsMovedCorrectly()
     {
-        const string oldPath = @"C:\SomeFile.png";
-        const string newFolder = @"C:\SomeOtherFolder\SomeOtherFolderAsWell\";
-        const string newPath = newFolder + "SomeFile.png";
+        var oldPath = Path.GetFullPath("SomeFile.png");
+        var newFolder = Path.GetFullPath("SomeOtherFolder");
+        var newPath = Path.Combine(newFolder, "SomeFile.png");
 
         var notifedOfAction = false;
         var notifiedOfReversion = false;
@@ -45,10 +45,10 @@ public class MoveActionTests
     [Fact(DisplayName = "Handles file or directory not existing correctly.")]
     public void HandlesFileOrDirectoryNotExisting()
     {
-        const string existingDirectory = @"C:\SomeRealDirectory";
-        const string existingFile = @"C:\SomeRealFile.tif";
-        const string fakeDirectory = @"C:\DirectoryThatDoesntExist";
-        const string fakeFile = @"C:\SomeFakeFile.gif";
+        var existingDirectory = Path.GetFullPath("SomeRealDirectory");
+        var existingFile = Path.GetFullPath("SomeRealFile.tif");
+        var fakeDirectory = Path.GetFullPath("DirectoryThatDoesntExist");
+        var fakeFile = Path.GetFullPath("SomeFakeFile.gif");
 
         var fsMock = Substitute.For<IFileSystem>();
 

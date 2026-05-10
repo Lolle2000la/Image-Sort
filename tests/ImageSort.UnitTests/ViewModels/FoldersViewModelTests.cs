@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
@@ -10,7 +11,7 @@ using Xunit;
 namespace ImageSort.UnitTests.ViewModels;
 public class FoldersViewModelTests
 {
-    private const string MockPath = @"C:\SomePath\";
+    private static readonly string MockPath = Path.GetFullPath(@"C:\SomePath\");
     private readonly IFileSystem fileSystemMock;
 
     public FoldersViewModelTests()
@@ -43,7 +44,7 @@ public class FoldersViewModelTests
     [Fact(DisplayName = "Can prompt user to pin folders.")]
     public async Task CanPinFolders()
     {
-        const string mockPathToPin = @"C:\SomeOtherPath\";
+        var mockPathToPin = Path.GetFullPath(@"C:\SomeOtherPath\");
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -65,7 +66,7 @@ public class FoldersViewModelTests
     [Fact(DisplayName = "Handles user canceling gracefully.")]
     public async Task HandlesCancelingGracefully()
     {
-        const string mockPathToPin = @"C:\SomeOtherPath\";
+        var mockPathToPin = Path.GetFullPath(@"C:\SomeOtherPath\");
 
         var foldersVM = new FoldersViewModel
         {
@@ -81,7 +82,7 @@ public class FoldersViewModelTests
     [Fact(DisplayName = "Can pin the selected folder.")]
     public async Task CanPinSelected()
     {
-        const string mockPathToPin = @"C:\SomeOtherPath\";
+        var mockPathToPin = Path.GetFullPath(@"C:\SomeOtherPath\");
 
         var mockToPin = CreateMock(mockPathToPin);
 
@@ -101,7 +102,7 @@ public class FoldersViewModelTests
     [Fact(DisplayName = "Can unpin the selected folder.")]
     public async Task CanUnpinSelected()
     {
-        const string mockPathToPin = @"C:\SomeOtherPath\";
+        var mockPathToPin = Path.GetFullPath(@"C:\SomeOtherPath\");
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -161,7 +162,7 @@ public class FoldersViewModelTests
             CurrentFolder = CreateMock(MockPath)
         };
 
-        var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+        var pinnedFolders = new[] { Path.GetFullPath("folder 1"), Path.GetFullPath("folder 2"), Path.GetFullPath("folder 3") };
 
         foreach (var pinnedFolder in pinnedFolders)
         {
@@ -181,6 +182,8 @@ public class FoldersViewModelTests
 
         await foldersVM.MoveSelectedPinnedFolderUp.Execute();
 
+        await Task.Delay(1); // allow bound collection to update
+
         Assert.Equal(selected, foldersVM.PinnedFolders.ElementAt(0));
     }
 
@@ -192,7 +195,7 @@ public class FoldersViewModelTests
             CurrentFolder = CreateMock(MockPath)
         };
 
-        var pinnedFolders = new[] { @"C:\folder 1", @"C:\folder 2", @"C:\folder 3" };
+        var pinnedFolders = new[] { Path.GetFullPath("folder 1"), Path.GetFullPath("folder 2"), Path.GetFullPath("folder 3") };
 
         foreach (var pinnedFolder in pinnedFolders)
         {
@@ -211,6 +214,8 @@ public class FoldersViewModelTests
         Assert.True(await foldersVM.MoveSelectedPinnedFolderDown.CanExecute.FirstAsync());
 
         await foldersVM.MoveSelectedPinnedFolderDown.Execute();
+
+        await Task.Delay(1); // allow bound collection to update
 
         Assert.Equal(selected, foldersVM.PinnedFolders.ElementAt(2));
     }

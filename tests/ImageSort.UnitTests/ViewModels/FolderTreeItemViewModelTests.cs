@@ -15,18 +15,19 @@ namespace ImageSort.UnitTests.ViewModels;
 public class FolderTreeItemViewModelTests
 {
     [Fact(DisplayName = "Obtains the child folders of the current folder correctly")]
-    public void ObtainsChildrenCorrectly()
+    public async Task ObtainsChildrenCorrectly()
     {
-        const string path = @"C:\current folder";
+        var path = Path.GetFullPath("current_folder");
 
         var resultingPaths =
             new[]
             {
-                @"\folder 1",
-                @"\folder 2",
-                @"\folder 3"
+                "folder 1",
+                "folder 2",
+                "folder 3"
             }
-            .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+            .Select(sub => Path.Combine(path, sub))
+            .ToArray(); // make the (mock) subfolders absolute paths.
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -38,18 +39,21 @@ public class FolderTreeItemViewModelTests
             IsVisible = true
         };
 
+        while (folderTreeItem.Children.Count == 0) 
+        {
+            await Task.Delay(1);
+        }
+
         fsMock.Received().GetSubFolders(path);
 
-        while (folderTreeItem.Children.Count == 0) {}
-
-        Assert.Equal(resultingPaths, folderTreeItem.Children.Select(vm => vm.Path).ToArray());
+        Assert.Equal(resultingPaths.OrderBy(p => p), folderTreeItem.Children.Select(vm => vm.Path).OrderBy(p => p));
     }
 
     [Fact(DisplayName =
         "Handles an tried access to an unauthorized file (UnauthorizedAccessException) gracefully.")]
     public void HandlesUnauthorizedAccessExceptionGracefully()
     {
-        const string pathToUnauthorisedFolder = @"C:\UnauthorizedFolder";
+        var pathToUnauthorisedFolder = Path.GetFullPath("UnauthorizedFolder");
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -64,12 +68,12 @@ public class FolderTreeItemViewModelTests
     [Fact(DisplayName = "Can create folders and adds them to the children.")]
     public async Task CanCreateFolders()
     {
-        const string currentFolder = @"C:\current_folder";
+        var currentFolder = Path.GetFullPath("current_folder");
         var subfolders = new[]
         {
             "sub1", "sub2", "sub3"
         }.Select(s => Path.Combine(currentFolder, s));
-        const string addedFolder = currentFolder + @"\new_ sub";
+        var addedFolder = Path.Combine(currentFolder, "new_sub");
         var result = new List<string>();
         result.AddRange(subfolders);
         result.Add(addedFolder);
@@ -85,9 +89,9 @@ public class FolderTreeItemViewModelTests
             IsVisible = true
         };
 
-        await folderTreeItem.CreateFolder.Execute(addedFolder);
+        await folderTreeItem.CreateFolder.Execute("new_sub");
         // verify that no second folder is created when a folder already exists
-        await folderTreeItem.CreateFolder.Execute(addedFolder);
+        await folderTreeItem.CreateFolder.Execute("new_sub");
 
         fsMock.Received().CreateFolder(addedFolder);
 
@@ -97,16 +101,16 @@ public class FolderTreeItemViewModelTests
     [Fact(DisplayName = "Do not load subfolders when not visible")]
     public void DoNotLoadSubfoldersWhenNotVisible()
     {
-        const string path = @"C:\current folder";
+        var path = Path.GetFullPath("current_folder");
 
         var resultingPaths =
             new[]
             {
-                @"\folder 1",
-                @"\folder 2",
-                @"\folder 3"
+                "folder 1",
+                "folder 2",
+                "folder 3"
             }
-            .Select(sub => path + sub); // make the (mock) subfolders absolute paths.
+            .Select(sub => Path.Combine(path, sub)); // make the (mock) subfolders absolute paths.
 
         var fsMock = Substitute.For<IFileSystem>();
 

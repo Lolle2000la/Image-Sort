@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
@@ -15,9 +17,9 @@ public class ImagesViewModelTests
     [Fact(DisplayName = "Gets the files correctly, ignoring unsupported files.")]
     public void GetTheFilesCorrectly()
     {
-        const string basePath = @"C:\";
+        var basePath = Path.GetFullPath(@"C:\");
         var allFiles = new[] {"image.png", "some.gif", "cat.mp4", "somethingwrong.exe"}
-            .Select(f => basePath + f);
+            .Select(f => Path.Combine(basePath, f));
 
         var expectedFiles = allFiles.Where(f =>
             f.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
@@ -40,9 +42,9 @@ public class ImagesViewModelTests
     [Fact(DisplayName = "Selected image is accessible by index and gives out the correct path.")]
     public void SelectedImageWorksCorrectly()
     {
-        const string basePath = @"C:\";
+        var basePath = Path.GetFullPath(@"C:\");
         var allFiles = new[] {"image.png", "some.gif"}
-            .Select(f => basePath + f);
+            .Select(f => Path.Combine(basePath, f));
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -65,9 +67,9 @@ public class ImagesViewModelTests
     [Fact(DisplayName = "Can remove and add images externally")]
     public void CanRemoveAndAddImagesExternally()
     {
-        const string basePath = @"C:\";
+        var basePath = Path.GetFullPath(@"C:\");
         var allFiles = new[] {"image.png", "some.gif"}
-            .Select(f => basePath + f);
+            .Select(f => Path.Combine(basePath, f));
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -94,9 +96,9 @@ public class ImagesViewModelTests
     [Fact(DisplayName = "Search filter works")]
     public void SearchFilterWorks()
     {
-        const string basePath = @"C:\";
+        var basePath = Path.GetFullPath("search_test");
         var allFiles = new[] {"image.png", "some.gif"}
-            .Select(f => basePath + f);
+            .Select(f => Path.Combine(basePath, f));
 
         var fsMock = Substitute.For<IFileSystem>();
 
@@ -107,7 +109,7 @@ public class ImagesViewModelTests
             CurrentFolder = basePath
         };
 
-        imagesVM.SearchTerm = "image";
+        imagesVM.SearchTerm = "image.png";
 
         Assert.DoesNotContain(allFiles.ElementAt(1), imagesVM.Images);
 
@@ -117,12 +119,12 @@ public class ImagesViewModelTests
     [Fact(DisplayName = "Can rename images")]
     public async Task CanRenameImages()
     {
-        const string basePath = @"C:\";
-        const string oldFilePath = basePath + "image.png";
+        var basePath = Path.GetFullPath("rename_test");
+        var oldFilePath = Path.Combine(basePath, "image.png");
         const string newFileName = "other_image";
         var invalidFileNames = new[] {@"image\ima", "im/age", "imag\n", "imag\t"};
         var promptedFileName = newFileName;
-        const string newFilePath = basePath + newFileName + ".png";
+        var newFilePath = Path.Combine(basePath, newFileName + ".png");
         var allFiles = new[] {oldFilePath};
         var allFilesResulting = new[] {newFilePath};
 
@@ -160,7 +162,7 @@ public class ImagesViewModelTests
 
         await Task.Delay(1);
 
-        Assert.Equal(allFilesResulting, imagesVM.Images);
+        Assert.Equal(allFilesResulting, imagesVM.Images.ToArray());
 
         foreach (var invalidFileName in invalidFileNames)
         {
@@ -168,7 +170,7 @@ public class ImagesViewModelTests
 
             await imagesVM.RenameImage.Execute();
 
-            Assert.Equal(allFilesResulting, imagesVM.Images);
+            Assert.Equal(allFilesResulting, imagesVM.Images.ToArray());
         }
 
         Assert.True(notifiesUserOfError);
