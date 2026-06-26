@@ -492,4 +492,44 @@ mod tests {
         state.pin_current_folder();
         assert!(state.pinned_folders.is_empty());
     }
+
+    #[test]
+    fn test_build_children_filters_files() {
+        let dir = std::env::temp_dir().join(format!("mediasort_bc_filter_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::create_dir(&dir.join("subdir")).unwrap();
+        std::fs::write(dir.join("file.txt"), b"data").unwrap();
+        std::fs::write(dir.join("another.jpg"), b"image").unwrap();
+
+        let children = build_children(&dir, None);
+        assert_eq!(children.len(), 1);
+        assert_eq!(children[0].name, "subdir");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_build_children_nonexistent_dir() {
+        let nonexistent = std::path::PathBuf::from("/nonexistent/dir_12345_xyz");
+        let children = build_children(&nonexistent, None);
+        assert!(children.is_empty());
+    }
+
+    #[test]
+    fn test_build_children_is_current() {
+        let dir = std::env::temp_dir().join(format!("mediasort_bc_current_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sub = dir.join("sub");
+        std::fs::create_dir(&sub).unwrap();
+
+        let canonical_sub = sub.canonicalize().unwrap();
+        let children = build_children(&dir, Some(&canonical_sub));
+        assert_eq!(children.len(), 1);
+        assert!(children[0].is_current);
+
+        let children2 = build_children(&dir, None);
+        assert!(!children2[0].is_current);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
 }

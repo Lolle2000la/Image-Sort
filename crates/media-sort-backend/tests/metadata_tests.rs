@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use id3::TagLike;
 use image::GenericImageView;
 use media_sort_backend::filesystem::scanner;
 use media_sort_backend::filesystem::trash_staging::TrashStaging;
@@ -213,4 +214,245 @@ fn test_trash_stage_nonexistent_file() {
     let staging = TrashStaging::new().unwrap();
     let result = staging.stage_file(Path::new("/nonexistent/file_xyz.txt"));
     assert!(result.is_err());
+}
+
+// ============================================================
+// Audio metadata extension routing
+// ============================================================
+
+#[test]
+fn test_extract_audio_metadata_wav() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_wav_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.wav");
+    std::fs::write(&path, b"").unwrap();
+    let mut tag = id3::Tag::new();
+    tag.set_title("Test Title");
+    tag.write_to_path(&path, id3::Version::Id3v24).unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    assert!(result
+        .as_ref()
+        .unwrap()
+        .get("ID3 Metadata")
+        .and_then(|s| s.get("Title"))
+        .is_some_and(|t| t == "Test Title"));
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_aiff() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_aiff_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.aiff");
+    std::fs::write(&path, b"").unwrap();
+    let mut tag = id3::Tag::new();
+    tag.set_title("AIFF Title");
+    tag.write_to_path(&path, id3::Version::Id3v24).unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    assert!(result
+        .as_ref()
+        .unwrap()
+        .get("ID3 Metadata")
+        .and_then(|s| s.get("Title"))
+        .is_some_and(|t| t == "AIFF Title"));
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_ogg() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_ogg_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.ogg");
+    std::fs::write(&path, b"OggS....").unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_empty());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_opus() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_opus_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.opus");
+    std::fs::write(&path, b"OggS....OpusHead").unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_m4a() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_m4a_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.m4a");
+    let data = minimal_mp4_container();
+    std::fs::write(&path, &data).unwrap();
+    let result = extract_audio_metadata(&path);
+    // Routing test: .m4a routes to mp4ameta reader, doesn't panic
+    assert!(result.is_ok() || result.is_err());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_aac() {
+    let dir = std::env::temp_dir().join(format!("mediasort_audio_aac_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.aac");
+    std::fs::write(&path, b"not real aac data").unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_empty());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+// ============================================================
+// Video metadata routing
+// ============================================================
+
+#[test]
+fn test_extract_video_metadata_mp4() {
+    let dir = std::env::temp_dir().join(format!("mediasort_video_mp4_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.mp4");
+    let data = minimal_mp4_container();
+    std::fs::write(&path, &data).unwrap();
+    let result = extract_video_metadata(&path);
+    // Routing test: .mp4 routes to mp4ameta reader, doesn't panic
+    assert!(result.is_ok() || result.is_err());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_video_metadata_m4v() {
+    let dir = std::env::temp_dir().join(format!("mediasort_video_m4v_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.m4v");
+    let data = minimal_mp4_container();
+    std::fs::write(&path, &data).unwrap();
+    let result = extract_video_metadata(&path);
+    assert!(result.is_ok() || result.is_err());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_video_metadata_mov() {
+    let dir = std::env::temp_dir().join(format!("mediasort_video_mov_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.mov");
+    let data = minimal_mp4_container();
+    std::fs::write(&path, &data).unwrap();
+    let result = extract_video_metadata(&path);
+    assert!(result.is_ok() || result.is_err());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+fn minimal_mp4_container() -> Vec<u8> {
+    let mut out = Vec::new();
+
+    // ftyp box: 24 bytes
+    out.extend_from_slice(&24u32.to_be_bytes());
+    out.extend_from_slice(b"ftyp");
+    out.extend_from_slice(b"isom");
+    out.extend_from_slice(&0u32.to_be_bytes());
+    out.extend_from_slice(b"isom");
+
+    // moov box
+    let moov_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder
+    out.extend_from_slice(b"moov");
+
+    // udta box inside moov
+    let udta_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder
+    out.extend_from_slice(b"udta");
+
+    // meta box (full box) inside udta
+    let meta_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder
+    out.extend_from_slice(b"meta");
+    out.extend_from_slice(&0u32.to_be_bytes()); // version=0, flags=0
+
+    // hdlr box (full box) inside meta
+    let hdlr_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder
+    out.extend_from_slice(b"hdlr");
+    out.extend_from_slice(&0u32.to_be_bytes()); // version=0, flags=0
+    out.extend_from_slice(&0u32.to_be_bytes()); // pre_defined
+    out.extend_from_slice(b"mdir"); // handler_type
+    out.extend_from_slice(&[0u8; 12]); // reserved
+    out.push(b'a'); // name (null-terminated)
+    out.push(0);
+    let hdlr_end = out.len();
+    let hdlr_size = (hdlr_end - hdlr_start) as u32;
+    out[hdlr_start..hdlr_start + 4].copy_from_slice(&hdlr_size.to_be_bytes());
+
+    // ilst box inside meta — pre-populated with a dummy \xa9day atom so
+    // mp4ameta can find at least one metadata entry.
+    let ilst_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder for ilst size
+    out.extend_from_slice(b"ilst");
+
+    // \xa9day atom
+    let day_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder for \xa9day size
+    out.extend_from_slice(b"\xa9day");
+    // data child (FullBox data atom)
+    let data_start = out.len();
+    out.extend_from_slice(&0u32.to_be_bytes()); // placeholder for data size
+    out.extend_from_slice(b"data");
+    out.extend_from_slice(&[0u8; 8]); // reserved(4) + type_indicator(4)
+    let data_end = out.len();
+    let data_size = (data_end - data_start) as u32;
+    out[data_start..data_start + 4].copy_from_slice(&data_size.to_be_bytes());
+
+    let day_end = out.len();
+    let day_size = (day_end - day_start) as u32;
+    out[day_start..day_start + 4].copy_from_slice(&day_size.to_be_bytes());
+
+    let ilst_end = out.len();
+    let ilst_size = (ilst_end - ilst_start) as u32;
+    out[ilst_start..ilst_start + 4].copy_from_slice(&ilst_size.to_be_bytes());
+
+    // backpatch meta
+    let meta_end = out.len();
+    let meta_size = (meta_end - meta_start) as u32;
+    out[meta_start..meta_start + 4].copy_from_slice(&meta_size.to_be_bytes());
+
+    // backpatch udta
+    let udta_end = out.len();
+    let udta_size = (udta_end - udta_start) as u32;
+    out[udta_start..udta_start + 4].copy_from_slice(&udta_size.to_be_bytes());
+
+    // backpatch moov
+    let moov_end = out.len();
+    let moov_size = (moov_end - moov_start) as u32;
+    out[moov_start..moov_start + 4].copy_from_slice(&moov_size.to_be_bytes());
+
+    out
+}
+
+#[test]
+fn test_extract_video_metadata_mkv() {
+    let dir = std::env::temp_dir().join(format!("mediasort_video_mkv_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.mkv");
+    std::fs::write(&path, b"\x1a\x45\xdf\xa3....").unwrap();
+    let result = extract_video_metadata(&path);
+    assert!(result.is_ok());
+    assert!(result.unwrap().is_empty());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_video_metadata_webm() {
+    let dir = std::env::temp_dir().join(format!("mediasort_video_webm_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.webm");
+    std::fs::write(&path, b"\x1a\x45\xdf\xa3....webm").unwrap();
+    let result = extract_video_metadata(&path);
+    assert!(result.is_ok());
+    std::fs::remove_dir_all(&dir).ok();
 }

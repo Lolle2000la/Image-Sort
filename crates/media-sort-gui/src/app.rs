@@ -944,4 +944,73 @@ mod tests {
 
         std::fs::remove_dir_all(&root).ok();
     }
+
+    #[test]
+    fn test_thumbnail_ready_empty_data() {
+        let mut state = AppState::new(SettingsStore::default());
+        let cache_size_before = state.thumbnail_cache.len();
+
+        let _task = update(
+            &mut state,
+            Message::ThumbnailReady(std::path::PathBuf::from("/test/empty.jpg"), Vec::new()),
+        );
+        assert_eq!(state.thumbnail_cache.len(), cache_size_before);
+    }
+
+    #[test]
+    fn test_thumbnail_ready_valid_data() {
+        let mut state = AppState::new(SettingsStore::default());
+        let path = std::path::PathBuf::from("/test/thumb.jpg");
+
+        let _task = update(
+            &mut state,
+            Message::ThumbnailReady(path.clone(), vec![0x89, 0x50, 0x4E, 0x47]),
+        );
+        assert_eq!(state.thumbnail_cache.len(), 1);
+        assert!(state.thumbnail_cache.contains(&path));
+    }
+
+    #[test]
+    fn test_metadata_loaded_error_clears_metadata() {
+        let mut state = AppState::new(SettingsStore::default());
+        let mut existing = std::collections::BTreeMap::new();
+        let mut inner = std::collections::BTreeMap::new();
+        inner.insert("Width".to_string(), "1920".to_string());
+        existing.insert("EXIF".to_string(), inner);
+        state.current_metadata = Some(existing);
+
+        let _task = update(
+            &mut state,
+            Message::MetadataLoaded(Err("load failed".to_string())),
+        );
+        assert!(state.current_metadata.is_none());
+    }
+
+    #[test]
+    fn test_metadata_loaded_success() {
+        let mut state = AppState::new(SettingsStore::default());
+        let mut metadata = std::collections::BTreeMap::new();
+        let mut section = std::collections::BTreeMap::new();
+        section.insert("Width".to_string(), "1920".to_string());
+        metadata.insert("EXIF".to_string(), section);
+
+        let _task = update(&mut state, Message::MetadataLoaded(Ok(metadata)));
+        assert!(state.current_metadata.is_some());
+        let m = state.current_metadata.as_ref().unwrap();
+        assert_eq!(m.get("EXIF").unwrap().get("Width").unwrap(), "1920");
+    }
+
+    #[test]
+    fn test_tick_should_exit_saves_settings() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.settings.general.dark_mode = true;
+        state.should_exit = true;
+
+        let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+        let reloaded = SettingsStore::load().unwrap_or_default();
+        assert!(reloaded.general.dark_mode);
+
+        state.settings.general.dark_mode = false;
+        state.settings.save().ok();
+    }
 }

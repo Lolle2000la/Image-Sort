@@ -856,6 +856,56 @@ fn test_paths_equal_one_canonicalize_fails() {
 }
 
 // ============================================================================
+// l10n fallback and edge case tests
+// ============================================================================
+
+#[test]
+fn test_l10n_invalid_language_fallback() {
+    let loc = Localization::init("invalid-lang-tag-!!!");
+    let msg = loc.get(
+        "move-action-message",
+        &[("file_name", "test.txt"), ("directory", "/tmp")],
+    );
+    assert!(!msg.is_empty());
+    assert!(msg.contains("Move"));
+}
+
+#[test]
+fn test_l10n_get_with_extra_args() {
+    let loc = Localization::init("en");
+    let msg = loc.get(
+        "delete-action-message",
+        &[("file_name", "test.txt"), ("extra_unused", "ignored")],
+    );
+    assert!(!msg.is_empty());
+    assert!(msg.contains("test.txt"));
+}
+
+#[test]
+fn test_l10n_get_missing_args() {
+    let loc = Localization::init("en");
+    let msg = loc.get("move-action-message", &[]);
+    assert!(!msg.is_empty());
+}
+
+// ============================================================================
+// rename_or_copy non-EXDEV error test
+// ============================================================================
+
+#[test]
+fn test_rename_or_copy_non_exdev_error() {
+    let dir = std::env::temp_dir().join(format!("mediasort_xdev_err_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let src = dir.join("nonexistent.txt");
+    let dst = dir.join("should_not_exist.txt");
+    let result = path_utils::rename_or_copy_and_delete(&src, &dst);
+    assert!(result.is_err());
+    assert!(!dst.exists());
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+// ============================================================================
 // History interleaved undo/redo tests
 // ============================================================================
 
