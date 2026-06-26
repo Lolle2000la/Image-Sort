@@ -357,3 +357,50 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 
     Subscription::batch(vec![tick_sub, keyboard_sub])
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use media_sort_core::media_type::MediaType;
+    use media_sort_core::models::MediaEntry;
+    use media_sort_core::settings::store::SettingsStore;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_select_entry_in_bounds() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![MediaEntry {
+            path: PathBuf::from("/test/a.jpg"),
+            media_type: MediaType::Image,
+            file_name: "a.jpg".into(),
+        }];
+        state.search_query = String::new();
+        let _task = update(&mut state, Message::SelectEntry(0));
+        assert_eq!(state.selected_index, Some(0));
+        assert!(state.current_metadata.is_none());
+    }
+
+    #[test]
+    fn test_select_entry_out_of_bounds() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![];
+        state.search_query = String::new();
+        state.selected_index = None;
+        let _task = update(&mut state, Message::SelectEntry(99));
+        assert_eq!(state.selected_index, None);
+    }
+
+    #[test]
+    fn test_select_entry_filtered_empty() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![MediaEntry {
+            path: PathBuf::from("/test/a.jpg"),
+            media_type: MediaType::Image,
+            file_name: "a.jpg".into(),
+        }];
+        state.search_query = "nomatch".into();
+        state.selected_index = None;
+        let _task = update(&mut state, Message::SelectEntry(0));
+        assert_eq!(state.selected_index, None);
+    }
+}

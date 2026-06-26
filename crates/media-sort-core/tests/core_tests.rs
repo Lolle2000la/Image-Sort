@@ -860,6 +860,107 @@ fn test_paths_equal_one_canonicalize_fails() {
 // ============================================================================
 
 #[test]
+fn test_rename_no_extension() {
+    use std::env;
+    use std::fs;
+
+    let dir = env::temp_dir().join(format!("mediasort_test_{}", std::process::id()));
+    fs::create_dir_all(&dir).unwrap();
+    let file = dir.join("noext");
+    fs::write(&file, b"content").unwrap();
+
+    let mut action = RenameAction::new(&file, "newname").unwrap();
+    assert!(action.display_name().contains("newname"));
+
+    action.execute().unwrap();
+    let new_file = dir.join("newname");
+    assert!(new_file.exists());
+    assert!(!file.exists());
+
+    action.rollback().unwrap();
+    assert!(file.exists());
+    assert!(!new_file.exists());
+
+    fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_rename_all_illegal_characters() {
+    use std::env;
+    use std::fs;
+
+    let dir = env::temp_dir().join(format!("mediasort_illegal_{}", std::process::id()));
+    fs::create_dir_all(&dir).unwrap();
+    let file = dir.join("test.txt");
+    fs::write(&file, b"content").unwrap();
+
+    for c in &["/", "\\", ":", "*", "?", "\"", "<", ">", "|"] {
+        let result = RenameAction::new(&file, &format!("bad{}name", c));
+        assert!(result.is_err(), "Expected error for character: {}", c);
+    }
+
+    fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_settings_load_corrupted_json() {
+    let dir = std::env::temp_dir().join(format!("mediasort_config_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let config_path = dir.join("test_config.json");
+
+    std::fs::write(&config_path, "this is not valid json {{{").unwrap();
+
+    let result = std::fs::read_to_string(&config_path)
+        .map_err(SettingsError::from)
+        .and_then(|data| serde_json::from_str::<SettingsStore>(&data).map_err(SettingsError::from));
+    assert!(result.is_err());
+    match result {
+        Err(SettingsError::Serde(_)) => {}
+        _ => panic!("Expected Serde error, got {:?}", result.err()),
+    }
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_settings_load_truncated_json() {
+    let dir = std::env::temp_dir().join(format!("mediasort_config2_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let config_path = dir.join("test_config.json");
+
+    std::fs::write(&config_path, r#"{"general": {"dark_mode": true"#).unwrap();
+
+    let result = std::fs::read_to_string(&config_path)
+        .map_err(SettingsError::from)
+        .and_then(|data| serde_json::from_str::<SettingsStore>(&data).map_err(SettingsError::from));
+    assert!(result.is_err());
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_settings_load_extra_unknown_fields() {
+    let dir = std::env::temp_dir().join(format!("mediasort_config3_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let config_path = dir.join("test_config.json");
+
+    std::fs::write(
+        &config_path,
+        r#"{"general": {"dark_mode": true}, "unknown_field": "should be ignored"}"#,
+    )
+    .unwrap();
+
+    let result = std::fs::read_to_string(&config_path)
+        .map_err(SettingsError::from)
+        .and_then(|data| serde_json::from_str::<SettingsStore>(&data).map_err(SettingsError::from));
+    assert!(result.is_ok());
+    let settings = result.unwrap();
+    assert!(settings.general.dark_mode);
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
 fn test_history_interleaved_undo_redo() {
     let mut history = History::new();
     let mut mock = MockAction::new("A");

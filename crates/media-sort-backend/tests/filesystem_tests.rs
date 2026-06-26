@@ -369,6 +369,13 @@ fn test_file_system_event_renamed() {
 }
 
 #[test]
+fn test_trash_stage_no_file_name() {
+    let staging = TrashStaging::new().unwrap();
+    let result = staging.stage_file(std::path::Path::new("/"));
+    assert!(result.is_err());
+}
+
+#[test]
 fn test_file_system_event_debug() {
     let ev = FileSystemEvent::Modified(std::path::PathBuf::from("/tmp/test.txt"));
     let dbg = format!("{:?}", ev);

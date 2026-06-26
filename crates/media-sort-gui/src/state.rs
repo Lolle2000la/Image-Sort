@@ -196,7 +196,7 @@ impl AppState {
     }
 }
 
-fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
+pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
     let mut children = Vec::new();
     if let Ok(entries) = std::fs::read_dir(parent) {
         for entry in entries.flatten() {
@@ -398,6 +398,98 @@ mod tests {
         state.current_folder = Some(folder.clone());
         state.pin_current_folder();
         state.unpin_folder(&folder);
+        assert!(state.pinned_folders.is_empty());
+    }
+
+    #[test]
+    fn test_toggle_expand_collapsed_node() {
+        let mut root = FolderNode {
+            path: PathBuf::from("/root"),
+            name: "root".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+        };
+        let child_path = PathBuf::from("/root/sub");
+        let found = toggle_expand_recursive(&mut root.children, &child_path);
+        assert!(!found);
+        let child = FolderNode {
+            path: child_path.clone(),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+        };
+        root.children = vec![child];
+        let found = toggle_expand_recursive(&mut root.children, &child_path);
+        assert!(found);
+        assert!(root.children[0].is_expanded);
+    }
+
+    #[test]
+    fn test_toggle_expand_toggle_back() {
+        let child = FolderNode {
+            path: PathBuf::from("/root/sub"),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: true,
+        };
+        let mut children = vec![child];
+        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"));
+        assert!(found);
+        assert!(!children[0].is_expanded);
+    }
+
+    #[test]
+    fn test_toggle_expand_nested_path() {
+        let grandchild = FolderNode {
+            path: PathBuf::from("/root/sub/deep"),
+            name: "deep".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+        };
+        let child = FolderNode {
+            path: PathBuf::from("/root/sub"),
+            name: "sub".into(),
+            children: vec![grandchild],
+            is_current: false,
+            is_expanded: false,
+        };
+        let mut children = vec![child];
+        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"));
+        assert!(found);
+        assert!(!children[0].is_expanded);
+        assert!(children[0].children[0].is_expanded);
+    }
+
+    #[test]
+    fn test_pin_current_folder_no_duplicate() {
+        let mut state = AppState::new(SettingsStore::default());
+        let folder = std::path::PathBuf::from("/test/folder");
+        state.current_folder = Some(folder.clone());
+        state.pin_current_folder();
+        assert_eq!(state.pinned_folders.len(), 1);
+        state.pin_current_folder();
+        assert_eq!(state.pinned_folders.len(), 1);
+    }
+
+    #[test]
+    fn test_pin_current_folder_syncs_settings() {
+        let mut state = AppState::new(SettingsStore::default());
+        let folder = std::path::PathBuf::from("/test/folder");
+        state.current_folder = Some(folder.clone());
+        state.pin_current_folder();
+        assert_eq!(state.settings.pinned_folders.paths.len(), 1);
+        assert_eq!(state.settings.pinned_folders.paths[0], "/test/folder");
+    }
+
+    #[test]
+    fn test_pin_current_folder_no_current() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = None;
+        state.pin_current_folder();
         assert!(state.pinned_folders.is_empty());
     }
 }
