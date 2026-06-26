@@ -1,3 +1,4 @@
+pub mod control_panel;
 pub mod folder_panel;
 pub mod folder_tree;
 pub mod history_bar;

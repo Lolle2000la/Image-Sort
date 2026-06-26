@@ -8,10 +8,10 @@ use crate::widgets::folder_icon;
 
 const INDENT_WIDTH: u16 = 20;
 
-pub fn folder_tree_view<'a>(tree: &'a [FolderNode]) -> Element<'a, Message> {
+pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
     column(
         tree.iter()
-            .map(|node| render_node(node, 0))
+            .map(|node| render_node(node, 0, selected_folder))
             .collect::<Vec<_>>(),
     )
     .spacing(0)
@@ -19,7 +19,7 @@ pub fn folder_tree_view<'a>(tree: &'a [FolderNode]) -> Element<'a, Message> {
 }
 
 #[allow(clippy::only_used_in_recursion)]
-fn render_node<'a>(node: &'a FolderNode, depth: u16) -> Element<'a, Message> {
+fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
     let icon = if node.is_expanded {
         folder_icon::open_folder_icon()
     } else {
@@ -42,16 +42,28 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16) -> Element<'a, Message> {
 
     let row_button = button(row_content)
         .on_press(Message::FolderSelected(node_path.clone()))
-        .style(move |_theme, _status| {
+        .style(move |theme: &iced::Theme, _status| {
+            let palette = theme.palette();
             let base = iced::widget::button::Style::default();
+            let is_selected = selected_folder.map_or(false, |p| p == node.path);
             if node.is_current {
                 iced::widget::button::Style {
-                    background: Some(iced::Background::Color(Color::from_rgb(0.3, 0.5, 0.9))),
+                    background: Some(iced::Background::Color(palette.primary)),
                     text_color: Color::WHITE,
                     ..base
                 }
+            } else if is_selected {
+                let selected_bg = Color { a: 0.4, ..palette.primary };
+                iced::widget::button::Style {
+                    background: Some(iced::Background::Color(selected_bg)),
+                    text_color: palette.text,
+                    ..base
+                }
             } else {
-                base
+                iced::widget::button::Style {
+                    text_color: palette.text,
+                    ..base
+                }
             }
         })
         .width(Length::Fill);
@@ -73,7 +85,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16) -> Element<'a, Message> {
                 column(
                     node.children
                         .iter()
-                        .map(|child| render_node(child, depth + 1))
+                        .map(|child| render_node(child, depth + 1, selected_folder))
                         .collect::<Vec<_>>(),
                 )
                 .spacing(0),

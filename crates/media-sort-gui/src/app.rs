@@ -38,10 +38,34 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::OpenFolder(path) => {
             state.open_folder(&path);
+            let tasks: Vec<_> = state
+                .media_entries
+                .iter()
+                .take(40)
+                .map(|entry| load_thumbnail(entry.path.clone()))
+                .collect();
+            Task::batch(tasks)
+        }
+        Message::PickFolder => {
+            Task::perform(
+                async {
+                    tokio::task::spawn_blocking(|| {
+                        rfd::FileDialog::new().pick_folder()
+                    })
+                    .await
+                    .unwrap_or(None)
+                },
+                Message::PickFolderResult
+            )
+        }
+        Message::PickFolderResult(Some(path)) => {
+            return Task::done(Message::OpenFolder(path));
+        }
+        Message::PickFolderResult(None) => {
             Task::none()
         }
         Message::FolderSelected(path) => {
-            state.open_folder(&path);
+            state.selected_folder = Some(path);
             Task::none()
         }
         Message::ToggleFolderExpand(path) => {
@@ -50,18 +74,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::SelectEntry(index) => {
-            let filtered_len = state.filtered_media_entries().len();
-            if index < filtered_len {
-                state.selected_index = Some(index);
-                state.current_metadata = None;
-                return load_metadata(state, index);
-            }
-            Task::none()
+            select_and_load_entry(state, index)
         }
         Message::SearchQueryChanged(query) => {
             state.search_query = query;
             state.selected_index = None;
             state.current_metadata = None;
+            state.selected_image_bytes = None;
+            state.search_focused = true;
             Task::none()
         }
 
@@ -76,8 +96,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             } else {
                                 state.history.push_executed(Box::new(action));
                                 state.scan_media();
-                                state.selected_index = None;
-                                state.current_metadata = None;
+                                return select_and_load_entry(state, index);
                             }
                         }
                         Err(e) => {
@@ -89,6 +108,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::DeleteEntry(path) => {
+            let index_to_select = state.selected_index.unwrap_or(0);
             match media_sort_backend::filesystem::trash_staging::TrashStaging::new() {
                 Ok(staging) => match staging.stage_file(&path) {
                     Ok(handle) => {
@@ -97,8 +117,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         );
                         state.history.push_executed(Box::new(action));
                         state.scan_media();
-                        state.selected_index = None;
-                        state.current_metadata = None;
+                        return select_and_load_entry(state, index_to_select);
                     }
                     Err(e) => {
                         log::error!("Cannot stage file for deletion: {e}");
@@ -110,14 +129,38 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
+        Message::TriggerRename => {
+            if let Some(index) = state.selected_index {
+                let filtered = state.filtered_media_entries();
+                if let Some(entry) = filtered.get(index) {
+                    let stem = entry
+                        .path
+                        .file_stem()
+                        .map(|s| s.to_string_lossy().to_string())
+                        .unwrap_or_default();
+                    state.renaming_path = Some(entry.path.clone());
+                    state.rename_input_value = stem;
+                }
+            }
+            Task::none()
+        }
+
         Message::RenameEntry(path, new_name) => {
             match RenameAction::new(&path, &new_name) {
                 Ok(mut action) => {
                     if let Err(e) = action.execute() {
                         log::error!("Rename failed: {e}");
                     } else {
+                        let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
                         state.scan_media();
+                        if let Some(pos) = state
+                            .media_entries
+                            .iter()
+                            .position(|e| e.path == new_path)
+                        {
+                            return select_and_load_entry(state, pos);
+                        }
                     }
                 }
                 Err(e) => {
@@ -127,23 +170,71 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        Message::RenameInputChanged(val) => {
+            state.rename_input_value = val;
+            Task::none()
+        }
+        Message::SubmitRename => {
+            if let Some(path) = state.renaming_path.take() {
+                let new_name = state.rename_input_value.trim().to_string();
+                if !new_name.is_empty() {
+                    state.rename_input_value.clear();
+                    return Task::done(Message::RenameEntry(path, new_name));
+                }
+            }
+            Task::none()
+        }
+        Message::CancelRename => {
+            state.renaming_path = None;
+            state.rename_input_value.clear();
+            Task::none()
+        }
+        Message::CreateFolderInputChanged(val) => {
+            state.create_folder_input = val;
+            Task::none()
+        }
+        Message::SubmitCreateFolder => {
+            if let Some(parent) = state.creating_folder_parent.take() {
+                let folder_name = state.create_folder_input.trim().to_string();
+                if !folder_name.is_empty() {
+                    let new_dir = parent.join(&folder_name);
+                    if let Err(e) = std::fs::create_dir_all(&new_dir) {
+                        log::error!("Failed to create folder: {e}");
+                    } else {
+                        if let Some(ref current) = state.current_folder {
+                            let c = current.clone();
+                            state.build_folder_tree(&c);
+                        }
+                        state.scan_media();
+                    }
+                }
+                state.create_folder_input.clear();
+            }
+            Task::none()
+        }
+        Message::CancelCreateFolder => {
+            state.creating_folder_parent = None;
+            state.create_folder_input.clear();
+            Task::none()
+        }
+
         Message::Undo => {
+            let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.undo() {
                 log::error!("Undo failed: {e}");
             } else {
                 state.scan_media();
-                state.selected_index = None;
-                state.current_metadata = None;
+                return select_and_load_entry(state, index);
             }
             Task::none()
         }
         Message::Redo => {
+            let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.redo() {
                 log::error!("Redo failed: {e}");
             } else {
                 state.scan_media();
-                state.selected_index = None;
-                state.current_metadata = None;
+                return select_and_load_entry(state, index);
             }
             Task::none()
         }
@@ -153,9 +244,23 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        Message::PinSelectedFolder => {
+            if let Some(selected_path) = state.selected_folder.clone() {
+                state.pin_folder(&selected_path);
+                let _ = state.settings.save();
+            }
+            Task::none()
+        }
         Message::UnpinCurrentFolder(path) => {
             state.unpin_folder(&path);
             let _ = state.settings.save();
+            Task::none()
+        }
+        Message::TriggerCreateFolder => {
+            if let Some(ref p) = state.selected_folder.as_ref().or(state.current_folder.as_ref()) {
+                state.creating_folder_parent = Some((*p).clone());
+                state.create_folder_input = String::new();
+            }
             Task::none()
         }
 
@@ -205,6 +310,31 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 return Task::none();
             }
 
+            if state.renaming_path.is_some() {
+                if key == "Enter" {
+                    return Task::done(Message::SubmitRename);
+                } else if key == "Esc" {
+                    return Task::done(Message::CancelRename);
+                }
+                return Task::none();
+            }
+
+            if state.creating_folder_parent.is_some() {
+                if key == "Enter" {
+                    return Task::done(Message::SubmitCreateFolder);
+                } else if key == "Esc" {
+                    return Task::done(Message::CancelCreateFolder);
+                }
+                return Task::none();
+            }
+
+            if state.search_focused {
+                if key == "Enter" || key == "Esc" {
+                    state.search_focused = false;
+                }
+                return Task::none();
+            }
+
             let bindings = keyboard::keybinding_list(state);
             for (name, binding) in &bindings {
                 if binding.key == key
@@ -235,10 +365,80 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 return Task::done(Message::UnpinCurrentFolder(c.clone()));
                             }
                         }
+                        "go_left" => {
+                            return Task::done(Message::GoLeft);
+                        }
+                        "go_right" => {
+                            return Task::done(Message::GoRight);
+                        }
+                        "move_to_folder" => {
+                            return Task::done(Message::MoveMedia);
+                        }
+                        "delete" => {
+                            if let Some(index) = state.selected_index {
+                                let filtered = state.filtered_media_entries();
+                                if let Some(entry) = filtered.get(index) {
+                                    return Task::done(Message::DeleteEntry(entry.path.clone()));
+                                }
+                            }
+                        }
+                        "rename" => {
+                            if let Some(index) = state.selected_index {
+                                let filtered = state.filtered_media_entries();
+                                if let Some(entry) = filtered.get(index) {
+                                    let stem = entry
+                                        .path
+                                        .file_stem()
+                                        .map(|s| s.to_string_lossy().to_string())
+                                        .unwrap_or_default();
+                                    state.renaming_path = Some(entry.path.clone());
+                                    state.rename_input_value = stem;
+                                }
+                            }
+                        }
+                        "create_folder" => {
+                            if let Some(ref p) =
+                                state.selected_folder.as_ref().or(state.current_folder.as_ref())
+                            {
+                                state.creating_folder_parent = Some((*p).clone());
+                                state.create_folder_input = String::new();
+                            }
+                        }
+                        "open_selected_folder" => {
+                            if let Some(ref selected_path) = state.selected_folder {
+                                return Task::done(Message::OpenFolder(selected_path.clone()));
+                            }
+                        }
+                        "pin_selected" => {
+                            if let Some(selected_path) = state.selected_folder.clone() {
+                                state.pin_folder(&selected_path);
+                                let _ = state.settings.save();
+                            }
+                        }
+                        "move_pinned_up" => {
+                            if let Some(selected_path) = state.selected_folder.clone() {
+                                state.move_pinned_folder_up(&selected_path);
+                            }
+                        }
+                        "move_pinned_down" => {
+                            if let Some(selected_path) = state.selected_folder.clone() {
+                                state.move_pinned_folder_down(&selected_path);
+                            }
+                        }
                         _ => {}
                     }
                 }
             }
+
+            if alt && !ctrl && !shift {
+                if let Some(c) = key.chars().next() {
+                    if c.is_ascii_digit() && c != '0' {
+                        let digit = c.to_digit(10).unwrap() as u8;
+                        return Task::done(Message::PinFolderShortcut(digit));
+                    }
+                }
+            }
+
             Task::none()
         }
 
@@ -248,12 +448,24 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::CloseSettings => {
             state.show_settings = false;
+            state.show_keybindings = false;
             state.editing_keybinding = None;
             state.waiting_for_key = false;
             Task::none()
         }
         Message::ToggleDarkMode => {
             state.settings.general.dark_mode = !state.settings.general.dark_mode;
+            let _ = state.settings.save();
+            Task::none()
+        }
+        Message::ToggleCheckForUpdates => {
+            state.settings.general.check_for_updates_on_startup = !state.settings.general.check_for_updates_on_startup;
+            let _ = state.settings.save();
+            Task::none()
+        }
+        Message::ToggleInstallPrerelease => {
+            state.settings.general.install_prerelease_builds = !state.settings.general.install_prerelease_builds;
+            let _ = state.settings.save();
             Task::none()
         }
         Message::ToggleAnimateGifs => {
@@ -268,6 +480,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::SaveSettings => {
             let _ = state.settings.save();
             state.show_settings = false;
+            state.show_keybindings = false;
+            Task::none()
+        }
+        Message::OpenKeybindings => {
+            state.show_keybindings = true;
+            Task::none()
+        }
+        Message::CloseKeybindings => {
+            state.show_keybindings = false;
+            state.editing_keybinding = None;
+            state.waiting_for_key = false;
             Task::none()
         }
 
@@ -276,8 +499,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if let Some(index) = state.selected_index {
                     let entries = state.filtered_media_entries();
                     if let Some(entry) = entries.get(index) {
+                        player.stop();
                         if let Err(e) = player.play(&entry.path) {
                             log::error!("Audio play failed: {e}");
+                        } else {
+                            player.resume();
                         }
                     }
                 }
@@ -303,7 +529,172 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
+        Message::ImageLoaded(path, result) => {
+            match result {
+                Ok(bytes) => {
+                    state.selected_image_bytes = Some((path, bytes));
+                }
+                Err(err) => {
+                    log::error!("Failed to load full image: {err}");
+                    state.selected_image_bytes = None;
+                }
+            }
+            Task::none()
+        }
+        Message::GoLeft => {
+            if let Some(idx) = state.selected_index {
+                if idx > 0 {
+                    return select_and_load_entry(state, idx - 1);
+                }
+            }
+            Task::none()
+        }
+        Message::GoRight => {
+            if let Some(idx) = state.selected_index {
+                let filtered_len = state.filtered_media_entries().len();
+                if idx + 1 < filtered_len {
+                    return select_and_load_entry(state, idx + 1);
+                }
+            }
+            Task::none()
+        }
+        Message::MoveMedia => {
+            if let Some(index) = state.selected_index {
+                if let Some(ref target_folder) = state.selected_folder {
+                    let filtered = state.filtered_media_entries();
+                    if let Some(entry) = filtered.get(index) {
+                        match MoveAction::new(&entry.path, target_folder) {
+                            Ok(mut action) => {
+                                if let Err(e) = action.execute() {
+                                    log::error!("Move failed: {e}");
+                                } else {
+                                    state.history.push_executed(Box::new(action));
+                                    state.scan_media();
+                                    return select_and_load_entry(state, index);
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Cannot create move action: {e}");
+                            }
+                        }
+                    }
+                }
+            }
+            Task::none()
+        }
+        Message::PinFolderShortcut(n) => {
+            let pinned_idx = (n.saturating_sub(1)) as usize;
+            if let Some(pinned) = state.pinned_folders.get(pinned_idx) {
+                let target_folder = pinned.path.clone();
+                if let Some(index) = state.selected_index {
+                    let filtered = state.filtered_media_entries();
+                    if let Some(entry) = filtered.get(index) {
+                        match MoveAction::new(&entry.path, &target_folder) {
+                            Ok(mut action) => {
+                                if let Err(e) = action.execute() {
+                                    log::error!("Move failed: {e}");
+                                } else {
+                                    state.history.push_executed(Box::new(action));
+                                    state.scan_media();
+                                    return select_and_load_entry(state, index);
+                                }
+                            }
+                            Err(e) => {
+                                log::error!("Cannot create move action: {e}");
+                            }
+                        }
+                    }
+                }
+            }
+            Task::none()
+        }
+        Message::SearchFocused => {
+            state.search_focused = true;
+            Task::none()
+        }
+        Message::SearchBlurred => {
+            state.search_focused = false;
+            Task::none()
+        }
     }
+}
+
+fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
+    let filtered = state.filtered_media_entries();
+    let filtered_len = filtered.len();
+    if filtered_len > 0 {
+        let index = index.min(filtered_len - 1);
+        let entry = filtered[index];
+        let path = entry.path.clone();
+        let media_type = entry.media_type;
+
+        let start = index.saturating_sub(5);
+        let end = (index + 6).min(filtered_len);
+        let mut thumbnail_paths = Vec::new();
+        for i in start..end {
+            if i != index {
+                thumbnail_paths.push(filtered[i].path.clone());
+            }
+        }
+        drop(filtered);
+
+        state.selected_index = Some(index);
+        state.current_metadata = None;
+        state.selected_image_bytes = None;
+
+        let mut tasks = vec![load_metadata(state, index)];
+        tasks.push(load_full_image(path, media_type));
+
+        for p in thumbnail_paths {
+            if !state.thumbnail_cache.contains(&p) {
+                tasks.push(load_thumbnail(p));
+            }
+        }
+        Task::batch(tasks)
+    } else {
+        state.selected_index = None;
+        state.current_metadata = None;
+        state.selected_image_bytes = None;
+        Task::none()
+    }
+}
+
+fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
+    Task::perform(
+        async move {
+            let path_clone = path.clone();
+            let bytes = tokio::task::spawn_blocking(move || {
+                crate::subscriptions::prefetch::generate_thumbnail(&path_clone)
+            })
+            .await
+            .unwrap_or_default();
+            (path, bytes)
+        },
+        |(path, bytes)| Message::ThumbnailReady(path, bytes),
+    )
+}
+fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<Message> {
+    if media_type != MediaType::Image {
+        return Task::none();
+    }
+    Task::perform(
+        async move {
+            let path_clone = path.clone();
+            let res = tokio::task::spawn_blocking(move || {
+                media_sort_backend::media::image_decoder::load_image(&path_clone)
+                    .and_then(|img| {
+                        let mut buf = std::io::Cursor::new(Vec::new());
+                        img.write_to(&mut buf, image::ImageFormat::Png)?;
+                        Ok(buf.into_inner())
+                    })
+                    .map_err(|e| e.to_string())
+            })
+            .await
+            .unwrap_or_else(|e| Err(format!("Join error: {e}")));
+            (path, res)
+        },
+        |(path, res)| Message::ImageLoaded(path, res),
+    )
 }
 
 fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
@@ -735,7 +1126,7 @@ mod tests {
         assert!(!dest_file.exists());
         assert!(!state.history.can_undo());
         assert!(state.history.can_redo());
-        assert_eq!(state.selected_index, None);
+        assert_eq!(state.selected_index, Some(0));
 
         std::fs::remove_dir_all(&root).ok();
     }

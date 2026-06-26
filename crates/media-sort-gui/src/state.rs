@@ -31,10 +31,18 @@ pub struct AppState {
     pub current_metadata: Option<BTreeMap<String, BTreeMap<String, String>>>,
 
     pub show_settings: bool,
+    pub show_keybindings: bool,
 
     pub audio_player: Option<AudioPlayer>,
 
     pub thumbnail_cache: LruCache<PathBuf, Vec<u8>>,
+    pub selected_folder: Option<PathBuf>,
+    pub selected_image_bytes: Option<(PathBuf, Vec<u8>)>,
+    pub renaming_path: Option<PathBuf>,
+    pub rename_input_value: String,
+    pub creating_folder_parent: Option<PathBuf>,
+    pub create_folder_input: String,
+    pub search_focused: bool,
 }
 
 impl AppState {
@@ -63,6 +71,8 @@ impl AppState {
         let cache_size = NonZeroUsize::new((PREFETCH_RADIUS * 2).max(1))
             .unwrap_or_else(|| NonZeroUsize::new(1).unwrap());
 
+        let audio_player = AudioPlayer::new().ok();
+
         Self {
             history: History::new(),
             settings,
@@ -78,8 +88,16 @@ impl AppState {
             metadata_panel_expanded,
             current_metadata: None,
             show_settings: false,
-            audio_player: None,
+            show_keybindings: false,
+            audio_player,
             thumbnail_cache: LruCache::new(cache_size),
+            selected_folder: None,
+            selected_image_bytes: None,
+            renaming_path: None,
+            rename_input_value: String::new(),
+            creating_folder_parent: None,
+            create_folder_input: String::new(),
+            search_focused: false,
         }
     }
 
@@ -90,6 +108,8 @@ impl AppState {
         self.build_folder_tree(path);
         self.selected_index = None;
         self.current_metadata = None;
+        self.selected_folder = None;
+        self.selected_image_bytes = None;
     }
 
     pub fn scan_media(&mut self) {
@@ -176,6 +196,52 @@ impl AppState {
             .iter()
             .map(|p| p.path.display().to_string())
             .collect();
+    }
+
+    pub fn pin_folder(&mut self, path: &Path) {
+        let name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| path.display().to_string());
+        let pinned = PinnedFolder {
+            path: path.to_path_buf(),
+            name,
+            numeric_shortcut: None,
+        };
+        if !self.pinned_folders.iter().any(|p| p.path == pinned.path) {
+            self.pinned_folders.push(pinned);
+            self.settings.pinned_folders.paths = self
+                .pinned_folders
+                .iter()
+                .map(|p| p.path.display().to_string())
+                .collect();
+        }
+    }
+
+    pub fn move_pinned_folder_up(&mut self, path: &Path) {
+        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path) {
+            if pos > 0 {
+                self.pinned_folders.swap(pos, pos - 1);
+                self.settings.pinned_folders.paths = self
+                    .pinned_folders
+                    .iter()
+                    .map(|p| p.path.display().to_string())
+                    .collect();
+            }
+        }
+    }
+
+    pub fn move_pinned_folder_down(&mut self, path: &Path) {
+        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path) {
+            if pos < self.pinned_folders.len() - 1 {
+                self.pinned_folders.swap(pos, pos + 1);
+                self.settings.pinned_folders.paths = self
+                    .pinned_folders
+                    .iter()
+                    .map(|p| p.path.display().to_string())
+                    .collect();
+            }
+        }
     }
 
     #[allow(dead_code)]

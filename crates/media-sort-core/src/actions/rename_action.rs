@@ -58,6 +58,10 @@ impl RenameAction {
             display_name,
         })
     }
+
+    pub fn new_path(&self) -> &Path {
+        &self.new_path
+    }
 }
 
 impl ReversibleAction for RenameAction {

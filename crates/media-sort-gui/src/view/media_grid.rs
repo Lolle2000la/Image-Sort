@@ -21,22 +21,39 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         .into();
     }
 
-    let mut entries_column = column![].spacing(4);
-    let mut current_row = row![].spacing(8);
+    // Left navigation button
+    let prev_btn = button(text("\u{2190}").size(16))
+        .on_press(Message::GoLeft)
+        .style(iced::widget::button::secondary);
+
+    // Right navigation button
+    let next_btn = button(text("\u{2192}").size(16))
+        .on_press(Message::GoRight)
+        .style(iced::widget::button::secondary);
+
+    let mut entries_row = row![].spacing(8);
 
     for (i, entry) in filtered.iter().enumerate() {
         let is_selected = state.selected_index == Some(i);
 
-        let thumbnail = container(text("[IMG]").size(12))
+        let thumbnail_content: Element<'_, Message> = if let Some(bytes) = state.thumbnail_cache.peek(&entry.path) {
+            let handle = iced::widget::image::Handle::from_bytes(bytes.clone());
+            iced::widget::image(handle).width(Length::Fill).height(Length::Fill).into()
+        } else {
+            text("[IMG]").size(12).into()
+        };
+
+        let thumbnail = container(thumbnail_content)
             .center_x(60)
             .center_y(50)
             .width(Length::Fixed(60.0))
             .height(Length::Fixed(50.0))
-            .style(move |_theme| {
+            .style(move |theme: &iced::Theme| {
+                let palette = theme.palette();
                 let bg = if is_selected {
-                    Color::from_rgb(0.3, 0.5, 0.9)
+                    palette.primary
                 } else {
-                    Color::from_rgb(0.15, 0.15, 0.15)
+                    palette.background
                 };
                 iced::widget::container::Style {
                     background: Some(iced::Background::Color(bg)),
@@ -44,7 +61,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                         radius: 4.0.into(),
                         width: if is_selected { 2.0 } else { 0.0 },
                         color: if is_selected {
-                            Color::WHITE
+                            palette.text
                         } else {
                             Color::TRANSPARENT
                         },
@@ -64,13 +81,21 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .on_press(Message::SelectEntry(idx))
             .style(iced::widget::button::text);
 
-        current_row = current_row.push(entry_button);
-
-        if (i + 1) % 4 == 0 || i == filtered.len() - 1 {
-            entries_column = entries_column.push(current_row);
-            current_row = row![].spacing(8);
-        }
+        entries_row = entries_row.push(entry_button);
     }
 
-    scrollable(entries_column).height(Length::Fill).into()
+    let scrollable_row = scrollable(entries_row)
+        .direction(iced::widget::scrollable::Direction::Horizontal(iced::widget::scrollable::Scrollbar::default()));
+
+    container(
+        row![
+            prev_btn,
+            container(scrollable_row).width(Length::Fill),
+            next_btn
+        ]
+        .spacing(8)
+        .align_y(Alignment::Center)
+    )
+    .width(Length::Fill)
+    .into()
 }

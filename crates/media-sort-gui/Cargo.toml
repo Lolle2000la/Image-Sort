@@ -18,6 +18,7 @@ parking_lot.workspace = true
 crossbeam-channel.workspace = true
 strum.workspace = true
 image.workspace = true
+rfd = { workspace = true }
 
 [dev-dependencies]
 smol_str.workspace = true

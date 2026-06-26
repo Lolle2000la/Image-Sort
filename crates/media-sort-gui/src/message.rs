@@ -12,21 +12,33 @@ pub enum Message {
     Quit,
 
     OpenFolder(PathBuf),
+    PickFolder,
+    PickFolderResult(Option<PathBuf>),
     FolderSelected(PathBuf),
     ToggleFolderExpand(PathBuf),
 
     SelectEntry(usize),
     SearchQueryChanged(String),
+    TriggerRename,
 
     MoveToFolder(PathBuf),
     DeleteEntry(PathBuf),
     RenameEntry(PathBuf, String),
 
+    RenameInputChanged(String),
+    SubmitRename,
+    CancelRename,
+    CreateFolderInputChanged(String),
+    SubmitCreateFolder,
+    CancelCreateFolder,
+
     Undo,
     Redo,
 
     PinCurrentFolder,
+    PinSelectedFolder,
     UnpinCurrentFolder(PathBuf),
+    TriggerCreateFolder,
 
     ToggleMetadataPanel,
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
@@ -37,13 +49,24 @@ pub enum Message {
     OpenSettings,
     CloseSettings,
     ToggleDarkMode,
+    ToggleCheckForUpdates,
+    ToggleInstallPrerelease,
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
     SaveSettings,
+    OpenKeybindings,
+    CloseKeybindings,
 
     PlayAudio,
     PauseAudio,
     StopAudio,
 
     ThumbnailReady(PathBuf, Vec<u8>),
+    ImageLoaded(PathBuf, Result<Vec<u8>, String>),
+    GoLeft,
+    GoRight,
+    MoveMedia,
+    PinFolderShortcut(u8),
+    SearchFocused,
+    SearchBlurred,
 }

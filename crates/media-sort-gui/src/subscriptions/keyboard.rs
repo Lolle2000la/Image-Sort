@@ -63,16 +63,27 @@ pub fn keybinding_list(
         ("move_to_folder".into(), kb.move_to_folder.clone()),
         ("delete".into(), kb.delete.clone()),
         ("rename".into(), kb.rename.clone()),
+        ("go_left".into(), kb.go_left.clone()),
+        ("go_right".into(), kb.go_right.clone()),
+        ("create_folder".into(), kb.create_folder.clone()),
+        ("folder_up".into(), kb.folder_up.clone()),
+        ("folder_left".into(), kb.folder_left.clone()),
+        ("folder_down".into(), kb.folder_down.clone()),
+        ("folder_right".into(), kb.folder_right.clone()),
         ("undo".into(), kb.undo.clone()),
         ("redo".into(), kb.redo.clone()),
         ("open_folder".into(), kb.open_folder.clone()),
+        ("open_selected_folder".into(), kb.open_selected_folder.clone()),
+        ("pin".into(), kb.pin.clone()),
+        ("pin_selected".into(), kb.pin_selected.clone()),
+        ("unpin".into(), kb.unpin.clone()),
+        ("move_pinned_up".into(), kb.move_pinned_up.clone()),
+        ("move_pinned_down".into(), kb.move_pinned_down.clone()),
         ("search_images".into(), kb.search_images.clone()),
         (
             "toggle_metadata_panel".into(),
             kb.toggle_metadata_panel.clone(),
         ),
-        ("pin".into(), kb.pin.clone()),
-        ("unpin".into(), kb.unpin.clone()),
     ]
 }
 
@@ -95,13 +106,24 @@ pub fn update_keybinding(
         "move_to_folder" => kb.move_to_folder = binding,
         "delete" => kb.delete = binding,
         "rename" => kb.rename = binding,
+        "go_left" => kb.go_left = binding,
+        "go_right" => kb.go_right = binding,
+        "create_folder" => kb.create_folder = binding,
+        "folder_up" => kb.folder_up = binding,
+        "folder_left" => kb.folder_left = binding,
+        "folder_down" => kb.folder_down = binding,
+        "folder_right" => kb.folder_right = binding,
         "undo" => kb.undo = binding,
         "redo" => kb.redo = binding,
         "open_folder" => kb.open_folder = binding,
+        "open_selected_folder" => kb.open_selected_folder = binding,
+        "pin" => kb.pin = binding,
+        "pin_selected" => kb.pin_selected = binding,
+        "unpin" => kb.unpin = binding,
+        "move_pinned_up" => kb.move_pinned_up = binding,
+        "move_pinned_down" => kb.move_pinned_down = binding,
         "search_images" => kb.search_images = binding,
         "toggle_metadata_panel" => kb.toggle_metadata_panel = binding,
-        "pin" => kb.pin = binding,
-        "unpin" => kb.unpin = binding,
         _ => {}
     }
 }
@@ -243,7 +265,7 @@ mod tests {
 
         let state = AppState::new(SettingsStore::default());
         let list = keybinding_list(&state);
-        assert_eq!(list.len(), 10);
+        assert_eq!(list.len(), 21);
     }
 
     #[test]

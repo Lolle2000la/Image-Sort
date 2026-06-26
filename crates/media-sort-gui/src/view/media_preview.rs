@@ -1,4 +1,4 @@
-use iced::widget::{column, container, row, text};
+use iced::widget::{container, text};
 use iced::{Color, Element, Length};
 
 use crate::message::Message;
@@ -20,46 +20,57 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             .into();
     };
 
-    let type_label = match entry.media_type {
-        media_sort_core::media_type::MediaType::Image => "Image",
-        media_sort_core::media_type::MediaType::Video => "Video",
-        media_sort_core::media_type::MediaType::Audio => "Audio",
+    let preview_element: Element<'_, Message> = match entry.media_type {
+        media_sort_core::media_type::MediaType::Image => {
+            if let Some((ref path, ref bytes)) = state.selected_image_bytes {
+                if path == &entry.path {
+                    let handle = iced::widget::image::Handle::from_bytes(bytes.clone());
+                    iced::widget::image(handle)
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                        .into()
+                } else {
+                    container(text("Loading image...").size(14))
+                        .center_x(Length::Fill)
+                        .center_y(Length::Fill)
+                        .width(Length::Fill)
+                        .height(Length::Fill)
+                        .into()
+                }
+            } else {
+                container(text("Loading image...").size(14))
+                    .center_x(Length::Fill)
+                    .center_y(Length::Fill)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
+            }
+        }
+        media_sort_core::media_type::MediaType::Video => {
+            crate::widgets::video_canvas::video_canvas_view()
+        }
+        media_sort_core::media_type::MediaType::Audio => {
+            crate::widgets::video_canvas::audio_controls_view()
+        }
     };
 
-    let preview_placeholder = container(column![
-        text("Image preview").size(16),
-        text(format!("Type: {}", type_label)).size(12),
-    ])
-    .center_x(300)
-    .center_y(200)
-    .width(Length::Fixed(300.0))
-    .height(Length::Fixed(200.0))
-    .style(|_theme| iced::widget::container::Style {
-        background: Some(iced::Background::Color(Color::from_rgb(0.1, 0.1, 0.1))),
-        border: iced::Border {
-            radius: 8.0.into(),
-            width: 1.0,
-            color: Color::from_rgb(0.3, 0.3, 0.3),
-        },
-        ..iced::widget::container::Style::default()
-    });
-
-    let info = column![
-        text(&entry.file_name).size(18),
-        text(format!("Type: {}", type_label)).size(12),
-        text(format!("Path: {}", entry.path.display())).size(10),
-    ]
-    .spacing(4);
-
-    let delete_btn = iced::widget::button(text("Delete"))
-        .on_press(Message::DeleteEntry(entry.path.clone()))
-        .style(iced::widget::button::danger);
-
-    let action_row = row![delete_btn].spacing(8);
-
-    container(column![info, preview_placeholder, action_row].spacing(12))
-        .padding(12)
+    container(preview_element)
         .width(Length::Fill)
         .height(Length::Fill)
+        .center_x(Length::Fill)
+        .center_y(Length::Fill)
+        .style(|theme: &iced::Theme| {
+            let palette = theme.palette();
+            let border_color = Color { a: 0.2, ..palette.text };
+            iced::widget::container::Style {
+                background: Some(iced::Background::Color(palette.background)),
+                border: iced::Border {
+                    radius: 8.0.into(),
+                    width: 1.0,
+                    color: border_color,
+                },
+                ..iced::widget::container::Style::default()
+            }
+        })
         .into()
 }

@@ -6,65 +6,60 @@ use crate::state::AppState;
 use crate::view::folder_tree;
 
 pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
-    let current_path = state
-        .current_folder
-        .as_ref()
-        .map(|p| p.display().to_string())
-        .unwrap_or_else(|| "No folder selected".to_string());
+    let pin_btn = if state.current_folder.is_some() {
+        button(text("Pin (P)").size(12))
+            .on_press(Message::PinCurrentFolder)
+            .style(iced::widget::button::secondary)
+    } else {
+        button(text("Pin (P)").size(12))
+            .style(iced::widget::button::secondary)
+    };
 
-    let folder_label = text("Folders").size(18);
+    let pin_sel_btn = if state.selected_folder.is_some() {
+        button(text("Pin selected (F)").size(12))
+            .on_press(Message::PinSelectedFolder)
+            .style(iced::widget::button::secondary)
+    } else {
+        button(text("Pin selected (F)").size(12))
+            .style(iced::widget::button::secondary)
+    };
 
-    let path_display = text(format!("Path: {}", current_path)).size(12);
+    let unpin_btn = if let Some(ref current) = state.current_folder {
+        button(text("Unpin (U)").size(12))
+            .on_press(Message::UnpinCurrentFolder(current.clone()))
+            .style(iced::widget::button::secondary)
+    } else {
+        button(text("Unpin (U)").size(12))
+            .style(iced::widget::button::secondary)
+    };
 
-    let tree_content = folder_tree::folder_tree_view(&state.folder_tree);
+    let has_parent = state.selected_folder.is_some() || state.current_folder.is_some();
+    let create_folder_btn = if has_parent {
+        button(text("Create Folder (C)").size(12))
+            .on_press(Message::TriggerCreateFolder)
+            .style(iced::widget::button::secondary)
+            .width(Length::Fill)
+    } else {
+        button(text("Create Folder (C)").size(12))
+            .style(iced::widget::button::secondary)
+            .width(Length::Fill)
+    };
+
+    let buttons_row = row![pin_btn, pin_sel_btn, unpin_btn].spacing(4);
+
+    let tree_content = folder_tree::folder_tree_view(&state.folder_tree, state.selected_folder.as_deref());
     let scrollable_tree = scrollable(tree_content).height(Length::Fill);
-
-    let mut pin_buttons = row![].spacing(4);
-    if let Some(current) = &state.current_folder {
-        let is_pinned = state.pinned_folders.iter().any(|p| p.path == *current);
-
-        if is_pinned {
-            pin_buttons = pin_buttons.push(
-                button(text("Unpin"))
-                    .on_press(Message::UnpinCurrentFolder(current.clone()))
-                    .style(iced::widget::button::secondary),
-            );
-        } else {
-            pin_buttons = pin_buttons.push(
-                button(text("Pin"))
-                    .on_press(Message::PinCurrentFolder)
-                    .style(iced::widget::button::secondary),
-            );
-        }
-    }
-
-    let pinned_label = text("Pinned folders:").size(14);
-    let mut pinned_column = column![].spacing(2);
-    for pinned in &state.pinned_folders {
-        let path = pinned.path.clone();
-        pinned_column = pinned_column.push(
-            button(text(&pinned.name).size(13))
-                .on_press(Message::OpenFolder(path.clone()))
-                .style(iced::widget::button::text)
-                .width(Length::Fill),
-        );
-    }
 
     container(
         column![
-            folder_label,
-            path_display,
-            pin_buttons,
-            text("").height(8),
+            buttons_row,
+            create_folder_btn,
             scrollable_tree,
-            text("").height(8),
-            pinned_label,
-            pinned_column,
         ]
-        .spacing(4),
+        .spacing(6),
     )
-    .padding(8)
-    .width(Length::Fixed(220.0))
+    .padding(6)
+    .width(Length::Fixed(240.0))
     .height(Length::Fill)
     .into()
 }
