@@ -1,0 +1,18 @@
+[package]
+name = "media-sort-gui"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+media-sort-core = { path = "../media-sort-core" }
+media-sort-backend = { path = "../media-sort-backend" }
+iced.workspace = true
+iced_wgpu.workspace = true
+wgpu.workspace = true
+winit.workspace = true
+tokio.workspace = true
+lru.workspace = true
+env_logger.workspace = true
+log.workspace = true
+parking_lot.workspace = true
+crossbeam-channel.workspace = true
