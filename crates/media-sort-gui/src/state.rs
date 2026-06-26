@@ -244,7 +244,7 @@ fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
     false
 }
 
-fn detect_media_type(ext: &str) -> MediaType {
+pub(crate) fn detect_media_type(ext: &str) -> MediaType {
     let ext = ext.to_lowercase();
     for ty in [MediaType::Image, MediaType::Video, MediaType::Audio] {
         if ty.extensions().contains(&ext.as_str()) {
@@ -252,4 +252,152 @@ fn detect_media_type(ext: &str) -> MediaType {
         }
     }
     MediaType::Image
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use media_sort_core::media_type::MediaType;
+    use media_sort_core::models::MediaEntry;
+    use media_sort_core::settings::store::SettingsStore;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_detect_media_type_image() {
+        assert_eq!(detect_media_type("jpg"), MediaType::Image);
+        assert_eq!(detect_media_type("png"), MediaType::Image);
+        assert_eq!(detect_media_type("jpeg"), MediaType::Image);
+        assert_eq!(detect_media_type("gif"), MediaType::Image);
+    }
+
+    #[test]
+    fn test_detect_media_type_video() {
+        assert_eq!(detect_media_type("mp4"), MediaType::Video);
+        assert_eq!(detect_media_type("mkv"), MediaType::Video);
+        assert_eq!(detect_media_type("webm"), MediaType::Video);
+        assert_eq!(detect_media_type("mov"), MediaType::Video);
+    }
+
+    #[test]
+    fn test_detect_media_type_audio() {
+        assert_eq!(detect_media_type("mp3"), MediaType::Audio);
+        assert_eq!(detect_media_type("flac"), MediaType::Audio);
+        assert_eq!(detect_media_type("wav"), MediaType::Audio);
+        assert_eq!(detect_media_type("ogg"), MediaType::Audio);
+    }
+
+    #[test]
+    fn test_detect_media_type_unknown_fallback() {
+        assert_eq!(detect_media_type("xyz"), MediaType::Image);
+        assert_eq!(detect_media_type(""), MediaType::Image);
+        assert_eq!(detect_media_type("doc"), MediaType::Image);
+    }
+
+    #[test]
+    fn test_detect_media_type_case_insensitive() {
+        assert_eq!(detect_media_type("JPG"), MediaType::Image);
+        assert_eq!(detect_media_type("MP3"), MediaType::Audio);
+        assert_eq!(detect_media_type("Mp4"), MediaType::Video);
+    }
+
+    #[test]
+    fn test_filtered_media_entries_empty_query() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![
+            MediaEntry {
+                path: "/a.jpg".into(),
+                media_type: MediaType::Image,
+                file_name: "a.jpg".into(),
+            },
+            MediaEntry {
+                path: "/b.png".into(),
+                media_type: MediaType::Image,
+                file_name: "b.png".into(),
+            },
+        ];
+        state.search_query = String::new();
+        let results = state.filtered_media_entries();
+        assert_eq!(results.len(), 2);
+    }
+
+    #[test]
+    fn test_filtered_media_entries_with_query() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![
+            MediaEntry {
+                path: "/sunset.jpg".into(),
+                media_type: MediaType::Image,
+                file_name: "sunset.jpg".into(),
+            },
+            MediaEntry {
+                path: "/mountain.png".into(),
+                media_type: MediaType::Image,
+                file_name: "mountain.png".into(),
+            },
+        ];
+        state.search_query = "sun".into();
+        let results = state.filtered_media_entries();
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].file_name, "sunset.jpg");
+    }
+
+    #[test]
+    fn test_filtered_media_entries_case_insensitive() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![MediaEntry {
+            path: "/SUNSET.jpg".into(),
+            media_type: MediaType::Image,
+            file_name: "SUNSET.jpg".into(),
+        }];
+        state.search_query = "sun".into();
+        let results = state.filtered_media_entries();
+        assert_eq!(results.len(), 1);
+    }
+
+    #[test]
+    fn test_filtered_media_entries_no_match() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.media_entries = vec![MediaEntry {
+            path: "/test.jpg".into(),
+            media_type: MediaType::Image,
+            file_name: "test.jpg".into(),
+        }];
+        state.search_query = "nonexistent".into();
+        let results = state.filtered_media_entries();
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_app_state_new() {
+        let state = AppState::new(SettingsStore::default());
+        assert!(state.media_entries.is_empty());
+        assert!(state.search_query.is_empty());
+        assert!(state.selected_index.is_none());
+        assert!(!state.should_exit);
+        assert!(!state.show_settings);
+        assert!(!state.metadata_panel_expanded);
+        assert!(!state.waiting_for_key);
+        assert!(state.editing_keybinding.is_none());
+        assert_eq!(state.history.done_len(), 0);
+    }
+
+    #[test]
+    fn test_pin_current_folder() {
+        let mut state = AppState::new(SettingsStore::default());
+        let folder = PathBuf::from("/test/folder");
+        state.current_folder = Some(folder.clone());
+        state.pin_current_folder();
+        assert_eq!(state.pinned_folders.len(), 1);
+        assert_eq!(state.pinned_folders[0].path, folder);
+    }
+
+    #[test]
+    fn test_unpin_folder() {
+        let mut state = AppState::new(SettingsStore::default());
+        let folder = PathBuf::from("/test/folder");
+        state.current_folder = Some(folder.clone());
+        state.pin_current_folder();
+        state.unpin_folder(&folder);
+        assert!(state.pinned_folders.is_empty());
+    }
 }

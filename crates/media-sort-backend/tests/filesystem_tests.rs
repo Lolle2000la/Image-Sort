@@ -5,6 +5,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use media_sort_backend::filesystem::scanner::scan_media_files;
 use media_sort_backend::filesystem::trash_staging::TrashStaging;
+use media_sort_backend::filesystem::watcher::FileSystemEvent;
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
@@ -317,4 +318,60 @@ fn test_drop_flushes() {
     );
 
     TempDir::cleanup_staging_root();
+}
+
+// ============================================================
+// FileSystemEvent constructors
+// ============================================================
+
+#[test]
+fn test_file_system_event_added() {
+    let p = std::path::PathBuf::from("/tmp/test.txt");
+    let ev = FileSystemEvent::Added(p.clone());
+    match ev {
+        FileSystemEvent::Added(ref path) => assert_eq!(path, &p),
+        _ => panic!("Expected Added variant"),
+    }
+}
+
+#[test]
+fn test_file_system_event_removed() {
+    let p = std::path::PathBuf::from("/tmp/test.txt");
+    let ev = FileSystemEvent::Removed(p.clone());
+    match ev {
+        FileSystemEvent::Removed(ref path) => assert_eq!(path, &p),
+        _ => panic!("Expected Removed variant"),
+    }
+}
+
+#[test]
+fn test_file_system_event_modified() {
+    let p = std::path::PathBuf::from("/tmp/test.txt");
+    let ev = FileSystemEvent::Modified(p.clone());
+    match ev {
+        FileSystemEvent::Modified(ref path) => assert_eq!(path, &p),
+        _ => panic!("Expected Modified variant"),
+    }
+}
+
+#[test]
+fn test_file_system_event_renamed() {
+    let old = std::path::PathBuf::from("/tmp/old.txt");
+    let new = std::path::PathBuf::from("/tmp/new.txt");
+    let ev = FileSystemEvent::Renamed(old.clone(), new.clone());
+    match ev {
+        FileSystemEvent::Renamed(ref o, ref n) => {
+            assert_eq!(o, &old);
+            assert_eq!(n, &new);
+        }
+        _ => panic!("Expected Renamed variant"),
+    }
+}
+
+#[test]
+fn test_file_system_event_debug() {
+    let ev = FileSystemEvent::Modified(std::path::PathBuf::from("/tmp/test.txt"));
+    let dbg = format!("{:?}", ev);
+    assert!(dbg.contains("Modified"));
+    assert!(dbg.contains("test.txt"));
 }

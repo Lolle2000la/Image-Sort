@@ -2699,6 +2699,7 @@ dependencies = [
  "media-sort-backend",
  "media-sort-core",
  "parking_lot 0.12.5",
+ "smol_str",
  "strum",
  "tokio",
  "wgpu 24.0.5",

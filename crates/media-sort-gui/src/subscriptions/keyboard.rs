@@ -16,7 +16,7 @@ pub fn keyboard_subscription() -> Subscription<Message> {
     })
 }
 
-fn key_to_name(key: Key) -> Option<String> {
+pub(crate) fn key_to_name(key: Key) -> Option<String> {
     match &key {
         Key::Named(named) => {
             let name = match named {
@@ -119,4 +119,145 @@ pub fn format_keybinding(binding: &media_sort_core::settings::keybindings::KeyBi
     }
     parts.push(&binding.key);
     parts.join("+")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use media_sort_core::settings::keybindings::{KeyBinding, KeyBindings};
+    use smol_str::SmolStr;
+
+    #[test]
+    fn test_key_to_name_named_keys() {
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(
+                iced::keyboard::key::Named::Enter
+            )),
+            Some("Enter".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(
+                iced::keyboard::key::Named::Space
+            )),
+            Some("Space".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(
+                iced::keyboard::key::Named::ArrowUp
+            )),
+            Some("Up".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(
+                iced::keyboard::key::Named::Escape
+            )),
+            Some("Esc".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(iced::keyboard::key::Named::F1)),
+            Some("F1".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Named(iced::keyboard::key::Named::F12)),
+            Some("F12".into())
+        );
+    }
+
+    #[test]
+    fn test_key_to_name_character() {
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Character(SmolStr::new("a"))),
+            Some("A".into())
+        );
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Character(SmolStr::new("z"))),
+            Some("Z".into())
+        );
+    }
+
+    #[test]
+    fn test_key_to_name_unknown() {
+        assert_eq!(key_to_name(iced::keyboard::Key::Unidentified), None);
+        assert_eq!(
+            key_to_name(iced::keyboard::Key::Character(SmolStr::new(""))),
+            None
+        );
+    }
+
+    #[test]
+    fn test_format_keybinding_plain() {
+        let kb = KeyBinding::new("A");
+        assert_eq!(format_keybinding(&kb), "A");
+    }
+
+    #[test]
+    fn test_format_keybinding_ctrl() {
+        let kb = KeyBinding::new("X").with_ctrl();
+        assert_eq!(format_keybinding(&kb), "Ctrl+X");
+    }
+
+    #[test]
+    fn test_format_keybinding_shift() {
+        let mut kb = KeyBinding::new("A");
+        kb.shift = true;
+        assert_eq!(format_keybinding(&kb), "Shift+A");
+    }
+
+    #[test]
+    fn test_format_keybinding_ctrl_shift() {
+        let kb = KeyBinding::new("Z").with_ctrl().with_shift();
+        assert_eq!(format_keybinding(&kb), "Ctrl+Shift+Z");
+    }
+
+    #[test]
+    fn test_format_keybinding_all_modifiers() {
+        let kb = KeyBinding::new("Delete")
+            .with_ctrl()
+            .with_shift()
+            .with_alt();
+        assert_eq!(format_keybinding(&kb), "Ctrl+Shift+Alt+Delete");
+    }
+
+    #[test]
+    fn test_update_keybinding_known_name() {
+        let mut kb = KeyBindings::default();
+        update_keybinding(&mut kb, "undo", "Z", true, false, false);
+        assert_eq!(kb.undo.key, "Z");
+        assert!(kb.undo.ctrl);
+        assert!(!kb.undo.shift);
+        assert!(!kb.undo.alt);
+    }
+
+    #[test]
+    fn test_update_keybinding_unknown_name() {
+        let mut kb = KeyBindings::default();
+        let saved = kb.redo.key.clone();
+        update_keybinding(&mut kb, "nonexistent_action", "X", false, false, false);
+        assert_eq!(kb.redo.key, saved);
+    }
+
+    #[test]
+    fn test_keybinding_list_length() {
+        use crate::state::AppState;
+        use media_sort_core::settings::store::SettingsStore;
+
+        let state = AppState::new(SettingsStore::default());
+        let list = keybinding_list(&state);
+        assert_eq!(list.len(), 10);
+    }
+
+    #[test]
+    fn test_keybinding_list_has_known_actions() {
+        use crate::state::AppState;
+        use media_sort_core::settings::store::SettingsStore;
+
+        let state = AppState::new(SettingsStore::default());
+        let list = keybinding_list(&state);
+        let names: Vec<&str> = list.iter().map(|(name, _)| name.as_str()).collect();
+        assert!(names.contains(&"undo"));
+        assert!(names.contains(&"redo"));
+        assert!(names.contains(&"delete"));
+        assert!(names.contains(&"rename"));
+        assert!(names.contains(&"move_to_folder"));
+    }
 }

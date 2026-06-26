@@ -10,7 +10,11 @@ use media_sort_core::history::History;
 use media_sort_core::l10n::Localization;
 use media_sort_core::media_type::MediaType;
 use media_sort_core::path_utils;
-use media_sort_core::settings::store::SettingsStore;
+use media_sort_core::settings::keybindings::KeyBinding;
+use media_sort_core::settings::metadata_panel::MetadataPanelSettings;
+use media_sort_core::settings::pinned_folders::PinnedFoldersSettings;
+use media_sort_core::settings::store::{SettingsError, SettingsStore};
+use media_sort_core::settings::window_position::WindowPosition;
 
 struct MockAction {
     name: String,
@@ -702,4 +706,187 @@ fn test_action_error_from_io() {
     let action_err = ActionError::from(io_err);
     assert!(matches!(action_err, ActionError::Io(_)));
     assert!(action_err.to_string().contains("i/o error"));
+}
+
+// ============================================================================
+// KeyBinding tests
+// ============================================================================
+
+#[test]
+fn test_keybinding_new() {
+    let kb = KeyBinding::new("Enter");
+    assert_eq!(kb.key, "Enter");
+    assert!(!kb.ctrl);
+    assert!(!kb.shift);
+    assert!(!kb.alt);
+    assert!(!kb.meta);
+}
+
+#[test]
+fn test_keybinding_builders() {
+    let kb = KeyBinding::new("A").with_ctrl().with_shift().with_alt();
+    assert_eq!(kb.key, "A");
+    assert!(kb.ctrl);
+    assert!(kb.shift);
+    assert!(kb.alt);
+    assert!(!kb.meta);
+}
+
+#[test]
+fn test_keybinding_serde_roundtrip() {
+    let kb = KeyBinding::new("X").with_ctrl();
+    let json = serde_json::to_string(&kb).unwrap();
+    let kb2: KeyBinding = serde_json::from_str(&json).unwrap();
+    assert_eq!(kb2.key, "X");
+    assert!(kb2.ctrl);
+    assert!(!kb2.shift);
+    assert!(!kb2.alt);
+}
+
+// ============================================================================
+// SettingsError tests
+// ============================================================================
+
+#[test]
+fn test_settings_error_display() {
+    use std::io;
+
+    let io_err = io::Error::new(io::ErrorKind::NotFound, "test io");
+    let se = SettingsError::Io(io_err);
+    assert!(se.to_string().contains("IO error"));
+
+    let json_err = serde_json::from_str::<serde_json::Value>("invalid").unwrap_err();
+    let se2 = SettingsError::Serde(json_err);
+    assert!(se2.to_string().contains("Serialization error"));
+}
+
+#[test]
+fn test_settings_error_from_io() {
+    use std::io;
+
+    let io_err = io::Error::new(io::ErrorKind::Other, "test");
+    let se: SettingsError = io_err.into();
+    assert!(matches!(se, SettingsError::Io(_)));
+}
+
+#[test]
+fn test_settings_error_from_serde() {
+    let json_err = serde_json::from_str::<i32>("not a number").unwrap_err();
+    let se: SettingsError = json_err.into();
+    assert!(matches!(se, SettingsError::Serde(_)));
+}
+
+// ============================================================================
+// Sub-settings defaults tests
+// ============================================================================
+
+#[test]
+fn test_pinned_folders_settings_default() {
+    let pfs = PinnedFoldersSettings::default();
+    assert!(pfs.paths.is_empty());
+}
+
+#[test]
+fn test_window_position_default() {
+    let wp = WindowPosition::default();
+    assert_eq!(wp.left, 100);
+    assert_eq!(wp.top, 100);
+    assert_eq!(wp.width, 1000);
+    assert_eq!(wp.height, 600);
+    assert!(!wp.maximized);
+    assert_eq!(wp.screen_count, 1);
+}
+
+#[test]
+fn test_metadata_panel_settings_default() {
+    let mps = MetadataPanelSettings::default();
+    assert!(!mps.is_expanded);
+    assert_eq!(mps.panel_width, 300);
+}
+
+// ============================================================================
+// MockRestoreHandle flush test
+// ============================================================================
+
+#[test]
+fn test_mock_trash_flush() {
+    let mut handle = MockRestoreHandle::new();
+    assert!(!handle.trash_was_called());
+    handle.flush_to_native_trash().unwrap();
+    assert!(handle.trash_was_called());
+}
+
+// ============================================================================
+// MoveAction accessor tests
+// ============================================================================
+
+#[test]
+fn test_move_action_accessors() {
+    let dir = temp_subdir();
+    let src_file = dir.join("accessor_test.txt");
+    let dst_dir = dir.join("dest");
+    std::fs::create_dir(&dst_dir).unwrap();
+    std::fs::write(&src_file, b"test").unwrap();
+
+    let action = MoveAction::new(&src_file, &dst_dir).unwrap();
+    assert_eq!(action.old_path(), src_file.canonicalize().unwrap());
+    assert_eq!(
+        action.new_path().parent().unwrap(),
+        dst_dir.canonicalize().unwrap()
+    );
+}
+
+// ============================================================================
+// path_utils edge case tests
+// ============================================================================
+
+#[test]
+fn test_paths_equal_same_non_existent() {
+    let p = PathBuf::from("/nonexistent/unique/test/file.txt");
+    assert!(path_utils::paths_equal(&p, &p));
+}
+
+#[test]
+fn test_paths_equal_one_canonicalize_fails() {
+    let dir = temp_subdir();
+    let existing = dir.join("exists.txt");
+    std::fs::write(&existing, b"test").unwrap();
+    let nonexistent = PathBuf::from("/nonexistent/other.txt");
+    assert!(!path_utils::paths_equal(&existing, &nonexistent));
+}
+
+// ============================================================================
+// History interleaved undo/redo tests
+// ============================================================================
+
+#[test]
+fn test_history_interleaved_undo_redo() {
+    let mut history = History::new();
+    let mut mock = MockAction::new("A");
+    mock.execute().unwrap();
+    history.push_executed(Box::new(mock));
+    let mut mock2 = MockAction::new("B");
+    mock2.execute().unwrap();
+    history.push_executed(Box::new(mock2));
+    let mut mock3 = MockAction::new("C");
+    mock3.execute().unwrap();
+    history.push_executed(Box::new(mock3));
+
+    assert_eq!(history.done_len(), 3);
+
+    history.undo().unwrap();
+    assert_eq!(history.done_len(), 2);
+    assert_eq!(history.undone_len(), 1);
+
+    history.undo().unwrap();
+    assert_eq!(history.done_len(), 1);
+    assert_eq!(history.undone_len(), 2);
+
+    history.redo().unwrap();
+    assert_eq!(history.done_len(), 2);
+    assert_eq!(history.undone_len(), 1);
+
+    history.undo().unwrap();
+    assert_eq!(history.done_len(), 1);
+    assert_eq!(history.undone_len(), 2);
 }

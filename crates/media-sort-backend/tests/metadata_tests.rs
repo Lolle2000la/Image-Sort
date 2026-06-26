@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use image::GenericImageView;
+use media_sort_backend::filesystem::scanner;
+use media_sort_backend::filesystem::trash_staging::TrashStaging;
 use media_sort_backend::media::image_decoder;
 use media_sort_backend::media::thumbnail;
 use media_sort_backend::metadata::audio_meta::extract_audio_metadata;
@@ -131,4 +133,84 @@ fn test_extract_video_from_non_video() {
     let path = fixtures_dir().join("test_image.jpg");
     let result = extract_video_metadata(&path);
     assert!(result.is_ok());
+}
+
+// ============================================================
+// Additional tests from audit
+// ============================================================
+
+#[test]
+fn test_extract_audio_metadata_unknown_extension() {
+    let dir = std::env::temp_dir().join("mediasort_audio_test");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("test.xyz");
+    std::fs::write(&path, b"not audio data").unwrap();
+    let result = extract_audio_metadata(&path);
+    assert!(result.is_ok());
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_extract_audio_metadata_nonexistent() {
+    let result = extract_audio_metadata(Path::new("/nonexistent/audio_xyz.mp3"));
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_extract_video_metadata_nonexistent() {
+    let result = extract_video_metadata(Path::new("/nonexistent/video_xyz.mp4"));
+    assert!(result.is_err());
+}
+
+// ============================================================
+// Scanner edge cases
+// ============================================================
+
+#[test]
+fn test_scan_nonexistent_directory() {
+    let results = scanner::scan_media_files(Path::new("/nonexistent/dir_12345_xyz"));
+    assert!(results.is_empty());
+}
+
+// ============================================================
+// Image decoder error paths
+// ============================================================
+
+#[test]
+fn test_decode_dimensions_nonexistent() {
+    let result = image_decoder::decode_image_dimensions(Path::new("/nonexistent/img.jpg"));
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_image_generate_thumbnail_nonexistent() {
+    let result = image_decoder::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
+    assert!(result.is_err());
+}
+
+// ============================================================
+// Thumbnail error paths
+// ============================================================
+
+#[test]
+fn test_thumbnail_generate_nonexistent() {
+    let result = thumbnail::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_thumbnail_dimensions_nonexistent() {
+    let result = thumbnail::thumbnail_dimensions(Path::new("/nonexistent/img.jpg"));
+    assert!(result.is_err());
+}
+
+// ============================================================
+// Trash staging: stage_file with missing source
+// ============================================================
+
+#[test]
+fn test_trash_stage_nonexistent_file() {
+    let staging = TrashStaging::new().unwrap();
+    let result = staging.stage_file(Path::new("/nonexistent/file_xyz.txt"));
+    assert!(result.is_err());
 }

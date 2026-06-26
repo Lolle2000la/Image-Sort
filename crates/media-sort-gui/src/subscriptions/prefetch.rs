@@ -28,3 +28,30 @@ pub fn prefetch_subscription() -> iced::Subscription<Message> {
         }),
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_thumbnail_valid_image() {
+        let dir = std::env::temp_dir().join("mediasort_test_thumb");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.png");
+
+        let img = image::RgbaImage::from_pixel(32, 32, image::Rgba([255, 0, 0, 255]));
+        img.save(&path).unwrap();
+
+        let result = generate_thumbnail(&path);
+        assert!(!result.is_empty());
+        assert_eq!(&result[0..4], &[0x89, 0x50, 0x4E, 0x47]);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_generate_thumbnail_nonexistent() {
+        let result = generate_thumbnail(&std::path::PathBuf::from("/nonexistent/image_xyz.jpg"));
+        assert!(result.is_empty());
+    }
+}
