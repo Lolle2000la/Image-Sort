@@ -1,3 +1,3 @@
+pub mod audio_meta;
 pub mod image_meta;
 pub mod video_meta;
-pub mod audio_meta;

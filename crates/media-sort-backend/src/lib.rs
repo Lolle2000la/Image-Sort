@@ -1,4 +1,4 @@
 pub mod filesystem;
-pub mod metadata;
 pub mod media;
+pub mod metadata;
 pub mod platform;

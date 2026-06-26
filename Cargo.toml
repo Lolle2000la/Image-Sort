@@ -27,6 +27,7 @@ fluent-bundle = "0.16"
 unic-langid = { version = "0.9", features = ["macros"] }
 once_cell = "1"
 strum = { version = "0.26", features = ["derive"] }
+dirs = "5"
 
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "tiff", "ico", "webp"] }
 notify = { version = "7", default-features = false, features = ["macos_kqueue"] }

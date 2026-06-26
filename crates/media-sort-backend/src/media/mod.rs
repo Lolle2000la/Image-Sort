@@ -1,5 +1,5 @@
-pub mod image_decoder;
-pub mod video_decoder;
 pub mod audio_decoder;
-pub mod thumbnail;
+pub mod image_decoder;
 pub mod mpv_context;
+pub mod thumbnail;
+pub mod video_decoder;

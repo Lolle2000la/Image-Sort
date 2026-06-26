@@ -14,3 +14,4 @@ fluent-bundle.workspace = true
 unic-langid.workspace = true
 once_cell.workspace = true
 strum.workspace = true
+dirs.workspace = true
