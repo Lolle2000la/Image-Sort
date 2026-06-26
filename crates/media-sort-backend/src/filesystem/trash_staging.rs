@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 
 use media_sort_core::actions::delete_action::TrashRestoreHandle;
 use media_sort_core::actions::reversible::ActionError;
+use media_sort_core::path_utils;
 use parking_lot::Mutex;
 
 pub struct TrashStaging {
@@ -73,7 +74,7 @@ impl TrashStaging {
         fs::create_dir_all(&staging_dir).map_err(ActionError::Io)?;
 
         let staging_path = staging_dir.join(file_name);
-        fs::rename(path, &staging_path).map_err(ActionError::Io)?;
+        path_utils::rename_or_copy_and_delete(path, &staging_path).map_err(ActionError::Io)?;
 
         let staged = StagedFile {
             original_path: path.to_path_buf(),
@@ -107,7 +108,8 @@ impl TrashRestoreHandle for StagingRestoreHandle {
         if self.flushed {
             return Err(ActionError::RestorationFailed("already flushed".into()));
         }
-        fs::rename(&self.staging_path, &self.original_path).map_err(ActionError::Io)?;
+        path_utils::rename_or_copy_and_delete(&self.staging_path, &self.original_path)
+            .map_err(ActionError::Io)?;
         Ok(())
     }
 

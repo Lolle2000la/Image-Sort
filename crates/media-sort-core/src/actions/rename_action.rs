@@ -66,13 +66,13 @@ impl ReversibleAction for RenameAction {
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
-        std::fs::rename(&self.old_path, &self.new_path)?;
+        crate::path_utils::rename_or_copy_and_delete(&self.old_path, &self.new_path)?;
         self.executed = true;
         Ok(())
     }
 
     fn rollback(&mut self) -> Result<(), ActionError> {
-        std::fs::rename(&self.new_path, &self.old_path)?;
+        crate::path_utils::rename_or_copy_and_delete(&self.new_path, &self.old_path)?;
         self.executed = false;
         Ok(())
     }

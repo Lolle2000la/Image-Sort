@@ -849,4 +849,99 @@ mod tests {
 
         std::fs::remove_dir_all(&root).ok();
     }
+
+    #[test]
+    fn test_move_across_filesystems() {
+        let root = std::env::temp_dir().join(format!("mediasort_xdev_src_{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("test.jpg");
+        std::fs::write(&file, b"cross-filesystem data").unwrap();
+
+        let dest = dirs::data_local_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(format!("mediasort_xdev_dst_{}", std::process::id()));
+        std::fs::create_dir_all(&dest).unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+
+        assert!(!file.exists());
+        let moved_file = dest.join("test.jpg");
+        assert!(moved_file.exists());
+        assert!(state.history.can_undo());
+
+        let content = std::fs::read_to_string(&moved_file).unwrap();
+        assert_eq!(content, "cross-filesystem data");
+
+        std::fs::remove_dir_all(&root).ok();
+        std::fs::remove_dir_all(&dest).ok();
+    }
+
+    #[test]
+    fn test_rename_or_copy_same_filesystem() {
+        let dir = std::env::temp_dir().join(format!("mediasort_samefs_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("source.txt");
+        let dst = dir.join("dest.txt");
+        std::fs::write(&src, b"test data").unwrap();
+
+        media_sort_core::path_utils::rename_or_copy_and_delete(&src, &dst).unwrap();
+        assert!(!src.exists());
+        assert!(dst.exists());
+        assert_eq!(std::fs::read_to_string(&dst).unwrap(), "test data");
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_rename_or_copy_cross_filesystem() {
+        let src_dir =
+            std::env::temp_dir().join(format!("mediasort_xdev_test_src_{}", std::process::id()));
+        std::fs::create_dir_all(&src_dir).unwrap();
+        let src = src_dir.join("xdev_file.txt");
+        std::fs::write(&src, b"cross-fs content").unwrap();
+
+        let dst_dir = dirs::config_dir()
+            .unwrap_or_else(|| PathBuf::from("."))
+            .join(format!("mediasort_xdev_test_dst_{}", std::process::id()));
+        std::fs::create_dir_all(&dst_dir).unwrap();
+        let dst = dst_dir.join("xdev_file.txt");
+
+        let result = media_sort_core::path_utils::rename_or_copy_and_delete(&src, &dst);
+        assert!(result.is_ok(), "Failed: {:?}", result.err());
+        assert!(!src.exists());
+        assert!(dst.exists());
+        assert_eq!(std::fs::read_to_string(&dst).unwrap(), "cross-fs content");
+
+        std::fs::remove_dir_all(&src_dir).ok();
+        let _ = std::fs::remove_file(&dst);
+        let _ = std::fs::remove_dir(&dst_dir);
+    }
+
+    #[test]
+    fn test_delete_undo_cross_filesystem() {
+        let root = std::env::temp_dir().join(format!("mediasort_del_xdev_{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("delete_me.jpg");
+        std::fs::write(&file, b"delete me data").unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        assert!(file.exists());
+
+        let _task = update(&mut state, Message::DeleteEntry(file.clone()));
+        assert!(!file.exists());
+        assert!(state.history.can_undo());
+
+        let _task = update(&mut state, Message::Undo);
+        assert!(file.exists());
+        assert_eq!(std::fs::read_to_string(&file).unwrap(), "delete me data");
+        assert!(!state.history.can_undo());
+        assert!(state.history.can_redo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
 }
