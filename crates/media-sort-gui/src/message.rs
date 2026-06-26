@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Instant;
 
 use media_sort_core::settings::store::SettingsStore;
@@ -8,4 +9,21 @@ pub enum Message {
     Tick(Instant),
     SettingsLoaded(Box<Result<SettingsStore, String>>),
     Quit,
+
+    OpenFolder(PathBuf),
+    FolderSelected(PathBuf),
+    ToggleFolderExpand(PathBuf),
+
+    SelectEntry(usize),
+    SearchQueryChanged(String),
+
+    MoveToFolder(PathBuf),
+    DeleteEntry(PathBuf),
+    RenameEntry(PathBuf, String),
+
+    Undo,
+    Redo,
+
+    PinCurrentFolder,
+    UnpinCurrentFolder(PathBuf),
 }

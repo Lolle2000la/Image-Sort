@@ -2,6 +2,8 @@ mod app;
 mod message;
 mod state;
 mod update;
+mod view;
+mod widgets;
 
 use media_sort_core::settings::store::SettingsStore;
 
