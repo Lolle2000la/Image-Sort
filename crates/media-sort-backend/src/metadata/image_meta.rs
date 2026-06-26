@@ -38,9 +38,10 @@ pub fn extract_image_metadata(
 
     let file = std::fs::File::open(path)?;
     let mut buf_reader = std::io::BufReader::new(&file);
-    let exif = Reader::new()
-        .read_from_container(&mut buf_reader)
-        .map_err(|_| MetadataError::ExtractionFailed)?;
+    let exif = match Reader::new().read_from_container(&mut buf_reader) {
+        Ok(exif) => exif,
+        Err(_) => return Ok(BTreeMap::new()),
+    };
 
     let mut dirs: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
 
