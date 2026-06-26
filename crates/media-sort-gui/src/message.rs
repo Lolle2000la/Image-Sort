@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
@@ -26,4 +27,23 @@ pub enum Message {
 
     PinCurrentFolder,
     UnpinCurrentFolder(PathBuf),
+
+    ToggleMetadataPanel,
+    MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
+
+    EditKeyBinding(usize),
+    KeyCaptured(String, bool, bool, bool),
+
+    OpenSettings,
+    CloseSettings,
+    ToggleDarkMode,
+    ToggleAnimateGifs,
+    ToggleAnimateThumbnails,
+    SaveSettings,
+
+    PlayAudio,
+    PauseAudio,
+    StopAudio,
+
+    ThumbnailReady(PathBuf, Vec<u8>),
 }

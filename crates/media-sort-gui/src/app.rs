@@ -1,14 +1,14 @@
-use std::path::PathBuf;
-
 use iced::window;
 use iced::{Element, Subscription, Task};
 
 use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
+use media_sort_core::media_type::MediaType;
 
 use crate::message::Message;
 use crate::state::AppState;
+use crate::subscriptions::keyboard;
 use crate::view;
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
@@ -50,14 +50,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
 
         Message::SelectEntry(index) => {
-            if index < state.filtered_media_entries().len() {
+            let filtered_len = state.filtered_media_entries().len();
+            if index < filtered_len {
                 state.selected_index = Some(index);
+                state.current_metadata = None;
+                return load_metadata(state, index);
             }
             Task::none()
         }
         Message::SearchQueryChanged(query) => {
             state.search_query = query;
             state.selected_index = None;
+            state.current_metadata = None;
             Task::none()
         }
 
@@ -73,6 +77,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 state.history.push_executed(Box::new(action));
                                 state.scan_media();
                                 state.selected_index = None;
+                                state.current_metadata = None;
                             }
                         }
                         Err(e) => {
@@ -93,6 +98,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         state.history.push_executed(Box::new(action));
                         state.scan_media();
                         state.selected_index = None;
+                        state.current_metadata = None;
                     }
                     Err(e) => {
                         log::error!("Cannot stage file for deletion: {e}");
@@ -127,6 +133,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             } else {
                 state.scan_media();
                 state.selected_index = None;
+                state.current_metadata = None;
             }
             Task::none()
         }
@@ -136,6 +143,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             } else {
                 state.scan_media();
                 state.selected_index = None;
+                state.current_metadata = None;
             }
             Task::none()
         }
@@ -150,81 +158,188 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+
+        Message::ToggleMetadataPanel => {
+            state.metadata_panel_expanded = !state.metadata_panel_expanded;
+            state.settings.metadata_panel.is_expanded = state.metadata_panel_expanded;
+            let _ = state.settings.save();
+            Task::none()
+        }
+
+        Message::MetadataLoaded(result) => match result {
+            Ok(metadata) => {
+                state.current_metadata = Some(metadata);
+                Task::none()
+            }
+            Err(err) => {
+                log::error!("Metadata load failed: {err}");
+                state.current_metadata = None;
+                Task::none()
+            }
+        },
+
+        Message::EditKeyBinding(index) => {
+            state.editing_keybinding = Some(index);
+            state.waiting_for_key = true;
+            Task::none()
+        }
+        Message::KeyCaptured(key, ctrl, shift, alt) => {
+            if state.waiting_for_key {
+                if let Some(idx) = state.editing_keybinding {
+                    let bindings = keyboard::keybinding_list(state);
+                    if idx < bindings.len() {
+                        let (name, _) = &bindings[idx];
+                        keyboard::update_keybinding(
+                            &mut state.settings.keybindings,
+                            name,
+                            &key,
+                            ctrl,
+                            shift,
+                            alt,
+                        );
+                        let _ = state.settings.save();
+                    }
+                }
+                state.waiting_for_key = false;
+                state.editing_keybinding = None;
+                return Task::none();
+            }
+
+            let bindings = keyboard::keybinding_list(state);
+            for (name, binding) in &bindings {
+                if binding.key == key
+                    && binding.ctrl == ctrl
+                    && binding.shift == shift
+                    && binding.alt == alt
+                {
+                    match name.as_str() {
+                        "undo" if state.history.can_undo() => {
+                            return Task::done(Message::Undo);
+                        }
+                        "redo" if state.history.can_redo() => {
+                            return Task::done(Message::Redo);
+                        }
+                        "open_folder" => {
+                            if let Ok(p) = std::env::current_dir() {
+                                return Task::done(Message::OpenFolder(p));
+                            }
+                        }
+                        "toggle_metadata_panel" => {
+                            return Task::done(Message::ToggleMetadataPanel);
+                        }
+                        "pin" => {
+                            return Task::done(Message::PinCurrentFolder);
+                        }
+                        "unpin" => {
+                            if let Some(ref c) = state.current_folder {
+                                return Task::done(Message::UnpinCurrentFolder(c.clone()));
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            Task::none()
+        }
+
+        Message::OpenSettings => {
+            state.show_settings = true;
+            Task::none()
+        }
+        Message::CloseSettings => {
+            state.show_settings = false;
+            state.editing_keybinding = None;
+            state.waiting_for_key = false;
+            Task::none()
+        }
+        Message::ToggleDarkMode => {
+            state.settings.general.dark_mode = !state.settings.general.dark_mode;
+            Task::none()
+        }
+        Message::ToggleAnimateGifs => {
+            state.settings.general.animate_gifs = !state.settings.general.animate_gifs;
+            Task::none()
+        }
+        Message::ToggleAnimateThumbnails => {
+            state.settings.general.animate_gif_thumbnails =
+                !state.settings.general.animate_gif_thumbnails;
+            Task::none()
+        }
+        Message::SaveSettings => {
+            let _ = state.settings.save();
+            state.show_settings = false;
+            Task::none()
+        }
+
+        Message::PlayAudio => {
+            if let Some(ref player) = state.audio_player {
+                if let Some(index) = state.selected_index {
+                    let entries = state.filtered_media_entries();
+                    if let Some(entry) = entries.get(index) {
+                        if let Err(e) = player.play(&entry.path) {
+                            log::error!("Audio play failed: {e}");
+                        }
+                    }
+                }
+            }
+            Task::none()
+        }
+        Message::PauseAudio => {
+            if let Some(ref player) = state.audio_player {
+                player.pause();
+            }
+            Task::none()
+        }
+        Message::StopAudio => {
+            if let Some(ref player) = state.audio_player {
+                player.stop();
+            }
+            Task::none()
+        }
+
+        Message::ThumbnailReady(path, data) => {
+            if !data.is_empty() {
+                state.thumbnail_cache.push(path, data);
+            }
+            Task::none()
+        }
     }
 }
 
-pub fn view(state: &AppState) -> Element<'_, Message> {
-    use iced::widget::{column, container, horizontal_rule, row, text};
+fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
+    let entries = state.filtered_media_entries();
+    let Some(entry) = entries.get(index) else {
+        return Task::none();
+    };
 
-    let folder_panel = view::folder_panel::folder_panel_view(state);
+    let path = entry.path.clone();
+    let media_type = entry.media_type;
 
-    let search_bar = view::search_bar::search_bar_view(&state.search_query);
-
-    let media_grid = view::media_grid::media_grid_view(state);
-    let media_preview = view::media_preview::media_preview_view(state);
-
-    let mut history_row = row![].spacing(8);
-    if state.history.can_undo() {
-        history_row = history_row.push(
-            iced::widget::button(text(format!(
-                "Undo ({})",
-                state.history.last_done_name().unwrap_or("")
-            )))
-            .on_press(Message::Undo)
-            .style(iced::widget::button::secondary),
-        );
-    }
-    if state.history.can_redo() {
-        history_row = history_row.push(
-            iced::widget::button(text(format!(
-                "Redo ({})",
-                state.history.last_undone_name().unwrap_or("")
-            )))
-            .on_press(Message::Redo)
-            .style(iced::widget::button::secondary),
-        );
-    }
-
-    let main_content = column![
-        search_bar,
-        horizontal_rule(1),
-        row![
-            column![media_grid]
-                .width(iced::Length::FillPortion(1))
-                .height(iced::Length::Fill),
-            column![media_preview]
-                .width(iced::Length::FillPortion(1))
-                .height(iced::Length::Fill),
-        ]
-        .height(iced::Length::Fill)
-        .spacing(8),
-        horizontal_rule(1),
-        history_row,
-    ]
-    .spacing(4);
-
-    let top_row = row![text("Media Sort v3.0.0").size(18), {
-        iced::widget::button(text("Open Folder"))
-            .on_press({
-                let path = std::env::current_dir().ok();
-                Message::OpenFolder(path.unwrap_or_else(|| PathBuf::from(".")))
+    Task::perform(
+        async move {
+            tokio::task::spawn_blocking(move || match media_type {
+                MediaType::Image => {
+                    media_sort_backend::metadata::image_meta::extract_image_metadata(&path)
+                        .map_err(|e| e.to_string())
+                }
+                MediaType::Audio => {
+                    media_sort_backend::metadata::audio_meta::extract_audio_metadata(&path)
+                        .map_err(|e| e.to_string())
+                }
+                MediaType::Video => {
+                    media_sort_backend::metadata::video_meta::extract_video_metadata(&path)
+                        .map_err(|e| e.to_string())
+                }
             })
-            .style(iced::widget::button::primary)
-    },]
-    .spacing(8)
-    .align_y(iced::Alignment::Center);
+            .await
+            .unwrap_or_else(|e| Err(format!("Join error: {e}")))
+        },
+        Message::MetadataLoaded,
+    )
+}
 
-    let app_layout = column![
-        top_row,
-        horizontal_rule(1),
-        row![folder_panel, main_content]
-            .spacing(4)
-            .height(iced::Length::Fill),
-    ]
-    .spacing(4)
-    .padding(8);
-
-    container(app_layout).into()
+pub fn view(state: &AppState) -> Element<'_, Message> {
+    view::main_layout::main_layout_view(state)
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {
@@ -236,5 +351,9 @@ pub fn theme(state: &AppState) -> iced::Theme {
 }
 
 pub fn subscription(_state: &AppState) -> Subscription<Message> {
-    iced::time::every(std::time::Duration::from_millis(16)).map(Message::Tick)
+    let tick_sub = iced::time::every(std::time::Duration::from_millis(16)).map(Message::Tick);
+
+    let keyboard_sub = crate::subscriptions::keyboard::keyboard_subscription();
+
+    Subscription::batch(vec![tick_sub, keyboard_sub])
 }

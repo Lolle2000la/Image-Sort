@@ -1,9 +1,16 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use lru::LruCache;
+use std::num::NonZeroUsize;
+
+use media_sort_backend::media::audio_decoder::AudioPlayer;
 use media_sort_core::history::History;
 use media_sort_core::media_type::MediaType;
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
+
+pub const PREFETCH_RADIUS: usize = 5;
 
 pub struct AppState {
     pub history: History,
@@ -16,6 +23,18 @@ pub struct AppState {
     pub selected_index: Option<usize>,
     pub search_query: String,
     pub pinned_folders: Vec<PinnedFolder>,
+
+    pub editing_keybinding: Option<usize>,
+    pub waiting_for_key: bool,
+
+    pub metadata_panel_expanded: bool,
+    pub current_metadata: Option<BTreeMap<String, BTreeMap<String, String>>>,
+
+    pub show_settings: bool,
+
+    pub audio_player: Option<AudioPlayer>,
+
+    pub thumbnail_cache: LruCache<PathBuf, Vec<u8>>,
 }
 
 impl AppState {
@@ -38,6 +57,12 @@ impl AppState {
             })
             .collect();
 
+        let metadata_panel_expanded = settings.metadata_panel.is_expanded;
+        let _dark_mode = settings.general.dark_mode;
+
+        let cache_size = NonZeroUsize::new((PREFETCH_RADIUS * 2).max(1))
+            .unwrap_or_else(|| NonZeroUsize::new(1).unwrap());
+
         Self {
             history: History::new(),
             settings,
@@ -48,6 +73,13 @@ impl AppState {
             selected_index: None,
             search_query: String::new(),
             pinned_folders,
+            editing_keybinding: None,
+            waiting_for_key: false,
+            metadata_panel_expanded,
+            current_metadata: None,
+            show_settings: false,
+            audio_player: None,
+            thumbnail_cache: LruCache::new(cache_size),
         }
     }
 
@@ -57,6 +89,7 @@ impl AppState {
         self.scan_media();
         self.build_folder_tree(path);
         self.selected_index = None;
+        self.current_metadata = None;
     }
 
     pub fn scan_media(&mut self) {
@@ -143,6 +176,23 @@ impl AppState {
             .iter()
             .map(|p| p.path.display().to_string())
             .collect();
+    }
+
+    #[allow(dead_code)]
+    pub fn save_settings_task(&self) -> iced::Task<crate::message::Message> {
+        let _ = self.settings.save();
+        iced::Task::none()
+    }
+
+    #[allow(dead_code)]
+    pub fn save_window_position(&mut self, position: iced::window::Position, size: iced::Size) {
+        if let iced::window::Position::Specific(point) = position {
+            self.settings.window_position.left = point.x as i32;
+            self.settings.window_position.top = point.y as i32;
+        }
+        self.settings.window_position.width = size.width as u32;
+        self.settings.window_position.height = size.height as u32;
+        let _ = self.settings.save();
     }
 }
 
