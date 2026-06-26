@@ -21,3 +21,4 @@ image.workspace = true
 
 [dev-dependencies]
 smol_str.workspace = true
+dirs.workspace = true

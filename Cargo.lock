@@ -2690,6 +2690,7 @@ name = "media-sort-gui"
 version = "3.0.0"
 dependencies = [
  "crossbeam-channel",
+ "dirs 5.0.1",
  "env_logger",
  "iced",
  "iced_wgpu",

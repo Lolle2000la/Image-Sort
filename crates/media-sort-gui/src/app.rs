@@ -577,4 +577,276 @@ mod tests {
         assert_eq!(state.history.can_undo(), saved_undo);
         assert!(!state.metadata_panel_expanded);
     }
+
+    fn setup_temp_dir_with_files(
+        name: &str,
+    ) -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
+        let root = std::env::temp_dir().join(format!("mediasort_{}_{}", name, std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("test_image.jpg");
+        std::fs::write(&file, b"fake jpeg data").unwrap();
+        let dest = root.join("subfolder");
+        std::fs::create_dir_all(&dest).unwrap();
+        (root, file, dest)
+    }
+
+    fn setup_data_dir_with_files(
+        name: &str,
+    ) -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
+        let base = dirs::data_local_dir()
+            .unwrap_or_else(|| std::env::temp_dir())
+            .join("media-sort")
+            .join("test");
+        let root = base.join(format!("{}_{}", name, std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file = root.join("test_image.jpg");
+        std::fs::write(&file, b"fake jpeg data").unwrap();
+        let dest = root.join("subfolder");
+        std::fs::create_dir_all(&dest).unwrap();
+        (root, file, dest)
+    }
+
+    #[test]
+    fn test_move_to_folder_success() {
+        let (root, file, dest) = setup_temp_dir_with_files("move_ok");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        assert!(file.exists());
+        let dest_file = dest.join("test_image.jpg");
+        assert!(!dest_file.exists());
+
+        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+
+        assert!(!file.exists());
+        assert!(dest_file.exists());
+        assert!(state.history.can_undo());
+        assert_eq!(state.history.done_len(), 1);
+        assert_eq!(state.selected_index, None);
+        assert!(state.media_entries.is_empty());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_move_to_folder_no_selection_is_noop() {
+        let (root, _file, dest) = setup_temp_dir_with_files("move_nosel");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = None;
+
+        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+
+        assert!(!state.history.can_undo());
+        assert!(state.selected_index.is_none());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_move_to_folder_index_out_of_bounds() {
+        let (root, _file, dest) = setup_temp_dir_with_files("move_oob");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(999);
+
+        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+
+        assert!(!state.history.can_undo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_move_to_folder_nonexistent_target() {
+        let (root, file, _dest) = setup_temp_dir_with_files("move_nodir");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        let nonexistent = root.join("does_not_exist");
+
+        let _task = update(&mut state, Message::MoveToFolder(nonexistent));
+
+        assert!(file.exists());
+        assert!(!state.history.can_undo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_delete_entry_success() {
+        let (root, file, _dest) = setup_data_dir_with_files("delete_ok");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+
+        assert!(file.exists());
+
+        let _task = update(&mut state, Message::DeleteEntry(file.clone()));
+
+        assert!(!file.exists());
+        assert!(state.history.can_undo());
+        assert_eq!(state.history.done_len(), 1);
+        assert_eq!(state.selected_index, None);
+        assert!(state.media_entries.is_empty());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_delete_entry_nonexistent_file() {
+        let (root, _file, _dest) = setup_data_dir_with_files("delete_nofile");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+
+        let nonexistent = root.join("does_not_exist.jpg");
+
+        let _task = update(&mut state, Message::DeleteEntry(nonexistent));
+
+        assert!(!state.history.can_undo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_undo_after_move() {
+        let (root, file, dest) = setup_temp_dir_with_files("undo_move");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        let _ = update(&mut state, Message::MoveToFolder(dest.clone()));
+        assert!(!file.exists());
+        let dest_file = dest.join("test_image.jpg");
+        assert!(dest_file.exists());
+        assert!(state.history.can_undo());
+
+        let _task = update(&mut state, Message::Undo);
+
+        assert!(file.exists());
+        assert!(!dest_file.exists());
+        assert!(!state.history.can_undo());
+        assert!(state.history.can_redo());
+        assert_eq!(state.selected_index, None);
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_undo_after_delete() {
+        let (root, file, _dest) = setup_data_dir_with_files("undo_delete");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+
+        let _ = update(&mut state, Message::DeleteEntry(file.clone()));
+        assert!(!file.exists());
+        assert!(state.history.can_undo());
+
+        let _task = update(&mut state, Message::Undo);
+
+        assert!(file.exists());
+        assert!(!state.history.can_undo());
+        assert!(state.history.can_redo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_redo_after_undo_move() {
+        let (root, file, dest) = setup_temp_dir_with_files("redo_move");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        let _ = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _ = update(&mut state, Message::Undo);
+        assert!(file.exists());
+        assert!(state.history.can_redo());
+
+        let _task = update(&mut state, Message::Redo);
+
+        assert!(!file.exists());
+        let dest_file = dest.join("test_image.jpg");
+        assert!(dest_file.exists());
+        assert!(state.history.can_undo());
+        assert!(!state.history.can_redo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_undo_empty_history_no_panic() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert!(!state.history.can_undo());
+
+        let _task = update(&mut state, Message::Undo);
+        assert!(!state.history.can_undo());
+    }
+
+    #[test]
+    fn test_redo_empty_undone_no_panic() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert!(!state.history.can_redo());
+
+        let _task = update(&mut state, Message::Redo);
+        assert!(!state.history.can_redo());
+    }
+
+    #[test]
+    fn test_rename_entry_success() {
+        let (root, file, _dest) = setup_temp_dir_with_files("rename_ok");
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+        state.selected_index = Some(0);
+
+        assert!(file.exists());
+
+        let _task = update(
+            &mut state,
+            Message::RenameEntry(file.clone(), "renamed_image".to_string()),
+        );
+
+        assert!(!file.exists());
+        let renamed = root.join("renamed_image.jpg");
+        assert!(renamed.exists());
+        assert!(state.history.can_undo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[test]
+    fn test_rename_entry_target_exists_is_noop() {
+        let root =
+            std::env::temp_dir().join(format!("mediasort_rename_conflict_{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let file1 = root.join("a.jpg");
+        let file2 = root.join("b.jpg");
+        std::fs::write(&file1, b"a").unwrap();
+        std::fs::write(&file2, b"b").unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&root);
+
+        let _task = update(
+            &mut state,
+            Message::RenameEntry(file1.clone(), "b".to_string()),
+        );
+
+        assert!(file1.exists());
+        assert!(file2.exists());
+        assert!(!state.history.can_undo());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
 }
