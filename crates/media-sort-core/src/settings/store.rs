@@ -35,7 +35,7 @@ impl From<serde_json::Error> for SettingsError {
     }
 }
 
-#[derive(Debug, Default, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SettingsStore {
     #[serde(default)]
     pub general: GeneralSettings,
