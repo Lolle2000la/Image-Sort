@@ -361,6 +361,7 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use media_sort_core::actions::rename_action::RenameAction;
     use media_sort_core::media_type::MediaType;
     use media_sort_core::models::MediaEntry;
     use media_sort_core::settings::store::SettingsStore;
@@ -402,5 +403,178 @@ mod tests {
         state.selected_index = None;
         let _task = update(&mut state, Message::SelectEntry(0));
         assert_eq!(state.selected_index, None);
+    }
+
+    fn setup_temp_rename_action(dir_prefix: &str) -> (std::path::PathBuf, RenameAction) {
+        let dir = std::env::temp_dir().join(format!("{}_{}", dir_prefix, std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file = dir.join("test.txt");
+        std::fs::write(&file, b"content").unwrap();
+        let mut action = RenameAction::new(&file, "renamed").unwrap();
+        action.execute().unwrap();
+        (dir, action)
+    }
+
+    #[test]
+    fn test_keycaptured_undo_when_history_has_actions() {
+        let mut state = AppState::new(SettingsStore::default());
+        let (dir, action) = setup_temp_rename_action("mediasort_undo");
+
+        state.history.push_executed(Box::new(action));
+        assert!(state.history.can_undo());
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("Q".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::Undo);
+        assert!(state.history.can_redo());
+        assert!(!state.history.can_undo());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_keycaptured_undo_when_history_empty() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert!(!state.history.can_undo());
+
+        let _task = update(
+            &mut state,
+            Message::KeyCaptured("Q".into(), false, false, false),
+        );
+        assert!(!state.history.can_undo());
+        assert!(!state.history.can_redo());
+    }
+
+    #[test]
+    fn test_keycaptured_redo_when_history_has_undone() {
+        let mut state = AppState::new(SettingsStore::default());
+        let (dir, action) = setup_temp_rename_action("mediasort_redo");
+
+        state.history.push_executed(Box::new(action));
+        state.history.undo().unwrap();
+        assert!(state.history.can_redo());
+        assert!(!state.history.can_undo());
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("E".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::Redo);
+        assert!(!state.history.can_redo());
+        assert!(state.history.can_undo());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_keycaptured_capture_mode_updates_binding() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.waiting_for_key = true;
+        state.editing_keybinding = Some(0);
+
+        let _task = update(
+            &mut state,
+            Message::KeyCaptured("X".into(), true, false, false),
+        );
+
+        assert!(!state.waiting_for_key);
+        assert_eq!(state.editing_keybinding, None);
+        let kb = &state.settings.keybindings;
+        assert_eq!(kb.move_to_folder.key, "X");
+        assert!(kb.move_to_folder.ctrl);
+        assert!(!kb.move_to_folder.shift);
+        assert!(!kb.move_to_folder.alt);
+    }
+
+    #[test]
+    fn test_keycaptured_capture_mode_clears_editing_state() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.waiting_for_key = true;
+        state.editing_keybinding = Some(3);
+
+        let _task = update(
+            &mut state,
+            Message::KeyCaptured("Left".into(), false, false, false),
+        );
+
+        assert!(!state.waiting_for_key);
+        assert_eq!(state.editing_keybinding, None);
+    }
+
+    #[test]
+    fn test_keycaptured_toggle_metadata_panel() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert!(!state.metadata_panel_expanded);
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("M".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::ToggleMetadataPanel);
+        assert!(state.metadata_panel_expanded);
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("M".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::ToggleMetadataPanel);
+        assert!(!state.metadata_panel_expanded);
+    }
+
+    #[test]
+    fn test_keycaptured_pin_triggers_pin() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = Some(PathBuf::from("/test/folder"));
+        assert!(state.pinned_folders.is_empty());
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("P".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::PinCurrentFolder);
+        assert_eq!(state.pinned_folders.len(), 1);
+    }
+
+    #[test]
+    fn test_keycaptured_unpin_triggers_unpin() {
+        let mut state = AppState::new(SettingsStore::default());
+        let folder = PathBuf::from("/test/unpin_dir");
+        state.current_folder = Some(folder.clone());
+        state.pin_current_folder();
+        assert_eq!(state.pinned_folders.len(), 1);
+
+        let _ = update(
+            &mut state,
+            Message::KeyCaptured("U".into(), false, false, false),
+        );
+        let _ = update(&mut state, Message::UnpinCurrentFolder(folder.clone()));
+        assert!(state.pinned_folders.is_empty());
+    }
+
+    #[test]
+    fn test_keycaptured_pin_without_folder_is_noop() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = None;
+        assert!(state.pinned_folders.is_empty());
+
+        let _task = update(
+            &mut state,
+            Message::KeyCaptured("P".into(), false, false, false),
+        );
+        assert!(state.pinned_folders.is_empty());
+    }
+
+    #[test]
+    fn test_keycaptured_unknown_binding_is_noop() {
+        let mut state = AppState::new(SettingsStore::default());
+        let saved_undo = state.history.can_undo();
+        let _task = update(
+            &mut state,
+            Message::KeyCaptured("F9".into(), false, false, false),
+        );
+        assert_eq!(state.history.can_undo(), saved_undo);
+        assert!(!state.metadata_panel_expanded);
     }
 }
