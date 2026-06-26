@@ -360,3 +360,4 @@ GitVersion_WixVersion.wxi
 
 # Rider temp files
 .idea/
+target/
