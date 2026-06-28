@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reflection;
 using System.Threading;
@@ -45,6 +46,18 @@ public partial class App : System.Windows.Application
             .WithCoreServices()
             .BuildApp();
 
+        RxApp.DefaultExceptionHandler = Observer.Create<Exception>(ex =>
+        {
+            Application.Current?.Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show(
+                    $"ReactiveUI Pipeline Exception:\n\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}",
+                    "ReactiveUI Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
+            });
+        });
+
         Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
         Locator.CurrentMutable.RegisterManditoryDependencies();
         Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
@@ -67,20 +80,52 @@ public partial class App : System.Windows.Application
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
     }
 
-    private void UnhandledDispatcherException(Object sender, DispatcherUnhandledExceptionEventArgs e)
+    private void UnhandledDispatcherException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
         System.Diagnostics.Trace.WriteLine(e.Exception);
-        e.Handled = true; // Ex is now handled and will not crash your app
+
+        MessageBox.Show(
+            $"Unhandled UI Exception:\n\n{e.Exception.Message}\n\nStack Trace:\n{e.Exception.StackTrace}",
+            "Critical UI Error",
+            MessageBoxButton.OK,
+            MessageBoxImage.Error);
+
+        e.Handled = true;
     }
 
     private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
         System.Diagnostics.Trace.WriteLine(e.ExceptionObject);
+
+        var exception = e.ExceptionObject as Exception;
+        var message = exception != null
+            ? $"{exception.Message}\n\nStack Trace:\n{exception.StackTrace}"
+            : e.ExceptionObject?.ToString();
+
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            MessageBox.Show(
+                $"Unhandled AppDomain Exception:\n\n{message}",
+                "Critical Domain Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        });
     }
 
     private void TaskScheduler_UnobservedTaskException(object sender, UnobservedTaskExceptionEventArgs e)
     {
         System.Diagnostics.Trace.WriteLine(e.Exception);
+
+        Application.Current?.Dispatcher.Invoke(() =>
+        {
+            MessageBox.Show(
+                $"Unobserved Task Exception:\n\n{e.Exception.InnerException?.Message ?? e.Exception.Message}",
+                "Task Error",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        });
+
+        e.SetObserved();
     }
 
     // Warning is disabled, since async is used when running in release mode for automatic updates.
