@@ -48,7 +48,12 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
         .wrap();
 
     let tree_content = folder_tree::folder_tree_view(&state.folder_tree, state.selected_folder.as_deref());
-    let scrollable_tree = scrollable(tree_content).height(Length::Fill);
+    let scrollable_tree = scrollable(tree_content)
+        .direction(iced::widget::scrollable::Direction::Both {
+            vertical: iced::widget::scrollable::Scrollbar::default(),
+            horizontal: iced::widget::scrollable::Scrollbar::default(),
+        })
+        .height(Length::Fill);
 
     container(
         column![

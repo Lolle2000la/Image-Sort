@@ -52,6 +52,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
         icon,
         text(&node.name)
             .size(14)
+            .wrapping(iced::widget::text::Wrapping::None)
             .shaping(iced::widget::text::Shaping::Advanced)
     ]
     .spacing(4)
