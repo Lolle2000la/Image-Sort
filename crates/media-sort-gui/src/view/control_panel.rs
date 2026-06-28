@@ -7,18 +7,18 @@ use crate::state::AppState;
 pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     // 1. Folder section
     let folder_header = text("Folder").size(15);
-    let open_folder_btn = button(text("Open folder (O)").size(12))
+    let open_folder_btn = button(text("Open folder").size(12))
         .on_press(Message::PickFolder)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
 
     let open_sel_btn = if let Some(ref selected) = state.selected_folder {
-        button(text("Open selected folder (Enter)").size(12))
+        button(text("Open selected folder").size(12))
             .on_press(Message::OpenFolder(selected.clone()))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Open selected folder (Enter)").size(12))
+        button(text("Open selected folder").size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };
@@ -44,23 +44,23 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     // 2. History section
     let history_header = text("History").size(15);
     let undo_btn = if state.history.can_undo() {
-        button(text("Undo (Q)").size(12))
+        button(text("Undo").size(12))
             .on_press(Message::Undo)
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Undo (Q)").size(12))
+        button(text("Undo").size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };
 
     let redo_btn = if state.history.can_redo() {
-        button(text("Redo (E)").size(12))
+        button(text("Redo").size(12))
             .on_press(Message::Redo)
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Redo (E)").size(12))
+        button(text("Redo").size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };

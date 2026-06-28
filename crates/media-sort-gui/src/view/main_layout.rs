@@ -19,13 +19,12 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     let move_btn = {
         let btn_content = row![
-            text("Move ("),
+            text("Move "),
             text(char::from(lucide_icons::Icon::ArrowUp))
                 .font(iced::Font::with_name("lucide"))
                 .size(14),
-            text(")")
         ]
-        .spacing(0)
+        .spacing(2)
         .align_y(iced::Alignment::Center);
         let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
@@ -39,7 +38,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     // Rename (R) button next to search bar:
     let rename_btn = {
-        let btn = iced::widget::button(text("Rename (R)").size(13))
+        let btn = iced::widget::button(text("Rename").size(13))
             .style(iced::widget::button::secondary);
         if state.selected_index.is_some() {
             btn.on_press(Message::TriggerRename)
@@ -51,13 +50,12 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     // Delete (Down Arrow) button at the bottom:
     let delete_btn = {
         let btn_content = row![
-            text("Delete ("),
+            text("Delete "),
             text(char::from(lucide_icons::Icon::ArrowDown))
                 .font(iced::Font::with_name("lucide"))
                 .size(14),
-            text(")")
         ]
-        .spacing(0)
+        .spacing(2)
         .align_y(iced::Alignment::Center);
         let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
