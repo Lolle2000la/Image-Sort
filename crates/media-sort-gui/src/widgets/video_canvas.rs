@@ -35,9 +35,36 @@ pub fn audio_controls_view() -> Element<'static, Message> {
         column![
             text("Audio Controls").size(14),
             row![
-                button(text("\u{25B6} Play")).on_press(Message::PlayAudio),
-                button(text("\u{23F8} Pause")).on_press(Message::PauseAudio),
-                button(text("\u{23F9} Stop")).on_press(Message::StopAudio),
+                button(
+                    row![
+                        text(char::from(lucide_icons::Icon::Play))
+                            .font(iced::Font::with_name("lucide"))
+                            .size(12),
+                        text(" Play")
+                    ]
+                    .align_y(iced::Alignment::Center)
+                )
+                .on_press(Message::PlayAudio),
+                button(
+                    row![
+                        text(char::from(lucide_icons::Icon::Pause))
+                            .font(iced::Font::with_name("lucide"))
+                            .size(12),
+                        text(" Pause")
+                    ]
+                    .align_y(iced::Alignment::Center)
+                )
+                .on_press(Message::PauseAudio),
+                button(
+                    row![
+                        text(char::from(lucide_icons::Icon::Square))
+                            .font(iced::Font::with_name("lucide"))
+                            .size(12),
+                        text(" Stop")
+                    ]
+                    .align_y(iced::Alignment::Center)
+                )
+                .on_press(Message::StopAudio),
             ]
             .spacing(8),
         ]

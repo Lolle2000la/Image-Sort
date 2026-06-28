@@ -22,14 +22,22 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     }
 
     // Left navigation button
-    let prev_btn = button(text("\u{2190}").size(16))
-        .on_press(Message::GoLeft)
-        .style(iced::widget::button::secondary);
+    let prev_btn = button(
+        text(char::from(lucide_icons::Icon::ChevronLeft))
+            .font(iced::Font::with_name("lucide"))
+            .size(16)
+    )
+    .on_press(Message::GoLeft)
+    .style(iced::widget::button::secondary);
 
     // Right navigation button
-    let next_btn = button(text("\u{2192}").size(16))
-        .on_press(Message::GoRight)
-        .style(iced::widget::button::secondary);
+    let next_btn = button(
+        text(char::from(lucide_icons::Icon::ChevronRight))
+            .font(iced::Font::with_name("lucide"))
+            .size(16)
+    )
+    .on_press(Message::GoRight)
+    .style(iced::widget::button::secondary);
 
     let mut entries_row = row![].spacing(8);
 

@@ -17,9 +17,17 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     let preview = media_preview::media_preview_view(state);
     let metadata = metadata_panel::metadata_panel_view(state);
 
-    // Move (Up Arrow) button at the top:
     let move_btn = {
-        let btn = iced::widget::button(text("Move (\u{2191})").size(14))
+        let btn_content = row![
+            text("Move ("),
+            text(char::from(lucide_icons::Icon::ArrowUp))
+                .font(iced::Font::with_name("lucide"))
+                .size(14),
+            text(")")
+        ]
+        .spacing(0)
+        .align_y(iced::Alignment::Center);
+        let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
             .style(iced::widget::button::secondary);
         if state.selected_index.is_some() && state.selected_folder.is_some() {
@@ -42,7 +50,16 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     // Delete (Down Arrow) button at the bottom:
     let delete_btn = {
-        let btn = iced::widget::button(text("Delete (\u{2193})").size(14))
+        let btn_content = row![
+            text("Delete ("),
+            text(char::from(lucide_icons::Icon::ArrowDown))
+                .font(iced::Font::with_name("lucide"))
+                .size(14),
+            text(")")
+        ]
+        .spacing(0)
+        .align_y(iced::Alignment::Center);
+        let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
             .style(iced::widget::button::danger);
         if let Some(index) = state.selected_index {
