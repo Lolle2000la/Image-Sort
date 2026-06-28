@@ -49,6 +49,7 @@ pub enum Message {
     OpenSettings,
     CloseSettings,
     ToggleDarkMode,
+    ToggleReopenFolder,
     ToggleCheckForUpdates,
     ToggleInstallPrerelease,
     ToggleIntegrationWithWindows,
@@ -58,6 +59,7 @@ pub enum Message {
     RestoreDefaultKeyBindings,
     OpenCredits,
     CloseCredits,
+    EventOccurred(iced::Event),
     OpenKeybindings,
     CloseKeybindings,
 

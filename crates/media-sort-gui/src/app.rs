@@ -485,6 +485,30 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        Message::ToggleReopenFolder => {
+            state.settings.general.reopen_last_opened_folder = !state.settings.general.reopen_last_opened_folder;
+            let _ = state.settings.save();
+            Task::none()
+        }
+        Message::EventOccurred(event) => {
+            match event {
+                iced::Event::Window(iced::window::Event::CloseRequested) => {
+                    let _ = state.settings.save();
+                    window::get_latest().and_then(window::close)
+                }
+                iced::Event::Window(iced::window::Event::Resized(size)) => {
+                    state.settings.window_position.width = size.width.round() as u32;
+                    state.settings.window_position.height = size.height.round() as u32;
+                    Task::none()
+                }
+                iced::Event::Window(iced::window::Event::Moved(point)) => {
+                    state.settings.window_position.left = point.x.round() as i32;
+                    state.settings.window_position.top = point.y.round() as i32;
+                    Task::none()
+                }
+                _ => Task::none(),
+            }
+        }
         Message::ToggleCheckForUpdates => {
             state.settings.general.check_for_updates_on_startup = !state.settings.general.check_for_updates_on_startup;
             let _ = state.settings.save();
@@ -836,7 +860,9 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 
     let keyboard_sub = crate::subscriptions::keyboard::keyboard_subscription();
 
-    Subscription::batch(vec![tick_sub, keyboard_sub])
+    let event_sub = iced::event::listen().map(Message::EventOccurred);
+
+    Subscription::batch(vec![tick_sub, keyboard_sub, event_sub])
 }
 
 #[cfg(test)]

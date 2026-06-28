@@ -107,6 +107,8 @@ impl AppState {
 
     pub fn open_folder(&mut self, path: &Path) {
         self.current_folder = Some(path.to_path_buf());
+        self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
+        let _ = self.settings.save();
         self.history.clear();
         self.scan_media();
         self.build_folder_tree(path);

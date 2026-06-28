@@ -147,11 +147,19 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         .on_toggle(|_| Message::ToggleInstallPrerelease)
         .size(16);
 
+        let reopen_folder_cb = checkbox(
+            "Reopen last opened folder on startup",
+            state.settings.general.reopen_last_opened_folder,
+        )
+        .on_toggle(|_| Message::ToggleReopenFolder)
+        .size(16);
+
         #[allow(unused_mut)]
         let mut settings_col = column![
             column![
                 text("Appearance").font(BOLD_FONT).size(14),
                 dark_mode_cb,
+                reopen_folder_cb,
             ].spacing(8),
             column![
                 text("Animated Gifs").font(BOLD_FONT).size(14),

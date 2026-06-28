@@ -20,7 +20,7 @@ strum.workspace = true
 image.workspace = true
 rfd = { workspace = true }
 lucide-icons = "1.16"
+dirs = { workspace = true }
 
 [dev-dependencies]
 smol_str.workspace = true
-dirs.workspace = true

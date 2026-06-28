@@ -19,6 +19,12 @@ pub struct GeneralSettings {
 
     #[serde(default)]
     pub integration_with_windows: bool,
+
+    #[serde(default = "default_true")]
+    pub reopen_last_opened_folder: bool,
+
+    #[serde(default)]
+    pub last_opened_folder: Option<String>,
 }
 
 impl Default for GeneralSettings {
@@ -30,6 +36,8 @@ impl Default for GeneralSettings {
             animate_gifs: true,
             animate_gif_thumbnails: true,
             integration_with_windows: false,
+            reopen_last_opened_folder: true,
+            last_opened_folder: None,
         }
     }
 }
