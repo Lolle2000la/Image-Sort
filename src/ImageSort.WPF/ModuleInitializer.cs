@@ -11,7 +11,6 @@ public static class ModuleInitializer
     {
         RxAppBuilder.CreateReactiveUIBuilder()
             .WithCoreServices()
-            .WithPlatformServices()
             .BuildApp();
     }
 }
