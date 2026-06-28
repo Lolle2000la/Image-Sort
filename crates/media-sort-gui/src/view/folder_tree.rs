@@ -30,7 +30,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
 
     // Arrow button specifically for expand/collapse toggle
     let arrow_content: Element<'static, Message> = if node.children.is_empty() {
-        text(" ").size(12).width(Length::Fixed(12.0)).into()
+        container(text("")).width(Length::Fixed(16.0)).into()
     } else {
         button(
             text(char::from(if node.is_expanded {
