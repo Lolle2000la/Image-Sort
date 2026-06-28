@@ -95,13 +95,13 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
                 }
             }
         })
-        .width(Length::Fill);
+        .width(Length::Shrink);
 
     // Combined item layout: Chevron on the left, folder button on the right
     let item_layout = row![arrow_content, select_button]
         .spacing(4)
         .align_y(iced::Alignment::Center)
-        .width(Length::Fill);
+        .width(Length::Shrink);
 
     let children: Vec<Element<'a, Message>> = if node.is_expanded && !node.children.is_empty() {
         vec![
