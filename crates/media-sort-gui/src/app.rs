@@ -425,6 +425,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 state.move_pinned_folder_down(&selected_path);
                             }
                         }
+                        "folder_up" => {
+                            state.select_folder_above();
+                        }
+                        "folder_down" => {
+                            state.select_folder_below();
+                        }
+                        "folder_left" => {
+                            state.collapse_selected_folder();
+                        }
+                        "folder_right" => {
+                            state.expand_selected_folder();
+                        }
                         _ => {}
                     }
                 }

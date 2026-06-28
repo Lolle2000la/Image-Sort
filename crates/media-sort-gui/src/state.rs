@@ -265,6 +265,67 @@ impl AppState {
         self.settings.window_position.height = size.height as u32;
         let _ = self.settings.save();
     }
+
+    pub fn select_folder_below(&mut self) {
+        let visible = self.collect_visible_folders();
+        if visible.is_empty() {
+            return;
+        }
+        if let Some(ref selected) = self.selected_folder {
+            if let Some(idx) = visible.iter().position(|p| p == selected) {
+                if idx + 1 < visible.len() {
+                    self.selected_folder = Some(visible[idx + 1].clone());
+                }
+            } else {
+                self.selected_folder = Some(visible[0].clone());
+            }
+        } else {
+            self.selected_folder = Some(visible[0].clone());
+        }
+    }
+
+    pub fn select_folder_above(&mut self) {
+        let visible = self.collect_visible_folders();
+        if visible.is_empty() {
+            return;
+        }
+        if let Some(ref selected) = self.selected_folder {
+            if let Some(idx) = visible.iter().position(|p| p == selected) {
+                if idx > 0 {
+                    self.selected_folder = Some(visible[idx - 1].clone());
+                }
+            }
+        }
+    }
+
+    pub fn expand_selected_folder(&mut self) {
+        if let Some(ref selected) = self.selected_folder {
+            set_expand_recursive(&mut self.folder_tree, selected, true);
+        }
+    }
+
+    pub fn collapse_selected_folder(&mut self) {
+        let Some(selected) = self.selected_folder.clone() else {
+            return;
+        };
+        if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
+            if expanded {
+                set_expand_recursive(&mut self.folder_tree, &selected, false);
+            } else {
+                if let Some(parent) = selected.parent() {
+                    if find_node_expanded(&self.folder_tree, parent).is_some() {
+                        self.selected_folder = Some(parent.to_path_buf());
+                    }
+                }
+            }
+        }
+    }
+
+    fn collect_visible_folders(&self) -> Vec<PathBuf> {
+        let mut list = Vec::new();
+        collect_visible_folders_recursive(&self.folder_tree, &mut list);
+        list
+    }
 }
 
 pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
@@ -313,6 +374,50 @@ fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
         }
     }
     false
+}
+
+fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBuf>) {
+    for node in nodes {
+        list.push(node.path.clone());
+        if node.is_expanded {
+            collect_visible_folders_recursive(&node.children, list);
+        }
+    }
+}
+
+fn set_expand_recursive(nodes: &mut [FolderNode], path: &Path, expand: bool) -> bool {
+    for node in nodes.iter_mut() {
+        if node.path == path {
+            if node.is_expanded != expand {
+                node.is_expanded = expand;
+                if node.is_expanded && node.children.is_empty() && node.path.is_dir() {
+                    let current = if node.is_current {
+                        Some(node.path.as_path())
+                    } else {
+                        None
+                    };
+                    node.children = build_children(&node.path, current);
+                }
+            }
+            return true;
+        }
+        if set_expand_recursive(&mut node.children, path, expand) {
+            return true;
+        }
+    }
+    false
+}
+
+fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bool> {
+    for node in nodes {
+        if node.path == path {
+            return Some(node.is_expanded);
+        }
+        if let Some(res) = find_node_expanded(&node.children, path) {
+            return Some(res);
+        }
+    }
+    None
 }
 
 pub(crate) fn detect_media_type(ext: &str) -> MediaType {
@@ -602,5 +707,73 @@ mod tests {
         assert!(!children2[0].is_current);
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_folder_tree_navigation() {
+        let mut state = AppState::new(SettingsStore::default());
+
+        let p_root1 = PathBuf::from("/root1");
+        let p_sub1 = PathBuf::from("/root1/sub1");
+        let p_sub2 = PathBuf::from("/root1/sub2");
+        let p_root2 = PathBuf::from("/root2");
+
+        let node_root1 = FolderNode {
+            path: p_root1.clone(),
+            name: "root1".to_string(),
+            children: vec![
+                FolderNode {
+                    path: p_sub1.clone(),
+                    name: "sub1".to_string(),
+                    children: Vec::new(),
+                    is_current: false,
+                    is_expanded: false,
+                },
+                FolderNode {
+                    path: p_sub2.clone(),
+                    name: "sub2".to_string(),
+                    children: Vec::new(),
+                    is_current: false,
+                    is_expanded: false,
+                },
+            ],
+            is_current: false,
+            is_expanded: false,
+        };
+
+        let node_root2 = FolderNode {
+            path: p_root2.clone(),
+            name: "root2".to_string(),
+            children: Vec::new(),
+            is_current: false,
+            is_expanded: false,
+        };
+
+        state.folder_tree = vec![node_root1, node_root2];
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_root2.clone()));
+
+        state.select_folder_above();
+        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+
+        state.expand_selected_folder();
+        assert!(state.folder_tree[0].is_expanded);
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_sub1.clone()));
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_sub2.clone()));
+
+        state.collapse_selected_folder();
+        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+
+        state.collapse_selected_folder();
+        assert!(!state.folder_tree[0].is_expanded);
+        assert_eq!(state.selected_folder, Some(p_root1.clone()));
     }
 }
