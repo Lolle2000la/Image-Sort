@@ -54,7 +54,7 @@ public partial class App : System.Windows.Application
                         MessageBoxImage.Error);
                 });
             }))
-            .WithCoreServices()
+            .WithWpf()
             .BuildApp();
 
         Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
