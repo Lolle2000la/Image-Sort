@@ -43,20 +43,19 @@ public partial class App : System.Windows.Application
 #endif
 
         RxAppBuilder.CreateReactiveUIBuilder()
+            .WithExceptionHandler(ex =>
+            {
+                Application.Current?.Dispatcher.Invoke(() =>
+                {
+                    MessageBox.Show(
+                        $"ReactiveUI Pipeline Exception:\n\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}",
+                        "ReactiveUI Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                });
+            })
             .WithCoreServices()
             .BuildApp();
-
-        RxApp.DefaultExceptionHandler = Observer.Create<Exception>(ex =>
-        {
-            Application.Current?.Dispatcher.Invoke(() =>
-            {
-                MessageBox.Show(
-                    $"ReactiveUI Pipeline Exception:\n\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}",
-                    "ReactiveUI Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-            });
-        });
 
         Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
         Locator.CurrentMutable.RegisterManditoryDependencies();
