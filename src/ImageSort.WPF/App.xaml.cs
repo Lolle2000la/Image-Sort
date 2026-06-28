@@ -14,6 +14,7 @@ using ImageSort.WPF.SettingsManagement;
 using ImageSort.WPF.SettingsManagement.ShortCutManagement;
 using ImageSort.WPF.SettingsManagement.WindowPosition;
 using ReactiveUI;
+using ReactiveUI.Builder;
 using Splat;
 
 #if !DO_NOT_INCLUDE_UPDATER
