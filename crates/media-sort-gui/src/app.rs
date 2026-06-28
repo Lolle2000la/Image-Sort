@@ -78,12 +78,25 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             select_and_load_entry(state, index)
         }
         Message::SearchQueryChanged(query) => {
+            let previously_selected_path = state.selected_index.and_then(|idx| {
+                state.filtered_media_entries().get(idx).map(|entry| entry.path.clone())
+            });
+
             state.search_query = query;
-            state.selected_index = None;
-            state.current_metadata = None;
-            state.selected_image = None;
             state.search_focused = true;
-            Task::none()
+
+            let filtered = state.filtered_media_entries();
+            if filtered.is_empty() {
+                state.selected_index = None;
+                state.current_metadata = None;
+                state.selected_image = None;
+                Task::none()
+            } else {
+                let target_index = previously_selected_path
+                    .and_then(|prev_path| filtered.iter().position(|entry| entry.path == prev_path))
+                    .unwrap_or(0);
+                select_and_load_entry(state, target_index)
+            }
         }
 
         Message::MoveToFolder(target_folder) => {
