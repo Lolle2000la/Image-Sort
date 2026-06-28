@@ -30,15 +30,15 @@ internal static class WindowHelper
         {
             windowPosition.ScreenCount = screenCount;
         }
-        else
+        else if (windowPosition.Width > 0 && windowPosition.Height > 0)
         {
             window.Left = windowPosition.Left;
             window.Top = windowPosition.Top;
         }
 
         window.WindowState = windowPosition.IsMaximized ? WindowState.Maximized : WindowState.Normal;
-        window.Height = windowPosition.Height;
-        window.Width = windowPosition.Width;
+        window.Height = windowPosition.Height > 0 ? windowPosition.Height : 600;
+        window.Width = windowPosition.Width > 0 ? windowPosition.Width : 1000;
     }
 
     public static void SaveWindowState<TWindow>(this TWindow window) where TWindow : Window
