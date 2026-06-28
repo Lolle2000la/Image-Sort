@@ -38,12 +38,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::OpenFolder(path) => {
             state.open_folder(&path);
-            let tasks: Vec<_> = state
+            let mut tasks: Vec<_> = state
                 .media_entries
                 .iter()
                 .take(40)
                 .map(|entry| load_thumbnail(entry.path.clone()))
                 .collect();
+            tasks.push(select_and_load_entry(state, 0));
             Task::batch(tasks)
         }
         Message::PickFolder => {
