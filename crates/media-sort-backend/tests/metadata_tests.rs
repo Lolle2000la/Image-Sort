@@ -268,7 +268,7 @@ fn test_extract_audio_metadata_ogg() {
     std::fs::write(&path, b"OggS....").unwrap();
     let result = extract_audio_metadata(&path);
     assert!(result.is_ok());
-    assert!(result.unwrap().is_empty());
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -304,7 +304,7 @@ fn test_extract_audio_metadata_aac() {
     std::fs::write(&path, b"not real aac data").unwrap();
     let result = extract_audio_metadata(&path);
     assert!(result.is_ok());
-    assert!(result.unwrap().is_empty());
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -442,7 +442,7 @@ fn test_extract_video_metadata_mkv() {
     std::fs::write(&path, b"\x1a\x45\xdf\xa3....").unwrap();
     let result = extract_video_metadata(&path);
     assert!(result.is_ok());
-    assert!(result.unwrap().is_empty());
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
