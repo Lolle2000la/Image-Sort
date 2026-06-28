@@ -55,6 +55,9 @@ env_logger = "0.11"
 log = "0.4"
 rfd = "0.15"
 
+[profile.dev.package."*"]
+opt-level = 3
+
 [profile.release]
 opt-level = 3
 lto = "fat"
