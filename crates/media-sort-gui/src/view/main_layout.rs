@@ -27,8 +27,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .spacing(2)
         .align_y(iced::Alignment::Center);
         let btn = iced::widget::button(btn_content)
-            .width(Length::Fill)
-            .style(iced::widget::button::secondary);
+            .width(Length::Fill);
         if state.selected_index.is_some() && state.selected_folder.is_some() {
             btn.on_press(Message::MoveMedia)
         } else {
@@ -38,8 +37,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     // Rename (R) button next to search bar:
     let rename_btn = {
-        let btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(13))
-            .style(iced::widget::button::secondary);
+        let btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(13));
         if state.selected_index.is_some() {
             btn.on_press(Message::TriggerRename)
         } else {

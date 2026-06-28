@@ -27,8 +27,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .font(iced::Font::with_name("lucide"))
             .size(16)
     )
-    .on_press(Message::GoLeft)
-    .style(iced::widget::button::secondary);
+    .on_press(Message::GoLeft);
 
     // Right navigation button
     let next_btn = button(
@@ -36,8 +35,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .font(iced::Font::with_name("lucide"))
             .size(16)
     )
-    .on_press(Message::GoRight)
-    .style(iced::widget::button::secondary);
+    .on_press(Message::GoRight);
 
     let mut entries_row = row![].spacing(8);
 

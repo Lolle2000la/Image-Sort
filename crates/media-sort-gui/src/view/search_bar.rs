@@ -1,10 +1,12 @@
 use iced::widget::{button, container, row, text, text_input};
 use iced::{Element, Length};
-
 use crate::message::Message;
+
+pub static SEARCH_INPUT_ID: iced::widget::Id = iced::widget::Id::new("search_bar");
 
 pub fn search_bar_view<'a>(query: &'a str, placeholder: &'a str) -> Element<'a, Message> {
     let search_input = text_input(placeholder, query)
+        .id(SEARCH_INPUT_ID.clone())
         .on_input(Message::SearchQueryChanged)
         .padding(6)
         .width(Length::Fill);

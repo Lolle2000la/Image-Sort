@@ -451,6 +451,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         "folder_right" => {
                             state.expand_selected_folder();
                         }
+                        "search_images" => {
+                            state.search_focused = true;
+                            return iced::widget::operation::focus(crate::view::search_bar::SEARCH_INPUT_ID.clone());
+                        }
                         _ => {}
                     }
                 }
