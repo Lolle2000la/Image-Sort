@@ -40,6 +40,10 @@ public partial class App : System.Windows.Application
         Thread.CurrentThread.CurrentUICulture = new CultureInfo("en");
 #endif
 
+        RxAppBuilder.CreateReactiveUIBuilder()
+            .WithCoreServices()
+            .BuildApp();
+
         Locator.CurrentMutable.RegisterViewsForViewModels(Assembly.GetEntryAssembly());
         Locator.CurrentMutable.RegisterManditoryDependencies();
         Locator.CurrentMutable.Register<IRecycleBin>(() => new RecycleBin());
