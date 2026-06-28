@@ -37,7 +37,7 @@ public static class DependencyRegistrationHelper
 
         foreach (var setting in settings)
         {
-            dependencyResolver.RegisterConstant(setting);
+            dependencyResolver.RegisterConstant<SettingsGroupViewModelBase>(setting);
         }
     }
 }
