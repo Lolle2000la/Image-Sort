@@ -46,6 +46,9 @@ pub struct AppState {
     pub search_focused: bool,
     pub show_credits: bool,
     pub l10n: media_sort_core::l10n::Localization,
+    pub search_placeholder: String,
+    pub rename_placeholder: String,
+    pub create_folder_placeholder: String,
 }
 
 impl AppState {
@@ -81,6 +84,9 @@ impl AppState {
             None => media_sort_core::l10n::detect_locale(),
         };
         let l10n = media_sort_core::l10n::Localization::init(detected_locale);
+        let search_placeholder = l10n.tr("keybindings-search-images");
+        let rename_placeholder = l10n.tr("ui-enter-new-name");
+        let create_folder_placeholder = l10n.tr("ui-folder-name-placeholder");
 
         Self {
             history: History::new(),
@@ -110,6 +116,9 @@ impl AppState {
             search_focused: false,
             show_credits: false,
             l10n,
+            search_placeholder,
+            rename_placeholder,
+            create_folder_placeholder,
         }
     }
 

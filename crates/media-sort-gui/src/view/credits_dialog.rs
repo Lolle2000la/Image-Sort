@@ -5,9 +5,8 @@ use crate::message::Message;
 use crate::state::AppState;
 
 pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
-    let _ = state; // unused but kept for parity/future use
-    let title = text("Credits").size(20);
-    let leading_text = text("These open source projects made Image Sort possible:").size(13);
+    let title = text(state.l10n.tr("ui-credits-title")).size(20);
+    let leading_text = text(state.l10n.tr("ui-credits-leading")).size(13);
 
     let libraries = vec![
         ("AdonisUI", "https://github.com/benruehl/adonis-ui"),
@@ -45,7 +44,7 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let list = column(rows).spacing(10);
 
-    let close_btn = button(text("Close"))
+    let close_btn = button(text(state.l10n.tr("ui-close")))
         .on_press(Message::CloseCredits)
         .style(iced::widget::button::primary);
 

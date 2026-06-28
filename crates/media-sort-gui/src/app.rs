@@ -484,6 +484,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.l10n.set_locale(&locale);
             state.settings.general.locale = Some(locale);
             let _ = state.settings.save();
+            state.search_placeholder = state.l10n.tr("keybindings-search-images");
+            state.rename_placeholder = state.l10n.tr("ui-enter-new-name");
+            state.create_folder_placeholder = state.l10n.tr("ui-folder-name-placeholder");
             Task::none()
         }
         Message::ToggleDarkMode => {

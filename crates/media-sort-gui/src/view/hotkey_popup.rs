@@ -12,11 +12,11 @@ pub fn hotkey_popup_view(state: &AppState) -> Element<'_, Message> {
 
     let descriptions: Vec<String> = bindings
         .iter()
-        .map(|(n, _)| hotkey_description(n))
+        .map(|(n, _)| hotkey_description(state, n))
         .collect();
     let shortcut_texts: Vec<String> = bindings.iter().map(|(_, b)| format_keybinding(b)).collect();
 
-    let header = text("Keyboard Shortcuts").size(18);
+    let header = text(state.l10n.tr("settings-tab-keybindings")).size(18);
 
     let mut rows = Vec::with_capacity(count);
 
@@ -33,7 +33,7 @@ pub fn hotkey_popup_view(state: &AppState) -> Element<'_, Message> {
 
     let rows_column = column(rows).spacing(4);
 
-    let close_btn = button(text("Close"))
+    let close_btn = button(text(state.l10n.tr("ui-close")))
         .on_press(Message::CloseSettings)
         .style(iced::widget::button::primary);
 
@@ -61,18 +61,18 @@ pub fn hotkey_popup_view(state: &AppState) -> Element<'_, Message> {
 }
 
 #[allow(dead_code)]
-fn hotkey_description(name: &str) -> String {
+fn hotkey_description(state: &AppState, name: &str) -> String {
     match name {
-        "move_to_folder" => "Move to folder".into(),
-        "delete" => "Delete file".into(),
-        "rename" => "Rename file".into(),
-        "undo" => "Undo action".into(),
-        "redo" => "Redo action".into(),
-        "open_folder" => "Open folder".into(),
-        "search_images" => "Search images".into(),
-        "toggle_metadata_panel" => "Toggle metadata panel".into(),
-        "pin" => "Pin folder".into(),
-        "unpin" => "Unpin folder".into(),
+        "move_to_folder" => state.l10n.tr("keybindings-move"),
+        "delete" => state.l10n.tr("keybindings-delete"),
+        "rename" => state.l10n.tr("keybindings-rename"),
+        "undo" => state.l10n.tr("keybindings-undo"),
+        "redo" => state.l10n.tr("keybindings-redo"),
+        "open_folder" => state.l10n.tr("keybindings-open-folder"),
+        "search_images" => state.l10n.tr("keybindings-search-images"),
+        "toggle_metadata_panel" => state.l10n.tr("keybindings-toggle-metadata"),
+        "pin" => state.l10n.tr("keybindings-pin"),
+        "unpin" => state.l10n.tr("keybindings-unpin"),
         _ => name.to_string(),
     }
 }

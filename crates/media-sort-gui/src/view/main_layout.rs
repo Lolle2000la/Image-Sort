@@ -12,14 +12,14 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     let folder_panel = folder_panel::folder_panel_view(state);
     let control_panel = control_panel::control_panel_view(state);
 
-    let search_bar = search_bar::search_bar_view(&state.search_query);
+    let search_bar = search_bar::search_bar_view(&state.search_query, &state.search_placeholder);
     let grid = media_grid::media_grid_view(state);
     let preview = media_preview::media_preview_view(state);
     let metadata = metadata_panel::metadata_panel_view(state);
 
     let move_btn = {
         let btn_content = row![
-            text("Move "),
+            text(state.l10n.tr("ui-move")),
             text(char::from(lucide_icons::Icon::ArrowUp))
                 .font(iced::Font::with_name("lucide"))
                 .size(14),
@@ -38,7 +38,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     // Rename (R) button next to search bar:
     let rename_btn = {
-        let btn = iced::widget::button(text("Rename").size(13))
+        let btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(13))
             .style(iced::widget::button::secondary);
         if state.selected_index.is_some() {
             btn.on_press(Message::TriggerRename)
@@ -50,7 +50,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     // Delete (Down Arrow) button at the bottom:
     let delete_btn = {
         let btn_content = row![
-            text("Delete "),
+            text(state.l10n.tr("ui-delete")),
             text(char::from(lucide_icons::Icon::ArrowDown))
                 .font(iced::Font::with_name("lucide"))
                 .size(14),
@@ -151,24 +151,24 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Element<'a, Message> {
     let old_name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
     
-    let title = Text::new("Rename File").size(18);
-    let old_name_label = Text::new(format!("Original: {}", old_name))
+    let title = Text::new(state.l10n.tr("ui-rename-file")).size(18);
+    let old_name_label = Text::new(state.l10n.get("ui-original", &[("name", &old_name)]))
         .size(12)
         .color(Color::from_rgb(0.6, 0.6, 0.6))
         .shaping(iced::widget::text::Shaping::Advanced);
 
-    let input = iced::widget::text_input("Enter new name...", &state.rename_input_value)
+    let input = iced::widget::text_input(&state.rename_placeholder, &state.rename_input_value)
         .on_input(Message::RenameInputChanged)
         .on_submit(Message::SubmitRename)
         .padding(8)
         .size(14);
 
-    let submit_btn = iced::widget::button(text("Rename").size(14))
+    let submit_btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(14))
         .on_press(Message::SubmitRename)
         .style(iced::widget::button::primary)
         .padding(8);
 
-    let cancel_btn = iced::widget::button(text("Cancel").size(14))
+    let cancel_btn = iced::widget::button(text(state.l10n.tr("ui-cancel")).size(14))
         .on_press(Message::CancelRename)
         .style(iced::widget::button::secondary)
         .padding(8);
@@ -201,24 +201,24 @@ fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Elem
 fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path) -> Element<'a, Message> {
     let parent_name = parent.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "/".to_string());
     
-    let title = Text::new("Create Folder").size(18);
-    let parent_label = Text::new(format!("Parent: {}", parent_name))
+    let title = Text::new(state.l10n.tr("ui-create-folder-title")).size(18);
+    let parent_label = Text::new(state.l10n.get("ui-parent", &[("name", &parent_name)]))
         .size(12)
         .color(Color::from_rgb(0.6, 0.6, 0.6))
         .shaping(iced::widget::text::Shaping::Advanced);
 
-    let input = iced::widget::text_input("Folder name...", &state.create_folder_input)
+    let input = iced::widget::text_input(&state.create_folder_placeholder, &state.create_folder_input)
         .on_input(Message::CreateFolderInputChanged)
         .on_submit(Message::SubmitCreateFolder)
         .padding(8)
         .size(14);
 
-    let submit_btn = iced::widget::button(text("Create").size(14))
+    let submit_btn = iced::widget::button(text(state.l10n.tr("ui-create")).size(14))
         .on_press(Message::SubmitCreateFolder)
         .style(iced::widget::button::primary)
         .padding(8);
 
-    let cancel_btn = iced::widget::button(text("Cancel").size(14))
+    let cancel_btn = iced::widget::button(text(state.l10n.tr("ui-cancel")).size(14))
         .on_press(Message::CancelCreateFolder)
         .style(iced::widget::button::secondary)
         .padding(8);

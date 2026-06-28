@@ -10,9 +10,9 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     if filtered.is_empty() {
         return container(
             text(if state.search_query.is_empty() {
-                "No media files in this folder."
+                state.l10n.tr("ui-no-images")
             } else {
-                "No matching files."
+                state.l10n.tr("ui-no-results")
             })
             .size(14),
         )

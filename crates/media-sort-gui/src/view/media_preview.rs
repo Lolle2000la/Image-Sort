@@ -6,7 +6,7 @@ use crate::state::AppState;
 
 pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
     let Some(index) = state.selected_index else {
-        return container(text("Select a file to preview").size(14))
+        return container(text(state.l10n.tr("ui-select-file")).size(14))
             .center_x(Length::Fill)
             .center_y(Length::Fill)
             .into();
@@ -14,7 +14,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
 
     let filtered = state.filtered_media_entries();
     let Some(entry) = filtered.get(index) else {
-        return container(text("File not found").size(14))
+        return container(text(state.l10n.tr("ui-file-not-found")).size(14))
             .center_x(Length::Fill)
             .center_y(Length::Fill)
             .into();
@@ -29,7 +29,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                         .height(Length::Fill)
                         .into()
                 } else {
-                    container(text("Loading image...").size(14))
+                    container(text(state.l10n.tr("ui-loading-image")).size(14))
                         .center_x(Length::Fill)
                         .center_y(Length::Fill)
                         .width(Length::Fill)
@@ -37,7 +37,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                         .into()
                 }
             } else {
-                container(text("Loading image...").size(14))
+                container(text(state.l10n.tr("ui-loading-image")).size(14))
                     .center_x(Length::Fill)
                     .center_y(Length::Fill)
                     .width(Length::Fill)

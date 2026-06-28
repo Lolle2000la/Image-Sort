@@ -6,14 +6,14 @@ use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
     if !state.metadata_panel_expanded {
-        let toggle_btn = button(text("> Metadata"))
+        let toggle_btn = button(text(format!("> {}", state.l10n.tr("ui-metadata"))))
             .on_press(Message::ToggleMetadataPanel)
             .style(iced::widget::button::secondary);
         return container(toggle_btn).padding(4).into();
     }
 
     let header_row = row![
-        text("Metadata").size(16),
+        text(state.l10n.tr("ui-metadata")).size(16),
         iced::widget::Space::new().width(Length::Fill),
         button(text("X"))
             .on_press(Message::ToggleMetadataPanel)
@@ -51,12 +51,12 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
         }
         None => {
             if state.selected_index.is_some() {
-                container(text("Loading metadata...").size(12))
+                container(text(state.l10n.tr("ui-loading-metadata")).size(12))
                     .center_x(Length::Fill)
                     .center_y(Length::Fill)
                     .into()
             } else {
-                container(text("Select a file to view metadata").size(12))
+                container(text(state.l10n.tr("ui-select-file-metadata")).size(12))
                     .center_x(Length::Fill)
                     .center_y(Length::Fill)
                     .into()

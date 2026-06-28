@@ -6,19 +6,19 @@ use crate::state::AppState;
 
 pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     // 1. Folder section
-    let folder_header = text("Folder").size(15);
-    let open_folder_btn = button(text("Open folder").size(12))
+    let folder_header = text(state.l10n.tr("ui-folder")).size(15);
+    let open_folder_btn = button(text(state.l10n.tr("ui-open-folder")).size(12))
         .on_press(Message::PickFolder)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
 
     let open_sel_btn = if let Some(ref selected) = state.selected_folder {
-        button(text("Open selected folder").size(12))
+        button(text(state.l10n.tr("ui-open-selected-folder")).size(12))
             .on_press(Message::OpenFolder(selected.clone()))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Open selected folder").size(12))
+        button(text(state.l10n.tr("ui-open-selected-folder")).size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };
@@ -42,25 +42,25 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     });
 
     // 2. History section
-    let history_header = text("History").size(15);
+    let history_header = text(state.l10n.tr("ui-history")).size(15);
     let undo_btn = if state.history.can_undo() {
-        button(text("Undo").size(12))
+        button(text(state.l10n.tr("ui-undo")).size(12))
             .on_press(Message::Undo)
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Undo").size(12))
+        button(text(state.l10n.tr("ui-undo")).size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };
 
     let redo_btn = if state.history.can_redo() {
-        button(text("Redo").size(12))
+        button(text(state.l10n.tr("ui-redo")).size(12))
             .on_press(Message::Redo)
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     } else {
-        button(text("Redo").size(12))
+        button(text(state.l10n.tr("ui-redo")).size(12))
             .style(iced::widget::button::secondary)
             .width(Length::Fill)
     };
@@ -87,18 +87,18 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     });
 
     // 3. Settings section
-    let settings_header = text("Settings").size(15);
-    let open_settings_btn = button(text("Open").size(12))
+    let settings_header = text(state.l10n.tr("ui-settings")).size(15);
+    let open_settings_btn = button(text(state.l10n.tr("ui-open")).size(12))
         .on_press(Message::OpenSettings)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
 
-    let keybindings_btn = button(text("Key bindings").size(12))
+    let keybindings_btn = button(text(state.l10n.tr("ui-key-bindings")).size(12))
         .on_press(Message::OpenKeybindings)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
 
-    let credits_btn = button(text("Credits").size(12))
+    let credits_btn = button(text(state.l10n.tr("ui-credits")).size(12))
         .on_press(Message::OpenCredits)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
