@@ -44,7 +44,7 @@ id3 = "1"
 metaflac = "0.2"
 mp4ameta = "0.3"
 
-iced = { version = "0.13", features = ["wgpu", "image", "lazy", "tokio", "advanced"] }
+iced = { version = "0.13", features = ["wgpu", "image", "lazy", "tokio", "advanced", "system"] }
 iced_wgpu = "0.13"
 wgpu = "24"
 winit = "0.30"
