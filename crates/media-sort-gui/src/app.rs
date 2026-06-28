@@ -49,11 +49,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::PickFolder => {
             Task::perform(
                 async {
-                    tokio::task::spawn_blocking(|| {
-                        rfd::FileDialog::new().pick_folder()
-                    })
-                    .await
-                    .unwrap_or(None)
+                    if let Some(handle) = rfd::AsyncFileDialog::new().pick_folder().await {
+                        Some(handle.path().to_path_buf())
+                    } else {
+                        None
+                    }
                 },
                 Message::PickFolderResult
             )
@@ -444,6 +444,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::OpenSettings => {
             state.show_settings = true;
+            state.show_keybindings = false;
             Task::none()
         }
         Message::CloseSettings => {
@@ -468,13 +469,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        Message::ToggleIntegrationWithWindows => {
+            state.settings.general.integration_with_windows = !state.settings.general.integration_with_windows;
+            let _ = state.settings.save();
+            Task::none()
+        }
         Message::ToggleAnimateGifs => {
             state.settings.general.animate_gifs = !state.settings.general.animate_gifs;
+            let _ = state.settings.save();
             Task::none()
         }
         Message::ToggleAnimateThumbnails => {
             state.settings.general.animate_gif_thumbnails =
                 !state.settings.general.animate_gif_thumbnails;
+            let _ = state.settings.save();
             Task::none()
         }
         Message::SaveSettings => {
@@ -483,7 +491,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.show_keybindings = false;
             Task::none()
         }
+        Message::RestoreDefaultKeyBindings => {
+            state.settings.keybindings = media_sort_core::settings::keybindings::KeyBindings::default();
+            let _ = state.settings.save();
+            Task::none()
+        }
         Message::OpenKeybindings => {
+            state.show_settings = true;
             state.show_keybindings = true;
             Task::none()
         }
@@ -491,6 +505,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.show_keybindings = false;
             state.editing_keybinding = None;
             state.waiting_for_key = false;
+            Task::none()
+        }
+        Message::OpenCredits => {
+            state.show_credits = true;
+            Task::none()
+        }
+        Message::CloseCredits => {
+            state.show_credits = false;
             Task::none()
         }
 

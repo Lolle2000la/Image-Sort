@@ -1,4 +1,4 @@
-use iced::widget::{button, checkbox, column, container, row, text};
+use iced::widget::{button, column, container, row, text};
 use iced::{Element, Length, Color};
 
 use crate::message::Message;
@@ -88,31 +88,27 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
 
     // 3. Settings section
     let settings_header = text("Settings").size(15);
-    let dark_mode_btn = button(text("Dark Mode").size(12))
-        .on_press(Message::ToggleDarkMode)
+    let open_settings_btn = button(text("Open").size(12))
+        .on_press(Message::OpenSettings)
         .style(iced::widget::button::secondary)
         .width(Length::Fill);
 
-    let check_updates = checkbox(
-        "Check for updates on startup",
-        state.settings.general.check_for_updates_on_startup,
-    )
-    .on_toggle(|_| Message::ToggleCheckForUpdates)
-    .size(13);
+    let keybindings_btn = button(text("Key bindings").size(12))
+        .on_press(Message::OpenKeybindings)
+        .style(iced::widget::button::secondary)
+        .width(Length::Fill);
 
-    let install_prerelease = checkbox(
-        "Install prerelease builds",
-        state.settings.general.install_prerelease_builds,
-    )
-    .on_toggle(|_| Message::ToggleInstallPrerelease)
-    .size(13);
+    let credits_btn = button(text("Credits").size(12))
+        .on_press(Message::OpenCredits)
+        .style(iced::widget::button::secondary)
+        .width(Length::Fill);
 
     let settings_box = container(
         column![
             settings_header,
-            dark_mode_btn,
-            check_updates,
-            install_prerelease,
+            open_settings_btn,
+            keybindings_btn,
+            credits_btn,
         ].spacing(8)
     )
     .padding(10)

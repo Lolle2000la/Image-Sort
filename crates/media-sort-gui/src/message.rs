@@ -51,9 +51,13 @@ pub enum Message {
     ToggleDarkMode,
     ToggleCheckForUpdates,
     ToggleInstallPrerelease,
+    ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
     SaveSettings,
+    RestoreDefaultKeyBindings,
+    OpenCredits,
+    CloseCredits,
     OpenKeybindings,
     CloseKeybindings,
 

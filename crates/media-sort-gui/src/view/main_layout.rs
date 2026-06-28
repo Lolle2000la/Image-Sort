@@ -4,7 +4,7 @@ use iced::{Color, Element, Length};
 use crate::message::Message;
 use crate::state::AppState;
 use crate::view::{
-    control_panel, folder_panel, keybinding_editor, media_grid, media_preview, metadata_panel,
+    control_panel, folder_panel, media_grid, media_preview, metadata_panel,
     search_bar,
 };
 
@@ -97,12 +97,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     let mut overlays = Vec::new();
 
     if state.show_settings {
-        let overlay = if state.editing_keybinding.is_some() {
-            keybinding_editor::keybinding_editor_view(state)
-        } else {
-            crate::view::settings_dialog::settings_dialog_view(state)
-        };
-        overlays.push(overlay);
+        overlays.push(crate::view::settings_dialog::settings_dialog_view(state));
+    }
+
+    if state.show_credits {
+        overlays.push(crate::view::credits_dialog::credits_dialog_view(state));
     }
 
     if let Some(ref path) = state.renaming_path {

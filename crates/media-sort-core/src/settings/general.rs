@@ -16,6 +16,9 @@ pub struct GeneralSettings {
 
     #[serde(default = "default_true")]
     pub animate_gif_thumbnails: bool,
+
+    #[serde(default)]
+    pub integration_with_windows: bool,
 }
 
 impl Default for GeneralSettings {
@@ -26,6 +29,7 @@ impl Default for GeneralSettings {
             install_prerelease_builds: false,
             animate_gifs: true,
             animate_gif_thumbnails: true,
+            integration_with_windows: false,
         }
     }
 }

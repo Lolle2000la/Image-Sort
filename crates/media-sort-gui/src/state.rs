@@ -43,6 +43,7 @@ pub struct AppState {
     pub creating_folder_parent: Option<PathBuf>,
     pub create_folder_input: String,
     pub search_focused: bool,
+    pub show_credits: bool,
 }
 
 impl AppState {
@@ -98,6 +99,7 @@ impl AppState {
             creating_folder_parent: None,
             create_folder_input: String::new(),
             search_focused: false,
+            show_credits: false,
         }
     }
 
