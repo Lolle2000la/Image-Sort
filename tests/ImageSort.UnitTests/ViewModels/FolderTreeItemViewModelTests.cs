@@ -93,6 +93,8 @@ public class FolderTreeItemViewModelTests
         // verify that no second folder is created when a folder already exists
         await folderTreeItem.CreateFolder.Execute("new_sub");
 
+        await Task.Delay(1);
+
         fsMock.Received().CreateFolder(addedFolder);
 
         Assert.Equal(result.OrderBy(p => p), folderTreeItem.Children.Select(f => f.Path).OrderBy(p => p));
