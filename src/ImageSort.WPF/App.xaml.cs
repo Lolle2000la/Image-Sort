@@ -95,7 +95,7 @@ public partial class App : System.Windows.Application
 #if !DO_NOT_INCLUDE_UPDATER
         InstallerRunner.CleanUpInstaller();
 
-        var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        var generalSettings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
             .OfType<GeneralSettingsGroupViewModel>()
             .Single();
 

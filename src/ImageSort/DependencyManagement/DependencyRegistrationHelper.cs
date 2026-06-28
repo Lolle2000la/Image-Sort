@@ -35,6 +35,9 @@ public static class DependencyRegistrationHelper
 
         if (userSettings.Count > 0) settings.AddRange(userSettings);
 
-        dependencyResolver.RegisterConstant<IEnumerable<SettingsGroupViewModelBase>>(settings);
+        foreach (var setting in settings)
+        {
+            dependencyResolver.RegisterConstant(setting);
+        }
     }
 }

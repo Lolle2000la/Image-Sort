@@ -35,11 +35,11 @@ public partial class ImagesView : ReactiveUserControl<ImagesViewModel>
     {
         InitializeComponent();
 
-        var generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        var generalSettings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
             .Select(s => s as GeneralSettingsGroupViewModel)
             .First(s => s != null);
 
-        var metadataSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        var metadataSettings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
                 .Select(s => s as MetadataPanelSettings)
                 .First(s => s != null);
 

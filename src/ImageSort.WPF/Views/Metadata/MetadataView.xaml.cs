@@ -33,7 +33,7 @@ public partial class MetadataView : ReactiveUserControl<MetadataViewModel>
 
         this.WhenActivated(disposableRegistration =>
         {
-            var metadataSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+            var metadataSettings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
                 .Select(s => s as MetadataPanelSettings)
                 .First(s => s != null);
 

@@ -12,7 +12,7 @@ public class SettingsViewModel : ReactiveObject
 
 public SettingsViewModel(IEnumerable<SettingsGroupViewModelBase> settingsGroups = null)
     {
-        SettingsGroups = settingsGroups ?? Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>();
+        SettingsGroups = settingsGroups ?? Locator.Current.GetServices<SettingsGroupViewModelBase>();
     }
 
     public TGroup GetGroup<TGroup>() where TGroup : SettingsGroupViewModelBase

@@ -18,7 +18,7 @@ public partial class KeyBindingsSettingsGroupView : ReactiveUserControl<KeyBindi
 
         this.WhenActivated(disposableRegistration =>
         {
-            ViewModel ??= Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+            ViewModel ??= Locator.Current.GetServices<SettingsGroupViewModelBase>()
                 .OfType<KeyBindingsSettingsGroupViewModel>()
                 .FirstOrDefault();
 

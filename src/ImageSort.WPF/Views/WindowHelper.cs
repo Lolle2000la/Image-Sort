@@ -12,7 +12,7 @@ internal static class WindowHelper
 {
     private static WindowPositionSettingsViewModel<TWindow> GetWindowPostion<TWindow>() where TWindow : Window
     {
-        return Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+        return Locator.Current.GetServices<SettingsGroupViewModelBase>()
             .OfType<WindowPositionSettingsViewModel<TWindow>>()
             .FirstOrDefault();
     }

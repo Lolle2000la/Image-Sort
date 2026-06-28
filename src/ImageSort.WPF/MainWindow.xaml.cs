@@ -111,7 +111,7 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
                 })
                 .DisposeWith(disposableRegistration);
 
-            var keyBindings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+            var keyBindings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
                 .OfType<KeyBindingsSettingsGroupViewModel>()
                 .FirstOrDefault();
 

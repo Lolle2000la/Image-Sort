@@ -19,7 +19,7 @@ internal class PathToBitmapImageConverter : IValueConverter
     public int? LoadWidth { get; set; } = null;
     public bool ForGifThumbnails { get; set; } = false;
     
-    private GeneralSettingsGroupViewModel generalSettings = Locator.Current.GetService<IEnumerable<SettingsGroupViewModelBase>>()
+    private GeneralSettingsGroupViewModel generalSettings = Locator.Current.GetServices<SettingsGroupViewModelBase>()
             .Select(s => s as GeneralSettingsGroupViewModel)
             .First(s => s != null);
 
