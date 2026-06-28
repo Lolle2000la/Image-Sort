@@ -147,38 +147,45 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         .on_toggle(|_| Message::ToggleInstallPrerelease)
         .size(16);
 
-        let integration_with_windows_cb = checkbox(
-            "Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.",
-            state.settings.general.integration_with_windows,
-        )
-        .on_toggle(|_| Message::ToggleIntegrationWithWindows)
-        .size(16);
-
-        scrollable(
+        #[allow(unused_mut)]
+        let mut settings_col = column![
             column![
-                column![
-                    text("Appearance").font(BOLD_FONT).size(14),
-                    dark_mode_cb,
-                ].spacing(8),
-                column![
-                    text("Animated Gifs").font(BOLD_FONT).size(14),
-                    animate_gifs_cb,
-                    animate_thumbs_cb,
-                ].spacing(8),
-                column![
-                    text("Updates").font(BOLD_FONT).size(14),
-                    check_updates_cb,
-                    install_prerelease_cb,
-                ].spacing(8),
+                text("Appearance").font(BOLD_FONT).size(14),
+                dark_mode_cb,
+            ].spacing(8),
+            column![
+                text("Animated Gifs").font(BOLD_FONT).size(14),
+                animate_gifs_cb,
+                animate_thumbs_cb,
+            ].spacing(8),
+            column![
+                text("Updates").font(BOLD_FONT).size(14),
+                check_updates_cb,
+                install_prerelease_cb,
+            ].spacing(8),
+        ]
+        .spacing(16);
+
+        #[cfg(target_os = "windows")]
+        {
+            let integration_with_windows_cb = checkbox(
+                "Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.",
+                state.settings.general.integration_with_windows,
+            )
+            .on_toggle(|_| Message::ToggleIntegrationWithWindows)
+            .size(16);
+
+            settings_col = settings_col.push(
                 column![
                     text("Integration with Windows").font(BOLD_FONT).size(14),
                     integration_with_windows_cb,
                 ].spacing(8),
-            ]
-            .spacing(16)
-        )
-        .height(Length::Fill)
-        .into()
+            );
+        }
+
+        scrollable(settings_col)
+            .height(Length::Fill)
+            .into()
     } else {
         // Key bindings tab
         let restore_btn = button(text("Restore default key bindings").size(12))
