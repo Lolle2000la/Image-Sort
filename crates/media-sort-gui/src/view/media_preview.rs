@@ -22,10 +22,9 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
 
     let preview_element: Element<'_, Message> = match entry.media_type {
         media_sort_core::media_type::MediaType::Image => {
-            if let Some((ref path, ref bytes)) = state.selected_image_bytes {
+            if let Some((ref path, ref handle)) = state.selected_image {
                 if path == &entry.path {
-                    let handle = iced::widget::image::Handle::from_bytes(bytes.clone());
-                    iced::widget::image(handle)
+                    iced::widget::image(handle.clone())
                         .width(Length::Fill)
                         .height(Length::Fill)
                         .into()

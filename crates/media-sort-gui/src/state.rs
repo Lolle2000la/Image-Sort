@@ -37,7 +37,7 @@ pub struct AppState {
 
     pub thumbnail_cache: LruCache<PathBuf, Vec<u8>>,
     pub selected_folder: Option<PathBuf>,
-    pub selected_image_bytes: Option<(PathBuf, Vec<u8>)>,
+    pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
     pub renaming_path: Option<PathBuf>,
     pub rename_input_value: String,
     pub creating_folder_parent: Option<PathBuf>,
@@ -93,7 +93,7 @@ impl AppState {
             audio_player,
             thumbnail_cache: LruCache::new(cache_size),
             selected_folder: None,
-            selected_image_bytes: None,
+            selected_image: None,
             renaming_path: None,
             rename_input_value: String::new(),
             creating_folder_parent: None,
@@ -111,7 +111,7 @@ impl AppState {
         self.selected_index = None;
         self.current_metadata = None;
         self.selected_folder = None;
-        self.selected_image_bytes = None;
+        self.selected_image = None;
     }
 
     pub fn scan_media(&mut self) {

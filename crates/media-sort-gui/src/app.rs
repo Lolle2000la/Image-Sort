@@ -80,7 +80,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.search_query = query;
             state.selected_index = None;
             state.current_metadata = None;
-            state.selected_image_bytes = None;
+            state.selected_image = None;
             state.search_focused = true;
             Task::none()
         }
@@ -553,12 +553,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::ImageLoaded(path, result) => {
             match result {
-                Ok(bytes) => {
-                    state.selected_image_bytes = Some((path, bytes));
+                Ok((w, h, pixels)) => {
+                    let handle = iced::widget::image::Handle::from_rgba(w, h, pixels);
+                    state.selected_image = Some((path, handle));
                 }
                 Err(err) => {
                     log::error!("Failed to load full image: {err}");
-                    state.selected_image_bytes = None;
+                    state.selected_image = None;
                 }
             }
             Task::none()
@@ -662,7 +663,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         state.selected_index = Some(index);
         state.current_metadata = None;
-        state.selected_image_bytes = None;
+        state.selected_image = None;
 
         let mut tasks = vec![load_metadata(state, index)];
         tasks.push(load_full_image(path, media_type));
@@ -676,7 +677,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
     } else {
         state.selected_index = None;
         state.current_metadata = None;
-        state.selected_image_bytes = None;
+        state.selected_image = None;
         Task::none()
     }
 }
@@ -704,10 +705,11 @@ fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<Mess
             let path_clone = path.clone();
             let res = tokio::task::spawn_blocking(move || {
                 media_sort_backend::media::image_decoder::load_image(&path_clone)
-                    .and_then(|img| {
-                        let mut buf = std::io::Cursor::new(Vec::new());
-                        img.write_to(&mut buf, image::ImageFormat::Png)?;
-                        Ok(buf.into_inner())
+                    .map(|img| {
+                        use image::GenericImageView;
+                        let (w, h) = img.dimensions();
+                        let rgba = img.to_rgba8().into_raw();
+                        (w, h, rgba)
                     })
                     .map_err(|e| e.to_string())
             })

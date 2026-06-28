@@ -66,7 +66,7 @@ pub enum Message {
     StopAudio,
 
     ThumbnailReady(PathBuf, Vec<u8>),
-    ImageLoaded(PathBuf, Result<Vec<u8>, String>),
+    ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
     GoLeft,
     GoRight,
     MoveMedia,
