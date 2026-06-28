@@ -36,6 +36,7 @@ pub struct AppState {
     pub audio_player: Option<AudioPlayer>,
 
     pub thumbnail_cache: LruCache<PathBuf, Vec<u8>>,
+    pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
     pub renaming_path: Option<PathBuf>,
@@ -92,6 +93,7 @@ impl AppState {
             show_keybindings: false,
             audio_player,
             thumbnail_cache: LruCache::new(cache_size),
+            image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
             selected_folder: None,
             selected_image: None,
             renaming_path: None,
@@ -112,6 +114,7 @@ impl AppState {
         self.current_metadata = None;
         self.selected_folder = None;
         self.selected_image = None;
+        self.image_cache.clear();
     }
 
     pub fn scan_media(&mut self) {

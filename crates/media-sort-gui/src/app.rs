@@ -555,11 +555,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             match result {
                 Ok((w, h, pixels)) => {
                     let handle = iced::widget::image::Handle::from_rgba(w, h, pixels);
-                    state.selected_image = Some((path, handle));
+                    state.image_cache.push(path.clone(), handle.clone());
+                    if let Some(idx) = state.selected_index {
+                        let entries = state.filtered_media_entries();
+                        if let Some(entry) = entries.get(idx) {
+                            if entry.path == path {
+                                state.selected_image = Some((path, handle));
+                            }
+                        }
+                    }
                 }
                 Err(err) => {
                     log::error!("Failed to load full image: {err}");
-                    state.selected_image = None;
+                    if let Some(idx) = state.selected_index {
+                        let entries = state.filtered_media_entries();
+                        if let Some(entry) = entries.get(idx) {
+                            if entry.path == path {
+                                state.selected_image = None;
+                            }
+                        }
+                    }
                 }
             }
             Task::none()
@@ -659,14 +674,39 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
                 thumbnail_paths.push(filtered[i].path.clone());
             }
         }
+
+        // Pre-load the next and previous full images!
+        let mut preload_tasks = Vec::new();
+        if index + 1 < filtered_len {
+            let next_entry = filtered[index + 1];
+            if next_entry.media_type == media_sort_core::media_type::MediaType::Image && !state.image_cache.contains(&next_entry.path) {
+                preload_tasks.push(load_full_image(next_entry.path.clone(), next_entry.media_type));
+            }
+        }
+        if index > 0 {
+            let prev_entry = filtered[index - 1];
+            if prev_entry.media_type == media_sort_core::media_type::MediaType::Image && !state.image_cache.contains(&prev_entry.path) {
+                preload_tasks.push(load_full_image(prev_entry.path.clone(), prev_entry.media_type));
+            }
+        }
+
         drop(filtered);
 
         state.selected_index = Some(index);
         state.current_metadata = None;
-        state.selected_image = None;
 
         let mut tasks = vec![load_metadata(state, index)];
-        tasks.push(load_full_image(path, media_type));
+
+        if let Some(handle) = state.image_cache.get(&path) {
+            state.selected_image = Some((path, handle.clone()));
+        } else {
+            state.selected_image = None;
+            tasks.push(load_full_image(path, media_type));
+        }
+
+        for t in preload_tasks {
+            tasks.push(t);
+        }
 
         for p in thumbnail_paths {
             if !state.thumbnail_cache.contains(&p) {
