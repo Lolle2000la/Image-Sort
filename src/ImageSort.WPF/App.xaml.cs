@@ -45,13 +45,13 @@ public partial class App : System.Windows.Application
         RxAppBuilder.CreateReactiveUIBuilder()
             .WithExceptionHandler(Observer.Create<Exception>(ex =>
             {
-                Application.Current?.Dispatcher.Invoke(() =>
+                System.Windows.Application.Current?.Dispatcher.Invoke(() =>
                 {
-                    MessageBox.Show(
+                    System.Windows.MessageBox.Show(
                         $"ReactiveUI Pipeline Exception:\n\n{ex.Message}\n\nStack Trace:\n{ex.StackTrace}",
                         "ReactiveUI Error",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Error);
                 });
             }))
             .WithWpf()
@@ -93,11 +93,11 @@ public partial class App : System.Windows.Application
             stackTrace = ex.InnerException.StackTrace;
         }
 
-        MessageBox.Show(
+        System.Windows.MessageBox.Show(
             $"Unhandled UI Exception:\n\n{message}\n\nStack Trace:\n{stackTrace}",
             "Critical UI Error",
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+            System.Windows.MessageBoxButton.OK,
+            System.Windows.MessageBoxImage.Error);
 
         e.Handled = true;
     }
@@ -111,13 +111,13 @@ public partial class App : System.Windows.Application
             ? $"{exception.Message}\n\nStack Trace:\n{exception.StackTrace}"
             : e.ExceptionObject?.ToString();
 
-        Application.Current?.Dispatcher.Invoke(() =>
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 $"Unhandled AppDomain Exception:\n\n{message}",
                 "Critical Domain Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         });
     }
 
@@ -125,13 +125,13 @@ public partial class App : System.Windows.Application
     {
         System.Diagnostics.Trace.WriteLine(e.Exception);
 
-        Application.Current?.Dispatcher.Invoke(() =>
+        System.Windows.Application.Current?.Dispatcher.Invoke(() =>
         {
-            MessageBox.Show(
+            System.Windows.MessageBox.Show(
                 $"Unobserved Task Exception:\n\n{e.Exception.InnerException?.Message ?? e.Exception.Message}",
                 "Task Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+                System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Warning);
         });
 
         e.SetObserved();
