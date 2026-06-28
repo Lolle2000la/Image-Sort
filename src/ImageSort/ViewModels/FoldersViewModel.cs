@@ -74,7 +74,9 @@ public class FoldersViewModel : ReactiveObject
 
         _allFoldersTracked = this.WhenAnyValue(vm => vm.CurrentFolder)
             .CombineLatest(pinnedFolders.Connect(), (c, p) => (c, pinnedFolders.Items))
-            .Select(folders => new[] {folders.c}.Concat(folders.Items))
+            .Select(folders =>
+                (folders.c != null ? new[] { folders.c } : Enumerable.Empty<FolderTreeItemViewModel>())
+                .Concat(folders.Items ?? Enumerable.Empty<FolderTreeItemViewModel>()))
             .ToProperty(this, vm => vm.AllFoldersTracked);
 
         Pin = ReactiveCommand.CreateFromTask(async () =>
