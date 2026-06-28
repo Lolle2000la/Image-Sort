@@ -43,7 +43,7 @@ public partial class App : System.Windows.Application
 #endif
 
         RxAppBuilder.CreateReactiveUIBuilder()
-            .WithExceptionHandler(ex =>
+            .WithExceptionHandler(Observer.Create<Exception>(ex =>
             {
                 Application.Current?.Dispatcher.Invoke(() =>
                 {
@@ -53,7 +53,7 @@ public partial class App : System.Windows.Application
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 });
-            })
+            }))
             .WithCoreServices()
             .BuildApp();
 
