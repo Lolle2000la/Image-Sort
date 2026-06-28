@@ -48,10 +48,14 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
         .into()
     };
 
-    // Main row content with Folder icon and Folder name
-    let row_content = row![icon, text(&node.name).size(14)]
-        .spacing(4)
-        .align_y(iced::Alignment::Center);
+    let row_content = row![
+        icon,
+        text(&node.name)
+            .size(14)
+            .shaping(iced::widget::text::Shaping::Advanced)
+    ]
+    .spacing(4)
+    .align_y(iced::Alignment::Center);
 
     // Folder selection button
     let select_button = button(row_content)

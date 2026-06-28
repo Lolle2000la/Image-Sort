@@ -78,7 +78,9 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                 }
             });
 
-        let file_name = text(&entry.file_name).size(10);
+        let file_name = text(&entry.file_name)
+            .size(10)
+            .shaping(iced::widget::text::Shaping::Advanced);
         let card = column![thumbnail, file_name]
             .align_x(Alignment::Center)
             .spacing(2)

@@ -154,7 +154,8 @@ fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Elem
     let title = Text::new("Rename File").size(18);
     let old_name_label = Text::new(format!("Original: {}", old_name))
         .size(12)
-        .color(Color::from_rgb(0.6, 0.6, 0.6));
+        .color(Color::from_rgb(0.6, 0.6, 0.6))
+        .shaping(iced::widget::text::Shaping::Advanced);
 
     let input = iced::widget::text_input("Enter new name...", &state.rename_input_value)
         .on_input(Message::RenameInputChanged)
@@ -203,7 +204,8 @@ fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path
     let title = Text::new("Create Folder").size(18);
     let parent_label = Text::new(format!("Parent: {}", parent_name))
         .size(12)
-        .color(Color::from_rgb(0.6, 0.6, 0.6));
+        .color(Color::from_rgb(0.6, 0.6, 0.6))
+        .shaping(iced::widget::text::Shaping::Advanced);
 
     let input = iced::widget::text_input("Folder name...", &state.create_folder_input)
         .on_input(Message::CreateFolderInputChanged)

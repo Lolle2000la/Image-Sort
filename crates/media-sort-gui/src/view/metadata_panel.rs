@@ -38,7 +38,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
                 for (tag_name, value) in fields {
                     let line = row![
                         text(format!("{}:", tag_name)).size(11),
-                        text(value).size(11),
+                        text(value).size(11).shaping(iced::widget::text::Shaping::Advanced),
                     ]
                     .spacing(4);
                     field_list = field_list.push(line);
