@@ -44,9 +44,8 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     for (i, entry) in filtered.iter().enumerate() {
         let is_selected = state.selected_index == Some(i);
 
-        let thumbnail_content: Element<'_, Message> = if let Some(bytes) = state.thumbnail_cache.peek(&entry.path) {
-            let handle = iced::widget::image::Handle::from_bytes(bytes.clone());
-            iced::widget::image(handle).width(Length::Fill).height(Length::Fill).into()
+        let thumbnail_content: Element<'_, Message> = if let Some(handle) = state.thumbnail_cache.peek(&entry.path) {
+            iced::widget::image(handle.clone()).width(Length::Fill).height(Length::Fill).into()
         } else {
             text("[IMG]").size(12).into()
         };

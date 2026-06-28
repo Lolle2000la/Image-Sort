@@ -624,7 +624,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::ThumbnailReady(path, data) => {
             if !data.is_empty() {
-                state.thumbnail_cache.push(path, data);
+                let handle = iced::widget::image::Handle::from_bytes(data);
+                state.thumbnail_cache.push(path, handle);
             }
             Task::none()
         }

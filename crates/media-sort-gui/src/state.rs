@@ -35,7 +35,7 @@ pub struct AppState {
 
     pub audio_player: Option<AudioPlayer>,
 
-    pub thumbnail_cache: LruCache<PathBuf, Vec<u8>>,
+    pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
