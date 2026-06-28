@@ -83,8 +83,18 @@ public partial class App : System.Windows.Application
     {
         System.Diagnostics.Trace.WriteLine(e.Exception);
 
+        var ex = e.Exception;
+        var message = ex.Message;
+        var stackTrace = ex.StackTrace;
+
+        if (ex.InnerException != null)
+        {
+            message += $"\n\nINNER EXCEPTION:\n{ex.InnerException.Message}";
+            stackTrace = ex.InnerException.StackTrace;
+        }
+
         MessageBox.Show(
-            $"Unhandled UI Exception:\n\n{e.Exception.Message}\n\nStack Trace:\n{e.Exception.StackTrace}",
+            $"Unhandled UI Exception:\n\n{message}\n\nStack Trace:\n{stackTrace}",
             "Critical UI Error",
             MessageBoxButton.OK,
             MessageBoxImage.Error);
