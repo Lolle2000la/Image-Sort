@@ -1,0 +1,172 @@
+[general]
+dark_mode = false
+check_for_updates_on_startup = true
+install_prerelease_builds = false
+animate_gifs = true
+animate_gif_thumbnails = true
+integration_with_windows = false
+reopen_last_opened_folder = true
+last_opened_folder = "/home/luca/画像"
+folder_tree_width = 240
+
+[keybindings.move_to_folder]
+key = "Up"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.delete]
+key = "Down"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.rename]
+key = "R"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.go_left]
+key = "Left"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.go_right]
+key = "Right"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.create_folder]
+key = "C"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.folder_up]
+key = "W"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.folder_left]
+key = "A"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.folder_down]
+key = "S"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.folder_right]
+key = "D"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.undo]
+key = "Q"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.redo]
+key = "E"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.open_folder]
+key = "O"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.open_selected_folder]
+key = "Enter"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.pin]
+key = "P"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.pin_selected]
+key = "F"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.unpin]
+key = "U"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.move_pinned_up]
+key = "W"
+ctrl = true
+shift = false
+alt = false
+meta = false
+
+[keybindings.move_pinned_down]
+key = "S"
+ctrl = true
+shift = false
+alt = false
+meta = false
+
+[keybindings.search_images]
+key = "I"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[keybindings.toggle_metadata_panel]
+key = "M"
+ctrl = false
+shift = false
+alt = false
+meta = false
+
+[pinned_folders]
+paths = []
+
+[window_position]
+left = 100
+top = 100
+width = 2560
+height = 1372
+maximized = false
+screen_count = 1
+
+[metadata_panel]
+is_expanded = false
+panel_width = 300

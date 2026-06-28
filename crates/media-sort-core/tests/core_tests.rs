@@ -1041,3 +1041,76 @@ fn test_history_interleaved_undo_redo() {
     assert_eq!(history.done_len(), 1);
     assert_eq!(history.undone_len(), 2);
 }
+
+#[test]
+fn test_wpf_settings_migration() {
+    use media_sort_core::settings::store::SettingsStore;
+
+    let raw_json = r#"{
+        "General": {
+            "DarkMode": true,
+            "CheckForUpdatesOnStartup": false,
+            "InstallPrereleaseBuilds": true,
+            "AnimateGifs": false,
+            "AnimateGifThumbnails": false
+        },
+        "PinnedFolders": {
+            "PinnedFolders": [
+                "/some/path/1",
+                "/some/path/2"
+            ]
+        },
+        "MetadataPanel": {
+            "IsExpanded": true,
+            "MetadataPanelWidth": 250
+        },
+        "MainWindow": {
+            "Left": 50,
+            "Top": 60,
+            "Width": 1200,
+            "Height": 800,
+            "IsMaximized": true,
+            "ScreenCount": 2
+        },
+        "KeyBindings": {
+            "Move": { "Key": 24, "Modifiers": 0 },
+            "Delete": { "Key": 26, "Modifiers": 2 },
+            "SearchImages": { "Key": 52, "Modifiers": 4 }
+        }
+    }"#;
+
+    let store = SettingsStore::parse_wpf_settings(raw_json).expect("Failed to parse wpf settings");
+
+    // Assert General
+    assert!(store.general.dark_mode);
+    assert!(!store.general.check_for_updates_on_startup);
+    assert!(store.general.install_prerelease_builds);
+    assert!(!store.general.animate_gifs);
+    assert!(!store.general.animate_gif_thumbnails);
+
+    // Assert PinnedFolders
+    assert_eq!(store.pinned_folders.paths.len(), 2);
+    assert_eq!(store.pinned_folders.paths[0], "/some/path/1");
+    assert_eq!(store.pinned_folders.paths[1], "/some/path/2");
+
+    // Assert MetadataPanel
+    assert!(store.metadata_panel.is_expanded);
+    assert_eq!(store.metadata_panel.panel_width, 250);
+
+    // Assert WindowPosition
+    assert_eq!(store.window_position.left, 50);
+    assert_eq!(store.window_position.top, 60);
+    assert_eq!(store.window_position.width, 1200);
+    assert_eq!(store.window_position.height, 800);
+    assert!(store.window_position.maximized);
+    assert_eq!(store.window_position.screen_count, 2);
+
+    // Assert KeyBindings
+    assert_eq!(store.keybindings.move_to_folder.key, "Up");
+    assert!(!store.keybindings.move_to_folder.ctrl);
+    assert_eq!(store.keybindings.delete.key, "Down");
+    assert!(store.keybindings.delete.ctrl); // 2 is Control
+    assert_eq!(store.keybindings.search_images.key, "I");
+    assert!(store.keybindings.search_images.shift); // 4 is Shift
+}
+

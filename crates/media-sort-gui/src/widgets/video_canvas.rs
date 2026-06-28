@@ -3,20 +3,33 @@ use iced::{Color, Element, Length};
 
 use crate::message::Message;
 
-#[allow(dead_code)]
-pub fn video_canvas_view() -> Element<'static, Message> {
+pub fn video_canvas_view(
+    path: std::path::PathBuf,
+    l10n: &media_sort_core::l10n::Localization,
+) -> Element<'static, Message> {
     container(
         column![
-            text("Video playback coming soon").size(16),
-            text("MPV/wgpu rendering not yet implemented").size(12),
+            text(l10n.tr("ui-video-playback-soon")).size(16),
+            text(l10n.tr("ui-rendering-not-implemented")).size(12),
+            button(
+                row![
+                    text(char::from(lucide_icons::Icon::ExternalLink))
+                        .font(iced::Font::with_name("lucide"))
+                        .size(12),
+                    text(format!(" {}", l10n.tr("ui-play-in-system-player")))
+                ]
+                .align_y(iced::Alignment::Center)
+            )
+            .padding([8, 16])
+            .on_press(Message::PlayVideoExternally(path)),
         ]
-        .spacing(8)
+        .spacing(12)
         .align_x(iced::Alignment::Center),
     )
     .center_x(Length::Fill)
     .center_y(Length::Fill)
     .width(Length::Fill)
-    .height(Length::Fixed(200.0))
+    .height(Length::Fill)
     .style(|_theme| iced::widget::container::Style {
         background: Some(iced::Background::Color(Color::from_rgb(0.05, 0.05, 0.08))),
         border: iced::Border {

@@ -46,7 +46,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             }
         }
         media_sort_core::media_type::MediaType::Video => {
-            crate::widgets::video_canvas::video_canvas_view()
+            crate::widgets::video_canvas::video_canvas_view(entry.path.clone(), &state.l10n)
         }
         media_sort_core::media_type::MediaType::Audio => {
             crate::widgets::video_canvas::audio_controls_view()

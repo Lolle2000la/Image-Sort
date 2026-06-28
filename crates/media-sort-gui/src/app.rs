@@ -493,6 +493,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.create_folder_placeholder = state.l10n.tr("ui-folder-name-placeholder");
             Task::none()
         }
+        Message::PlayVideoExternally(path) => {
+            let res = if cfg!(target_os = "windows") {
+                std::process::Command::new("cmd")
+                    .args(["/C", "start", ""])
+                    .arg(&path)
+                    .spawn()
+            } else if cfg!(target_os = "macos") {
+                std::process::Command::new("open")
+                    .arg(&path)
+                    .spawn()
+            } else {
+                std::process::Command::new("xdg-open")
+                    .arg(&path)
+                    .spawn()
+            };
+            if let Err(e) = res {
+                log::error!("Failed to play video externally: {e}");
+            }
+            Task::none()
+        }
         Message::ToggleDarkMode => {
             state.settings.general.dark_mode = !state.settings.general.dark_mode;
             let _ = state.settings.save();

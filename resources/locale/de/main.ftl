@@ -99,4 +99,8 @@ ui-credits-title = Danksagungen
 ui-credits-leading = Diese Open-Source-Projekte haben Image Sort ermöglicht:
 ui-enter-new-name = Geben Sie einen neuen Namen ein...
 ui-folder-name-placeholder = Ordnername...
+ui-video-playback-soon = Videowiedergabe demnächst verfügbar
+ui-rendering-not-implemented = MPV/wgpu-Rendering noch nicht implementiert
+ui-play-in-system-player = Im System-Player abspielen
+
 

@@ -57,6 +57,7 @@ pub enum Message {
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
     ChangeLanguage(String),
+    PlayVideoExternally(std::path::PathBuf),
     SaveSettings,
     RestoreDefaultKeyBindings,
     OpenCredits,
