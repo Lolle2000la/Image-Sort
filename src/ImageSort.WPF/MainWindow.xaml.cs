@@ -124,7 +124,9 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
                 .Where(_ => !(Keyboard.FocusedElement is TextBox))
                 .Where(k => reservedKeys.Contains(new Hotkey(k.Key, Keyboard.Modifiers)))
                 .Do(k => k.Handled = true)
-                .Select(k => new Hotkey(k.Key, Keyboard.Modifiers));
+                .Select(k => new Hotkey(k.Key, Keyboard.Modifiers))
+                .Publish()
+                .RefCount();
 
             IObservable<Unit> KeyPressed(Func<Hotkey> key)
             {
