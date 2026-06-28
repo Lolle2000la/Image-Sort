@@ -30,8 +30,8 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
                 let section_header =
                     text(format!("[{}]", section_name))
                         .size(12)
-                        .style(move |_theme| text::Style {
-                            color: Some(Color::from_rgb(0.6, 0.7, 0.9)),
+                        .style(move |theme: &iced::Theme| text::Style {
+                            color: Some(theme.palette().primary),
                         });
 
                 let mut field_list = column![].spacing(2);
@@ -70,14 +70,17 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
             state.settings.metadata_panel.panel_width,
         )))
         .height(Length::Fill)
-        .style(|_theme| iced::widget::container::Style {
-            background: Some(iced::Background::Color(Color::from_rgb(0.1, 0.1, 0.12))),
-            border: iced::Border {
-                radius: 0.0.into(),
-                width: 0.0,
-                color: Color::TRANSPARENT,
-            },
-            ..iced::widget::container::Style::default()
+        .style(|theme: &iced::Theme| {
+            let palette = theme.palette();
+            iced::widget::container::Style {
+                background: Some(iced::Background::Color(palette.background)),
+                border: iced::Border {
+                    radius: 0.0.into(),
+                    width: 1.0,
+                    color: Color { a: 0.15, ..palette.text },
+                },
+                ..iced::widget::container::Style::default()
+            }
         })
         .into()
 }
