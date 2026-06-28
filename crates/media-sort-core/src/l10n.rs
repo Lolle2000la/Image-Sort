@@ -15,17 +15,24 @@ impl Localization {
             .unwrap_or_else(|_| "en".parse().unwrap());
         let mut bundles = HashMap::new();
 
-        let ftl = r#"
-move-action-message = Move {$file_name} to {$directory}
-delete-action-message = Delete {$file_name}
-rename-action-message = Rename {$old_file_name} to {$new_file_name}
-could-not-act-error = Could not execute action "{$act_message}": {$error_message}
-        "#;
+        let ftl_en = include_str!("../../../resources/locale/en/main.ftl");
+        let ftl_de = include_str!("../../../resources/locale/de/main.ftl");
+        let ftl_ja = include_str!("../../../resources/locale/ja/main.ftl");
 
-        if let Ok(res) = FluentResource::try_new(ftl.to_string()) {
-            let mut bundle = FluentBundle::new(vec![langid.clone()]);
-            bundle.add_resource(res).ok();
-            bundles.insert(langid.clone(), bundle);
+        let locales = [
+            ("en", ftl_en),
+            ("de", ftl_de),
+            ("ja", ftl_ja),
+        ];
+
+        for (lang_code, ftl_content) in locales {
+            let current_id: LanguageIdentifier = lang_code.parse().unwrap();
+            if let Ok(res) = FluentResource::try_new(ftl_content.to_string()) {
+                let mut bundle = FluentBundle::new(vec![current_id.clone()]);
+                bundle.add_resource(res).ok();
+                bundle.set_use_isolating(false);
+                bundles.insert(current_id, bundle);
+            }
         }
 
         Self {
@@ -35,7 +42,9 @@ could-not-act-error = Could not execute action "{$act_message}": {$error_message
     }
 
     pub fn get(&self, key: &str, args: &[(&str, &str)]) -> String {
-        if let Some(bundle) = self.bundles.get(&self.current_lang) {
+        let bundle = self.bundles.get(&self.current_lang)
+            .or_else(|| self.bundles.get(&"en".parse().unwrap()));
+        if let Some(bundle) = bundle {
             let mut errors = Vec::new();
             if let Some(pattern) = bundle.get_message(key) {
                 if let Some(value) = pattern.value() {
