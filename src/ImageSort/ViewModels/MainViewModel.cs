@@ -84,10 +84,10 @@ public class MainViewModel : ReactiveObject
             catch (UnhandledInteractionException<Unit, string>) { }
         });
 
-        var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images, (f, i) => new { Folders = f, Images = i })
-            .Where(fi => fi.Folders != null && fi.Images != null)
-            .SelectMany(_ => Folders.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
-                .CombineLatest(Images.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
+        var canMoveImageToFolderExecute = this.WhenAnyValue(x => x.Folders, x => x.Images)
+            .Where(fi => fi.Item1 != null && fi.Item2 != null)
+            .SelectMany(fi => fi.Item1.WhenAnyValue(x => x.Selected, x => x.CurrentFolder, (s, c) => s != null && c != null && s != c)
+                .CombineLatest(fi.Item2.WhenAnyValue(x => x.SelectedImage), (f, s) => f && s != null));
 
         MoveImageToFolder = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -122,13 +122,13 @@ public class MainViewModel : ReactiveObject
 
         this.WhenAnyValue(x => x.Folders, x => x.Actions)
             .Where(models => models.Item1 != null && models.Item2 != null)
-            .SelectMany(_ => Folders.WhenAnyValue(x => x.CurrentFolder))
+            .SelectMany(models => models.Item1.WhenAnyValue(x => x.CurrentFolder))
             .Select(_ => Unit.Default)
             .Subscribe(async _ => await Actions.Clear.Execute());
 
         this.WhenAnyValue(x => x.Images, x => x.Actions)
             .Where(i => i.Item1 != null && i.Item2 != null)
-            .SelectMany(_ => Images.RenameImage)
+            .SelectMany(i => i.Item1.RenameImage)
             .Where(a => a != null)
             .Subscribe(async a => await Actions.Execute.Execute(a));
     }
