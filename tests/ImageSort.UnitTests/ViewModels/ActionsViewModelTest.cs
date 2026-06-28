@@ -26,6 +26,8 @@ public class ActionsViewModelTest
 
         await actionsVM.Execute.Execute(actionMock);
 
+        await Task.Delay(1); // without this the variables do not get updated for some reason.
+
         Assert.Equal(actionDisplayName, actionsVM.LastDone);
 
         await actionsVM.Undo.Execute();
