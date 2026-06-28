@@ -3,6 +3,13 @@ use std::collections::HashMap;
 use fluent::{FluentBundle, FluentResource};
 use unic_langid::LanguageIdentifier;
 
+mod locales_codegen {
+    include!(concat!(env!("OUT_DIR"), "/locales_codegen.rs"));
+}
+pub use locales_codegen::locale_display_name;
+
+pub const AVAILABLE_LOCALES: &[&str] = locales_codegen::AVAILABLE_LOCALES;
+
 pub struct Localization {
     bundles: HashMap<LanguageIdentifier, FluentBundle<FluentResource>>,
     current_lang: LanguageIdentifier,
@@ -15,17 +22,13 @@ impl Localization {
             .unwrap_or_else(|_| "en".parse().unwrap());
         let mut bundles = HashMap::new();
 
-        let ftl_en = include_str!("../../../resources/locale/en/main.ftl");
-        let ftl_de = include_str!("../../../resources/locale/de/main.ftl");
-        let ftl_ja = include_str!("../../../resources/locale/ja/main.ftl");
+        for &lang_code in AVAILABLE_LOCALES {
+            let ftl_content = if lang_code == "en" {
+                include_str!("../../../resources/locale/en/main.ftl")
+            } else {
+                locales_codegen::load_ftl(lang_code).unwrap()
+            };
 
-        let locales = [
-            ("en", ftl_en),
-            ("de", ftl_de),
-            ("ja", ftl_ja),
-        ];
-
-        for (lang_code, ftl_content) in locales {
             let current_id: LanguageIdentifier = lang_code.parse().unwrap();
             if let Ok(res) = FluentResource::try_new(ftl_content.to_string()) {
                 let mut bundle = FluentBundle::new(vec![current_id.clone()]);
