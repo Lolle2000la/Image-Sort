@@ -4,7 +4,7 @@ use iced::{Element, Length};
 use crate::message::Message;
 
 pub fn search_bar_view<'a>(query: &'a str) -> Element<'a, Message> {
-    let search_input = text_input("Search images... (Shortcuts: 'I' to focus, 'Tab' to leave)", query)
+    let search_input = text_input("Search images...", query)
         .on_input(Message::SearchQueryChanged)
         .padding(6)
         .width(Length::Fill);
