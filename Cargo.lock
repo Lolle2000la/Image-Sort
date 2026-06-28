@@ -2784,6 +2784,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "lucide-icons"
+version = "1.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8dbb0a9db524d2167609e8fe281a011259bca3d57ca0340954b55f0aa8f3cc4a"
+
+[[package]]
 name = "mach2"
 version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2859,6 +2865,7 @@ dependencies = [
  "image 0.25.10",
  "log",
  "lru",
+ "lucide-icons",
  "media-sort-backend",
  "media-sort-core",
  "parking_lot 0.12.5",

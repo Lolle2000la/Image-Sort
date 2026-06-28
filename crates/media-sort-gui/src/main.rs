@@ -31,6 +31,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     iced::application("Media Sort", app::update, app::view)
         .theme(app::theme)
         .subscription(app::subscription)
+        .font(lucide_icons::LUCIDE_FONT_BYTES)
         .window(window_settings)
         .run_with(move || {
             let state = crate::state::AppState::new(settings);

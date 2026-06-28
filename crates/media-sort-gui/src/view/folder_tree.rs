@@ -27,11 +27,17 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
     };
 
     let arrow = if node.children.is_empty() {
-        text("  ").size(14)
+        text(" ").size(12).width(Length::Fixed(12.0))
     } else if node.is_expanded {
-        text("\u{25BC}").size(12)
+        text(char::from(lucide_icons::Icon::ChevronDown))
+            .font(iced::Font::with_name("lucide"))
+            .size(12)
+            .width(Length::Fixed(12.0))
     } else {
-        text("\u{25B6}").size(12)
+        text(char::from(lucide_icons::Icon::ChevronRight))
+            .font(iced::Font::with_name("lucide"))
+            .size(12)
+            .width(Length::Fixed(12.0))
     };
 
     let node_path = node.path.clone();
