@@ -50,7 +50,9 @@ internal static class SettingsHelper
         using var configFile = File.OpenRead(ConfigFileLocation);
 
         var configContents = JsonSerializer
-            .DeserializeAsync<Dictionary<string, Dictionary<string, object>>>(configFile).Result;
+            .Deserialize<Dictionary<string, Dictionary<string, object>>>(configFile);
+
+        if (configContents == null) return;
 
         foreach (var configGroup in new Dictionary<string, Dictionary<string, object>>(configContents))
         foreach (var config in new Dictionary<string, object>(configGroup.Value))
