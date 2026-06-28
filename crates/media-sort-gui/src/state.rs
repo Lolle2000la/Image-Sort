@@ -379,6 +379,9 @@ fn is_dummy_or_empty(children: &[FolderNode]) -> bool {
 fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
     for node in nodes.iter_mut() {
         if node.path == path {
+            if node.path.exists() && node.children.is_empty() {
+                return true;
+            }
             node.is_expanded = !node.is_expanded;
             if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {
                 let current = if node.is_current {
@@ -412,6 +415,9 @@ fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBu
 fn set_expand_recursive(nodes: &mut [FolderNode], path: &Path, expand: bool) -> bool {
     for node in nodes.iter_mut() {
         if node.path == path {
+            if expand && node.path.exists() && node.children.is_empty() {
+                return true;
+            }
             if node.is_expanded != expand {
                 node.is_expanded = expand;
                 if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {

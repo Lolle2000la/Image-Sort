@@ -20,33 +20,41 @@ pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a 
 
 #[allow(clippy::only_used_in_recursion)]
 fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
-    let icon = if node.is_expanded {
+    let icon = if node.is_expanded && !node.children.is_empty() {
         folder_icon::open_folder_icon()
     } else {
         folder_icon::folder_icon()
     };
 
-    let arrow = if node.children.is_empty() {
-        text(" ").size(12).width(Length::Fixed(12.0))
-    } else if node.is_expanded {
-        text(char::from(lucide_icons::Icon::ChevronDown))
-            .font(iced::Font::with_name("lucide"))
-            .size(12)
-            .width(Length::Fixed(12.0))
-    } else {
-        text(char::from(lucide_icons::Icon::ChevronRight))
-            .font(iced::Font::with_name("lucide"))
-            .size(12)
-            .width(Length::Fixed(12.0))
-    };
-
     let node_path = node.path.clone();
 
-    let row_content = row![arrow, icon, text(&node.name).size(14),]
+    // Arrow button specifically for expand/collapse toggle
+    let arrow_content: Element<'static, Message> = if node.children.is_empty() {
+        text(" ").size(12).width(Length::Fixed(12.0)).into()
+    } else {
+        button(
+            text(char::from(if node.is_expanded {
+                lucide_icons::Icon::ChevronDown
+            } else {
+                lucide_icons::Icon::ChevronRight
+            }))
+            .font(iced::Font::with_name("lucide"))
+            .size(12)
+            .width(Length::Fixed(12.0))
+        )
+        .on_press(Message::ToggleFolderExpand(node_path.clone()))
+        .style(iced::widget::button::text)
+        .padding(iced::Padding::new(2.0))
+        .into()
+    };
+
+    // Main row content with Folder icon and Folder name
+    let row_content = row![icon, text(&node.name).size(14)]
         .spacing(4)
         .align_y(iced::Alignment::Center);
 
-    let row_button = button(row_content)
+    // Folder selection button
+    let select_button = button(row_content)
         .on_press(Message::FolderSelected(node_path.clone()))
         .style(move |theme: &iced::Theme, _status| {
             let palette = theme.palette();
@@ -84,19 +92,15 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
         })
         .width(Length::Fill);
 
-    let expand_path = node.path.clone();
-    let row_with_expand = if node.children.is_empty() {
-        row_button
-    } else {
-        button(row_button)
-            .on_press(Message::ToggleFolderExpand(expand_path))
-            .style(iced::widget::button::text)
-            .width(Length::Fill)
-    };
+    // Combined item layout: Chevron on the left, folder button on the right
+    let item_layout = row![arrow_content, select_button]
+        .spacing(4)
+        .align_y(iced::Alignment::Center)
+        .width(Length::Fill);
 
     let children: Vec<Element<'a, Message>> = if node.is_expanded && !node.children.is_empty() {
         vec![
-            row_with_expand.into(),
+            item_layout.into(),
             container(
                 column(
                     node.children
@@ -111,7 +115,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
             .into(),
         ]
     } else {
-        vec![row_with_expand.into()]
+        vec![item_layout.into()]
     };
 
     column(children).spacing(0).into()
