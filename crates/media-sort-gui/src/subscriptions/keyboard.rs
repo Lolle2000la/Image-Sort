@@ -4,15 +4,20 @@ use iced::Subscription;
 use crate::message::Message;
 
 pub fn keyboard_subscription() -> Subscription<Message> {
-    keyboard::on_key_press(|key, modifiers| {
-        key_to_name(key).map(|key_name| {
-            Message::KeyCaptured(
-                key_name,
-                modifiers.control(),
-                modifiers.shift(),
-                modifiers.alt(),
-            )
-        })
+    keyboard::listen().filter_map(|event| {
+        match event {
+            keyboard::Event::KeyPressed { key, modifiers, .. } => {
+                key_to_name(key).map(|key_name| {
+                    Message::KeyCaptured(
+                        key_name,
+                        modifiers.control(),
+                        modifiers.shift(),
+                        modifiers.alt(),
+                    )
+                })
+            }
+            _ => None,
+        }
     })
 }
 

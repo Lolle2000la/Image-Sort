@@ -14,7 +14,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
 
     let header_row = row![
         text("Metadata").size(16),
-        iced::widget::horizontal_space(),
+        iced::widget::Space::new().width(Length::Fill),
         button(text("X"))
             .on_press(Message::ToggleMetadataPanel)
             .style(iced::widget::button::text),

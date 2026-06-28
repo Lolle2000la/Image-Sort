@@ -16,7 +16,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Tick(_instant) => {
             if state.should_exit {
                 let _ = state.settings.save();
-                return window::get_latest().and_then(window::close);
+                return window::latest().and_then(window::close);
             }
             Task::none()
         }
@@ -500,7 +500,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             match event {
                 iced::Event::Window(iced::window::Event::CloseRequested) => {
                     let _ = state.settings.save();
-                    window::get_latest().and_then(window::close)
+                    window::latest().and_then(window::close)
                 }
                 iced::Event::Window(iced::window::Event::Resized(size)) => {
                     state.settings.window_position.width = size.width.round() as u32;

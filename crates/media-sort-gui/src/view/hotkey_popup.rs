@@ -23,7 +23,7 @@ pub fn hotkey_popup_view(state: &AppState) -> Element<'_, Message> {
     for i in 0..count {
         let r = row![
             Text::new(descriptions[i].clone()).size(13),
-            iced::widget::horizontal_space(),
+            iced::widget::Space::new().width(Length::Fill),
             Text::new(shortcut_texts[i].clone()).size(13),
         ]
         .spacing(8)

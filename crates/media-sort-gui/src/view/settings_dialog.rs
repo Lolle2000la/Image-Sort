@@ -63,12 +63,12 @@ fn get_keybinding(state: &AppState, idx: usize) -> &media_sort_core::settings::k
 fn keybinding_row<'a>(
     state: &'a AppState,
     idx: usize,
-    label: &'static str,
+    label: String,
 ) -> Element<'a, Message> {
     let binding = get_keybinding(state, idx);
     let is_editing = state.editing_keybinding == Some(idx);
     let shortcut_text = if is_editing {
-        "Press a key...".to_string()
+        state.l10n.tr("keybindings-press-key")
     } else {
         format_keybinding(binding)
     };
@@ -92,7 +92,7 @@ fn keybinding_row<'a>(
 }
 
 fn keybinding_section<'a>(
-    title: &'static str,
+    title: String,
     items: Vec<Element<'a, Message>>,
 ) -> Element<'a, Message> {
     column(
@@ -104,7 +104,7 @@ fn keybinding_section<'a>(
 }
 
 fn keybinding_subsection<'a>(
-    title: &'static str,
+    title: String,
     items: Vec<Element<'a, Message>>,
 ) -> Element<'a, Message> {
     column(
@@ -117,18 +117,18 @@ fn keybinding_subsection<'a>(
 }
 
 pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
-    let title = text("Settings").size(20).font(BOLD_FONT);
+    let title = text(state.l10n.tr("settings-title")).size(20).font(BOLD_FONT);
 
     // Tab bar
     let tab_bar = row![
-        button(text("General settings").size(13))
+        button(text(state.l10n.tr("settings-tab-general")).size(13))
             .on_press(Message::OpenSettings)
             .style(if !state.show_keybindings {
                 iced::widget::button::primary
             } else {
                 iced::widget::button::secondary
             }),
-        button(text("Key bindings").size(13))
+        button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
             .on_press(Message::OpenKeybindings)
             .style(if state.show_keybindings {
                 iced::widget::button::primary
@@ -140,56 +140,50 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let tab_content: Element<'_, Message> = if !state.show_keybindings {
         // General settings tab
-        let dark_mode_cb = checkbox("Dark Mode", state.settings.general.dark_mode)
+        let dark_mode_cb = checkbox(state.settings.general.dark_mode)
+            .label(state.l10n.tr("settings-dark-mode"))
             .on_toggle(|_| Message::ToggleDarkMode)
             .size(16);
 
-        let animate_gifs_cb = checkbox("Play animated gifs", state.settings.general.animate_gifs)
+        let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
+            .label(state.l10n.tr("settings-play-gifs"))
             .on_toggle(|_| Message::ToggleAnimateGifs)
             .size(16);
 
-        let animate_thumbs_cb = checkbox(
-            "Preview animated gifs in thumbnails",
-            state.settings.general.animate_gif_thumbnails,
-        )
-        .on_toggle(|_| Message::ToggleAnimateThumbnails)
-        .size(16);
+        let animate_thumbs_cb = checkbox(state.settings.general.animate_gif_thumbnails)
+            .label(state.l10n.tr("settings-preview-gifs"))
+            .on_toggle(|_| Message::ToggleAnimateThumbnails)
+            .size(16);
 
-        let check_updates_cb = checkbox(
-            "Check for updates on startup",
-            state.settings.general.check_for_updates_on_startup,
-        )
-        .on_toggle(|_| Message::ToggleCheckForUpdates)
-        .size(16);
+        let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
+            .label(state.l10n.tr("settings-check-updates"))
+            .on_toggle(|_| Message::ToggleCheckForUpdates)
+            .size(16);
 
-        let install_prerelease_cb = checkbox(
-            "Install prerelease builds",
-            state.settings.general.install_prerelease_builds,
-        )
-        .on_toggle(|_| Message::ToggleInstallPrerelease)
-        .size(16);
+        let install_prerelease_cb = checkbox(state.settings.general.install_prerelease_builds)
+            .label(state.l10n.tr("settings-install-prerelease"))
+            .on_toggle(|_| Message::ToggleInstallPrerelease)
+            .size(16);
 
-        let reopen_folder_cb = checkbox(
-            "Reopen last opened folder on startup",
-            state.settings.general.reopen_last_opened_folder,
-        )
-        .on_toggle(|_| Message::ToggleReopenFolder)
-        .size(16);
+        let reopen_folder_cb = checkbox(state.settings.general.reopen_last_opened_folder)
+            .label(state.l10n.tr("settings-reopen-folder"))
+            .on_toggle(|_| Message::ToggleReopenFolder)
+            .size(16);
 
         #[allow(unused_mut)]
         let mut settings_col = column![
             column![
-                text("Appearance").font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-appearance")).font(BOLD_FONT).size(14),
                 dark_mode_cb,
                 reopen_folder_cb,
             ].spacing(8),
             column![
-                text("Animated Gifs").font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-animated-gifs")).font(BOLD_FONT).size(14),
                 animate_gifs_cb,
                 animate_thumbs_cb,
             ].spacing(8),
             column![
-                text("Updates").font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-updates")).font(BOLD_FONT).size(14),
                 check_updates_cb,
                 install_prerelease_cb,
             ].spacing(8),
@@ -209,16 +203,14 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
         #[cfg(target_os = "windows")]
         {
-            let integration_with_windows_cb = checkbox(
-                "Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.",
-                state.settings.general.integration_with_windows,
-            )
-            .on_toggle(|_| Message::ToggleIntegrationWithWindows)
-            .size(16);
+            let integration_with_windows_cb = checkbox(state.settings.general.integration_with_windows)
+                .label(state.l10n.tr("settings-windows-context-menu"))
+                .on_toggle(|_| Message::ToggleIntegrationWithWindows)
+                .size(16);
 
             settings_col = settings_col.push(
                 column![
-                    text("Integration with Windows").font(BOLD_FONT).size(14),
+                    text(state.l10n.tr("settings-windows-integration")).font(BOLD_FONT).size(14),
                     integration_with_windows_cb,
                 ].spacing(8),
             );
@@ -229,27 +221,27 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .into()
     } else {
         // Key bindings tab
-        let restore_btn = button(text("Restore default key bindings").size(12))
+        let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
             .on_press(Message::RestoreDefaultKeyBindings)
             .style(iced::widget::button::secondary);
 
         // Images Section
-        let images_management = keybinding_subsection("Management", vec![
-            keybinding_row(state, 0, "Move"),
-            keybinding_row(state, 1, "Delete"),
-            keybinding_row(state, 2, "Rename"),
+        let images_management = keybinding_subsection(state.l10n.tr("keybindings-management"), vec![
+            keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
+            keybinding_row(state, 1, state.l10n.tr("keybindings-delete")),
+            keybinding_row(state, 2, state.l10n.tr("keybindings-rename")),
         ]);
-        let images_selection = keybinding_subsection("Selection", vec![
-            keybinding_row(state, 3, "Select image on the left"),
-            keybinding_row(state, 4, "Select image on the right"),
+        let images_selection = keybinding_subsection(state.l10n.tr("keybindings-selection"), vec![
+            keybinding_row(state, 3, state.l10n.tr("keybindings-select-left")),
+            keybinding_row(state, 4, state.l10n.tr("keybindings-select-right")),
         ]);
-        let images_search = keybinding_subsection("Search", vec![
-            keybinding_row(state, 19, "Search images... (press 'Tab' to leave)"),
+        let images_search = keybinding_subsection(state.l10n.tr("keybindings-search"), vec![
+            keybinding_row(state, 19, state.l10n.tr("keybindings-search-images")),
         ]);
-        let images_metadata = keybinding_subsection("Metadata", vec![
-            keybinding_row(state, 20, "Open/Close metadata panel"),
+        let images_metadata = keybinding_subsection(state.l10n.tr("keybindings-metadata"), vec![
+            keybinding_row(state, 20, state.l10n.tr("keybindings-toggle-metadata")),
         ]);
-        let images_section = keybinding_section("Images", vec![
+        let images_section = keybinding_section(state.l10n.tr("keybindings-images"), vec![
             images_management,
             images_selection,
             images_search,
@@ -257,27 +249,27 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         ]);
 
         // Folders Section
-        let folders_management = keybinding_subsection("Management", vec![
-            keybinding_row(state, 5, "Create Folder"),
+        let folders_management = keybinding_subsection(state.l10n.tr("keybindings-management"), vec![
+            keybinding_row(state, 5, state.l10n.tr("keybindings-create-folder")),
         ]);
-        let folders_open = keybinding_subsection("Open", vec![
-            keybinding_row(state, 12, "Open folder"),
-            keybinding_row(state, 13, "Open selected folder"),
+        let folders_open = keybinding_subsection(state.l10n.tr("keybindings-open"), vec![
+            keybinding_row(state, 12, state.l10n.tr("keybindings-open-folder")),
+            keybinding_row(state, 13, state.l10n.tr("keybindings-open-selected")),
         ]);
-        let folders_pinned = keybinding_subsection("Pinned", vec![
-            keybinding_row(state, 14, "Pin"),
-            keybinding_row(state, 15, "Pin selected"),
-            keybinding_row(state, 16, "Unpin"),
-            keybinding_row(state, 17, "Move the selected pinned folder up"),
-            keybinding_row(state, 18, "Move the selected pinned folder down"),
+        let folders_pinned = keybinding_subsection(state.l10n.tr("keybindings-pinned"), vec![
+            keybinding_row(state, 14, state.l10n.tr("keybindings-pin")),
+            keybinding_row(state, 15, state.l10n.tr("keybindings-pin-selected")),
+            keybinding_row(state, 16, state.l10n.tr("keybindings-unpin")),
+            keybinding_row(state, 17, state.l10n.tr("keybindings-move-pinned-up")),
+            keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-down")),
         ]);
-        let folders_selection = keybinding_subsection("Selection", vec![
-            keybinding_row(state, 6, "Select the folder above"),
-            keybinding_row(state, 7, "Collapse folder"),
-            keybinding_row(state, 8, "Select the folder below"),
-            keybinding_row(state, 9, "Expand folder (list sub-folders)"),
+        let folders_selection = keybinding_subsection(state.l10n.tr("keybindings-selection"), vec![
+            keybinding_row(state, 6, state.l10n.tr("keybindings-select-above")),
+            keybinding_row(state, 7, state.l10n.tr("keybindings-collapse")),
+            keybinding_row(state, 8, state.l10n.tr("keybindings-select-below")),
+            keybinding_row(state, 9, state.l10n.tr("keybindings-expand")),
         ]);
-        let folders_section = keybinding_section("Folders", vec![
+        let folders_section = keybinding_section(state.l10n.tr("keybindings-folders"), vec![
             folders_management,
             folders_open,
             folders_pinned,
@@ -285,11 +277,11 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         ]);
 
         // Other Section
-        let other_history = keybinding_subsection("History", vec![
-            keybinding_row(state, 10, "Undo"),
-            keybinding_row(state, 11, "Redo"),
+        let other_history = keybinding_subsection(state.l10n.tr("keybindings-history"), vec![
+            keybinding_row(state, 10, state.l10n.tr("keybindings-undo")),
+            keybinding_row(state, 11, state.l10n.tr("keybindings-redo")),
         ]);
-        let other_section = keybinding_section("Other", vec![
+        let other_section = keybinding_section(state.l10n.tr("keybindings-other"), vec![
             other_history,
         ]);
 
@@ -306,7 +298,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .into()
     };
 
-    let close_btn = button(text("Close"))
+    let close_btn = button(text(state.l10n.tr("settings-close")))
         .on_press(Message::CloseSettings)
         .style(iced::widget::button::primary);
 
@@ -338,3 +330,5 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     .height(Length::Fixed(500.0))
     .into()
 }
+
+

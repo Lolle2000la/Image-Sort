@@ -6,7 +6,7 @@ use media_sort_core::models::FolderNode;
 use crate::message::Message;
 use crate::widgets::folder_icon;
 
-const INDENT_WIDTH: u16 = 20;
+const INDENT_WIDTH: f32 = 20.0;
 
 pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
     column(

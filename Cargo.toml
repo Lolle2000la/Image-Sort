@@ -29,23 +29,52 @@ once_cell = "1"
 strum = { version = "0.26", features = ["derive"] }
 dirs = "5"
 
-image = { version = "0.25", default-features = false, features = ["jpeg", "png", "gif", "bmp", "tiff", "ico", "webp"] }
-notify = { version = "7", default-features = false, features = ["macos_kqueue"] }
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "gif",
+    "bmp",
+    "tiff",
+    "ico",
+    "webp",
+] }
+notify = { version = "7", default-features = false, features = [
+    "macos_kqueue",
+] }
 notify-debouncer-mini = "0.5"
 trash = "5"
 walkdir = "2"
 kamadak-exif = "0.6"
-symphonia = { version = "0.5", features = ["mp3", "aac", "flac", "vorbis", "wav", "all-codecs"] }
+symphonia = { version = "0.5", features = [
+    "mp3",
+    "aac",
+    "flac",
+    "vorbis",
+    "wav",
+    "all-codecs",
+] }
 symphonia-core = "0.5"
-rodio = { version = "0.20", default-features = false, features = ["flac", "vorbis", "wav", "mp3"] }
+rodio = { version = "0.20", default-features = false, features = [
+    "flac",
+    "vorbis",
+    "wav",
+    "mp3",
+] }
 ash = "0.38"
 raw-window-handle = "0.6"
 id3 = "1"
 metaflac = "0.2"
 mp4ameta = "0.3"
 
-iced = { version = "0.13", features = ["wgpu", "image", "lazy", "tokio", "advanced", "system"] }
-iced_wgpu = "0.13"
+iced = { version = "0.14", features = [
+    "wgpu",
+    "image",
+    "lazy",
+    "tokio",
+    "advanced",
+    "advanced-shaping",
+] }
+iced_wgpu = "0.14"
 wgpu = "24"
 winit = "0.30"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync"] }

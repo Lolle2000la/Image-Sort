@@ -28,12 +28,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..window::Settings::default()
     };
 
-    iced::application("Media Sort", app::update, app::view)
-        .theme(app::theme)
-        .subscription(app::subscription)
-        .font(lucide_icons::LUCIDE_FONT_BYTES)
-        .window(window_settings)
-        .run_with(move || {
+    iced::application(
+        move || {
+            let settings = SettingsStore::load().unwrap_or_default();
             let state = crate::state::AppState::new(settings);
             let mut startup_path = None;
 
@@ -61,7 +58,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
 
             (state, task)
-        })?;
+        },
+        app::update,
+        app::view,
+    )
+    .title("Media Sort")
+    .theme(app::theme)
+    .subscription(app::subscription)
+    .font(lucide_icons::LUCIDE_FONT_BYTES)
+    .window(window_settings)
+    .run()?;
 
     Ok(())
 }

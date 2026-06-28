@@ -17,16 +17,17 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
     Vec::new()
 }
 
+fn prefetch_stream() -> impl iced::futures::Stream<Item = Message> {
+    iced::stream::channel(64, |_output| async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+        }
+    })
+}
+
 #[allow(dead_code)]
 pub fn prefetch_subscription() -> iced::Subscription<Message> {
-    iced::Subscription::run_with_id(
-        "prefetch",
-        iced::stream::channel(64, |_output| async move {
-            loop {
-                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-            }
-        }),
-    )
+    iced::Subscription::run(prefetch_stream)
 }
 
 #[cfg(test)]
