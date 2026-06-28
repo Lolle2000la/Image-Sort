@@ -55,6 +55,7 @@ pub enum Message {
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
+    ChangeLanguage(String),
     SaveSettings,
     RestoreDefaultKeyBindings,
     OpenCredits,

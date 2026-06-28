@@ -1,4 +1,4 @@
-use iced::widget::{button, checkbox, column, container, row, scrollable, text};
+use iced::widget::{button, checkbox, column, container, pick_list, row, scrollable, text};
 use iced::{Color, Element, Length, Alignment};
 
 use crate::message::Message;
@@ -9,6 +9,28 @@ const BOLD_FONT: iced::Font = iced::Font {
     weight: iced::font::Weight::Bold,
     ..iced::Font::DEFAULT
 };
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LocaleOption {
+    code: String,
+    display: String,
+}
+
+impl std::fmt::Display for LocaleOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.display)
+    }
+}
+
+fn locale_options() -> Vec<LocaleOption> {
+    media_sort_core::l10n::AVAILABLE_LOCALES
+        .iter()
+        .map(|&code| LocaleOption {
+            code: code.to_string(),
+            display: media_sort_core::l10n::locale_display_name(code).to_string(),
+        })
+        .collect()
+}
 
 fn get_keybinding(state: &AppState, idx: usize) -> &media_sort_core::settings::keybindings::KeyBinding {
     let kb = &state.settings.keybindings;
@@ -170,6 +192,17 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 text("Updates").font(BOLD_FONT).size(14),
                 check_updates_cb,
                 install_prerelease_cb,
+            ].spacing(8),
+            column![
+                text(state.l10n.tr("settings-language")).font(BOLD_FONT).size(14),
+                pick_list(
+                    locale_options(),
+                    Some(LocaleOption {
+                        code: state.l10n.locale(),
+                        display: media_sort_core::l10n::locale_display_name(&state.l10n.locale()).to_string(),
+                    }),
+                    |opt: LocaleOption| Message::ChangeLanguage(opt.code),
+                ).width(Length::Fixed(200.0)),
             ].spacing(8),
         ]
         .spacing(16);

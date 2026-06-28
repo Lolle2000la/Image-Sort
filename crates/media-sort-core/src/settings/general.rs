@@ -25,6 +25,9 @@ pub struct GeneralSettings {
 
     #[serde(default)]
     pub last_opened_folder: Option<String>,
+
+    #[serde(default)]
+    pub locale: Option<String>,
 }
 
 impl Default for GeneralSettings {
@@ -38,6 +41,7 @@ impl Default for GeneralSettings {
             integration_with_windows: false,
             reopen_last_opened_folder: true,
             last_opened_folder: None,
+            locale: None,
         }
     }
 }

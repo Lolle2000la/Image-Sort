@@ -10,6 +10,40 @@ pub use locales_codegen::locale_display_name;
 
 pub const AVAILABLE_LOCALES: &[&str] = locales_codegen::AVAILABLE_LOCALES;
 
+pub fn detect_locale() -> &'static str {
+    for var in &["LC_ALL", "LC_MESSAGES", "LANG"] {
+        if let Ok(val) = std::env::var(var) {
+            let val_lower = val.to_ascii_lowercase();
+            let val_norm = val_lower.replace('_', "-");
+
+            // Pass 1: exact match
+            for &lang in AVAILABLE_LOCALES {
+                let lang_norm = lang.to_ascii_lowercase().replace('_', "-");
+                if val_norm == lang_norm {
+                    return lang;
+                }
+            }
+
+            // Pass 2: longest prefix match
+            let mut best_match: Option<&'static str> = None;
+            for &lang in AVAILABLE_LOCALES {
+                let lang_norm = lang.to_ascii_lowercase().replace('_', "-");
+                if val_norm
+                    .strip_prefix(&lang_norm)
+                    .is_some_and(|rest| rest.starts_with(['-', '.', '@']))
+                    && best_match.is_none_or(|best| lang.len() > best.len())
+                {
+                    best_match = Some(lang);
+                }
+            }
+            if let Some(lang) = best_match {
+                return lang;
+            }
+        }
+    }
+    "en"
+}
+
 pub struct Localization {
     bundles: HashMap<LanguageIdentifier, FluentBundle<FluentResource>>,
     current_lang: LanguageIdentifier,
@@ -62,5 +96,19 @@ impl Localization {
             }
         }
         key.to_string()
+    }
+
+    pub fn tr(&self, key: &str) -> String {
+        self.get(key, &[])
+    }
+
+    pub fn set_locale(&mut self, lang: &str) {
+        self.current_lang = lang
+            .parse()
+            .unwrap_or_else(|_| "en".parse().unwrap());
+    }
+
+    pub fn locale(&self) -> String {
+        self.current_lang.to_string()
     }
 }

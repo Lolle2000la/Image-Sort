@@ -480,6 +480,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.waiting_for_key = false;
             Task::none()
         }
+        Message::ChangeLanguage(locale) => {
+            state.l10n.set_locale(&locale);
+            state.settings.general.locale = Some(locale);
+            let _ = state.settings.save();
+            Task::none()
+        }
         Message::ToggleDarkMode => {
             state.settings.general.dark_mode = !state.settings.general.dark_mode;
             let _ = state.settings.save();

@@ -45,6 +45,7 @@ pub struct AppState {
     pub create_folder_input: String,
     pub search_focused: bool,
     pub show_credits: bool,
+    pub l10n: media_sort_core::l10n::Localization,
 }
 
 impl AppState {
@@ -75,6 +76,12 @@ impl AppState {
 
         let audio_player = AudioPlayer::new().ok();
 
+        let detected_locale = match &settings.general.locale {
+            Some(locale) => locale.as_str(),
+            None => media_sort_core::l10n::detect_locale(),
+        };
+        let l10n = media_sort_core::l10n::Localization::init(detected_locale);
+
         Self {
             history: History::new(),
             settings,
@@ -102,6 +109,7 @@ impl AppState {
             create_folder_input: String::new(),
             search_focused: false,
             show_credits: false,
+            l10n,
         }
     }
 
