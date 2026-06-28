@@ -38,14 +38,14 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
         button(text(state.l10n.tr("ui-create-folder")).size(12))
             .on_press(Message::TriggerCreateFolder)
             .style(iced::widget::button::secondary)
-            .width(Length::Fill)
     } else {
         button(text(state.l10n.tr("ui-create-folder")).size(12))
             .style(iced::widget::button::secondary)
-            .width(Length::Fill)
     };
 
-    let buttons_row = row![pin_btn, pin_sel_btn, unpin_btn].spacing(4);
+    let buttons_row = row![pin_btn, pin_sel_btn, unpin_btn, create_folder_btn]
+        .spacing(4)
+        .wrap();
 
     let tree_content = folder_tree::folder_tree_view(&state.folder_tree, state.selected_folder.as_deref());
     let scrollable_tree = scrollable(tree_content).height(Length::Fill);
@@ -53,13 +53,12 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
     container(
         column![
             buttons_row,
-            create_folder_btn,
             scrollable_tree,
         ]
         .spacing(6),
     )
     .padding(6)
-    .width(Length::Fixed(240.0))
+    .width(Length::Fixed(f32::from(state.settings.general.folder_tree_width)))
     .height(Length::Fill)
     .into()
 }

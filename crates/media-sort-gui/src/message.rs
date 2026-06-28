@@ -41,6 +41,7 @@ pub enum Message {
     TriggerCreateFolder,
 
     ToggleMetadataPanel,
+    StartDragFolderDivider,
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
 
     EditKeyBinding(usize),

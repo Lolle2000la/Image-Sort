@@ -28,6 +28,9 @@ pub struct GeneralSettings {
 
     #[serde(default)]
     pub locale: Option<String>,
+
+    #[serde(default = "default_folder_tree_width")]
+    pub folder_tree_width: u16,
 }
 
 impl Default for GeneralSettings {
@@ -42,10 +45,15 @@ impl Default for GeneralSettings {
             reopen_last_opened_folder: true,
             last_opened_folder: None,
             locale: None,
+            folder_tree_width: default_folder_tree_width(),
         }
     }
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_folder_tree_width() -> u16 {
+    240
 }

@@ -49,6 +49,7 @@ pub struct AppState {
     pub search_placeholder: String,
     pub rename_placeholder: String,
     pub create_folder_placeholder: String,
+    pub dragging_folder_divider: bool,
 }
 
 impl AppState {
@@ -119,6 +120,7 @@ impl AppState {
             search_placeholder,
             rename_placeholder,
             create_folder_placeholder,
+            dragging_folder_divider: false,
         }
     }
 

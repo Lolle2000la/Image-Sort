@@ -1,4 +1,4 @@
-use iced::widget::{column, container, row, text, Text};
+use iced::widget::{column, container, mouse_area, row, text, Text};
 use iced::{Color, Element, Length};
 
 use crate::message::Message;
@@ -91,9 +91,29 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     .spacing(8)
     .height(Length::Fill);
 
+    let divider = mouse_area(
+        container(
+            container(iced::widget::Space::new().width(Length::Fixed(2.0)).height(Length::Fill))
+                .style(|theme: &iced::Theme| {
+                    let palette = theme.palette();
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(Color { a: 0.15, ..palette.text })),
+                        ..Default::default()
+                    }
+                })
+        )
+        .width(Length::Fixed(8.0))
+        .height(Length::Fill)
+        .center_x(8.0)
+    )
+    .on_press(Message::StartDragFolderDivider)
+    .interaction(iced::mouse::Interaction::ResizingHorizontally);
+
     let main_content = row![
         folder_panel,
+        divider,
         control_panel,
+        iced::widget::Space::new().width(Length::Fixed(8.0)),
         row![
             container(media_column)
                 .width(Length::Fill)
@@ -104,7 +124,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .width(Length::Fill)
         .height(Length::Fill),
     ]
-    .spacing(8)
+    .spacing(0)
     .height(Length::Fill);
 
     let result = container(main_content).padding(8);

@@ -499,6 +499,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        Message::StartDragFolderDivider => {
+            state.dragging_folder_divider = true;
+            Task::none()
+        }
         Message::EventOccurred(event) => {
             match event {
                 iced::Event::Window(iced::window::Event::CloseRequested) => {
@@ -513,6 +517,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 iced::Event::Window(iced::window::Event::Moved(point)) => {
                     state.settings.window_position.left = point.x.round() as i32;
                     state.settings.window_position.top = point.y.round() as i32;
+                    Task::none()
+                }
+                iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
+                    if state.dragging_folder_divider {
+                        let new_width = position.x.round().clamp(100.0, 800.0) as u16;
+                        state.settings.general.folder_tree_width = new_width;
+                    }
+                    Task::none()
+                }
+                iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
+                    if state.dragging_folder_divider {
+                        state.dragging_folder_divider = false;
+                        let _ = state.settings.save();
+                    }
                     Task::none()
                 }
                 _ => Task::none(),
