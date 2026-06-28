@@ -340,10 +340,27 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                     .unwrap_or_default();
                 let is_current =
                     current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
+
+                // Check if this subfolder has any subfolders of its own!
+                let has_subdirs = std::fs::read_dir(&path)
+                    .map(|mut read| read.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false)))
+                    .unwrap_or(false);
+
+                let mut node_children = Vec::new();
+                if has_subdirs {
+                    node_children.push(FolderNode {
+                        path: PathBuf::new(),
+                        name: String::new(),
+                        children: Vec::new(),
+                        is_current: false,
+                        is_expanded: false,
+                    });
+                }
+
                 let node = FolderNode {
                     path,
                     name,
-                    children: Vec::new(),
+                    children: node_children,
                     is_current,
                     is_expanded: false,
                 };
@@ -355,11 +372,15 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
     children
 }
 
+fn is_dummy_or_empty(children: &[FolderNode]) -> bool {
+    children.is_empty() || (children.len() == 1 && children[0].path.as_os_str().is_empty())
+}
+
 fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
     for node in nodes.iter_mut() {
         if node.path == path {
             node.is_expanded = !node.is_expanded;
-            if node.is_expanded && node.children.is_empty() && node.path.is_dir() {
+            if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {
                 let current = if node.is_current {
                     Some(node.path.as_path())
                 } else {
@@ -378,6 +399,9 @@ fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
 
 fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBuf>) {
     for node in nodes {
+        if node.path.as_os_str().is_empty() {
+            continue;
+        }
         list.push(node.path.clone());
         if node.is_expanded {
             collect_visible_folders_recursive(&node.children, list);
@@ -390,7 +414,7 @@ fn set_expand_recursive(nodes: &mut [FolderNode], path: &Path, expand: bool) -> 
         if node.path == path {
             if node.is_expanded != expand {
                 node.is_expanded = expand;
-                if node.is_expanded && node.children.is_empty() && node.path.is_dir() {
+                if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {
                     let current = if node.is_current {
                         Some(node.path.as_path())
                     } else {
@@ -410,6 +434,9 @@ fn set_expand_recursive(nodes: &mut [FolderNode], path: &Path, expand: bool) -> 
 
 fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bool> {
     for node in nodes {
+        if node.path.as_os_str().is_empty() {
+            continue;
+        }
         if node.path == path {
             return Some(node.is_expanded);
         }

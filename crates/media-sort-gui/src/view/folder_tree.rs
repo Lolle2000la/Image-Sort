@@ -53,9 +53,19 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
             let base = iced::widget::button::Style::default();
             let is_selected = selected_folder.map_or(false, |p| p == node.path);
             if node.is_current {
+                let border = if is_selected {
+                    iced::Border {
+                        color: Color::WHITE,
+                        width: 2.0,
+                        radius: 4.0.into(),
+                    }
+                } else {
+                    iced::Border::default()
+                };
                 iced::widget::button::Style {
                     background: Some(iced::Background::Color(palette.primary)),
                     text_color: Color::WHITE,
+                    border,
                     ..base
                 }
             } else if is_selected {
@@ -91,6 +101,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
                 column(
                     node.children
                         .iter()
+                        .filter(|child| !child.path.as_os_str().is_empty())
                         .map(|child| render_node(child, depth + 1, selected_folder))
                         .collect::<Vec<_>>(),
                 )
