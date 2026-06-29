@@ -53,6 +53,11 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .into()
+            } else if let Some(thumb_handle) = state.thumbnail_cache.peek(&entry.path) {
+                iced::widget::image(thumb_handle.clone())
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
             } else {
                 crate::widgets::video_canvas::video_canvas_view(entry.path.clone(), &state.l10n)
             };
