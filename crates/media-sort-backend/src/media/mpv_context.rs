@@ -315,6 +315,7 @@ pub enum VideoCommand {
 #[derive(Debug, Clone)]
 pub enum VideoEvent {
     FrameReady {
+        path: std::path::PathBuf,
         width: u32,
         height: u32,
         rgba: Vec<u8>,
@@ -356,6 +357,7 @@ pub async fn run_video_worker(
     }
 
     let mut buffer = Vec::new();
+    let mut current_video_path = std::path::PathBuf::new();
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -373,6 +375,7 @@ pub async fn run_video_worker(
                         if let Ok(()) = player.load_file(&path) {
                             player.set_paused(false);
                             is_active = true;
+                            current_video_path = path;
                         }
                     }
                     VideoCommand::Play => {
@@ -428,6 +431,7 @@ pub async fn run_video_worker(
 
                             if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                                 let _ = event_tx.send(VideoEvent::FrameReady {
+                                    path: current_video_path.clone(),
                                     width: render_w as u32,
                                     height: render_h as u32,
                                     rgba: buffer.clone(),

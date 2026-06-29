@@ -21,6 +21,7 @@ image.workspace = true
 rfd = { workspace = true }
 lucide-icons = "1.16"
 dirs = { workspace = true }
+once_cell.workspace = true
 
 [dev-dependencies]
 smol_str.workspace = true

@@ -26,8 +26,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::VideoEvent(event) => {
             match event {
-                media_sort_backend::media::mpv_context::VideoEvent::FrameReady { width, height, rgba } => {
-                    state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, rgba));
+                media_sort_backend::media::mpv_context::VideoEvent::FrameReady { path, width, height, rgba } => {
+                    let current_path = state.selected_index
+                        .and_then(|idx| state.filtered_media_entries().get(idx).map(|e| e.path.clone()));
+                    if Some(path) == current_path {
+                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, rgba));
+                    }
                 }
                 media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress { position, duration } => {
                     state.video_position = position;
@@ -873,9 +877,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         let end = (index + 6).min(filtered_len);
         let mut thumbnail_paths = Vec::new();
         for i in start..end {
-            if i != index {
-                thumbnail_paths.push(filtered[i].path.clone());
-            }
+            thumbnail_paths.push(filtered[i].path.clone());
         }
 
         // Pre-load the next and previous full images!

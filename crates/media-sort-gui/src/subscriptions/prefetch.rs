@@ -1,17 +1,24 @@
 use std::path::PathBuf;
+use once_cell::sync::Lazy;
+use media_sort_core::media_type::MediaType;
 
 use crate::message::Message;
+
+static MPV_MUTEX: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 
 #[allow(dead_code)]
 pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
     let is_video = if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
         let ext_lower = ext.to_lowercase();
-        ext_lower == "mp4" || ext_lower == "mkv" || ext_lower == "avi" || ext_lower == "mov" || ext_lower == "webm" || ext_lower == "wmv" || ext_lower == "flv"
+        MediaType::Video.extensions().contains(&ext_lower.as_str())
     } else {
         false
     };
 
     if is_video {
+        // Sequentially execute video thumbnail generations to prevent mpv resource contention
+        let _lock = MPV_MUTEX.lock().unwrap();
+
         if let Ok(mut player) = media_sort_backend::media::mpv_context::MpvContext::new() {
             if player.load_file(path).is_ok() {
                 player.set_paused(true);
@@ -93,5 +100,22 @@ mod tests {
     fn test_generate_thumbnail_nonexistent() {
         let result = generate_thumbnail(&std::path::PathBuf::from("/nonexistent/image_xyz.jpg"));
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_generate_thumbnail_video() {
+        let home = std::env::var("HOME").unwrap_or_default();
+        if !home.is_empty() {
+            let path = std::path::PathBuf::from(home)
+                .join("ビデオ")
+                .join("画面録画")
+                .join("画面録画_20260222_144330.webm");
+            if path.exists() {
+                let result = generate_thumbnail(&path);
+                println!("VIDEO THUMBNAIL LEN: {}", result.len());
+                assert!(!result.is_empty());
+                assert_eq!(&result[0..4], &[0x89, 0x50, 0x4E, 0x47]);
+            }
+        }
     }
 }

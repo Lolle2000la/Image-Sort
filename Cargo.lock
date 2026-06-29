@@ -2800,6 +2800,7 @@ dependencies = [
  "lucide-icons",
  "media-sort-backend",
  "media-sort-core",
+ "once_cell",
  "parking_lot",
  "rfd",
  "smol_str",
