@@ -387,6 +387,7 @@ pub async fn run_video_worker(
     let mut last_volume = -1.0;
     let mut last_paused = false;
     let mut is_active = false;
+    let mut is_loading = false;
 
     let mut progress_interval = tokio::time::interval(std::time::Duration::from_millis(100));
 
@@ -400,6 +401,7 @@ pub async fn run_video_worker(
                             player.set_paused(false);
                             is_active = true;
                             current_video_path = path;
+                            is_loading = true;
                         }
                     }
                     VideoCommand::Play => {
@@ -436,44 +438,51 @@ pub async fn run_video_worker(
 
             _ = wakeup_rx.recv() => {
                 if is_active {
-                    let is_matching_path = if let Some(ref current_p) = player.get_current_path() {
-                        let target_p = current_video_path.to_string_lossy();
-                        current_p == &target_p
-                    } else {
-                        false
-                    };
+                    let mut should_render = true;
+                    if is_loading {
+                        if let Some(ref current_p) = player.get_current_path() {
+                            let target_p = current_video_path.to_string_lossy();
+                            if current_p == &target_p {
+                                is_loading = false;
+                            } else {
+                                should_render = false;
+                            }
+                        } else {
+                            should_render = false;
+                        }
+                    }
 
-                    if is_matching_path {
+                    if should_render {
                         let flags = unsafe {
                             mpv_render_context_update(player.render_ctx)
                         };
                         if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
-                        let (w, h) = player.get_video_size();
-                        if w > 0 && h > 0 {
-                            let max_w = 960.0;
-                            let max_h = 540.0;
-                            let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                            let render_w = (w as f64 * scale) as i32;
-                            let render_h = (h as f64 * scale) as i32;
+                            let (w, h) = player.get_video_size();
+                            if w > 0 && h > 0 {
+                                let max_w = 960.0;
+                                let max_h = 540.0;
+                                let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
+                                let render_w = (w as f64 * scale) as i32;
+                                let render_h = (h as f64 * scale) as i32;
 
-                            let size = (render_w * render_h * 4) as usize;
-                            if buffer.len() != size {
-                                buffer.resize(size, 0);
-                            }
+                                let size = (render_w * render_h * 4) as usize;
+                                if buffer.len() != size {
+                                    buffer.resize(size, 0);
+                                }
 
-                            if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                                let _ = event_tx.send(VideoEvent::FrameReady {
-                                    path: current_video_path.clone(),
-                                    width: render_w as u32,
-                                    height: render_h as u32,
-                                    rgba: buffer.clone(),
-                                }).await;
+                                if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                                    let _ = event_tx.send(VideoEvent::FrameReady {
+                                        path: current_video_path.clone(),
+                                        width: render_w as u32,
+                                        height: render_h as u32,
+                                        rgba: buffer.clone(),
+                                    }).await;
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
             _ = progress_interval.tick() => {
                 if is_active {
