@@ -342,7 +342,7 @@ pub enum VideoEvent {
         path: std::path::PathBuf,
         width: u32,
         height: u32,
-        rgba: Vec<u8>,
+        rgba: std::sync::Arc<Vec<u8>>,
     },
     PlaybackProgress {
         position: f64,
@@ -380,7 +380,7 @@ pub async fn run_video_worker(
         player.register_callback(wakeup_tx);
     }
 
-    let mut buffer = Vec::new();
+
     let mut current_video_path = std::path::PathBuf::new();
     let mut last_position = -1.0;
     let mut last_muted = false;
@@ -452,7 +452,7 @@ pub async fn run_video_worker(
                         }
                     }
 
-                    if should_render {
+                     if should_render && event_tx.capacity() > 0 {
                         let flags = unsafe {
                             mpv_render_context_update(player.render_ctx)
                         };
@@ -466,17 +466,15 @@ pub async fn run_video_worker(
                                 let render_h = (h as f64 * scale) as i32;
 
                                 let size = (render_w * render_h * 4) as usize;
-                                if buffer.len() != size {
-                                    buffer.resize(size, 0);
-                                }
+                                let mut frame_buffer = vec![0u8; size];
 
-                                if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                                    let _ = event_tx.send(VideoEvent::FrameReady {
+                                if player.render_frame(render_w, render_h, &mut frame_buffer).is_ok() {
+                                    let _ = event_tx.try_send(VideoEvent::FrameReady {
                                         path: current_video_path.clone(),
                                         width: render_w as u32,
                                         height: render_h as u32,
-                                        rgba: buffer.clone(),
-                                    }).await;
+                                        rgba: std::sync::Arc::new(frame_buffer),
+                                    });
                                 }
                             }
                         }

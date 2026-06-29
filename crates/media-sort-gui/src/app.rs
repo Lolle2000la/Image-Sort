@@ -30,7 +30,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let current_path = state.selected_index
                         .and_then(|idx| state.filtered_media_entries().get(idx).map(|e| e.path.clone()));
                     if Some(path) == current_path {
-                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, rgba));
+                        let pixels = match std::sync::Arc::try_unwrap(rgba) {
+                            Ok(vec) => vec,
+                            Err(arc) => (*arc).clone(),
+                        };
+                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, pixels));
                     }
                 }
                 media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress { position, duration } => {
