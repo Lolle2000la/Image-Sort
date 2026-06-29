@@ -39,6 +39,13 @@ impl MpvContext {
             mpv_set_option_string(handle, b"audio-file-auto\0".as_ptr() as *const c_char, no.as_ptr());
             mpv_set_option_string(handle, b"cache\0".as_ptr() as *const c_char, no.as_ptr());
 
+            mpv_set_option_string(handle, b"vsync\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(handle, b"framedrop\0".as_ptr() as *const c_char, no.as_ptr());
+            let audio_sync = CString::new("audio").unwrap();
+            mpv_set_option_string(handle, b"video-sync\0".as_ptr() as *const c_char, audio_sync.as_ptr());
+            mpv_set_option_string(handle, b"force-window\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(handle, b"input-default-bindings\0".as_ptr() as *const c_char, no.as_ptr());
+
             let err = mpv_initialize(handle);
             if err < 0 {
                 mpv_terminate_destroy(handle);
@@ -318,6 +325,7 @@ impl Drop for MpvContext {
 pub unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
     let sender = cb_ctx as *const tokio::sync::mpsc::Sender<()>;
     if let Some(tx) = unsafe { sender.as_ref() } {
+        tracing::trace!("MPV Frame Wakeup Triggered");
         let _ = tx.try_send(());
     }
 }
@@ -381,6 +389,13 @@ pub async fn run_video_worker(
     }
 
 
+    let max_buffer_size = (960 * 540 * 4) as usize;
+    let mut pool = vec![
+        std::sync::Arc::new(vec![0u8; max_buffer_size]),
+        std::sync::Arc::new(vec![0u8; max_buffer_size]),
+        std::sync::Arc::new(vec![0u8; max_buffer_size]),
+    ];
+
     let mut current_video_path = std::path::PathBuf::new();
     let mut last_position = -1.0;
     let mut last_muted = false;
@@ -436,34 +451,55 @@ pub async fn run_video_worker(
 
             _ = wakeup_rx.recv() => {
                 if is_active {
-                    if let Some(current_p_str) = player.get_current_path() {
-                        let current_p = std::path::PathBuf::from(current_p_str);
-                        let paths_match = current_p == current_video_path
-                            || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
+                    // 1. ALWAYS update the render context immediately to drain
+                    //    the wakeup flag and unblock libmpv's background decoder threads.
+                    let flags = unsafe {
+                        mpv_render_context_update(player.render_ctx)
+                    };
 
-                        if paths_match && event_tx.capacity() > 0 {
-                            let flags = unsafe {
-                                mpv_render_context_update(player.render_ctx)
-                            };
-                            if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
-                                let (w, h) = player.get_video_size();
-                                if w > 0 && h > 0 {
-                                    let max_w = 960.0;
-                                    let max_h = 540.0;
-                                    let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                                    let render_w = (w as f64 * scale) as i32;
-                                    let render_h = (h as f64 * scale) as i32;
+                    // 2. Only check guards if libmpv explicitly indicates a new frame is ready
+                    if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
+                        // 3. Drop-frame protection: only parse paths and extract pixels if the channel is clear
+                        if event_tx.capacity() > 0 {
+                            if let Some(current_p_str) = player.get_current_path() {
+                                let current_p = std::path::PathBuf::from(current_p_str);
+                                let paths_match = current_p == current_video_path
+                                    || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
 
-                                    let size = (render_w * render_h * 4) as usize;
-                                    let mut frame_buffer = vec![0u8; size];
+                                if paths_match {
+                                    let (w, h) = player.get_video_size();
+                                    if w > 0 && h > 0 {
+                                        let max_w = 960.0;
+                                        let max_h = 540.0;
+                                        let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
+                                        let render_w = (w as f64 * scale) as i32;
+                                        let render_h = (h as f64 * scale) as i32;
 
-                                    if player.render_frame(render_w, render_h, &mut frame_buffer).is_ok() {
-                                        let _ = event_tx.try_send(VideoEvent::FrameReady {
-                                            path: current_video_path.clone(),
-                                            width: render_w as u32,
-                                            height: render_h as u32,
-                                            rgba: std::sync::Arc::new(frame_buffer),
-                                        });
+                                        let size = (render_w * render_h * 4) as usize;
+
+                                        // Find a free buffer in the pool (where we are the sole owner)
+                                        let mut free_buffer = None;
+                                        for buf in &mut pool {
+                                            if std::sync::Arc::strong_count(buf) == 1 {
+                                                free_buffer = Some(buf);
+                                                break;
+                                            }
+                                        }
+
+                                        if let Some(arc_buf) = free_buffer {
+                                            if let Some(target_vec) = std::sync::Arc::get_mut(arc_buf) {
+                                                target_vec.resize(size, 0);
+
+                                                if player.render_frame(render_w, render_h, target_vec).is_ok() {
+                                                    let _ = event_tx.try_send(VideoEvent::FrameReady {
+                                                        path: current_video_path.clone(),
+                                                        width: render_w as u32,
+                                                        height: render_h as u32,
+                                                        rgba: arc_buf.clone(),
+                                                    });
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
