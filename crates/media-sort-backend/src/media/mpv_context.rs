@@ -332,29 +332,42 @@ unsafe impl Send for MpvContext {}
 unsafe impl Sync for MpvContext {}
 
 pub fn start_video_worker(
+    cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
+    event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
+) {
+    tokio::spawn(run_video_worker(cmd_rx, event_tx));
+}
+
+pub async fn run_video_worker(
     mut cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
 ) {
-    std::thread::spawn(move || {
-        let mut player = match MpvContext::new() {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::error!("Failed to create MpvContext: {e}");
-                return;
-            }
-        };
+    let mut player = match MpvContext::new() {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::error!("Failed to create MpvContext: {e}");
+            return;
+        }
+    };
 
-        let mut buffer = Vec::new();
-        let mut last_position = -1.0;
-        let mut last_muted = false;
-        let mut last_volume = -1.0;
-        let mut last_paused = false;
-        let mut is_active = false;
-        let mut frame_duration = std::time::Duration::from_millis(16); // ~60 fps limit
+    let (wakeup_tx, mut wakeup_rx) = tokio::sync::mpsc::channel(64);
+    unsafe {
+        player.register_callback(wakeup_tx);
+    }
 
-        loop {
-            // Read all pending commands
-            while let Ok(cmd) = cmd_rx.try_recv() {
+    let mut buffer = Vec::new();
+    let mut last_position = -1.0;
+    let mut last_muted = false;
+    let mut last_volume = -1.0;
+    let mut last_paused = false;
+    let mut is_active = false;
+
+    let mut progress_interval = tokio::time::interval(std::time::Duration::from_millis(100));
+
+    loop {
+        tokio::select! {
+            cmd_opt = cmd_rx.recv() => {
+                let Some(cmd) = cmd_opt else { break; };
                 match cmd {
                     VideoCommand::Load(path) => {
                         if let Ok(()) = player.load_file(&path) {
@@ -394,76 +407,80 @@ pub fn start_video_worker(
                 }
             }
 
-            if is_active {
-                // Render frame
-                let (w, h) = player.get_video_size();
-                if w > 0 && h > 0 {
-                    // Downscale resolution to cap at e.g. 960x540 to avoid massive CPU scaling overhead!
-                    let max_w = 960.0;
-                    let max_h = 540.0;
-                    let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                    let render_w = (w as f64 * scale) as i32;
-                    let render_h = (h as f64 * scale) as i32;
+            _ = wakeup_rx.recv() => {
+                if is_active {
+                    let flags = unsafe {
+                        mpv_render_context_update(player.render_ctx)
+                    };
+                    if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
+                        let (w, h) = player.get_video_size();
+                        if w > 0 && h > 0 {
+                            let max_w = 960.0;
+                            let max_h = 540.0;
+                            let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
+                            let render_w = (w as f64 * scale) as i32;
+                            let render_h = (h as f64 * scale) as i32;
 
-                    let size = (render_w * render_h * 4) as usize;
-                    if buffer.len() != size {
-                        buffer.resize(size, 0);
+                            let size = (render_w * render_h * 4) as usize;
+                            if buffer.len() != size {
+                                buffer.resize(size, 0);
+                            }
+
+                            if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                                let _ = event_tx.send(VideoEvent::FrameReady {
+                                    width: render_w as u32,
+                                    height: render_h as u32,
+                                    rgba: buffer.clone(),
+                                }).await;
+                            }
+                        }
                     }
-
-                    if let Ok(()) = player.render_frame(render_w, render_h, &mut buffer) {
-                        let _ = event_tx.blocking_send(VideoEvent::FrameReady {
-                            width: render_w as u32,
-                            height: render_h as u32,
-                            rgba: buffer.clone(),
-                        });
-                    }
-                }
-
-                // Query playback progress
-                let mut pos: f64 = 0.0;
-                let mut dur: f64 = 0.0;
-                unsafe {
-                    mpv_get_property(
-                        player.handle,
-                        b"time-pos\0".as_ptr() as *const c_char,
-                        mpv_format_MPV_FORMAT_DOUBLE,
-                        &mut pos as *mut _ as *mut c_void,
-                    );
-                    mpv_get_property(
-                        player.handle,
-                        b"duration\0".as_ptr() as *const c_char,
-                        mpv_format_MPV_FORMAT_DOUBLE,
-                        &mut dur as *mut _ as *mut c_void,
-                    );
-                }
-                if pos != last_position {
-                    let _ = event_tx.blocking_send(VideoEvent::PlaybackProgress {
-                        position: pos,
-                        duration: dur,
-                    });
-                    last_position = pos;
-                }
-
-                // Query volume / mute
-                let mute = player.get_mute();
-                if mute != last_muted {
-                    let _ = event_tx.blocking_send(VideoEvent::Muted(mute));
-                    last_muted = mute;
-                }
-                let vol = player.get_volume();
-                if vol != last_volume {
-                    let _ = event_tx.blocking_send(VideoEvent::Volume(vol));
-                    last_volume = vol;
-                }
-                let paused = !player.is_playing();
-                if paused != last_paused {
-                    let _ = event_tx.blocking_send(VideoEvent::Paused(paused));
-                    last_paused = paused;
                 }
             }
 
-            // Sleep to throttle frame rate and yield CPU to GUI thread
-            std::thread::sleep(frame_duration);
+            _ = progress_interval.tick() => {
+                if is_active {
+                    let mut pos: f64 = 0.0;
+                    let mut dur: f64 = 0.0;
+                    unsafe {
+                        mpv_get_property(
+                            player.handle,
+                            b"time-pos\0".as_ptr() as *const c_char,
+                            mpv_format_MPV_FORMAT_DOUBLE,
+                            &mut pos as *mut _ as *mut c_void,
+                        );
+                        mpv_get_property(
+                            player.handle,
+                            b"duration\0".as_ptr() as *const c_char,
+                            mpv_format_MPV_FORMAT_DOUBLE,
+                            &mut dur as *mut _ as *mut c_void,
+                        );
+                    }
+                    if pos != last_position {
+                        let _ = event_tx.send(VideoEvent::PlaybackProgress {
+                            position: pos,
+                            duration: dur,
+                        }).await;
+                        last_position = pos;
+                    }
+
+                    let mute = player.get_mute();
+                    if mute != last_muted {
+                        let _ = event_tx.send(VideoEvent::Muted(mute)).await;
+                        last_muted = mute;
+                    }
+                    let vol = player.get_volume();
+                    if vol != last_volume {
+                        let _ = event_tx.send(VideoEvent::Volume(vol)).await;
+                        last_volume = vol;
+                    }
+                    let paused = !player.is_playing();
+                    if paused != last_paused {
+                        let _ = event_tx.send(VideoEvent::Paused(paused)).await;
+                        last_paused = paused;
+                    }
+                }
+            }
         }
-    });
+    }
 }

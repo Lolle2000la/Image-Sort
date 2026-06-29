@@ -77,7 +77,7 @@ iced = { version = "0.14", features = [
 iced_wgpu = "0.14"
 wgpu = "24"
 winit = "0.30"
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
 lru = "0.12"
 smol_str = "0.2"
 env_logger = "0.11"
