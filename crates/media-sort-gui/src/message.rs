@@ -38,6 +38,8 @@ pub enum Message {
     PinCurrentFolder,
     PinSelectedFolder,
     UnpinCurrentFolder(PathBuf),
+    MovePinnedFolderUp(PathBuf),
+    MovePinnedFolderDown(PathBuf),
     TriggerCreateFolder,
 
     ToggleMetadataPanel,

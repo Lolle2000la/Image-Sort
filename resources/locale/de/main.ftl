@@ -73,6 +73,7 @@ ui-open = Öffnen
 ui-key-bindings = Tastenkürzel
 ui-credits = Danksagungen
 ui-pin = Anheften
+ui-pinned-folders = Angeheftete Ordner
 ui-pin-selected = Auswahl anheften
 ui-unpin = Lösen
 ui-create-folder = Ordner erstellen

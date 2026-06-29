@@ -73,6 +73,7 @@ ui-open = Open
 ui-key-bindings = Key bindings
 ui-credits = Credits
 ui-pin = Pin
+ui-pinned-folders = Pinned Folders
 ui-pin-selected = Pin selected
 ui-unpin = Unpin
 ui-create-folder = Create Folder

@@ -329,6 +329,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        Message::MovePinnedFolderUp(path) => {
+            state.move_pinned_folder_up(&path);
+            let _ = state.settings.save();
+            Task::none()
+        }
+        Message::MovePinnedFolderDown(path) => {
+            state.move_pinned_folder_down(&path);
+            let _ = state.settings.save();
+            Task::none()
+        }
         Message::TriggerCreateFolder => {
             if let Some(ref p) = state.selected_folder.as_ref().or(state.current_folder.as_ref()) {
                 state.creating_folder_parent = Some((*p).clone());

@@ -73,6 +73,7 @@ ui-open = 開く
 ui-key-bindings = キーバインド
 ui-credits = クレジット
 ui-pin = ピン留め
+ui-pinned-folders = ピン留めフォルダ
 ui-pin-selected = 選択をピン留め
 ui-unpin = ピン留め解除
 ui-create-folder = フォルダを作成
