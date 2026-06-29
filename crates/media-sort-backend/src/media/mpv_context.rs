@@ -204,10 +204,11 @@ impl MpvContext {
     pub fn seek_absolute(&mut self, seconds: f64) {
         unsafe {
             let sec_str = CString::new(seconds.to_string()).unwrap();
-            let mut cmd: [*const c_char; 4] = [
+            let mut cmd: [*const c_char; 5] = [
                 b"seek\0".as_ptr() as *const c_char,
                 sec_str.as_ptr(),
                 b"absolute\0".as_ptr() as *const c_char,
+                b"exact\0".as_ptr() as *const c_char,
                 ptr::null(),
             ];
             mpv_command(self.handle, cmd.as_mut_ptr());
@@ -303,6 +304,7 @@ pub enum VideoCommand {
     SetMute(bool),
     SetVolume(f64),
     Stop,
+    Deactivate,
 }
 
 #[derive(Debug, Clone)]
@@ -377,6 +379,10 @@ pub fn start_video_worker(
                         player.set_volume(v);
                     }
                     VideoCommand::Stop => {
+                        player.set_paused(true);
+                        player.seek_absolute(0.0);
+                    }
+                    VideoCommand::Deactivate => {
                         player.set_paused(true);
                         is_active = false;
                     }

@@ -151,7 +151,7 @@ impl AppState {
         self.selected_image = None;
         self.image_cache.clear();
         if let Some(ref sender) = self.video_sender {
-            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         self.video_frame = None;
         self.video_position = 0.0;

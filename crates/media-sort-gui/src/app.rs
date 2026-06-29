@@ -910,7 +910,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             }
         } else {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
             }
             state.video_frame = None;
         }
@@ -939,7 +939,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.current_metadata = None;
         state.selected_image = None;
         if let Some(ref sender) = state.video_sender {
-            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         state.video_frame = None;
         Task::none()
@@ -1685,6 +1685,7 @@ mod tests {
 
     #[test]
     fn test_tick_should_exit_saves_settings() {
+        std::env::set_var("UI_TEST", "1");
         let mut state = AppState::new(SettingsStore::default());
         state.settings.general.dark_mode = true;
         state.should_exit = true;
@@ -1693,7 +1694,10 @@ mod tests {
         let reloaded = SettingsStore::load().unwrap_or_default();
         assert!(reloaded.general.dark_mode);
 
-        state.settings.general.dark_mode = false;
-        state.settings.save().ok();
+        let test_path = SettingsStore::config_path();
+        if test_path.exists() {
+            let _ = std::fs::remove_file(test_path);
+        }
+        std::env::remove_var("UI_TEST");
     }
 }
