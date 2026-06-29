@@ -41,8 +41,10 @@ impl MpvContext {
 
             mpv_set_option_string(handle, b"vsync\0".as_ptr() as *const c_char, no.as_ptr());
             mpv_set_option_string(handle, b"framedrop\0".as_ptr() as *const c_char, no.as_ptr());
-            let audio_sync = CString::new("audio").unwrap();
-            mpv_set_option_string(handle, b"video-sync\0".as_ptr() as *const c_char, audio_sync.as_ptr());
+            let video_sync = CString::new("display-resample").unwrap();
+            mpv_set_option_string(handle, b"video-sync\0".as_ptr() as *const c_char, video_sync.as_ptr());
+            let video_timing_offset = CString::new("0").unwrap();
+            mpv_set_option_string(handle, b"video-timing-offset\0".as_ptr() as *const c_char, video_timing_offset.as_ptr());
             mpv_set_option_string(handle, b"force-window\0".as_ptr() as *const c_char, no.as_ptr());
             mpv_set_option_string(handle, b"input-default-bindings\0".as_ptr() as *const c_char, no.as_ptr());
 
@@ -450,6 +452,9 @@ pub async fn run_video_worker(
             }
 
             _ = wakeup_rx.recv() => {
+                // Drain all pending wakeups to ensure we are at the latest possible state
+                while wakeup_rx.try_recv().is_ok() {}
+
                 if is_active {
                     // 1. ALWAYS update the render context immediately to drain
                     //    the wakeup flag and unblock libmpv's background decoder threads.
