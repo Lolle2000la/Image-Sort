@@ -10,6 +10,7 @@ use media_sort_core::media_type::MediaType;
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
+#[allow(dead_code)]
 pub const PREFETCH_RADIUS: usize = 5;
 
 pub struct AppState {
@@ -82,8 +83,7 @@ impl AppState {
         let metadata_panel_expanded = settings.metadata_panel.is_expanded;
         let _dark_mode = settings.general.dark_mode;
 
-        let cache_size = NonZeroUsize::new((PREFETCH_RADIUS * 2).max(1))
-            .unwrap_or_else(|| NonZeroUsize::new(1).unwrap());
+        let cache_size = NonZeroUsize::new(200).unwrap();
 
         let audio_player = AudioPlayer::new().ok();
 

@@ -2806,6 +2806,7 @@ dependencies = [
  "smol_str",
  "strum",
  "tokio",
+ "tracing",
  "wgpu 24.0.5",
  "winit",
 ]

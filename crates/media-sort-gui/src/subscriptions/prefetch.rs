@@ -6,8 +6,8 @@ use crate::message::Message;
 
 static MPV_MUTEX: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 
-#[allow(dead_code)]
 pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
+    tracing::info!("generate_thumbnail called for {:?}", path);
     let is_video = if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
         let ext_lower = ext.to_lowercase();
         MediaType::Video.extensions().contains(&ext_lower.as_str())
@@ -16,6 +16,7 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
     };
 
     if is_video {
+        tracing::info!("generate_thumbnail: {:?} is recognized as video", path);
         // Sequentially execute video thumbnail generations to prevent mpv resource contention
         let _lock = MPV_MUTEX.lock().unwrap();
 
@@ -24,11 +25,13 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
                 player.set_paused(true);
                 let start_time = std::time::Instant::now();
                 let mut loaded = false;
-                while start_time.elapsed() < std::time::Duration::from_millis(500) {
-                    let (w, h) = player.get_video_size();
-                    if w > 0 && h > 0 {
-                        loaded = true;
-                        break;
+                while start_time.elapsed() < std::time::Duration::from_millis(1000) {
+                    if player.has_frame_ready() {
+                        let (w, h) = player.get_video_size();
+                        if w > 0 && h > 0 {
+                            loaded = true;
+                            break;
+                        }
                     }
                     std::thread::sleep(std::time::Duration::from_millis(10));
                 }
@@ -41,12 +44,20 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
                         if let Some(rgba) = image::RgbaImage::from_raw(render_w as u32, render_h as u32, buffer) {
                             let mut buf = std::io::Cursor::new(Vec::new());
                             if rgba.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
-                                return buf.into_inner();
+                                let result = buf.into_inner();
+                                tracing::info!("generate_thumbnail: successfully extracted thumbnail for {:?}, len: {}", path, result.len());
+                                return result;
                             }
                         }
                     }
+                } else {
+                    tracing::warn!("generate_thumbnail: timed out waiting for video size for {:?}", path);
                 }
+            } else {
+                tracing::warn!("generate_thumbnail: failed to load file {:?}", path);
             }
+        } else {
+            tracing::warn!("generate_thumbnail: failed to create MpvContext for {:?}", path);
         }
     }
 

@@ -84,6 +84,11 @@ impl MpvContext {
         );
     }
 
+    pub fn has_frame_ready(&self) -> bool {
+        let flags = unsafe { mpv_render_context_update(self.render_ctx) };
+        (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0
+    }
+
     pub fn load_file(&mut self, path: &Path) -> Result<(), String> {
         unsafe {
             let path_str = CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;

@@ -100,7 +100,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let mut tasks: Vec<_> = state
                 .media_entries
                 .iter()
-                .take(40)
+                .take(200)
                 .map(|entry| load_thumbnail(entry.path.clone()))
                 .collect();
             tasks.push(select_and_load_entry(state, 0));

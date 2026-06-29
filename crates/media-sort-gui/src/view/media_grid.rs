@@ -58,17 +58,17 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                 let bg = if is_selected {
                     palette.primary
                 } else {
-                    palette.background
+                    Color::from_rgb(0.08, 0.08, 0.1)
                 };
                 iced::widget::container::Style {
                     background: Some(iced::Background::Color(bg)),
                     border: iced::Border {
                         radius: 4.0.into(),
-                        width: if is_selected { 2.0 } else { 0.0 },
+                        width: 1.0,
                         color: if is_selected {
                             palette.text
                         } else {
-                            Color::TRANSPARENT
+                            Color::from_rgb(0.2, 0.2, 0.25)
                         },
                     },
                     ..iced::widget::container::Style::default()
