@@ -53,6 +53,9 @@ impl From<toml::ser::Error> for SettingsError {
 
 #[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub struct SettingsStore {
+    #[serde(skip)]
+    pub custom_path: Option<PathBuf>,
+
     #[serde(default)]
     pub general: GeneralSettings,
     #[serde(default)]
@@ -76,18 +79,15 @@ impl SettingsStore {
             .unwrap_or_else(|| PathBuf::from("."))
             .join("media-sort");
         std::fs::create_dir_all(&base).ok();
-        if cfg!(debug_assertions) {
-            base.join("debug_config.toml")
-        } else {
-            base.join("config.toml")
-        }
+        base.join("config.toml")
     }
 
     pub fn load() -> Result<Self, SettingsError> {
         let toml_path = Self::config_path();
         if toml_path.exists() {
             let data = std::fs::read_to_string(&toml_path)?;
-            let store: SettingsStore = toml::from_str(&data)?;
+            let mut store: SettingsStore = toml::from_str(&data)?;
+            store.custom_path = Some(toml_path);
             return Ok(store);
         }
 
@@ -99,7 +99,8 @@ impl SettingsStore {
                 let old_json_path = PathBuf::from("ui_test_config.json");
                 if old_json_path.exists() {
                     if let Ok(data) = std::fs::read_to_string(&old_json_path) {
-                        if let Ok(store) = serde_json::from_str::<SettingsStore>(&data) {
+                        if let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data) {
+                            store.custom_path = Some(toml_path.clone());
                             migrated_settings = Some(store);
                         }
                     }
@@ -120,7 +121,8 @@ impl SettingsStore {
 
             if rust_json_path.exists() {
                 if let Ok(data) = std::fs::read_to_string(&rust_json_path) {
-                    if let Ok(store) = serde_json::from_str::<SettingsStore>(&data) {
+                    if let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data) {
+                        store.custom_path = Some(toml_path.clone());
                         migrated_settings = Some(store);
                     }
                 }
@@ -140,7 +142,8 @@ impl SettingsStore {
 
             if wpf_json_path.exists() {
                 if let Ok(data) = std::fs::read_to_string(&wpf_json_path) {
-                    if let Some(store) = parse_wpf_settings(&data) {
+                    if let Some(mut store) = parse_wpf_settings(&data) {
+                        store.custom_path = Some(toml_path.clone());
                         migrated_settings = Some(store);
                     }
                 }
@@ -152,12 +155,18 @@ impl SettingsStore {
             store.save()?;
             Ok(store)
         } else {
-            Ok(Self::default())
+            let mut store = Self::default();
+            store.custom_path = Some(toml_path);
+            Ok(store)
         }
     }
 
     pub fn save(&self) -> Result<(), SettingsError> {
-        let path = Self::config_path();
+        let path = if let Some(ref custom) = self.custom_path {
+            custom.clone()
+        } else {
+            Self::config_path()
+        };
         let data = toml::to_string_pretty(self)?;
         std::fs::write(&path, data)?;
         Ok(())
