@@ -274,9 +274,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     if let Err(e) = std::fs::create_dir_all(&new_dir) {
                         log::error!("Failed to create folder: {e}");
                     } else {
-                        if let Some(ref current) = state.current_folder {
-                            let c = current.clone();
-                            state.build_folder_tree(&c);
+                        if state.current_folder.is_some() {
+                            state.build_folder_tree();
                         }
                         state.scan_media();
                     }

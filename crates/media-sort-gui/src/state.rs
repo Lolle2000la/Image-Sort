@@ -144,7 +144,7 @@ impl AppState {
         let _ = self.settings.save();
         self.history.clear();
         self.scan_media();
-        self.build_folder_tree(path);
+        self.build_folder_tree();
         self.selected_index = None;
         self.current_metadata = None;
         self.selected_folder = None;
@@ -190,23 +190,70 @@ impl AppState {
         }
     }
 
-    pub fn build_folder_tree(&mut self, root: &Path) {
+    pub fn build_folder_tree(&mut self) {
+        let root = if let Some(ref current) = self.current_folder {
+            current.clone()
+        } else {
+            return;
+        };
+
+        // Capture expanded paths:
+        let mut expanded_paths = std::collections::HashSet::new();
+        fn collect_expanded(nodes: &[FolderNode], set: &mut std::collections::HashSet<PathBuf>) {
+            for node in nodes {
+                if node.is_expanded {
+                    set.insert(node.path.clone());
+                }
+                collect_expanded(&node.children, set);
+            }
+        }
+        collect_expanded(&self.folder_tree, &mut expanded_paths);
+
         self.folder_tree.clear();
 
+        // 1. Build current folder root node
+        let mut children = build_children(&root, self.current_folder.as_deref());
+        fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
+            for node in nodes {
+                if set.contains(&node.path) {
+                    node.is_expanded = true;
+                }
+                restore_expansion(&mut node.children, set);
+            }
+        }
+        restore_expansion(&mut children, &expanded_paths);
+
         let root_node = FolderNode {
-            path: root.to_path_buf(),
+            path: root.clone(),
             name: root
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| root.display().to_string()),
-            children: build_children(root, self.current_folder.as_deref()),
-            is_current: self
-                .current_folder
-                .as_deref()
-                .is_some_and(|c| media_sort_core::path_utils::paths_equal(c, root)),
-            is_expanded: true,
+            children,
+            is_current: true,
+            is_expanded: expanded_paths.is_empty() || expanded_paths.contains(&root),
         };
         self.folder_tree.push(root_node);
+
+        // 2. Build pinned folder root nodes
+        for pinned in &self.pinned_folders {
+            let is_duplicate = media_sort_core::path_utils::paths_equal(&root, &pinned.path);
+            if is_duplicate {
+                continue;
+            }
+
+            let mut pinned_children = build_children(&pinned.path, self.current_folder.as_deref());
+            restore_expansion(&mut pinned_children, &expanded_paths);
+
+            let pinned_node = FolderNode {
+                path: pinned.path.clone(),
+                name: pinned.name.clone(),
+                children: pinned_children,
+                is_current: false,
+                is_expanded: expanded_paths.contains(&pinned.path),
+            };
+            self.folder_tree.push(pinned_node);
+        }
     }
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
@@ -231,6 +278,7 @@ impl AppState {
                     .iter()
                     .map(|p| p.path.display().to_string())
                     .collect();
+                self.build_folder_tree();
             }
         }
     }
@@ -242,6 +290,7 @@ impl AppState {
             .iter()
             .map(|p| p.path.display().to_string())
             .collect();
+        self.build_folder_tree();
     }
 
     pub fn pin_folder(&mut self, path: &Path) {
@@ -261,6 +310,7 @@ impl AppState {
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
+            self.build_folder_tree();
         }
     }
 
@@ -273,6 +323,7 @@ impl AppState {
                     .iter()
                     .map(|p| p.path.display().to_string())
                     .collect();
+                self.build_folder_tree();
             }
         }
     }
@@ -286,6 +337,7 @@ impl AppState {
                     .iter()
                     .map(|p| p.path.display().to_string())
                     .collect();
+                self.build_folder_tree();
             }
         }
     }

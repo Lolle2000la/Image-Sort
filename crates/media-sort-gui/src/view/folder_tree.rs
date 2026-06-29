@@ -11,7 +11,8 @@ const INDENT_WIDTH: f32 = 20.0;
 pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
     column(
         tree.iter()
-            .map(|node| render_node(node, 0, selected_folder))
+            .enumerate()
+            .map(|(i, node)| render_node(node, 0, i, selected_folder))
             .collect::<Vec<_>>(),
     )
     .spacing(0)
@@ -19,7 +20,12 @@ pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a 
 }
 
 #[allow(clippy::only_used_in_recursion)]
-fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
+fn render_node<'a>(
+    node: &'a FolderNode,
+    depth: u16,
+    root_index: usize,
+    selected_folder: Option<&'a std::path::Path>,
+) -> Element<'a, Message> {
     let icon = if node.is_expanded && !node.children.is_empty() {
         folder_icon::open_folder_icon()
     } else {
@@ -48,15 +54,61 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
         .into()
     };
 
-    let row_content = row![
-        icon,
+    // Pinned status indicators (only on root folders other than the current folder)
+    let pin_indicator = if depth == 0 && root_index > 0 {
+        Some(
+            text(char::from(lucide_icons::Icon::Pin))
+                .font(iced::Font::with_name("lucide"))
+                .size(11)
+                .color(Color::from_rgb(0.9, 0.45, 0.45))
+        )
+    } else {
+        None
+    };
+
+    let shortcut_badge = if depth == 0 && root_index > 0 && root_index <= 9 {
+        Some(
+            container(
+                text(format!("Alt+{}", root_index))
+                    .size(9)
+                    .color(Color::from_rgb(0.7, 0.7, 0.7))
+            )
+            .padding([2, 4])
+            .style(|theme: &iced::Theme| {
+                let palette = theme.palette();
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(Color { a: 0.1, ..palette.text })),
+                    border: iced::Border {
+                        radius: 3.0.into(),
+                        width: 1.0,
+                        color: Color { a: 0.15, ..palette.text },
+                    },
+                    ..Default::default()
+                }
+            })
+        )
+    } else {
+        None
+    };
+
+    let mut row_content = row![icon]
+        .spacing(4)
+        .align_y(iced::Alignment::Center);
+
+    if let Some(pin) = pin_indicator {
+        row_content = row_content.push(pin);
+    }
+
+    row_content = row_content.push(
         text(&node.name)
             .size(14)
             .wrapping(iced::widget::text::Wrapping::None)
             .shaping(iced::widget::text::Shaping::Advanced)
-    ]
-    .spacing(4)
-    .align_y(iced::Alignment::Center);
+    );
+
+    if let Some(badge) = shortcut_badge {
+        row_content = row_content.push(badge);
+    }
 
     // Folder selection button
     let select_button = button(row_content)
@@ -111,7 +163,7 @@ fn render_node<'a>(node: &'a FolderNode, depth: u16, selected_folder: Option<&'a
                     node.children
                         .iter()
                         .filter(|child| !child.path.as_os_str().is_empty())
-                        .map(|child| render_node(child, depth + 1, selected_folder))
+                        .map(|child| render_node(child, depth + 1, root_index, selected_folder))
                         .collect::<Vec<_>>(),
                 )
                 .spacing(0),
