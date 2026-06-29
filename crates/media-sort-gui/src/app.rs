@@ -124,6 +124,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::PickFolderResult(None) => {
             Task::none()
         }
+        Message::PickPinFolder => {
+            Task::perform(
+                async {
+                    if let Some(handle) = rfd::AsyncFileDialog::new().pick_folder().await {
+                        Some(handle.path().to_path_buf())
+                    } else {
+                        None
+                    }
+                },
+                Message::PickPinFolderResult
+            )
+        }
+        Message::PickPinFolderResult(Some(path)) => {
+            state.pin_folder(&path);
+            let _ = state.settings.save();
+            Task::none()
+        }
+        Message::PickPinFolderResult(None) => {
+            Task::none()
+        }
         Message::FolderSelected(path) => {
             state.selected_folder = Some(path);
             Task::none()
@@ -317,8 +337,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PinSelectedFolder => {
-            if let Some(selected_path) = state.selected_folder.clone() {
-                state.pin_folder(&selected_path);
+            let path_to_pin = state.selected_folder.clone().or(state.current_folder.clone());
+            if let Some(path) = path_to_pin {
+                state.pin_folder(&path);
                 let _ = state.settings.save();
             }
             Task::none()

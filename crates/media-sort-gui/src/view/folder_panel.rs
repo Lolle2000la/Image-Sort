@@ -6,25 +6,27 @@ use crate::state::AppState;
 use crate::view::folder_tree;
 
 pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
-    let pin_btn = if state.current_folder.is_some() {
-        button(text(state.l10n.tr("ui-pin")).size(12))
-            .on_press(Message::PinCurrentFolder)
-    } else {
-        button(text(state.l10n.tr("ui-pin")).size(12))
+    let pin_btn = button(text(state.l10n.tr("ui-pin")).size(12))
+        .on_press(Message::PickPinFolder);
+
+    let pin_sel_btn = {
+        let path_to_pin = state.selected_folder.clone().or(state.current_folder.clone());
+        if let Some(_) = path_to_pin {
+            button(text(state.l10n.tr("ui-pin-selected")).size(12))
+                .on_press(Message::PinSelectedFolder)
+        } else {
+            button(text(state.l10n.tr("ui-pin-selected")).size(12))
+        }
     };
 
-    let pin_sel_btn = if state.selected_folder.is_some() {
-        button(text(state.l10n.tr("ui-pin-selected")).size(12))
-            .on_press(Message::PinSelectedFolder)
-    } else {
-        button(text(state.l10n.tr("ui-pin-selected")).size(12))
-    };
-
-    let unpin_btn = if let Some(ref current) = state.current_folder {
-        button(text(state.l10n.tr("ui-unpin")).size(12))
-            .on_press(Message::UnpinCurrentFolder(current.clone()))
-    } else {
-        button(text(state.l10n.tr("ui-unpin")).size(12))
+    let unpin_btn = {
+        let path_to_unpin = state.selected_folder.clone().or(state.current_folder.clone());
+        if let Some(path) = path_to_unpin {
+            button(text(state.l10n.tr("ui-unpin")).size(12))
+                .on_press(Message::UnpinCurrentFolder(path))
+        } else {
+            button(text(state.l10n.tr("ui-unpin")).size(12))
+        }
     };
 
     let has_parent = state.selected_folder.is_some() || state.current_folder.is_some();

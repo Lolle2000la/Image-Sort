@@ -14,6 +14,8 @@ pub enum Message {
     OpenFolder(PathBuf),
     PickFolder,
     PickFolderResult(Option<PathBuf>),
+    PickPinFolder,
+    PickPinFolderResult(Option<PathBuf>),
     FolderSelected(PathBuf),
     ToggleFolderExpand(PathBuf),
 
