@@ -327,7 +327,6 @@ impl Drop for MpvContext {
 pub unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
     let sender = cb_ctx as *const tokio::sync::mpsc::Sender<()>;
     if let Some(tx) = unsafe { sender.as_ref() } {
-        tracing::trace!("MPV Frame Wakeup Triggered");
         let _ = tx.try_send(());
     }
 }
