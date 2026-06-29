@@ -74,7 +74,7 @@ impl Pipeline for VideoPipeline {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("video_quad_vertices"),
             contents: bytemuck::cast_slice(VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -186,12 +186,36 @@ impl Primitive for VideoPrimitive {
         pipeline: &mut Self::Pipeline,
         device: &wgpu::Device,
         queue: &wgpu::Queue,
-        _bounds: &Rectangle,
+        bounds: &Rectangle,
         _viewport: &Viewport,
     ) {
         if self.width == 0 || self.height == 0 {
             return;
         }
+
+        // Calculate aspect ratios and fit-shrink scales
+        let mut sx = 1.0f32;
+        let mut sy = 1.0f32;
+        if bounds.width > 0.0 && bounds.height > 0.0 {
+            let r_video = self.width as f32 / self.height as f32;
+            let r_bounds = bounds.width / bounds.height;
+            if r_video > r_bounds {
+                sx = 1.0;
+                sy = r_bounds / r_video;
+            } else {
+                sx = r_video / r_bounds;
+                sy = 1.0;
+            }
+        }
+
+        let vertices = [
+            Vertex { position: [-sx, -sy], tex_coords: [0.0, 1.0] },
+            Vertex { position: [sx, -sy], tex_coords: [1.0, 1.0] },
+            Vertex { position: [-sx, sy], tex_coords: [0.0, 0.0] },
+            Vertex { position: [sx, sy], tex_coords: [1.0, 0.0] },
+        ];
+
+        queue.write_buffer(&pipeline.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
 
         let size_changed = pipeline.width != self.width || pipeline.height != self.height || pipeline.texture.is_none();
 
