@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_void};
 use std::path::Path;
 use std::ptr;
@@ -87,6 +87,25 @@ impl MpvContext {
     pub fn has_frame_ready(&self) -> bool {
         let flags = unsafe { mpv_render_context_update(self.render_ctx) };
         (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0
+    }
+
+    pub fn get_current_path(&self) -> Option<String> {
+        unsafe {
+            let mut path_ptr: *mut c_char = ptr::null_mut();
+            let err = mpv_get_property(
+                self.handle,
+                b"path\0".as_ptr() as *const c_char,
+                mpv_format_MPV_FORMAT_STRING,
+                &mut path_ptr as *mut _ as *mut c_void,
+            );
+            if err >= 0 && !path_ptr.is_null() {
+                let s = CStr::from_ptr(path_ptr).to_string_lossy().into_owned();
+                mpv_free(path_ptr as *mut c_void);
+                Some(s)
+            } else {
+                None
+            }
+        }
     }
 
     pub fn load_file(&mut self, path: &Path) -> Result<(), String> {
@@ -417,10 +436,18 @@ pub async fn run_video_worker(
 
             _ = wakeup_rx.recv() => {
                 if is_active {
-                    let flags = unsafe {
-                        mpv_render_context_update(player.render_ctx)
+                    let is_matching_path = if let Some(ref current_p) = player.get_current_path() {
+                        let target_p = current_video_path.to_string_lossy();
+                        current_p == &target_p
+                    } else {
+                        false
                     };
-                    if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
+
+                    if is_matching_path {
+                        let flags = unsafe {
+                            mpv_render_context_update(player.render_ctx)
+                        };
+                        if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
                         let (w, h) = player.get_video_size();
                         if w > 0 && h > 0 {
                             let max_w = 960.0;
@@ -446,6 +473,7 @@ pub async fn run_video_worker(
                     }
                 }
             }
+        }
 
             _ = progress_interval.tick() => {
                 if is_active {
