@@ -21,6 +21,7 @@ strum.workspace = true
 image.workspace = true
 rfd = { workspace = true }
 lucide-icons = "1.16"
+bytemuck = "1"
 dirs = { workspace = true }
 once_cell.workspace = true
 

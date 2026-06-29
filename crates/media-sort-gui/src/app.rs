@@ -30,11 +30,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let current_path = state.selected_index
                         .and_then(|idx| state.filtered_media_entries().get(idx).map(|e| e.path.clone()));
                     if Some(path) == current_path {
-                        let pixels = match std::sync::Arc::try_unwrap(rgba) {
-                            Ok(vec) => vec,
-                            Err(arc) => (*arc).clone(),
-                        };
-                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, pixels));
+                        state.video_rgba = Some(rgba);
+                        state.video_width = width;
+                        state.video_height = height;
+                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(1, 1, vec![0]));
                     }
                 }
                 media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress { position, duration } => {
@@ -939,6 +938,9 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
                 let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()));
             }
             state.video_frame = None;
+            state.video_rgba = None;
+            state.video_width = 0;
+            state.video_height = 0;
             state.video_position = 0.0;
             state.video_duration = 0.0;
             if let Some(ref mut ap) = state.audio_player {
@@ -949,6 +951,9 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
                 let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
             }
             state.video_frame = None;
+            state.video_rgba = None;
+            state.video_width = 0;
+            state.video_height = 0;
         }
 
         let mut tasks = vec![load_metadata(state, index)];
@@ -978,6 +983,9 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         state.video_frame = None;
+        state.video_rgba = None;
+        state.video_width = 0;
+        state.video_height = 0;
         Task::none()
     }
 }

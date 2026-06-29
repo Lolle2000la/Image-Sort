@@ -48,11 +48,12 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         media_sort_core::media_type::MediaType::Video => {
             use iced::widget::{button, column, row, slider, text};
 
-            let video_content: Element<'_, Message> = if let Some(ref handle) = state.video_frame {
-                iced::widget::image(handle.clone())
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .into()
+            let video_content: Element<'_, Message> = if state.video_rgba.is_some() {
+                crate::widgets::video_shader::video_shader_view(
+                    state.video_width,
+                    state.video_height,
+                    state.video_rgba.clone(),
+                )
             } else if let Some(thumb_handle) = state.thumbnail_cache.peek(&entry.path) {
                 iced::widget::image(thumb_handle.clone())
                     .width(Length::Fill)

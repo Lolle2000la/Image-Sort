@@ -58,6 +58,9 @@ pub struct AppState {
     pub video_volume: f64,
     pub video_muted: bool,
     pub video_paused: bool,
+    pub video_rgba: Option<std::sync::Arc<Vec<u8>>>,
+    pub video_width: u32,
+    pub video_height: u32,
 }
 
 impl AppState {
@@ -135,6 +138,9 @@ impl AppState {
             video_volume: 100.0,
             video_muted: false,
             video_paused: false,
+            video_rgba: None,
+            video_width: 0,
+            video_height: 0,
         }
     }
 

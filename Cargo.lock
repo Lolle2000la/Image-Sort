@@ -2789,6 +2789,7 @@ dependencies = [
 name = "media-sort-gui"
 version = "3.0.0"
 dependencies = [
+ "bytemuck",
  "crossbeam-channel",
  "dirs",
  "env_logger",
