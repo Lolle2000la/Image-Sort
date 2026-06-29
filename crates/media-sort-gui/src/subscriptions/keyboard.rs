@@ -51,6 +51,15 @@ pub(crate) fn key_to_name(key: Key) -> Option<String> {
                 keyboard::key::Named::F10 => "F10",
                 keyboard::key::Named::F11 => "F11",
                 keyboard::key::Named::F12 => "F12",
+                keyboard::key::Named::MediaPlayPause => "MediaPlayPause",
+                keyboard::key::Named::MediaPlay => "MediaPlay",
+                keyboard::key::Named::MediaPause => "MediaPause",
+                keyboard::key::Named::MediaStop => "MediaStop",
+                keyboard::key::Named::MediaTrackNext => "MediaTrackNext",
+                keyboard::key::Named::MediaTrackPrevious => "MediaTrackPrevious",
+                keyboard::key::Named::AudioVolumeUp => "AudioVolumeUp",
+                keyboard::key::Named::AudioVolumeDown => "AudioVolumeDown",
+                keyboard::key::Named::AudioVolumeMute => "AudioVolumeMute",
                 _ => return None,
             };
             Some(name.to_string())

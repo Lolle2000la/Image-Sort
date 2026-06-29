@@ -50,6 +50,13 @@ pub struct AppState {
     pub rename_placeholder: String,
     pub create_folder_placeholder: String,
     pub dragging_folder_divider: bool,
+    pub video_sender: Option<tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>>,
+    pub video_frame: Option<iced::widget::image::Handle>,
+    pub video_position: f64,
+    pub video_duration: f64,
+    pub video_volume: f64,
+    pub video_muted: bool,
+    pub video_paused: bool,
 }
 
 impl AppState {
@@ -121,6 +128,13 @@ impl AppState {
             rename_placeholder,
             create_folder_placeholder,
             dragging_folder_divider: false,
+            video_sender: None,
+            video_frame: None,
+            video_position: 0.0,
+            video_duration: 0.0,
+            video_volume: 100.0,
+            video_muted: false,
+            video_paused: false,
         }
     }
 
@@ -136,6 +150,12 @@ impl AppState {
         self.selected_folder = None;
         self.selected_image = None;
         self.image_cache.clear();
+        if let Some(ref sender) = self.video_sender {
+            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+        }
+        self.video_frame = None;
+        self.video_position = 0.0;
+        self.video_duration = 0.0;
     }
 
     pub fn scan_media(&mut self) {

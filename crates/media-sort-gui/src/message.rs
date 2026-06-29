@@ -78,4 +78,12 @@ pub enum Message {
     PinFolderShortcut(u8),
     SearchFocused,
     SearchBlurred,
+
+    VideoPlayerReady(tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>),
+    VideoEvent(media_sort_backend::media::mpv_context::VideoEvent),
+    VideoSeek(f64),
+    VideoVolume(f64),
+    VideoMute,
+    VideoPlayPause,
+    VideoStop,
 }

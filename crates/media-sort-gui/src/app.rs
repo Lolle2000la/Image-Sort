@@ -20,6 +20,61 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
+        Message::VideoPlayerReady(sender) => {
+            state.video_sender = Some(sender);
+            Task::none()
+        }
+        Message::VideoEvent(event) => {
+            match event {
+                media_sort_backend::media::mpv_context::VideoEvent::FrameReady { width, height, rgba } => {
+                    state.video_frame = Some(iced::widget::image::Handle::from_rgba(width, height, rgba));
+                }
+                media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress { position, duration } => {
+                    state.video_position = position;
+                    state.video_duration = duration;
+                }
+                media_sort_backend::media::mpv_context::VideoEvent::Muted(muted) => {
+                    state.video_muted = muted;
+                }
+                media_sort_backend::media::mpv_context::VideoEvent::Volume(vol) => {
+                    state.video_volume = vol;
+                }
+                media_sort_backend::media::mpv_context::VideoEvent::Paused(paused) => {
+                    state.video_paused = paused;
+                }
+            }
+            Task::none()
+        }
+        Message::VideoSeek(pos) => {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos));
+            }
+            Task::none()
+        }
+        Message::VideoVolume(vol) => {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(vol));
+            }
+            Task::none()
+        }
+        Message::VideoMute => {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetMute(!state.video_muted));
+            }
+            Task::none()
+        }
+        Message::VideoPlayPause => {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+            }
+            Task::none()
+        }
+        Message::VideoStop => {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+            }
+            Task::none()
+        }
         Message::SettingsLoaded(result) => match *result {
             Ok(settings) => {
                 state.settings = settings;
@@ -347,6 +402,52 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.search_focused = false;
                 }
                 return Task::none();
+            }
+
+            if key == "Space" && !state.search_focused && state.renaming_path.is_none() && state.creating_folder_parent.is_none() {
+                if let Some(ref sender) = state.video_sender {
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                    return Task::none();
+                }
+            }
+
+            if key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause" {
+                if let Some(ref sender) = state.video_sender {
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                    return Task::none();
+                }
+            }
+            if key == "MediaStop" {
+                if let Some(ref sender) = state.video_sender {
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+                    return Task::none();
+                }
+            }
+            if key == "AudioVolumeUp" {
+                if let Some(ref sender) = state.video_sender {
+                    let new_vol = (state.video_volume + 5.0).min(100.0);
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
+                    return Task::none();
+                }
+            }
+            if key == "AudioVolumeDown" {
+                if let Some(ref sender) = state.video_sender {
+                    let new_vol = (state.video_volume - 5.0).max(0.0);
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
+                    return Task::none();
+                }
+            }
+            if key == "AudioVolumeMute" {
+                if let Some(ref sender) = state.video_sender {
+                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetMute(!state.video_muted));
+                    return Task::none();
+                }
+            }
+            if key == "MediaTrackNext" {
+                return Task::done(Message::GoRight);
+            }
+            if key == "MediaTrackPrevious" {
+                return Task::done(Message::GoLeft);
             }
 
             let bindings = keyboard::keybinding_list(state);
@@ -797,6 +898,23 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.selected_index = Some(index);
         state.current_metadata = None;
 
+        if media_type == media_sort_core::media_type::MediaType::Video {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()));
+            }
+            state.video_frame = None;
+            state.video_position = 0.0;
+            state.video_duration = 0.0;
+            if let Some(ref mut ap) = state.audio_player {
+                let _ = ap.stop();
+            }
+        } else {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+            }
+            state.video_frame = None;
+        }
+
         let mut tasks = vec![load_metadata(state, index)];
 
         if let Some(handle) = state.image_cache.get(&path) {
@@ -820,6 +938,10 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.selected_index = None;
         state.current_metadata = None;
         state.selected_image = None;
+        if let Some(ref sender) = state.video_sender {
+            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+        }
+        state.video_frame = None;
         Task::none()
     }
 }
@@ -914,7 +1036,9 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 
     let event_sub = iced::event::listen().map(Message::EventOccurred);
 
-    Subscription::batch(vec![tick_sub, keyboard_sub, event_sub])
+    let video_sub = crate::subscriptions::video_player::video_player_subscription();
+
+    Subscription::batch(vec![tick_sub, keyboard_sub, event_sub, video_sub])
 }
 
 #[cfg(test)]
