@@ -387,7 +387,6 @@ pub async fn run_video_worker(
     let mut last_volume = -1.0;
     let mut last_paused = false;
     let mut is_active = false;
-    let mut is_loading = false;
 
     let mut progress_interval = tokio::time::interval(std::time::Duration::from_millis(100));
 
@@ -401,7 +400,6 @@ pub async fn run_video_worker(
                             player.set_paused(false);
                             is_active = true;
                             current_video_path = path;
-                            is_loading = true;
                         }
                     }
                     VideoCommand::Play => {
@@ -438,43 +436,35 @@ pub async fn run_video_worker(
 
             _ = wakeup_rx.recv() => {
                 if is_active {
-                    let mut should_render = true;
-                    if is_loading {
-                        if let Some(ref current_p) = player.get_current_path() {
-                            let target_p = current_video_path.to_string_lossy();
-                            if current_p == &target_p {
-                                is_loading = false;
-                            } else {
-                                should_render = false;
-                            }
-                        } else {
-                            should_render = false;
-                        }
-                    }
+                    if let Some(current_p_str) = player.get_current_path() {
+                        let current_p = std::path::PathBuf::from(current_p_str);
+                        let paths_match = current_p == current_video_path
+                            || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
 
-                     if should_render && event_tx.capacity() > 0 {
-                        let flags = unsafe {
-                            mpv_render_context_update(player.render_ctx)
-                        };
-                        if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
-                            let (w, h) = player.get_video_size();
-                            if w > 0 && h > 0 {
-                                let max_w = 960.0;
-                                let max_h = 540.0;
-                                let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                                let render_w = (w as f64 * scale) as i32;
-                                let render_h = (h as f64 * scale) as i32;
+                        if paths_match && event_tx.capacity() > 0 {
+                            let flags = unsafe {
+                                mpv_render_context_update(player.render_ctx)
+                            };
+                            if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
+                                let (w, h) = player.get_video_size();
+                                if w > 0 && h > 0 {
+                                    let max_w = 960.0;
+                                    let max_h = 540.0;
+                                    let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
+                                    let render_w = (w as f64 * scale) as i32;
+                                    let render_h = (h as f64 * scale) as i32;
 
-                                let size = (render_w * render_h * 4) as usize;
-                                let mut frame_buffer = vec![0u8; size];
+                                    let size = (render_w * render_h * 4) as usize;
+                                    let mut frame_buffer = vec![0u8; size];
 
-                                if player.render_frame(render_w, render_h, &mut frame_buffer).is_ok() {
-                                    let _ = event_tx.try_send(VideoEvent::FrameReady {
-                                        path: current_video_path.clone(),
-                                        width: render_w as u32,
-                                        height: render_h as u32,
-                                        rgba: std::sync::Arc::new(frame_buffer),
-                                    });
+                                    if player.render_frame(render_w, render_h, &mut frame_buffer).is_ok() {
+                                        let _ = event_tx.try_send(VideoEvent::FrameReady {
+                                            path: current_video_path.clone(),
+                                            width: render_w as u32,
+                                            height: render_h as u32,
+                                            rgba: std::sync::Arc::new(frame_buffer),
+                                        });
+                                    }
                                 }
                             }
                         }
