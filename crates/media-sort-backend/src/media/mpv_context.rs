@@ -34,6 +34,11 @@ impl MpvContext {
             let hwdec = CString::new("auto").unwrap();
             mpv_set_option_string(handle, b"hwdec\0".as_ptr() as *const c_char, hwdec.as_ptr());
 
+            let no = CString::new("no").unwrap();
+            mpv_set_option_string(handle, b"sub-auto\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(handle, b"audio-file-auto\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(handle, b"cache\0".as_ptr() as *const c_char, no.as_ptr());
+
             let err = mpv_initialize(handle);
             if err < 0 {
                 mpv_terminate_destroy(handle);
