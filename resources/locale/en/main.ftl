@@ -110,5 +110,18 @@ metadata-field-name = Name
 metadata-field-size = Size
 metadata-field-modified = Modified
 metadata-field-dimensions = Dimensions
+metadata-section-container = Container Metadata
+metadata-field-duration = Duration
+metadata-field-encoder = Encoder
+metadata-field-title = Title
+metadata-field-artist = Artist
+metadata-field-album = Album
+metadata-field-genre = Genre
+metadata-field-date = Date
+metadata-field-track = Track
+metadata-field-comment = Comment
+metadata-field-description = Description
+metadata-field-copyright = Copyright
+metadata-field-language = Language
 
 

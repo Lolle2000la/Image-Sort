@@ -26,6 +26,8 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
             for (section_name, fields) in metadata {
                 let display_section = if section_name == "File" {
                     state.l10n.tr("metadata-section-file")
+                } else if section_name == "Container Metadata" {
+                    state.l10n.tr("metadata-section-container")
                 } else {
                     section_name.clone()
                 };
@@ -39,17 +41,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
 
                 let mut field_list = column![].spacing(2);
                 for (tag_name, value) in fields {
-                    let display_tag = if section_name == "File" {
-                        match tag_name.as_str() {
-                            "Name" => state.l10n.tr("metadata-field-name"),
-                            "Size" => state.l10n.tr("metadata-field-size"),
-                            "Modified" => state.l10n.tr("metadata-field-modified"),
-                            "Dimensions" => state.l10n.tr("metadata-field-dimensions"),
-                            _ => tag_name.clone(),
-                        }
-                    } else {
-                        tag_name.clone()
-                    };
+                    let display_tag = localize_tag_name(section_name, tag_name, &state.l10n);
 
                     let line = row![
                         text(format!("{}:", display_tag)).size(11),
@@ -98,4 +90,33 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
             }
         })
         .into()
+}
+
+fn localize_tag_name(section: &str, key: &str, l10n: &media_sort_core::l10n::Localization) -> String {
+    let key_upper = key.to_ascii_uppercase();
+    if section == "File" {
+        match key_upper.as_str() {
+            "NAME" => l10n.tr("metadata-field-name"),
+            "SIZE" => l10n.tr("metadata-field-size"),
+            "MODIFIED" => l10n.tr("metadata-field-modified"),
+            "DIMENSIONS" => l10n.tr("metadata-field-dimensions"),
+            _ => key.to_string(),
+        }
+    } else {
+        match key_upper.as_str() {
+            "DURATION" => l10n.tr("metadata-field-duration"),
+            "ENCODER" => l10n.tr("metadata-field-encoder"),
+            "TITLE" | "TRACKTITLE" => l10n.tr("metadata-field-title"),
+            "ARTIST" | "ALBUMARTIST" => l10n.tr("metadata-field-artist"),
+            "ALBUM" => l10n.tr("metadata-field-album"),
+            "GENRE" => l10n.tr("metadata-field-genre"),
+            "DATE" | "YEAR" => l10n.tr("metadata-field-date"),
+            "TRACKNUMBER" | "TRACK" => l10n.tr("metadata-field-track"),
+            "COMMENT" => l10n.tr("metadata-field-comment"),
+            "DESCRIPTION" => l10n.tr("metadata-field-description"),
+            "COPYRIGHT" => l10n.tr("metadata-field-copyright"),
+            "LANGUAGE" => l10n.tr("metadata-field-language"),
+            _ => key.to_string(),
+        }
+    }
 }

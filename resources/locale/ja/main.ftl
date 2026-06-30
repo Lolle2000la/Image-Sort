@@ -110,5 +110,18 @@ metadata-field-name = 名前
 metadata-field-size = サイズ
 metadata-field-modified = 更新日時
 metadata-field-dimensions = 解像度
+metadata-section-container = コンテナメタデータ
+metadata-field-duration = 長さ
+metadata-field-encoder = エンコーダー
+metadata-field-title = タイトル
+metadata-field-artist = アーティスト
+metadata-field-album = アルバム
+metadata-field-genre = ジャンル
+metadata-field-date = 日付
+metadata-field-track = トラック番号
+metadata-field-comment = コメント
+metadata-field-description = 説明
+metadata-field-copyright = 著作権
+metadata-field-language = 言語
 
 
