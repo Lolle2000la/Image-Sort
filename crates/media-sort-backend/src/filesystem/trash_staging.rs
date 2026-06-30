@@ -24,6 +24,10 @@ impl TrashStaging {
             .join("media-sort")
             .join("trash");
 
+        Self::new_in(root)
+    }
+
+    pub fn new_in(root: PathBuf) -> Result<Self, ActionError> {
         fs::create_dir_all(&root).map_err(ActionError::Io)?;
 
         Self::reconcile_orphaned_trash(&root);
@@ -51,7 +55,10 @@ impl TrashStaging {
             for file_entry in fs::read_dir(&entry_path).into_iter().flatten().flatten() {
                 let file_path = file_entry.path();
                 if file_path.is_file() {
+                    #[cfg(not(test))]
                     let _ = trash::delete(&file_path);
+                    #[cfg(test)]
+                    let _ = fs::remove_file(&file_path);
                 }
             }
             let _ = fs::remove_dir_all(&entry_path);

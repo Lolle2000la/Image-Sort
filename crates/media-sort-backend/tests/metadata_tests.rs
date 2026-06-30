@@ -211,7 +211,9 @@ fn test_thumbnail_dimensions_nonexistent() {
 
 #[test]
 fn test_trash_stage_nonexistent_file() {
-    let staging = TrashStaging::new().unwrap();
+    let tmp = std::env::temp_dir().join(format!("trash_{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&tmp);
+    let staging = TrashStaging::new_in(tmp).unwrap();
     let result = staging.stage_file(Path::new("/nonexistent/file_xyz.txt"));
     assert!(result.is_err());
 }
