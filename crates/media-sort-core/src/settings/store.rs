@@ -155,8 +155,10 @@ impl SettingsStore {
             store.save()?;
             Ok(store)
         } else {
-            let mut store = Self::default();
-            store.custom_path = Some(toml_path);
+            let store = Self {
+                custom_path: Some(toml_path),
+                ..Self::default()
+            };
             Ok(store)
         }
     }

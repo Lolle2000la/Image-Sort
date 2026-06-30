@@ -25,59 +25,31 @@ impl MpvContext {
 
             // Set some default options
             let vo_name = CString::new("libmpv").unwrap();
-            mpv_set_option_string(handle, b"vo\0".as_ptr() as *const c_char, vo_name.as_ptr());
+            mpv_set_option_string(handle, c"vo".as_ptr(), vo_name.as_ptr());
             let keep_open = CString::new("yes").unwrap();
-            mpv_set_option_string(
-                handle,
-                b"keep-open\0".as_ptr() as *const c_char,
-                keep_open.as_ptr(),
-            );
+            mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
             let loop_file = CString::new("inf").unwrap();
-            mpv_set_option_string(
-                handle,
-                b"loop-file\0".as_ptr() as *const c_char,
-                loop_file.as_ptr(),
-            );
+            mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
             let hwdec = CString::new("auto").unwrap();
-            mpv_set_option_string(handle, b"hwdec\0".as_ptr() as *const c_char, hwdec.as_ptr());
+            mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
 
             let no = CString::new("no").unwrap();
-            mpv_set_option_string(handle, b"sub-auto\0".as_ptr() as *const c_char, no.as_ptr());
-            mpv_set_option_string(
-                handle,
-                b"audio-file-auto\0".as_ptr() as *const c_char,
-                no.as_ptr(),
-            );
-            mpv_set_option_string(handle, b"cache\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
 
-            mpv_set_option_string(handle, b"vsync\0".as_ptr() as *const c_char, no.as_ptr());
-            mpv_set_option_string(
-                handle,
-                b"framedrop\0".as_ptr() as *const c_char,
-                no.as_ptr(),
-            );
+            mpv_set_option_string(handle, c"vsync".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"framedrop".as_ptr(), no.as_ptr());
             let video_sync = CString::new("display-resample").unwrap();
-            mpv_set_option_string(
-                handle,
-                b"video-sync\0".as_ptr() as *const c_char,
-                video_sync.as_ptr(),
-            );
+            mpv_set_option_string(handle, c"video-sync".as_ptr(), video_sync.as_ptr());
             let video_timing_offset = CString::new("0").unwrap();
             mpv_set_option_string(
                 handle,
-                b"video-timing-offset\0".as_ptr() as *const c_char,
+                c"video-timing-offset".as_ptr(),
                 video_timing_offset.as_ptr(),
             );
-            mpv_set_option_string(
-                handle,
-                b"force-window\0".as_ptr() as *const c_char,
-                no.as_ptr(),
-            );
-            mpv_set_option_string(
-                handle,
-                b"input-default-bindings\0".as_ptr() as *const c_char,
-                no.as_ptr(),
-            );
+            mpv_set_option_string(handle, c"force-window".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"input-default-bindings".as_ptr(), no.as_ptr());
 
             let err = mpv_initialize(handle);
             if err < 0 {
@@ -113,6 +85,10 @@ impl MpvContext {
         }
     }
 
+    /// # Safety
+    ///
+    /// The caller must ensure that `self.render_ctx` is a valid render context and that
+    /// the sender remains usable for the lifetime of the context.
     pub unsafe fn register_callback(&mut self, sender: tokio::sync::mpsc::Sender<()>) {
         let sender_box = Box::new(sender);
         self.callback_context_raw = Box::into_raw(sender_box) as *mut c_void;
@@ -134,7 +110,7 @@ impl MpvContext {
             let mut path_ptr: *mut c_char = ptr::null_mut();
             let err = mpv_get_property(
                 self.handle,
-                b"path\0".as_ptr() as *const c_char,
+                c"path".as_ptr(),
                 mpv_format_MPV_FORMAT_STRING,
                 &mut path_ptr as *mut _ as *mut c_void,
             );
@@ -152,11 +128,7 @@ impl MpvContext {
         unsafe {
             let path_str =
                 CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;
-            let mut cmd: [*const c_char; 3] = [
-                b"loadfile\0".as_ptr() as *const c_char,
-                path_str.as_ptr(),
-                ptr::null(),
-            ];
+            let mut cmd: [*const c_char; 3] = [c"loadfile".as_ptr(), path_str.as_ptr(), ptr::null()];
             let err = mpv_command(self.handle, cmd.as_mut_ptr());
             if err < 0 {
                 return Err(format!("Failed to load file: {err}"));
@@ -171,13 +143,13 @@ impl MpvContext {
             let mut height: i64 = 0;
             mpv_get_property(
                 self.handle,
-                b"width\0".as_ptr() as *const c_char,
+                c"width".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut width as *mut _ as *mut c_void,
             );
             mpv_get_property(
                 self.handle,
-                b"height\0".as_ptr() as *const c_char,
+                c"height".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut height as *mut _ as *mut c_void,
             );
@@ -227,7 +199,7 @@ impl MpvContext {
             let mut paused: c_int = 0;
             mpv_get_property(
                 self.handle,
-                b"pause\0".as_ptr() as *const c_char,
+                c"pause".as_ptr(),
                 mpv_format_MPV_FORMAT_FLAG,
                 &mut paused as *mut _ as *mut c_void,
             );
@@ -240,7 +212,7 @@ impl MpvContext {
             let val: c_int = if paused { 1 } else { 0 };
             mpv_set_property(
                 self.handle,
-                b"pause\0".as_ptr() as *const c_char,
+                c"pause".as_ptr(),
                 mpv_format_MPV_FORMAT_FLAG,
                 &val as *const _ as *mut c_void,
             );
@@ -249,11 +221,8 @@ impl MpvContext {
 
     pub fn toggle_pause(&mut self) {
         unsafe {
-            let mut cmd: [*const c_char; 3] = [
-                b"cycle\0".as_ptr() as *const c_char,
-                b"pause\0".as_ptr() as *const c_char,
-                ptr::null(),
-            ];
+            let mut cmd: [*const c_char; 3] =
+                [c"cycle".as_ptr(), c"pause".as_ptr(), ptr::null()];
             mpv_command(self.handle, cmd.as_mut_ptr());
         }
     }
@@ -262,9 +231,9 @@ impl MpvContext {
         unsafe {
             let sec_str = CString::new(seconds.to_string()).unwrap();
             let mut cmd: [*const c_char; 4] = [
-                b"seek\0".as_ptr() as *const c_char,
+                c"seek".as_ptr(),
                 sec_str.as_ptr(),
-                b"relative\0".as_ptr() as *const c_char,
+                c"relative".as_ptr(),
                 ptr::null(),
             ];
             mpv_command(self.handle, cmd.as_mut_ptr());
@@ -275,10 +244,10 @@ impl MpvContext {
         unsafe {
             let sec_str = CString::new(seconds.to_string()).unwrap();
             let mut cmd: [*const c_char; 5] = [
-                b"seek\0".as_ptr() as *const c_char,
+                c"seek".as_ptr(),
                 sec_str.as_ptr(),
-                b"absolute\0".as_ptr() as *const c_char,
-                b"exact\0".as_ptr() as *const c_char,
+                c"absolute".as_ptr(),
+                c"exact".as_ptr(),
                 ptr::null(),
             ];
             mpv_command(self.handle, cmd.as_mut_ptr());
@@ -289,7 +258,7 @@ impl MpvContext {
         unsafe {
             mpv_set_property(
                 self.handle,
-                b"volume\0".as_ptr() as *const c_char,
+                c"volume".as_ptr(),
                 mpv_format_MPV_FORMAT_DOUBLE,
                 &volume as *const _ as *mut c_void,
             );
@@ -301,7 +270,7 @@ impl MpvContext {
             let val: c_int = if mute { 1 } else { 0 };
             mpv_set_property(
                 self.handle,
-                b"mute\0".as_ptr() as *const c_char,
+                c"mute".as_ptr(),
                 mpv_format_MPV_FORMAT_FLAG,
                 &val as *const _ as *mut c_void,
             );
@@ -313,7 +282,7 @@ impl MpvContext {
             let mut vol: f64 = 0.0;
             mpv_get_property(
                 self.handle,
-                b"volume\0".as_ptr() as *const c_char,
+                c"volume".as_ptr(),
                 mpv_format_MPV_FORMAT_DOUBLE,
                 &mut vol as *mut _ as *mut c_void,
             );
@@ -326,7 +295,7 @@ impl MpvContext {
             let mut mute: c_int = 0;
             mpv_get_property(
                 self.handle,
-                b"mute\0".as_ptr() as *const c_char,
+                c"mute".as_ptr(),
                 mpv_format_MPV_FORMAT_FLAG,
                 &mut mute as *mut _ as *mut c_void,
             );
@@ -351,6 +320,10 @@ impl Drop for MpvContext {
     }
 }
 
+/// # Safety
+///
+/// `cb_ctx` must be a valid pointer to a `tokio::sync::mpsc::Sender<()>` that was
+/// previously registered via `mpv_render_context_set_update_callback`.
 pub unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
     let sender = cb_ctx as *const tokio::sync::mpsc::Sender<()>;
     if let Some(tx) = unsafe { sender.as_ref() } {
@@ -545,13 +518,13 @@ pub async fn run_video_worker(
                     unsafe {
                         mpv_get_property(
                             player.handle,
-                            b"time-pos\0".as_ptr() as *const c_char,
+                            c"time-pos".as_ptr(),
                             mpv_format_MPV_FORMAT_DOUBLE,
                             &mut pos as *mut _ as *mut c_void,
                         );
                         mpv_get_property(
                             player.handle,
-                            b"duration\0".as_ptr() as *const c_char,
+                            c"duration".as_ptr(),
                             mpv_format_MPV_FORMAT_DOUBLE,
                             &mut dur as *mut _ as *mut c_void,
                         );

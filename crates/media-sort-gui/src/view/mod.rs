@@ -2,7 +2,6 @@ pub mod control_panel;
 pub mod credits_dialog;
 pub mod folder_panel;
 pub mod folder_tree;
-pub mod history_bar;
 pub mod hotkey_popup;
 pub mod main_layout;
 pub mod media_grid;
