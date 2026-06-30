@@ -76,6 +76,8 @@ pub enum Message {
     StopAudio,
 
     ThumbnailReady(PathBuf, Vec<u8>),
+    ThumbnailFailed(PathBuf),
+    OpenExternal(PathBuf),
     ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
     GoLeft,
     GoRight,

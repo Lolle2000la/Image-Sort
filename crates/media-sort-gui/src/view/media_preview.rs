@@ -1,5 +1,5 @@
-use iced::widget::{container, text};
-use iced::{Color, Element, Length};
+use iced::widget::{button, column, container, text};
+use iced::{Alignment, Color, Element, Length};
 
 use crate::message::Message;
 use crate::state::AppState;
@@ -19,6 +19,23 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             .center_y(Length::Fill)
             .into();
     };
+
+    if state.unsupported_files.contains(&entry.path) {
+        return container(
+            column![
+                text(state.l10n.tr("ui-file-not-supported")).size(14),
+                button(text(state.l10n.tr("ui-open-externally")))
+                    .on_press(Message::OpenExternal(entry.path.clone())),
+            ]
+            .spacing(12)
+            .align_x(Alignment::Center),
+        )
+        .center_x(Length::Fill)
+        .center_y(Length::Fill)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into();
+    }
 
     let preview_element: Element<'_, Message> = match entry.media_type {
         media_sort_core::media_type::MediaType::Image => {

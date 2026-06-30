@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use lru::LruCache;
@@ -63,6 +64,7 @@ pub struct AppState {
     pub video_rgba: Option<std::sync::Arc<Vec<u8>>>,
     pub video_width: u32,
     pub video_height: u32,
+    pub unsupported_files: HashSet<PathBuf>,
 }
 
 impl AppState {
@@ -144,6 +146,7 @@ impl AppState {
             video_rgba: None,
             video_width: 0,
             video_height: 0,
+            unsupported_files: HashSet::new(),
         }
     }
 
@@ -166,6 +169,7 @@ impl AppState {
         self.video_frame = None;
         self.video_position = 0.0;
         self.video_duration = 0.0;
+        self.unsupported_files.clear();
     }
 
     pub fn scan_media(&mut self) {

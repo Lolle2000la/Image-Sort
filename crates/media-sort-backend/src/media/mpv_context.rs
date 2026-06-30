@@ -128,7 +128,8 @@ impl MpvContext {
         unsafe {
             let path_str =
                 CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;
-            let mut cmd: [*const c_char; 3] = [c"loadfile".as_ptr(), path_str.as_ptr(), ptr::null()];
+            let mut cmd: [*const c_char; 3] =
+                [c"loadfile".as_ptr(), path_str.as_ptr(), ptr::null()];
             let err = mpv_command(self.handle, cmd.as_mut_ptr());
             if err < 0 {
                 return Err(format!("Failed to load file: {err}"));
@@ -221,8 +222,7 @@ impl MpvContext {
 
     pub fn toggle_pause(&mut self) {
         unsafe {
-            let mut cmd: [*const c_char; 3] =
-                [c"cycle".as_ptr(), c"pause".as_ptr(), ptr::null()];
+            let mut cmd: [*const c_char; 3] = [c"cycle".as_ptr(), c"pause".as_ptr(), ptr::null()];
             mpv_command(self.handle, cmd.as_mut_ptr());
         }
     }
@@ -301,6 +301,37 @@ impl MpvContext {
             );
             mute != 0
         }
+    }
+
+    /// Query the set of file extensions compiled into the underlying FFmpeg layer of
+    /// `libmpv`. Returns an empty set if the context cannot be created or the
+    /// `demuxer-lavf-list` property cannot be read.
+    pub fn query_supported_extensions() -> std::collections::HashSet<String> {
+        let mut extensions = std::collections::HashSet::new();
+        if let Ok(ctx) = Self::new() {
+            unsafe {
+                let mut ptr: *mut c_char = ptr::null_mut();
+                let err = mpv_get_property(
+                    ctx.handle,
+                    c"demuxer-lavf-list".as_ptr(),
+                    mpv_format_MPV_FORMAT_STRING,
+                    &mut ptr as *mut _ as *mut c_void,
+                );
+                if err >= 0 && !ptr.is_null() {
+                    let list_str = CStr::from_ptr(ptr).to_string_lossy();
+                    for line in list_str.lines() {
+                        for ext in line.trim().split(',') {
+                            let clean_ext = ext.trim().to_lowercase();
+                            if !clean_ext.is_empty() {
+                                extensions.insert(clean_ext);
+                            }
+                        }
+                    }
+                    mpv_free(ptr as *mut c_void);
+                }
+            }
+        }
+        extensions
     }
 }
 

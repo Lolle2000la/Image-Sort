@@ -30,7 +30,10 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
             "raw-window-handle",
             "https://github.com/rust-windowing/raw-window-handle",
         ),
-        ("RFD (Rust File Dialogs)", "https://github.com/PolyMeilex/rfd"),
+        (
+            "RFD (Rust File Dialogs)",
+            "https://github.com/PolyMeilex/rfd",
+        ),
         ("Rodio", "https://github.com/RustAudio/rodio"),
         ("Serde", "https://github.com/serde-rs/serde"),
         ("serde_json", "https://github.com/serde-rs/json"),

@@ -14,6 +14,10 @@ use media_sort_core::settings::store::SettingsStore;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
 
+    let discovered =
+        media_sort_backend::media::mpv_context::MpvContext::query_supported_extensions();
+    media_sort_core::media_type::MediaRegistry::init(discovered);
+
     let settings = SettingsStore::load().unwrap_or_default();
 
     let window_settings = window::Settings {

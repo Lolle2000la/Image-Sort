@@ -132,17 +132,21 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::PickFolder => Task::perform(
             async {
-                rfd::AsyncFileDialog::new().pick_folder().await.map(|handle| handle.path().to_path_buf())
+                rfd::AsyncFileDialog::new()
+                    .pick_folder()
+                    .await
+                    .map(|handle| handle.path().to_path_buf())
             },
             Message::PickFolderResult,
         ),
-        Message::PickFolderResult(Some(path)) => {
-            Task::done(Message::OpenFolder(path))
-        }
+        Message::PickFolderResult(Some(path)) => Task::done(Message::OpenFolder(path)),
         Message::PickFolderResult(None) => Task::none(),
         Message::PickPinFolder => Task::perform(
             async {
-                rfd::AsyncFileDialog::new().pick_folder().await.map(|handle| handle.path().to_path_buf())
+                rfd::AsyncFileDialog::new()
+                    .pick_folder()
+                    .await
+                    .map(|handle| handle.path().to_path_buf())
             },
             Message::PickPinFolderResult,
         ),
@@ -667,19 +671,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PlayVideoExternally(path) => {
-            let res = if cfg!(target_os = "windows") {
-                std::process::Command::new("cmd")
-                    .args(["/C", "start", ""])
-                    .arg(&path)
-                    .spawn()
-            } else if cfg!(target_os = "macos") {
-                std::process::Command::new("open").arg(&path).spawn()
-            } else {
-                std::process::Command::new("xdg-open").arg(&path).spawn()
-            };
-            if let Err(e) = res {
-                log::error!("Failed to play video externally: {e}");
-            }
+            open_externally(&path);
             Task::none()
         }
         Message::ToggleDarkMode => {
@@ -834,6 +826,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let handle = iced::widget::image::Handle::from_bytes(data);
                 state.thumbnail_cache.push(path, handle);
             }
+            Task::none()
+        }
+        Message::ThumbnailFailed(path) => {
+            state.unsupported_files.insert(path);
+            Task::none()
+        }
+        Message::OpenExternal(path) => {
+            open_externally(&path);
             Task::none()
         }
         Message::ImageLoaded(path, result) => {
@@ -1053,16 +1053,36 @@ fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
     Task::perform(
         async move {
             let path_clone = path.clone();
-            let bytes = tokio::task::spawn_blocking(move || {
+            let result = tokio::task::spawn_blocking(move || {
                 crate::subscriptions::prefetch::generate_thumbnail(&path_clone)
             })
             .await
-            .unwrap_or_default();
-            (path, bytes)
+            .unwrap_or(Err(()));
+            (path, result)
         },
-        |(path, bytes)| Message::ThumbnailReady(path, bytes),
+        |(path, result)| match result {
+            Ok(bytes) => Message::ThumbnailReady(path, bytes),
+            Err(()) => Message::ThumbnailFailed(path),
+        },
     )
 }
+
+fn open_externally(path: &std::path::Path) {
+    let res = if cfg!(target_os = "windows") {
+        std::process::Command::new("cmd")
+            .args(["/C", "start", ""])
+            .arg(path)
+            .spawn()
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("open").arg(path).spawn()
+    } else {
+        std::process::Command::new("xdg-open").arg(path).spawn()
+    };
+    if let Err(e) = res {
+        log::error!("Failed to open file externally: {e}");
+    }
+}
+
 fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<Message> {
     if media_type != MediaType::Image {
         return Task::none();
