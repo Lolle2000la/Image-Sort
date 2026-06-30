@@ -11,7 +11,7 @@ use media_sort_backend::metadata::image_meta::extract_image_metadata;
 use media_sort_backend::metadata::video_meta::extract_video_metadata;
 
 fn fixtures_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures")
 }
 
 #[test]

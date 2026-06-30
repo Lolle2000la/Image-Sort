@@ -54,8 +54,6 @@ impl Deref for TempDir {
 
 fn fixtures_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("..")
         .join("tests")
         .join("fixtures")
 }
