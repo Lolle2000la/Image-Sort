@@ -123,5 +123,26 @@ metadata-field-comment = Kommentar
 metadata-field-description = Beschreibung
 metadata-field-copyright = Urheberrecht
 metadata-field-language = Sprache
+metadata-section-exif = EXIF-Metadaten
+metadata-section-exif-ifd = EXIF {$num}
+metadata-field-composer = Komponist
+metadata-field-conductor = Dirigent
+metadata-field-lyrics = Songtext
+metadata-field-bpm = BPM
+metadata-field-label = Record Label
+metadata-field-discnumber = Disc-Nummer
+metadata-field-tracktotal = Titel-Gesamtzahl
+metadata-field-datetime = Aufnahmedatum
+metadata-field-make = Kamerahersteller
+metadata-field-model = Kameramodell
+metadata-field-software = Software
+metadata-field-exposuretime = Belichtungszeit
+metadata-field-fnumber = Blende
+metadata-field-isospeed = ISO-Empfindlichkeit
+metadata-field-focallength = Brennweite
+metadata-field-lensmodel = Objektiv
+metadata-field-gpslatitude = Breitengrad
+metadata-field-gpslongitude = Längengrad
+metadata-field-gpsaltitude = Höhe
 
 

@@ -123,5 +123,26 @@ metadata-field-comment = コメント
 metadata-field-description = 説明
 metadata-field-copyright = 著作権
 metadata-field-language = 言語
+metadata-section-exif = EXIFメタデータ
+metadata-section-exif-ifd = EXIF {$num}
+metadata-field-composer = 作曲家
+metadata-field-conductor = 指揮者
+metadata-field-lyrics = 歌詞
+metadata-field-bpm = BPM
+metadata-field-label = レーベル
+metadata-field-discnumber = ディスク番号
+metadata-field-tracktotal = トラック総数
+metadata-field-datetime = 撮影日時
+metadata-field-make = カメラメーカー
+metadata-field-model = カメラ機種
+metadata-field-software = ソフトウェア
+metadata-field-exposuretime = シャッタースピード
+metadata-field-fnumber = 絞り値
+metadata-field-isospeed = ISO感度
+metadata-field-focallength = 焦点距離
+metadata-field-lensmodel = レンズ
+metadata-field-gpslatitude = 緯度
+metadata-field-gpslongitude = 経度
+metadata-field-gpsaltitude = 高度
 
 

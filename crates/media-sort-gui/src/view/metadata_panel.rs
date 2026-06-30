@@ -28,6 +28,11 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
                     state.l10n.tr("metadata-section-file")
                 } else if section_name == "Container Metadata" {
                     state.l10n.tr("metadata-section-container")
+                } else if section_name == "EXIF" {
+                    state.l10n.tr("metadata-section-exif")
+                } else if section_name.starts_with("EXIF IFD") {
+                    let num = section_name.strip_prefix("EXIF IFD ").unwrap_or("");
+                    state.l10n.get("metadata-section-exif-ifd", &[("num", num)])
                 } else {
                     section_name.clone()
                 };
@@ -116,6 +121,27 @@ fn localize_tag_name(section: &str, key: &str, l10n: &media_sort_core::l10n::Loc
             "DESCRIPTION" => l10n.tr("metadata-field-description"),
             "COPYRIGHT" => l10n.tr("metadata-field-copyright"),
             "LANGUAGE" => l10n.tr("metadata-field-language"),
+            "COMPOSER" => l10n.tr("metadata-field-composer"),
+            "CONDUCTOR" => l10n.tr("metadata-field-conductor"),
+            "LYRICS" => l10n.tr("metadata-field-lyrics"),
+            "BPM" => l10n.tr("metadata-field-bpm"),
+            "LABEL" => l10n.tr("metadata-field-label"),
+            "DISCNUMBER" => l10n.tr("metadata-field-discnumber"),
+            "TRACKTOTAL" | "TOTALTRACKS" => l10n.tr("metadata-field-tracktotal"),
+
+            // EXIF fields
+            "DATETIMEORIGINAL" | "DATETIME" => l10n.tr("metadata-field-datetime"),
+            "MAKE" => l10n.tr("metadata-field-make"),
+            "MODEL" => l10n.tr("metadata-field-model"),
+            "SOFTWARE" => l10n.tr("metadata-field-software"),
+            "EXPOSURETIME" => l10n.tr("metadata-field-exposuretime"),
+            "FNUMBER" => l10n.tr("metadata-field-fnumber"),
+            "ISOSPEEDRATINGS" | "PHOTOGRAPHICSENSITIVITY" => l10n.tr("metadata-field-isospeed"),
+            "FOCALLENGTH" => l10n.tr("metadata-field-focallength"),
+            "LENSMODEL" => l10n.tr("metadata-field-lensmodel"),
+            "GPSLATITUDE" => l10n.tr("metadata-field-gpslatitude"),
+            "GPSLONGITUDE" => l10n.tr("metadata-field-gpslongitude"),
+            "GPSALTITUDE" => l10n.tr("metadata-field-gpsaltitude"),
             _ => key.to_string(),
         }
     }
