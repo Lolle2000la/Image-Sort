@@ -1,7 +1,7 @@
 use iced::widget::{button, column, container, text};
 use iced::{Alignment, Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
 use crate::widgets::video_player::video_player;
 
@@ -25,8 +25,9 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         return container(
             column![
                 text(state.l10n.tr("ui-file-not-supported")).size(14),
-                button(text(state.l10n.tr("ui-open-externally")))
-                    .on_press(Message::OpenExternal(entry.path.clone())),
+                button(text(state.l10n.tr("ui-open-externally"))).on_press(Message::Media(
+                    MediaMessage::OpenExternal(entry.path.clone())
+                )),
             ]
             .spacing(12)
             .align_x(Alignment::Center),

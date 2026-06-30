@@ -1,7 +1,7 @@
 use iced::widget::{button, column, container, row, scrollable, text};
 use iced::{Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{Message, SettingsMessage};
 use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
@@ -16,7 +16,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
         text(state.l10n.tr("ui-metadata")).size(16),
         iced::widget::Space::new().width(Length::Fill),
         button(text("X"))
-            .on_press(Message::ToggleMetadataPanel)
+            .on_press(Message::Settings(SettingsMessage::ToggleMetadataPanel))
             .style(iced::widget::button::text),
     ]
     .spacing(8)

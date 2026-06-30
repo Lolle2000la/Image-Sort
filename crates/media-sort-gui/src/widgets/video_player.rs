@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use iced::widget::{button, column, container, row, slider, text};
 use iced::{Alignment, Background, Border, Color, Element, Font, Length};
 
-use crate::message::Message;
+use crate::message::{Message, VideoMessage};
 use crate::state::AppState;
 
 pub fn video_player<'a>(
@@ -36,7 +36,7 @@ pub fn video_player<'a>(
         .size(16),
     )
     .padding(8)
-    .on_press(Message::VideoPlayPause);
+    .on_press(Message::Video(VideoMessage::PlayPause));
 
     let stop_btn = button(
         text(char::from(lucide_icons::Icon::Square))
@@ -44,7 +44,7 @@ pub fn video_player<'a>(
             .size(16),
     )
     .padding(8)
-    .on_press(Message::VideoStop);
+    .on_press(Message::Video(VideoMessage::Stop));
 
     let time_str = format!(
         "{} / {}",
@@ -58,8 +58,10 @@ pub fn video_player<'a>(
     } else {
         1.0
     };
-    let seekbar =
-        slider(0.0..=seek_max, state.video_position, Message::VideoSeek).width(Length::Fill);
+    let seekbar = slider(0.0..=seek_max, state.video_position, |v| {
+        Message::Video(VideoMessage::Seek(v))
+    })
+    .width(Length::Fill);
 
     let mute_btn = button(
         text(char::from(if state.video_muted {
@@ -71,10 +73,12 @@ pub fn video_player<'a>(
         .size(16),
     )
     .padding(8)
-    .on_press(Message::VideoMute);
+    .on_press(Message::Video(VideoMessage::Mute));
 
-    let volume_slider =
-        slider(0.0..=100.0, state.video_volume, Message::VideoVolume).width(Length::Fixed(80.0));
+    let volume_slider = slider(0.0..=100.0, state.video_volume, |v| {
+        Message::Video(VideoMessage::Volume(v))
+    })
+    .width(Length::Fixed(80.0));
 
     let controls_row = row![
         play_pause_btn,
@@ -119,7 +123,7 @@ fn placeholder(
                 .align_y(Alignment::Center)
             )
             .padding([8, 16])
-            .on_press(Message::PlayVideoExternally(path)),
+            .on_press(Message::Video(VideoMessage::PlayExternally(path))),
         ]
         .spacing(12)
         .align_x(Alignment::Center),

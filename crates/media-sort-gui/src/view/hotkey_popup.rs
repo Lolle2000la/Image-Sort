@@ -1,7 +1,7 @@
 use iced::widget::{button, column, container, row, scrollable, text, Text};
 use iced::{Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{Message, SettingsMessage};
 use crate::state::AppState;
 use crate::subscriptions::keyboard::{format_keybinding, keybinding_list};
 
@@ -34,7 +34,7 @@ pub fn hotkey_popup_view(state: &AppState) -> Element<'_, Message> {
     let rows_column = column(rows).spacing(4);
 
     let close_btn = button(text(state.l10n.tr("ui-close")))
-        .on_press(Message::CloseSettings)
+        .on_press(Message::Settings(SettingsMessage::CloseKeybindings))
         .style(iced::widget::button::primary);
 
     container(

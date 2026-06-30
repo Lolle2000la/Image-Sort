@@ -56,7 +56,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             let task = if let Some(path) = startup_path {
-                iced::Task::done(crate::message::Message::OpenFolder(path))
+                iced::Task::done(crate::message::Message::Folder(
+                    crate::message::FolderMessage::Open(path),
+                ))
             } else {
                 iced::Task::none()
             };

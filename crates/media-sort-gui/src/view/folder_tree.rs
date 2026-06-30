@@ -3,7 +3,7 @@ use iced::{Color, Element, Length};
 
 use media_sort_core::models::FolderNode;
 
-use crate::message::Message;
+use crate::message::{FolderMessage, Message};
 use crate::widgets::folder_icon;
 
 const INDENT_WIDTH: f32 = 20.0;
@@ -51,7 +51,9 @@ fn render_node<'a>(
             .size(12)
             .width(Length::Fixed(12.0)),
         )
-        .on_press(Message::ToggleFolderExpand(node_path.clone()))
+        .on_press(Message::Folder(FolderMessage::ToggleExpand(
+            node_path.clone(),
+        )))
         .style(iced::widget::button::text)
         .padding(iced::Padding::new(2.0))
         .into()
@@ -119,7 +121,7 @@ fn render_node<'a>(
 
     // Folder selection button
     let select_button = button(row_content)
-        .on_press(Message::FolderSelected(node_path.clone()))
+        .on_press(Message::Folder(FolderMessage::Selected(node_path.clone())))
         .style(move |theme: &iced::Theme, _status| {
             let palette = theme.palette();
             let base = iced::widget::button::Style::default();

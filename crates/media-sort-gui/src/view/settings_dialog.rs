@@ -1,7 +1,7 @@
 use iced::widget::{button, checkbox, column, container, pick_list, row, scrollable, text};
 use iced::{Alignment, Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{Message, SettingsMessage};
 use crate::state::AppState;
 use crate::subscriptions::keyboard::format_keybinding;
 
@@ -83,7 +83,7 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
     row![
         text(label).size(12).width(Length::Fixed(240.0)),
         button(btn_label)
-            .on_press(Message::EditKeyBinding(idx))
+            .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
             .style(iced::widget::button::secondary)
             .width(Length::Fixed(120.0)),
     ]
@@ -116,14 +116,14 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     // Tab bar
     let tab_bar = row![
         button(text(state.l10n.tr("settings-tab-general")).size(13))
-            .on_press(Message::OpenSettings)
+            .on_press(Message::Settings(SettingsMessage::Open))
             .style(if !state.show_keybindings {
                 iced::widget::button::primary
             } else {
                 iced::widget::button::secondary
             }),
         button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
-            .on_press(Message::OpenKeybindings)
+            .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
             .style(if state.show_keybindings {
                 iced::widget::button::primary
             } else {
@@ -136,32 +136,32 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         // General settings tab
         let dark_mode_cb = checkbox(state.settings.general.dark_mode)
             .label(state.l10n.tr("settings-dark-mode"))
-            .on_toggle(|_| Message::ToggleDarkMode)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleDarkMode))
             .size(16);
 
         let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
             .label(state.l10n.tr("settings-play-gifs"))
-            .on_toggle(|_| Message::ToggleAnimateGifs)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
             .size(16);
 
         let animate_thumbs_cb = checkbox(state.settings.general.animate_gif_thumbnails)
             .label(state.l10n.tr("settings-preview-gifs"))
-            .on_toggle(|_| Message::ToggleAnimateThumbnails)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateThumbnails))
             .size(16);
 
         let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
             .label(state.l10n.tr("settings-check-updates"))
-            .on_toggle(|_| Message::ToggleCheckForUpdates)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleCheckForUpdates))
             .size(16);
 
         let install_prerelease_cb = checkbox(state.settings.general.install_prerelease_builds)
             .label(state.l10n.tr("settings-install-prerelease"))
-            .on_toggle(|_| Message::ToggleInstallPrerelease)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleInstallPrerelease))
             .size(16);
 
         let reopen_folder_cb = checkbox(state.settings.general.reopen_last_opened_folder)
             .label(state.l10n.tr("settings-reopen-folder"))
-            .on_toggle(|_| Message::ToggleReopenFolder)
+            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenFolder))
             .size(16);
 
         #[allow(unused_mut)]
@@ -201,7 +201,9 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                         display: media_sort_core::l10n::locale_display_name(&state.l10n.locale())
                             .to_string(),
                     }),
-                    |opt: LocaleOption| Message::ChangeLanguage(opt.code),
+                    |opt: LocaleOption| Message::Settings(SettingsMessage::ChangeLanguage(
+                        opt.code
+                    )),
                 )
                 .width(Length::Fixed(200.0)),
             ]
@@ -214,7 +216,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             let integration_with_windows_cb =
                 checkbox(state.settings.general.integration_with_windows)
                     .label(state.l10n.tr("settings-windows-context-menu"))
-                    .on_toggle(|_| Message::ToggleIntegrationWithWindows)
+                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleIntegrationWithWindows))
                     .size(16);
 
             settings_col = settings_col.push(
@@ -232,7 +234,9 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     } else {
         // Key bindings tab
         let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
-            .on_press(Message::RestoreDefaultKeyBindings)
+            .on_press(Message::Settings(
+                SettingsMessage::RestoreDefaultKeyBindings,
+            ))
             .style(iced::widget::button::secondary);
 
         // Images Section
@@ -340,7 +344,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     };
 
     let close_btn = button(text(state.l10n.tr("settings-close")))
-        .on_press(Message::CloseSettings)
+        .on_press(Message::Settings(SettingsMessage::Close))
         .style(iced::widget::button::primary);
 
     container(

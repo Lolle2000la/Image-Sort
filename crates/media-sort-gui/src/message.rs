@@ -5,99 +5,105 @@ use std::time::Instant;
 use media_sort_core::settings::store::SettingsStore;
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub enum Message {
     Tick(Instant),
+    #[allow(dead_code)]
     SettingsLoaded(Box<Result<SettingsStore, String>>),
     Quit,
+    EventOccurred(iced::Event),
+    OpenCredits,
+    CloseCredits,
 
-    OpenFolder(PathBuf),
-    PickFolder,
-    PickFolderResult(Option<PathBuf>),
-    PickPinFolder,
-    PickPinFolderResult(Option<PathBuf>),
-    FolderSelected(PathBuf),
-    ToggleFolderExpand(PathBuf),
-
-    SelectEntry(usize),
-    SearchQueryChanged(String),
-    TriggerRename,
-
-    MoveToFolder(PathBuf),
-    DeleteEntry(PathBuf),
-    RenameEntry(PathBuf, String),
-
-    RenameInputChanged(String),
-    SubmitRename,
-    CancelRename,
-    CreateFolderInputChanged(String),
-    SubmitCreateFolder,
-    CancelCreateFolder,
-
-    Undo,
-    Redo,
-
-    PinCurrentFolder,
-    PinSelectedFolder,
-    UnpinCurrentFolder(PathBuf),
-    MovePinnedFolderUp(PathBuf),
-    MovePinnedFolderDown(PathBuf),
-    TriggerCreateFolder,
-
-    ToggleMetadataPanel,
-    StartDragFolderDivider,
-    StartDragMetadataDivider,
-    MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
-
-    EditKeyBinding(usize),
     KeyCaptured(String, bool, bool, bool),
 
-    OpenSettings,
-    CloseSettings,
+    Settings(SettingsMessage),
+    Folder(FolderMessage),
+    Media(MediaMessage),
+    Video(VideoMessage),
+}
+
+#[derive(Debug, Clone)]
+pub enum SettingsMessage {
+    Open,
+    Close,
     ToggleDarkMode,
     ToggleReopenFolder,
     ToggleCheckForUpdates,
     ToggleInstallPrerelease,
+    #[allow(dead_code)]
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
     ChangeLanguage(String),
-    PlayVideoExternally(std::path::PathBuf),
-    SaveSettings,
+    Save,
     RestoreDefaultKeyBindings,
-    OpenCredits,
-    CloseCredits,
-    EventOccurred(iced::Event),
     OpenKeybindings,
     CloseKeybindings,
+    EditKeyBinding(usize),
+    ToggleMetadataPanel,
+    StartDragFolderDivider,
+    StartDragMetadataDivider,
+}
 
+#[derive(Debug, Clone)]
+pub enum FolderMessage {
+    Open(PathBuf),
+    Pick,
+    PickResult(Option<PathBuf>),
+    PickPin,
+    PickPinResult(Option<PathBuf>),
+    Selected(PathBuf),
+    ToggleExpand(PathBuf),
+    PinCurrent,
+    PinSelected,
+    UnpinCurrent(PathBuf),
+    MovePinnedUp(PathBuf),
+    MovePinnedDown(PathBuf),
+    PinShortcut(u8),
+    TriggerCreate,
+    CreateInputChanged(String),
+    SubmitCreate(PathBuf),
+    CancelCreate,
+}
+
+#[derive(Debug, Clone)]
+pub enum MediaMessage {
+    SelectEntry(usize),
+    SearchQueryChanged(String),
+    SearchFocused,
+    #[allow(dead_code)]
+    SearchBlurred,
+    TriggerRename,
+    RenameInputChanged(String),
+    SubmitRename,
+    CancelRename,
+    RenameEntry(PathBuf, String),
+    MoveToFolder(PathBuf),
+    DeleteEntry(PathBuf),
+    Undo,
+    Redo,
+    GoLeft,
+    GoRight,
+    MoveActive,
+    GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
+    ThumbnailReady(PathBuf, Vec<u8>),
+    ThumbnailFailed(PathBuf),
+    ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
+    MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
+    OpenExternal(PathBuf),
     PlayAudio,
     PauseAudio,
     StopAudio,
+}
 
-    ThumbnailReady(PathBuf, Vec<u8>),
-    ThumbnailFailed(PathBuf),
-    OpenExternal(PathBuf),
-    ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
-    GoLeft,
-    GoRight,
-    MoveMedia,
-    PinFolderShortcut(u8),
-    SearchFocused,
-    SearchBlurred,
-
-    VideoPlayerReady(
-        tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>,
-    ),
-    VideoEvent(media_sort_backend::media::mpv_context::VideoEvent),
-    VideoSeek(f64),
-    VideoVolume(f64),
-    VideoMute,
-    VideoPlayPause,
-    VideoStop,
-
-    /// The media grid's horizontal scrollable reported a new viewport.
-    /// Carries the absolute scroll offset, the viewport width, and the
-    /// content width in pixels.
-    GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
+#[derive(Debug, Clone)]
+pub enum VideoMessage {
+    PlayerReady(tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>),
+    Event(media_sort_backend::media::mpv_context::VideoEvent),
+    Seek(f64),
+    Volume(f64),
+    Mute,
+    PlayPause,
+    Stop,
+    PlayExternally(PathBuf),
 }

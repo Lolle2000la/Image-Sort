@@ -1,4 +1,4 @@
-use crate::message::Message;
+use crate::message::{Message, VideoMessage};
 use iced::futures::SinkExt;
 use iced::Subscription;
 use media_sort_backend::media::mpv_context::start_video_worker;
@@ -18,7 +18,7 @@ fn video_stream() -> impl iced::futures::Stream<Item = Message> {
             start_video_worker(cmd_rx, event_tx);
 
             if output
-                .send(Message::VideoPlayerReady(cmd_tx))
+                .send(Message::Video(VideoMessage::PlayerReady(cmd_tx)))
                 .await
                 .is_err()
             {
@@ -26,7 +26,11 @@ fn video_stream() -> impl iced::futures::Stream<Item = Message> {
             }
 
             while let Some(event) = event_rx.recv().await {
-                if output.send(Message::VideoEvent(event)).await.is_err() {
+                if output
+                    .send(Message::Video(VideoMessage::Event(event)))
+                    .await
+                    .is_err()
+                {
                     break;
                 }
             }

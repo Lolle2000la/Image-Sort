@@ -6,7 +6,7 @@ use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
 
-use crate::message::Message;
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::AppState;
 use crate::subscriptions::keyboard;
 use crate::view;
@@ -20,11 +20,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::VideoPlayerReady(sender) => {
+        Message::Video(VideoMessage::PlayerReady(sender)) => {
             state.video_sender = Some(sender);
             Task::none()
         }
-        Message::VideoEvent(event) => {
+        Message::Video(VideoMessage::Event(event)) => {
             match event {
                 media_sort_backend::media::mpv_context::VideoEvent::FrameReady {
                     path,
@@ -65,7 +65,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::VideoSeek(pos) => {
+        Message::Video(VideoMessage::Seek(pos)) => {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender.try_send(
                     media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos),
@@ -73,14 +73,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::VideoVolume(vol) => {
+        Message::Video(VideoMessage::Volume(vol)) => {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender
                     .try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(vol));
             }
             Task::none()
         }
-        Message::VideoMute => {
+        Message::Video(VideoMessage::Mute) => {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender.try_send(
                     media_sort_backend::media::mpv_context::VideoCommand::SetMute(
@@ -90,14 +90,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::VideoPlayPause => {
+        Message::Video(VideoMessage::PlayPause) => {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender
                     .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
             }
             Task::none()
         }
-        Message::VideoStop => {
+        Message::Video(VideoMessage::Stop) => {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
             }
@@ -119,7 +119,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::OpenFolder(path) => {
+        Message::Folder(FolderMessage::Open(path)) => {
             state.open_folder(&path);
             let mut tasks: Vec<_> = state
                 .media_entries
@@ -130,43 +130,45 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             tasks.push(select_and_load_entry(state, 0));
             Task::batch(tasks)
         }
-        Message::PickFolder => Task::perform(
+        Message::Folder(FolderMessage::Pick) => Task::perform(
             async {
                 rfd::AsyncFileDialog::new()
                     .pick_folder()
                     .await
                     .map(|handle| handle.path().to_path_buf())
             },
-            Message::PickFolderResult,
+            |result| Message::Folder(FolderMessage::PickResult(result)),
         ),
-        Message::PickFolderResult(Some(path)) => Task::done(Message::OpenFolder(path)),
-        Message::PickFolderResult(None) => Task::none(),
-        Message::PickPinFolder => Task::perform(
+        Message::Folder(FolderMessage::PickResult(Some(path))) => {
+            Task::done(Message::Folder(FolderMessage::Open(path)))
+        }
+        Message::Folder(FolderMessage::PickResult(None)) => Task::none(),
+        Message::Folder(FolderMessage::PickPin) => Task::perform(
             async {
                 rfd::AsyncFileDialog::new()
                     .pick_folder()
                     .await
                     .map(|handle| handle.path().to_path_buf())
             },
-            Message::PickPinFolderResult,
+            |result| Message::Folder(FolderMessage::PickPinResult(result)),
         ),
-        Message::PickPinFolderResult(Some(path)) => {
+        Message::Folder(FolderMessage::PickPinResult(Some(path))) => {
             state.pin_folder(&path);
             let _ = state.settings.save();
             Task::none()
         }
-        Message::PickPinFolderResult(None) => Task::none(),
-        Message::FolderSelected(path) => {
+        Message::Folder(FolderMessage::PickPinResult(None)) => Task::none(),
+        Message::Folder(FolderMessage::Selected(path)) => {
             state.selected_folder = Some(path);
             Task::none()
         }
-        Message::ToggleFolderExpand(path) => {
+        Message::Folder(FolderMessage::ToggleExpand(path)) => {
             state.toggle_folder_expand(&path);
             Task::none()
         }
 
-        Message::SelectEntry(index) => select_and_load_entry(state, index),
-        Message::SearchQueryChanged(query) => {
+        Message::Media(MediaMessage::SelectEntry(index)) => select_and_load_entry(state, index),
+        Message::Media(MediaMessage::SearchQueryChanged(query)) => {
             let previously_selected_path = state.selected_index.and_then(|idx| {
                 state
                     .filtered_media_entries()
@@ -191,7 +193,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         }
 
-        Message::MoveToFolder(target_folder) => {
+        Message::Media(MediaMessage::MoveToFolder(target_folder)) => {
             if let Some(index) = state.selected_index {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
@@ -213,7 +215,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::DeleteEntry(path) => {
+        Message::Media(MediaMessage::DeleteEntry(path)) => {
             let index_to_select = state.selected_index.unwrap_or(0);
             match media_sort_backend::filesystem::trash_staging::TrashStaging::new() {
                 Ok(staging) => match staging.stage_file(&path) {
@@ -235,7 +237,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::TriggerRename => {
+        Message::Media(MediaMessage::TriggerRename) => {
             if let Some(index) = state.selected_index {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
@@ -251,7 +253,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::RenameEntry(path, new_name) => {
+        Message::Media(MediaMessage::RenameEntry(path, new_name)) => {
             match RenameAction::new(&path, &new_name) {
                 Ok(mut action) => {
                     if let Err(e) = action.execute() {
@@ -274,30 +276,30 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::RenameInputChanged(val) => {
+        Message::Media(MediaMessage::RenameInputChanged(val)) => {
             state.rename_input_value = val;
             Task::none()
         }
-        Message::SubmitRename => {
+        Message::Media(MediaMessage::SubmitRename) => {
             if let Some(path) = state.renaming_path.take() {
                 let new_name = state.rename_input_value.trim().to_string();
                 if !new_name.is_empty() {
                     state.rename_input_value.clear();
-                    return Task::done(Message::RenameEntry(path, new_name));
+                    return Task::done(Message::Media(MediaMessage::RenameEntry(path, new_name)));
                 }
             }
             Task::none()
         }
-        Message::CancelRename => {
+        Message::Media(MediaMessage::CancelRename) => {
             state.renaming_path = None;
             state.rename_input_value.clear();
             Task::none()
         }
-        Message::CreateFolderInputChanged(val) => {
+        Message::Folder(FolderMessage::CreateInputChanged(val)) => {
             state.create_folder_input = val;
             Task::none()
         }
-        Message::SubmitCreateFolder => {
+        Message::Folder(FolderMessage::SubmitCreate(_parent)) => {
             if let Some(parent) = state.creating_folder_parent.take() {
                 let folder_name = state.create_folder_input.trim().to_string();
                 if !folder_name.is_empty() {
@@ -315,13 +317,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::CancelCreateFolder => {
+        Message::Folder(FolderMessage::CancelCreate) => {
             state.creating_folder_parent = None;
             state.create_folder_input.clear();
             Task::none()
         }
 
-        Message::Undo => {
+        Message::Media(MediaMessage::Undo) => {
             let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.undo() {
                 log::error!("Undo failed: {e}");
@@ -331,7 +333,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::Redo => {
+        Message::Media(MediaMessage::Redo) => {
             let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.redo() {
                 log::error!("Redo failed: {e}");
@@ -342,12 +344,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::PinCurrentFolder => {
+        Message::Folder(FolderMessage::PinCurrent) => {
             state.pin_current_folder();
             let _ = state.settings.save();
             Task::none()
         }
-        Message::PinSelectedFolder => {
+        Message::Folder(FolderMessage::PinSelected) => {
             let path_to_pin = state
                 .selected_folder
                 .clone()
@@ -358,22 +360,22 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::UnpinCurrentFolder(path) => {
+        Message::Folder(FolderMessage::UnpinCurrent(path)) => {
             state.unpin_folder(&path);
             let _ = state.settings.save();
             Task::none()
         }
-        Message::MovePinnedFolderUp(path) => {
+        Message::Folder(FolderMessage::MovePinnedUp(path)) => {
             state.move_pinned_folder_up(&path);
             let _ = state.settings.save();
             Task::none()
         }
-        Message::MovePinnedFolderDown(path) => {
+        Message::Folder(FolderMessage::MovePinnedDown(path)) => {
             state.move_pinned_folder_down(&path);
             let _ = state.settings.save();
             Task::none()
         }
-        Message::TriggerCreateFolder => {
+        Message::Folder(FolderMessage::TriggerCreate) => {
             if let Some(p) = state
                 .selected_folder
                 .as_ref()
@@ -385,14 +387,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::ToggleMetadataPanel => {
+        Message::Settings(SettingsMessage::ToggleMetadataPanel) => {
             state.metadata_panel_expanded = !state.metadata_panel_expanded;
             state.settings.metadata_panel.is_expanded = state.metadata_panel_expanded;
             let _ = state.settings.save();
             Task::none()
         }
 
-        Message::MetadataLoaded(result) => match result {
+        Message::Media(MediaMessage::MetadataLoaded(result)) => match result {
             Ok(metadata) => {
                 state.current_metadata = Some(metadata);
                 Task::none()
@@ -404,7 +406,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         },
 
-        Message::EditKeyBinding(index) => {
+        Message::Settings(SettingsMessage::EditKeyBinding(index)) => {
             state.editing_keybinding = Some(index);
             state.waiting_for_key = true;
             Task::none()
@@ -433,18 +435,20 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
             if state.renaming_path.is_some() {
                 if key == "Enter" {
-                    return Task::done(Message::SubmitRename);
+                    return Task::done(Message::Media(MediaMessage::SubmitRename));
                 } else if key == "Esc" {
-                    return Task::done(Message::CancelRename);
+                    return Task::done(Message::Media(MediaMessage::CancelRename));
                 }
                 return Task::none();
             }
 
             if state.creating_folder_parent.is_some() {
                 if key == "Enter" {
-                    return Task::done(Message::SubmitCreateFolder);
+                    return Task::done(Message::Folder(FolderMessage::SubmitCreate(
+                        std::path::PathBuf::new(),
+                    )));
                 } else if key == "Esc" {
-                    return Task::done(Message::CancelCreateFolder);
+                    return Task::done(Message::Folder(FolderMessage::CancelCreate));
                 }
                 return Task::none();
             }
@@ -468,8 +472,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let _ = sender.try_send(
                         media_sort_backend::media::mpv_context::VideoCommand::TogglePause,
                     );
-                    return Task::none();
                 }
+                return Task::none();
+            }
+
+            if ctrl && key == "Q" {
+                return Task::done(Message::Quit);
             }
 
             if key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause" {
@@ -516,10 +524,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 }
             }
             if key == "MediaTrackNext" {
-                return Task::done(Message::GoRight);
+                return Task::done(Message::Media(MediaMessage::GoRight));
             }
             if key == "MediaTrackPrevious" {
-                return Task::done(Message::GoLeft);
+                return Task::done(Message::Media(MediaMessage::GoLeft));
             }
 
             let bindings = keyboard::keybinding_list(state);
@@ -531,41 +539,56 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 {
                     match name.as_str() {
                         "undo" if state.history.can_undo() => {
-                            return Task::done(Message::Undo);
+                            return Task::done(Message::Media(MediaMessage::Undo));
                         }
                         "redo" if state.history.can_redo() => {
-                            return Task::done(Message::Redo);
+                            return Task::done(Message::Media(MediaMessage::Redo));
                         }
                         "open_folder" => {
                             if let Ok(p) = std::env::current_dir() {
-                                return Task::done(Message::OpenFolder(p));
+                                return Task::done(Message::Folder(FolderMessage::Open(p)));
                             }
                         }
                         "toggle_metadata_panel" => {
-                            return Task::done(Message::ToggleMetadataPanel);
+                            return Task::done(Message::Settings(
+                                SettingsMessage::ToggleMetadataPanel,
+                            ));
                         }
                         "pin" => {
-                            return Task::done(Message::PinCurrentFolder);
+                            return Task::done(Message::Folder(FolderMessage::PinCurrent));
                         }
                         "unpin" => {
                             if let Some(ref c) = state.current_folder {
-                                return Task::done(Message::UnpinCurrentFolder(c.clone()));
+                                return Task::done(Message::Folder(FolderMessage::UnpinCurrent(
+                                    c.clone(),
+                                )));
                             }
                         }
                         "go_left" => {
-                            return Task::done(Message::GoLeft);
+                            return Task::done(Message::Media(MediaMessage::GoLeft));
                         }
                         "go_right" => {
-                            return Task::done(Message::GoRight);
+                            return Task::done(Message::Media(MediaMessage::GoRight));
                         }
                         "move_to_folder" => {
-                            return Task::done(Message::MoveMedia);
+                            if let Some(index) = state.selected_index {
+                                let filtered = state.filtered_media_entries();
+                                if let Some(_entry) = filtered.get(index) {
+                                    if let Some(ref dest) = state.selected_folder {
+                                        return Task::done(Message::Media(
+                                            MediaMessage::MoveToFolder(dest.clone()),
+                                        ));
+                                    }
+                                }
+                            }
                         }
                         "delete" => {
                             if let Some(index) = state.selected_index {
                                 let filtered = state.filtered_media_entries();
                                 if let Some(entry) = filtered.get(index) {
-                                    return Task::done(Message::DeleteEntry(entry.path.clone()));
+                                    return Task::done(Message::Media(MediaMessage::DeleteEntry(
+                                        entry.path.clone(),
+                                    )));
                                 }
                             }
                         }
@@ -595,7 +618,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                         "open_selected_folder" => {
                             if let Some(ref selected_path) = state.selected_folder {
-                                return Task::done(Message::OpenFolder(selected_path.clone()));
+                                return Task::done(Message::Folder(FolderMessage::Open(
+                                    selected_path.clone(),
+                                )));
                             }
                         }
                         "pin_selected" => {
@@ -606,12 +631,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                         "move_pinned_up" => {
                             if let Some(selected_path) = state.selected_folder.clone() {
-                                state.move_pinned_folder_up(&selected_path);
+                                return Task::done(Message::Folder(FolderMessage::MovePinnedUp(
+                                    selected_path,
+                                )));
                             }
                         }
                         "move_pinned_down" => {
                             if let Some(selected_path) = state.selected_folder.clone() {
-                                state.move_pinned_folder_down(&selected_path);
+                                return Task::done(Message::Folder(FolderMessage::MovePinnedDown(
+                                    selected_path,
+                                )));
                             }
                         }
                         "folder_up" => {
@@ -627,10 +656,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             state.expand_selected_folder();
                         }
                         "search_images" => {
-                            state.search_focused = true;
-                            return iced::widget::operation::focus(
-                                crate::view::search_bar::SEARCH_INPUT_ID.clone(),
-                            );
+                            return Task::done(Message::Media(MediaMessage::SearchFocused));
                         }
                         _ => {}
                     }
@@ -641,7 +667,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if let Some(c) = key.chars().next() {
                     if c.is_ascii_digit() && c != '0' {
                         let digit = c.to_digit(10).unwrap() as u8;
-                        return Task::done(Message::PinFolderShortcut(digit));
+                        return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
                     }
                 }
             }
@@ -649,19 +675,19 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::OpenSettings => {
+        Message::Settings(SettingsMessage::Open) => {
             state.show_settings = true;
             state.show_keybindings = false;
             Task::none()
         }
-        Message::CloseSettings => {
+        Message::Settings(SettingsMessage::Close) => {
             state.show_settings = false;
             state.show_keybindings = false;
             state.editing_keybinding = None;
             state.waiting_for_key = false;
-            Task::none()
+            Task::done(Message::Settings(SettingsMessage::Save))
         }
-        Message::ChangeLanguage(locale) => {
+        Message::Settings(SettingsMessage::ChangeLanguage(locale)) => {
             state.l10n.set_locale(&locale);
             state.settings.general.locale = Some(locale);
             let _ = state.settings.save();
@@ -670,26 +696,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.create_folder_placeholder = state.l10n.tr("ui-folder-name-placeholder");
             Task::none()
         }
-        Message::PlayVideoExternally(path) => {
+        Message::Video(VideoMessage::PlayExternally(path)) => {
             open_externally(&path);
             Task::none()
         }
-        Message::ToggleDarkMode => {
+        Message::Settings(SettingsMessage::ToggleDarkMode) => {
             state.settings.general.dark_mode = !state.settings.general.dark_mode;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::ToggleReopenFolder => {
+        Message::Settings(SettingsMessage::ToggleReopenFolder) => {
             state.settings.general.reopen_last_opened_folder =
                 !state.settings.general.reopen_last_opened_folder;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::StartDragFolderDivider => {
+        Message::Settings(SettingsMessage::StartDragFolderDivider) => {
             state.dragging_folder_divider = true;
             Task::none()
         }
-        Message::StartDragMetadataDivider => {
+        Message::Settings(SettingsMessage::StartDragMetadataDivider) => {
             state.dragging_metadata_divider = true;
             Task::none()
         }
@@ -731,53 +757,51 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             _ => Task::none(),
         },
-        Message::ToggleCheckForUpdates => {
+        Message::Settings(SettingsMessage::ToggleCheckForUpdates) => {
             state.settings.general.check_for_updates_on_startup =
                 !state.settings.general.check_for_updates_on_startup;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::ToggleInstallPrerelease => {
+        Message::Settings(SettingsMessage::ToggleInstallPrerelease) => {
             state.settings.general.install_prerelease_builds =
                 !state.settings.general.install_prerelease_builds;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::ToggleIntegrationWithWindows => {
+        Message::Settings(SettingsMessage::ToggleIntegrationWithWindows) => {
             state.settings.general.integration_with_windows =
                 !state.settings.general.integration_with_windows;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::ToggleAnimateGifs => {
+        Message::Settings(SettingsMessage::ToggleAnimateGifs) => {
             state.settings.general.animate_gifs = !state.settings.general.animate_gifs;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::ToggleAnimateThumbnails => {
+        Message::Settings(SettingsMessage::ToggleAnimateThumbnails) => {
             state.settings.general.animate_gif_thumbnails =
                 !state.settings.general.animate_gif_thumbnails;
             let _ = state.settings.save();
             Task::none()
         }
-        Message::SaveSettings => {
+        Message::Settings(SettingsMessage::Save) => {
             let _ = state.settings.save();
-            state.show_settings = false;
-            state.show_keybindings = false;
             Task::none()
         }
-        Message::RestoreDefaultKeyBindings => {
+        Message::Settings(SettingsMessage::RestoreDefaultKeyBindings) => {
             state.settings.keybindings =
                 media_sort_core::settings::keybindings::KeyBindings::default();
             let _ = state.settings.save();
             Task::none()
         }
-        Message::OpenKeybindings => {
+        Message::Settings(SettingsMessage::OpenKeybindings) => {
             state.show_settings = true;
             state.show_keybindings = true;
             Task::none()
         }
-        Message::CloseKeybindings => {
+        Message::Settings(SettingsMessage::CloseKeybindings) => {
             state.show_keybindings = false;
             state.editing_keybinding = None;
             state.waiting_for_key = false;
@@ -792,7 +816,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::PlayAudio => {
+        Message::Media(MediaMessage::PlayAudio) => {
             if let Some(ref player) = state.audio_player {
                 if let Some(index) = state.selected_index {
                     let entries = state.filtered_media_entries();
@@ -808,35 +832,35 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::PauseAudio => {
+        Message::Media(MediaMessage::PauseAudio) => {
             if let Some(ref player) = state.audio_player {
                 player.pause();
             }
             Task::none()
         }
-        Message::StopAudio => {
+        Message::Media(MediaMessage::StopAudio) => {
             if let Some(ref player) = state.audio_player {
                 player.stop();
             }
             Task::none()
         }
 
-        Message::ThumbnailReady(path, data) => {
+        Message::Media(MediaMessage::ThumbnailReady(path, data)) => {
             if !data.is_empty() {
                 let handle = iced::widget::image::Handle::from_bytes(data);
                 state.thumbnail_cache.push(path, handle);
             }
             Task::none()
         }
-        Message::ThumbnailFailed(path) => {
+        Message::Media(MediaMessage::ThumbnailFailed(path)) => {
             state.unsupported_files.insert(path);
             Task::none()
         }
-        Message::OpenExternal(path) => {
+        Message::Media(MediaMessage::OpenExternal(path)) => {
             open_externally(&path);
             Task::none()
         }
-        Message::ImageLoaded(path, result) => {
+        Message::Media(MediaMessage::ImageLoaded(path, result)) => {
             match result {
                 Ok((w, h, pixels)) => {
                     let handle = iced::widget::image::Handle::from_rgba(w, h, pixels);
@@ -864,7 +888,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::GoLeft => {
+        Message::Media(MediaMessage::GoLeft) => {
             if let Some(idx) = state.selected_index {
                 if idx > 0 {
                     return select_and_load_entry(state, idx - 1);
@@ -872,7 +896,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::GoRight => {
+        Message::Media(MediaMessage::GoRight) => {
             if let Some(idx) = state.selected_index {
                 let filtered_len = state.filtered_media_entries().len();
                 if idx + 1 < filtered_len {
@@ -881,7 +905,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::MoveMedia => {
+        Message::Media(MediaMessage::MoveActive) => {
             if let Some(index) = state.selected_index {
                 if let Some(ref target_folder) = state.selected_folder {
                     let filtered = state.filtered_media_entries();
@@ -905,7 +929,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::PinFolderShortcut(n) => {
+        Message::Folder(FolderMessage::PinShortcut(n)) => {
             let pinned_idx = (n.saturating_sub(1)) as usize;
             if let Some(pinned) = state.pinned_folders.get(pinned_idx) {
                 let target_folder = pinned.path.clone();
@@ -931,15 +955,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
-        Message::SearchFocused => {
+        Message::Media(MediaMessage::SearchFocused) => {
             state.search_focused = true;
-            Task::none()
+            iced::widget::operation::focus(crate::view::search_bar::SEARCH_INPUT_ID.clone())
         }
-        Message::SearchBlurred => {
+        Message::Media(MediaMessage::SearchBlurred) => {
             state.search_focused = false;
             Task::none()
         }
-        Message::GridScrolled(offset, viewport_width, content_width) => {
+        Message::Media(MediaMessage::GridScrolled(offset, viewport_width, content_width)) => {
             state.media_grid_scroll.offset_x = offset.x;
             state.media_grid_scroll.viewport_width = viewport_width;
             state.media_grid_scroll.content_width = content_width;
@@ -1111,9 +1135,11 @@ fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
             .unwrap_or(Err(()));
             (path, result)
         },
-        |(path, result)| match result {
-            Ok(bytes) => Message::ThumbnailReady(path, bytes),
-            Err(()) => Message::ThumbnailFailed(path),
+        |(path, result)| {
+            Message::Media(match result {
+                Ok(bytes) => MediaMessage::ThumbnailReady(path, bytes),
+                Err(()) => MediaMessage::ThumbnailFailed(path),
+            })
         },
     )
 }
@@ -1155,7 +1181,7 @@ fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<Mess
             .unwrap_or_else(|e| Err(format!("Join error: {e}")));
             (path, res)
         },
-        |(path, res)| Message::ImageLoaded(path, res),
+        |(path, res)| Message::Media(MediaMessage::ImageLoaded(path, res)),
     )
 }
 
@@ -1187,7 +1213,7 @@ fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
             .await
             .unwrap_or_else(|e| Err(format!("Join error: {e}")))
         },
-        Message::MetadataLoaded,
+        |result| Message::Media(MediaMessage::MetadataLoaded(result)),
     )
 }
 
@@ -1233,7 +1259,7 @@ mod tests {
             file_name: "a.jpg".into(),
         }];
         state.search_query = String::new();
-        let _task = update(&mut state, Message::SelectEntry(0));
+        let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
         assert_eq!(state.selected_index, Some(0));
         assert!(state.current_metadata.is_none());
     }
@@ -1244,7 +1270,7 @@ mod tests {
         state.media_entries = vec![];
         state.search_query = String::new();
         state.selected_index = None;
-        let _task = update(&mut state, Message::SelectEntry(99));
+        let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(99)));
         assert_eq!(state.selected_index, None);
     }
 
@@ -1258,7 +1284,7 @@ mod tests {
         }];
         state.search_query = "nomatch".into();
         state.selected_index = None;
-        let _task = update(&mut state, Message::SelectEntry(0));
+        let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
         assert_eq!(state.selected_index, None);
     }
 
@@ -1284,7 +1310,7 @@ mod tests {
             &mut state,
             Message::KeyCaptured("Q".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::Undo);
+        let _ = update(&mut state, Message::Media(MediaMessage::Undo));
         assert!(state.history.can_redo());
         assert!(!state.history.can_undo());
 
@@ -1318,7 +1344,7 @@ mod tests {
             &mut state,
             Message::KeyCaptured("E".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::Redo);
+        let _ = update(&mut state, Message::Media(MediaMessage::Redo));
         assert!(!state.history.can_redo());
         assert!(state.history.can_undo());
 
@@ -1369,14 +1395,20 @@ mod tests {
             &mut state,
             Message::KeyCaptured("M".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::ToggleMetadataPanel);
+        let _ = update(
+            &mut state,
+            Message::Settings(SettingsMessage::ToggleMetadataPanel),
+        );
         assert!(state.metadata_panel_expanded);
 
         let _ = update(
             &mut state,
             Message::KeyCaptured("M".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::ToggleMetadataPanel);
+        let _ = update(
+            &mut state,
+            Message::Settings(SettingsMessage::ToggleMetadataPanel),
+        );
         assert!(!state.metadata_panel_expanded);
     }
 
@@ -1390,7 +1422,7 @@ mod tests {
             &mut state,
             Message::KeyCaptured("P".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::PinCurrentFolder);
+        let _ = update(&mut state, Message::Folder(FolderMessage::PinCurrent));
         assert_eq!(state.pinned_folders.len(), 1);
     }
 
@@ -1406,7 +1438,10 @@ mod tests {
             &mut state,
             Message::KeyCaptured("U".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::UnpinCurrentFolder(folder.clone()));
+        let _ = update(
+            &mut state,
+            Message::Folder(FolderMessage::UnpinCurrent(folder.clone())),
+        );
         assert!(state.pinned_folders.is_empty());
     }
 
@@ -1475,7 +1510,10 @@ mod tests {
         let dest_file = dest.join("test_image.jpg");
         assert!(!dest_file.exists());
 
-        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
 
         assert!(!file.exists());
         assert!(dest_file.exists());
@@ -1495,7 +1533,10 @@ mod tests {
         state.open_folder(&root);
         state.selected_index = None;
 
-        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
 
         assert!(!state.history.can_undo());
         assert!(state.selected_index.is_none());
@@ -1511,7 +1552,10 @@ mod tests {
         state.open_folder(&root);
         state.selected_index = Some(999);
 
-        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
 
         assert!(!state.history.can_undo());
 
@@ -1528,7 +1572,10 @@ mod tests {
 
         let nonexistent = root.join("does_not_exist");
 
-        let _task = update(&mut state, Message::MoveToFolder(nonexistent));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(nonexistent)),
+        );
 
         assert!(file.exists());
         assert!(!state.history.can_undo());
@@ -1545,7 +1592,10 @@ mod tests {
 
         assert!(file.exists());
 
-        let _task = update(&mut state, Message::DeleteEntry(file.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::DeleteEntry(file.clone())),
+        );
 
         assert!(!file.exists());
         assert!(state.history.can_undo());
@@ -1565,7 +1615,10 @@ mod tests {
 
         let nonexistent = root.join("does_not_exist.jpg");
 
-        let _task = update(&mut state, Message::DeleteEntry(nonexistent));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::DeleteEntry(nonexistent)),
+        );
 
         assert!(!state.history.can_undo());
 
@@ -1580,13 +1633,16 @@ mod tests {
         state.open_folder(&root);
         state.selected_index = Some(0);
 
-        let _ = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _ = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
         assert!(!file.exists());
         let dest_file = dest.join("test_image.jpg");
         assert!(dest_file.exists());
         assert!(state.history.can_undo());
 
-        let _task = update(&mut state, Message::Undo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Undo));
 
         assert!(file.exists());
         assert!(!dest_file.exists());
@@ -1604,11 +1660,14 @@ mod tests {
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
 
-        let _ = update(&mut state, Message::DeleteEntry(file.clone()));
+        let _ = update(
+            &mut state,
+            Message::Media(MediaMessage::DeleteEntry(file.clone())),
+        );
         assert!(!file.exists());
         assert!(state.history.can_undo());
 
-        let _task = update(&mut state, Message::Undo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Undo));
 
         assert!(file.exists());
         assert!(!state.history.can_undo());
@@ -1625,12 +1684,15 @@ mod tests {
         state.open_folder(&root);
         state.selected_index = Some(0);
 
-        let _ = update(&mut state, Message::MoveToFolder(dest.clone()));
-        let _ = update(&mut state, Message::Undo);
+        let _ = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
+        let _ = update(&mut state, Message::Media(MediaMessage::Undo));
         assert!(file.exists());
         assert!(state.history.can_redo());
 
-        let _task = update(&mut state, Message::Redo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Redo));
 
         assert!(!file.exists());
         let dest_file = dest.join("test_image.jpg");
@@ -1646,7 +1708,7 @@ mod tests {
         let mut state = AppState::new(SettingsStore::default());
         assert!(!state.history.can_undo());
 
-        let _task = update(&mut state, Message::Undo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Undo));
         assert!(!state.history.can_undo());
     }
 
@@ -1655,7 +1717,7 @@ mod tests {
         let mut state = AppState::new(SettingsStore::default());
         assert!(!state.history.can_redo());
 
-        let _task = update(&mut state, Message::Redo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Redo));
         assert!(!state.history.can_redo());
     }
 
@@ -1671,7 +1733,10 @@ mod tests {
 
         let _task = update(
             &mut state,
-            Message::RenameEntry(file.clone(), "renamed_image".to_string()),
+            Message::Media(MediaMessage::RenameEntry(
+                file.clone(),
+                "renamed_image".to_string(),
+            )),
         );
 
         assert!(!file.exists());
@@ -1697,7 +1762,7 @@ mod tests {
 
         let _task = update(
             &mut state,
-            Message::RenameEntry(file1.clone(), "b".to_string()),
+            Message::Media(MediaMessage::RenameEntry(file1.clone(), "b".to_string())),
         );
 
         assert!(file1.exists());
@@ -1723,7 +1788,10 @@ mod tests {
         state.open_folder(&root);
         state.selected_index = Some(0);
 
-        let _task = update(&mut state, Message::MoveToFolder(dest.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MoveToFolder(dest.clone())),
+        );
 
         assert!(!file.exists());
         let moved_file = dest.join("test.jpg");
@@ -1789,11 +1857,14 @@ mod tests {
         state.open_folder(&root);
         assert!(file.exists());
 
-        let _task = update(&mut state, Message::DeleteEntry(file.clone()));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::DeleteEntry(file.clone())),
+        );
         assert!(!file.exists());
         assert!(state.history.can_undo());
 
-        let _task = update(&mut state, Message::Undo);
+        let _task = update(&mut state, Message::Media(MediaMessage::Undo));
         assert!(file.exists());
         assert_eq!(std::fs::read_to_string(&file).unwrap(), "delete me data");
         assert!(!state.history.can_undo());
@@ -1809,7 +1880,10 @@ mod tests {
 
         let _task = update(
             &mut state,
-            Message::ThumbnailReady(std::path::PathBuf::from("/test/empty.jpg"), Vec::new()),
+            Message::Media(MediaMessage::ThumbnailReady(
+                std::path::PathBuf::from("/test/empty.jpg"),
+                Vec::new(),
+            )),
         );
         assert_eq!(state.thumbnail_cache.len(), cache_size_before);
     }
@@ -1821,7 +1895,10 @@ mod tests {
 
         let _task = update(
             &mut state,
-            Message::ThumbnailReady(path.clone(), vec![0x89, 0x50, 0x4E, 0x47]),
+            Message::Media(MediaMessage::ThumbnailReady(
+                path.clone(),
+                vec![0x89, 0x50, 0x4E, 0x47],
+            )),
         );
         assert_eq!(state.thumbnail_cache.len(), 1);
         assert!(state.thumbnail_cache.contains(&path));
@@ -1838,7 +1915,7 @@ mod tests {
 
         let _task = update(
             &mut state,
-            Message::MetadataLoaded(Err("load failed".to_string())),
+            Message::Media(MediaMessage::MetadataLoaded(Err("load failed".to_string()))),
         );
         assert!(state.current_metadata.is_none());
     }
@@ -1851,7 +1928,10 @@ mod tests {
         section.insert("Width".to_string(), "1920".to_string());
         metadata.insert("EXIF".to_string(), section);
 
-        let _task = update(&mut state, Message::MetadataLoaded(Ok(metadata)));
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::MetadataLoaded(Ok(metadata))),
+        );
         assert!(state.current_metadata.is_some());
         let m = state.current_metadata.as_ref().unwrap();
         assert_eq!(m.get("EXIF").unwrap().get("Width").unwrap(), "1920");
@@ -1864,11 +1944,11 @@ mod tests {
 
         let _ = update(
             &mut state,
-            Message::GridScrolled(
+            Message::Media(MediaMessage::GridScrolled(
                 iced::widget::scrollable::AbsoluteOffset { x: 120.0, y: 0.0 },
                 400.0,
                 1200.0,
-            ),
+            )),
         );
         assert_eq!(state.media_grid_scroll.offset_x, 120.0);
         assert_eq!(state.media_grid_scroll.viewport_width, 400.0);

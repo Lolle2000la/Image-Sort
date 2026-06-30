@@ -1,19 +1,19 @@
 use iced::widget::{button, column, container, row, text};
 use iced::{Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::AppState;
 
 pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     // 1. Folder section
     let folder_header = text(state.l10n.tr("ui-folder")).size(15);
     let open_folder_btn = button(text(state.l10n.tr("ui-open-folder")).size(12))
-        .on_press(Message::PickFolder)
+        .on_press(Message::Folder(FolderMessage::Pick))
         .width(Length::Fill);
 
     let open_sel_btn = if let Some(ref selected) = state.selected_folder {
         button(text(state.l10n.tr("ui-open-selected-folder")).size(12))
-            .on_press(Message::OpenFolder(selected.clone()))
+            .on_press(Message::Folder(FolderMessage::Open(selected.clone())))
             .width(Length::Fill)
     } else {
         button(text(state.l10n.tr("ui-open-selected-folder")).size(12)).width(Length::Fill)
@@ -42,7 +42,7 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     let history_header = text(state.l10n.tr("ui-history")).size(15);
     let undo_btn = if state.history.can_undo() {
         button(text(state.l10n.tr("ui-undo")).size(12))
-            .on_press(Message::Undo)
+            .on_press(Message::Media(MediaMessage::Undo))
             .width(Length::Fill)
     } else {
         button(text(state.l10n.tr("ui-undo")).size(12)).width(Length::Fill)
@@ -50,7 +50,7 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
 
     let redo_btn = if state.history.can_redo() {
         button(text(state.l10n.tr("ui-redo")).size(12))
-            .on_press(Message::Redo)
+            .on_press(Message::Media(MediaMessage::Redo))
             .width(Length::Fill)
     } else {
         button(text(state.l10n.tr("ui-redo")).size(12)).width(Length::Fill)
@@ -79,11 +79,11 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
     // 3. Settings section
     let settings_header = text(state.l10n.tr("ui-settings")).size(15);
     let open_settings_btn = button(text(state.l10n.tr("ui-open")).size(12))
-        .on_press(Message::OpenSettings)
+        .on_press(Message::Settings(SettingsMessage::Open))
         .width(Length::Fill);
 
     let keybindings_btn = button(text(state.l10n.tr("ui-key-bindings")).size(12))
-        .on_press(Message::OpenKeybindings)
+        .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
         .width(Length::Fill);
 
     let credits_btn = button(text(state.l10n.tr("ui-credits")).size(12))

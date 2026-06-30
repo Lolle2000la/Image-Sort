@@ -1,7 +1,7 @@
 use iced::widget::{button, column, container, row, text};
 use iced::{Color, Element};
 
-use crate::message::Message;
+use crate::message::{MediaMessage, Message};
 
 #[allow(dead_code)]
 pub fn audio_controls_view() -> Element<'static, Message> {
@@ -18,7 +18,7 @@ pub fn audio_controls_view() -> Element<'static, Message> {
                     ]
                     .align_y(iced::Alignment::Center)
                 )
-                .on_press(Message::PlayAudio),
+                .on_press(Message::Media(MediaMessage::PlayAudio)),
                 button(
                     row![
                         text(char::from(lucide_icons::Icon::Pause))
@@ -28,7 +28,7 @@ pub fn audio_controls_view() -> Element<'static, Message> {
                     ]
                     .align_y(iced::Alignment::Center)
                 )
-                .on_press(Message::PauseAudio),
+                .on_press(Message::Media(MediaMessage::PauseAudio)),
                 button(
                     row![
                         text(char::from(lucide_icons::Icon::Square))
@@ -38,7 +38,7 @@ pub fn audio_controls_view() -> Element<'static, Message> {
                     ]
                     .align_y(iced::Alignment::Center)
                 )
-                .on_press(Message::StopAudio),
+                .on_press(Message::Media(MediaMessage::StopAudio)),
             ]
             .spacing(8),
         ]

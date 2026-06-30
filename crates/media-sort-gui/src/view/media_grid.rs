@@ -1,7 +1,7 @@
 use iced::widget::{button, column, container, row, scrollable, space, text};
 use iced::{Alignment, Color, Element, Length};
 
-use crate::message::Message;
+use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
 
 /// Identifier used to programmatically scroll the media grid's horizontal
@@ -41,7 +41,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .font(iced::Font::with_name("lucide"))
             .size(16),
     )
-    .on_press(Message::GoLeft);
+    .on_press(Message::Media(MediaMessage::GoLeft));
 
     // Right navigation button
     let next_btn = button(
@@ -49,7 +49,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .font(iced::Font::with_name("lucide"))
             .size(16),
     )
-    .on_press(Message::GoRight);
+    .on_press(Message::Media(MediaMessage::GoRight));
 
     let mut entries_row = row![].spacing(MEDIA_GRID_CARD_SPACING);
 
@@ -103,7 +103,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
 
         let idx = i;
         let entry_button = button(card)
-            .on_press(Message::SelectEntry(idx))
+            .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
             .style(iced::widget::button::text);
 
         entries_row = entries_row.push(entry_button);
@@ -124,11 +124,11 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         ))
         .on_scroll(|viewport| {
             let offset = viewport.absolute_offset();
-            Message::GridScrolled(
+            Message::Media(MediaMessage::GridScrolled(
                 offset,
                 viewport.bounds().width,
                 viewport.content_bounds().width,
-            )
+            ))
         });
 
     container(
