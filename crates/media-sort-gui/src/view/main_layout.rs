@@ -71,15 +71,8 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     };
 
     // Metadata button:
-    let metadata_btn = {
-        let btn = iced::widget::button(text(state.l10n.tr("ui-metadata")).size(13))
-            .on_press(Message::ToggleMetadataPanel);
-        if state.metadata_panel_expanded {
-            btn.style(iced::widget::button::primary)
-        } else {
-            btn.style(iced::widget::button::secondary)
-        }
-    };
+    let metadata_btn = iced::widget::button(text(state.l10n.tr("ui-metadata")).size(13))
+        .on_press(Message::ToggleMetadataPanel);
 
     // Row containing the search bar, Rename button, and Metadata button:
     let search_rename_row = row![
