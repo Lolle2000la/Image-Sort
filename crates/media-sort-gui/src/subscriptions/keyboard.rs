@@ -4,9 +4,19 @@ use iced::Subscription;
 use crate::message::Message;
 
 pub fn keyboard_subscription() -> Subscription<Message> {
-    keyboard::listen().filter_map(|event| {
+    iced::event::listen_with(|event, status, _window| {
         match event {
-            keyboard::Event::KeyPressed { key, modifiers, .. } => {
+            iced::Event::Keyboard(iced::keyboard::Event::KeyPressed { key, modifiers, .. }) => {
+                let is_exit_key = matches!(
+                    key,
+                    iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape)
+                        | iced::keyboard::Key::Named(iced::keyboard::key::Named::Enter)
+                );
+
+                if status == iced::event::Status::Captured && !is_exit_key {
+                    return None;
+                }
+
                 key_to_name(key).map(|key_name| {
                     Message::KeyCaptured(
                         key_name,
