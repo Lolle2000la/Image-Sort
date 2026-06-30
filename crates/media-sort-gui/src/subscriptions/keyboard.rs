@@ -11,6 +11,7 @@ pub fn keyboard_subscription() -> Subscription<Message> {
                     key,
                     iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape)
                         | iced::keyboard::Key::Named(iced::keyboard::key::Named::Enter)
+                        | iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab)
                 );
 
                 if status == iced::event::Status::Captured && !is_exit_key {

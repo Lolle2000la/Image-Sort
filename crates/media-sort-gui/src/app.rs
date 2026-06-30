@@ -435,7 +435,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
 
             if state.search_focused {
-                if key == "Enter" || key == "Esc" {
+                if key == "Enter" || key == "Esc" || key == "Tab" {
                     state.search_focused = false;
                     return iced::advanced::widget::operate(
                         iced::advanced::widget::operation::focusable::unfocus()
