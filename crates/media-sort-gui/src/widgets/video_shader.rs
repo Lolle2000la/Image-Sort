@@ -43,10 +43,22 @@ struct Vertex {
 }
 
 const VERTICES: &[Vertex] = &[
-    Vertex { position: [-1.0, -1.0], tex_coords: [0.0, 1.0] },
-    Vertex { position: [1.0, -1.0], tex_coords: [1.0, 1.0] },
-    Vertex { position: [-1.0, 1.0], tex_coords: [0.0, 0.0] },
-    Vertex { position: [1.0, 1.0], tex_coords: [1.0, 0.0] },
+    Vertex {
+        position: [-1.0, -1.0],
+        tex_coords: [0.0, 1.0],
+    },
+    Vertex {
+        position: [1.0, -1.0],
+        tex_coords: [1.0, 1.0],
+    },
+    Vertex {
+        position: [-1.0, 1.0],
+        tex_coords: [0.0, 0.0],
+    },
+    Vertex {
+        position: [1.0, 1.0],
+        tex_coords: [1.0, 0.0],
+    },
 ];
 
 pub struct VideoPipeline {
@@ -61,11 +73,7 @@ pub struct VideoPipeline {
 }
 
 impl Pipeline for VideoPipeline {
-    fn new(
-        device: &wgpu::Device,
-        _queue: &wgpu::Queue,
-        format: wgpu::TextureFormat,
-    ) -> Self {
+    fn new(device: &wgpu::Device, _queue: &wgpu::Queue, format: wgpu::TextureFormat) -> Self {
         let shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some("video_shader"),
             source: wgpu::ShaderSource::Wgsl(std::borrow::Cow::Borrowed(SHADER_WGSL)),
@@ -209,15 +217,29 @@ impl Primitive for VideoPrimitive {
         }
 
         let vertices = [
-            Vertex { position: [-sx, -sy], tex_coords: [0.0, 1.0] },
-            Vertex { position: [sx, -sy], tex_coords: [1.0, 1.0] },
-            Vertex { position: [-sx, sy], tex_coords: [0.0, 0.0] },
-            Vertex { position: [sx, sy], tex_coords: [1.0, 0.0] },
+            Vertex {
+                position: [-sx, -sy],
+                tex_coords: [0.0, 1.0],
+            },
+            Vertex {
+                position: [sx, -sy],
+                tex_coords: [1.0, 1.0],
+            },
+            Vertex {
+                position: [-sx, sy],
+                tex_coords: [0.0, 0.0],
+            },
+            Vertex {
+                position: [sx, sy],
+                tex_coords: [1.0, 0.0],
+            },
         ];
 
         queue.write_buffer(&pipeline.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
 
-        let size_changed = pipeline.width != self.width || pipeline.height != self.height || pipeline.texture.is_none();
+        let size_changed = pipeline.width != self.width
+            || pipeline.height != self.height
+            || pipeline.texture.is_none();
 
         if size_changed {
             let texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -284,11 +306,7 @@ impl Primitive for VideoPrimitive {
         }
     }
 
-    fn draw(
-        &self,
-        pipeline: &Self::Pipeline,
-        render_pass: &mut wgpu::RenderPass<'_>,
-    ) -> bool {
+    fn draw(&self, pipeline: &Self::Pipeline, render_pass: &mut wgpu::RenderPass<'_>) -> bool {
         if let Some(bind_group) = &pipeline.bind_group {
             render_pass.set_pipeline(&pipeline.pipeline);
             render_pass.set_vertex_buffer(0, pipeline.vertex_buffer.slice(..));
@@ -325,13 +343,13 @@ impl<Message> iced::widget::shader::Program<Message> for VideoProgram {
     }
 }
 
-pub fn video_shader_view<'a, Message: 'a, Theme: 'a, Renderer: 'a>(
+pub fn video_shader_view<'a, Message: 'a, Theme: 'a, Renderer>(
     width: u32,
     height: u32,
     rgba: Option<std::sync::Arc<Vec<u8>>>,
 ) -> Element<'a, Message, Theme, Renderer>
 where
-    Renderer: iced_wgpu::primitive::Renderer,
+    Renderer: iced_wgpu::primitive::Renderer + 'a,
 {
     iced::widget::Shader::new(VideoProgram {
         width,

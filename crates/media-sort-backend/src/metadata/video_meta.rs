@@ -26,7 +26,10 @@ pub fn extract_video_metadata(
 
     if let Ok(modified) = meta.modified() {
         let datetime: chrono::DateTime<chrono::Local> = modified.into();
-        file_sec.insert("Modified".into(), datetime.format("%Y-%m-%d %H:%M:%S").to_string());
+        file_sec.insert(
+            "Modified".into(),
+            datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
+        );
     }
     dirs.insert("File".into(), file_sec);
 
@@ -115,8 +118,8 @@ pub fn extract_generic_container_metadata(
         let meta_opts = MetadataOptions::default();
         let fmt_opts = FormatOptions::default();
 
-        if let Ok(probed) = symphonia::default::get_probe()
-            .format(&hint, mss, &fmt_opts, &meta_opts)
+        if let Ok(probed) =
+            symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts)
         {
             let mut format = probed.format;
             let mut metadata = format.metadata();

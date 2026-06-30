@@ -1,5 +1,5 @@
 use iced::widget::{button, checkbox, column, container, pick_list, row, scrollable, text};
-use iced::{Color, Element, Length, Alignment};
+use iced::{Alignment, Color, Element, Length};
 
 use crate::message::Message;
 use crate::state::AppState;
@@ -32,7 +32,10 @@ fn locale_options() -> Vec<LocaleOption> {
         .collect()
 }
 
-fn get_keybinding(state: &AppState, idx: usize) -> &media_sort_core::settings::keybindings::KeyBinding {
+fn get_keybinding(
+    state: &AppState,
+    idx: usize,
+) -> &media_sort_core::settings::keybindings::KeyBinding {
     let kb = &state.settings.keybindings;
     match idx {
         0 => &kb.move_to_folder,
@@ -60,11 +63,7 @@ fn get_keybinding(state: &AppState, idx: usize) -> &media_sort_core::settings::k
     }
 }
 
-fn keybinding_row<'a>(
-    state: &'a AppState,
-    idx: usize,
-    label: String,
-) -> Element<'a, Message> {
+fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element<'a, Message> {
     let binding = get_keybinding(state, idx);
     let is_editing = state.editing_keybinding == Some(idx);
     let shortcut_text = if is_editing {
@@ -74,7 +73,9 @@ fn keybinding_row<'a>(
     };
 
     let btn_label = if is_editing {
-        text(shortcut_text).color(Color::from_rgb(1.0, 0.8, 0.0)).size(12)
+        text(shortcut_text)
+            .color(Color::from_rgb(1.0, 0.8, 0.0))
+            .size(12)
     } else {
         text(shortcut_text).size(12)
     };
@@ -91,33 +92,26 @@ fn keybinding_row<'a>(
     .into()
 }
 
-fn keybinding_section<'a>(
-    title: String,
-    items: Vec<Element<'a, Message>>,
-) -> Element<'a, Message> {
-    column(
-        std::iter::once(text(title).font(BOLD_FONT).size(14).into())
-            .chain(items.into_iter())
-    )
-    .spacing(8)
-    .into()
+fn keybinding_section<'a>(title: String, items: Vec<Element<'a, Message>>) -> Element<'a, Message> {
+    column(std::iter::once(text(title).font(BOLD_FONT).size(14).into()).chain(items))
+        .spacing(8)
+        .into()
 }
 
 fn keybinding_subsection<'a>(
     title: String,
     items: Vec<Element<'a, Message>>,
 ) -> Element<'a, Message> {
-    column(
-        std::iter::once(text(title).size(12).into())
-            .chain(items.into_iter())
-    )
-    .spacing(6)
-    .padding(iced::Padding::new(0.0).left(12.0))
-    .into()
+    column(std::iter::once(text(title).size(12).into()).chain(items))
+        .spacing(6)
+        .padding(iced::Padding::new(0.0).left(12.0))
+        .into()
 }
 
 pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
-    let title = text(state.l10n.tr("settings-title")).size(20).font(BOLD_FONT);
+    let title = text(state.l10n.tr("settings-title"))
+        .size(20)
+        .font(BOLD_FONT);
 
     // Tab bar
     let tab_bar = row![
@@ -173,52 +167,68 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         #[allow(unused_mut)]
         let mut settings_col = column![
             column![
-                text(state.l10n.tr("settings-appearance")).font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-appearance"))
+                    .font(BOLD_FONT)
+                    .size(14),
                 dark_mode_cb,
                 reopen_folder_cb,
-            ].spacing(8),
+            ]
+            .spacing(8),
             column![
-                text(state.l10n.tr("settings-animated-gifs")).font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-animated-gifs"))
+                    .font(BOLD_FONT)
+                    .size(14),
                 animate_gifs_cb,
                 animate_thumbs_cb,
-            ].spacing(8),
+            ]
+            .spacing(8),
             column![
-                text(state.l10n.tr("settings-updates")).font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-updates"))
+                    .font(BOLD_FONT)
+                    .size(14),
                 check_updates_cb,
                 install_prerelease_cb,
-            ].spacing(8),
+            ]
+            .spacing(8),
             column![
-                text(state.l10n.tr("settings-language")).font(BOLD_FONT).size(14),
+                text(state.l10n.tr("settings-language"))
+                    .font(BOLD_FONT)
+                    .size(14),
                 pick_list(
                     locale_options(),
                     Some(LocaleOption {
                         code: state.l10n.locale(),
-                        display: media_sort_core::l10n::locale_display_name(&state.l10n.locale()).to_string(),
+                        display: media_sort_core::l10n::locale_display_name(&state.l10n.locale())
+                            .to_string(),
                     }),
                     |opt: LocaleOption| Message::ChangeLanguage(opt.code),
-                ).width(Length::Fixed(200.0)),
-            ].spacing(8),
+                )
+                .width(Length::Fixed(200.0)),
+            ]
+            .spacing(8),
         ]
         .spacing(16);
 
         #[cfg(target_os = "windows")]
         {
-            let integration_with_windows_cb = checkbox(state.settings.general.integration_with_windows)
-                .label(state.l10n.tr("settings-windows-context-menu"))
-                .on_toggle(|_| Message::ToggleIntegrationWithWindows)
-                .size(16);
+            let integration_with_windows_cb =
+                checkbox(state.settings.general.integration_with_windows)
+                    .label(state.l10n.tr("settings-windows-context-menu"))
+                    .on_toggle(|_| Message::ToggleIntegrationWithWindows)
+                    .size(16);
 
             settings_col = settings_col.push(
                 column![
-                    text(state.l10n.tr("settings-windows-integration")).font(BOLD_FONT).size(14),
+                    text(state.l10n.tr("settings-windows-integration"))
+                        .font(BOLD_FONT)
+                        .size(14),
                     integration_with_windows_cb,
-                ].spacing(8),
+                ]
+                .spacing(8),
             );
         }
 
-        scrollable(settings_col)
-            .height(Length::Fill)
-            .into()
+        scrollable(settings_col).height(Length::Fill).into()
     } else {
         // Key bindings tab
         let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
@@ -226,76 +236,107 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .style(iced::widget::button::secondary);
 
         // Images Section
-        let images_management = keybinding_subsection(state.l10n.tr("keybindings-management"), vec![
-            keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
-            keybinding_row(state, 1, state.l10n.tr("keybindings-delete")),
-            keybinding_row(state, 2, state.l10n.tr("keybindings-rename")),
-        ]);
-        let images_selection = keybinding_subsection(state.l10n.tr("keybindings-selection"), vec![
-            keybinding_row(state, 3, state.l10n.tr("keybindings-select-left")),
-            keybinding_row(state, 4, state.l10n.tr("keybindings-select-right")),
-        ]);
-        let images_search = keybinding_subsection(state.l10n.tr("keybindings-search"), vec![
-            keybinding_row(state, 19, state.l10n.tr("keybindings-search-images")),
-        ]);
-        let images_metadata = keybinding_subsection(state.l10n.tr("keybindings-metadata"), vec![
-            keybinding_row(state, 20, state.l10n.tr("keybindings-toggle-metadata")),
-        ]);
-        let images_section = keybinding_section(state.l10n.tr("keybindings-images"), vec![
-            images_management,
-            images_selection,
-            images_search,
-            images_metadata,
-        ]);
+        let images_management = keybinding_subsection(
+            state.l10n.tr("keybindings-management"),
+            vec![
+                keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
+                keybinding_row(state, 1, state.l10n.tr("keybindings-delete")),
+                keybinding_row(state, 2, state.l10n.tr("keybindings-rename")),
+            ],
+        );
+        let images_selection = keybinding_subsection(
+            state.l10n.tr("keybindings-selection"),
+            vec![
+                keybinding_row(state, 3, state.l10n.tr("keybindings-select-left")),
+                keybinding_row(state, 4, state.l10n.tr("keybindings-select-right")),
+            ],
+        );
+        let images_search = keybinding_subsection(
+            state.l10n.tr("keybindings-search"),
+            vec![keybinding_row(
+                state,
+                19,
+                state.l10n.tr("keybindings-search-images"),
+            )],
+        );
+        let images_metadata = keybinding_subsection(
+            state.l10n.tr("keybindings-metadata"),
+            vec![keybinding_row(
+                state,
+                20,
+                state.l10n.tr("keybindings-toggle-metadata"),
+            )],
+        );
+        let images_section = keybinding_section(
+            state.l10n.tr("keybindings-images"),
+            vec![
+                images_management,
+                images_selection,
+                images_search,
+                images_metadata,
+            ],
+        );
 
         // Folders Section
-        let folders_management = keybinding_subsection(state.l10n.tr("keybindings-management"), vec![
-            keybinding_row(state, 5, state.l10n.tr("keybindings-create-folder")),
-        ]);
-        let folders_open = keybinding_subsection(state.l10n.tr("keybindings-open"), vec![
-            keybinding_row(state, 12, state.l10n.tr("keybindings-open-folder")),
-            keybinding_row(state, 13, state.l10n.tr("keybindings-open-selected")),
-        ]);
-        let folders_pinned = keybinding_subsection(state.l10n.tr("keybindings-pinned"), vec![
-            keybinding_row(state, 14, state.l10n.tr("keybindings-pin")),
-            keybinding_row(state, 15, state.l10n.tr("keybindings-pin-selected")),
-            keybinding_row(state, 16, state.l10n.tr("keybindings-unpin")),
-            keybinding_row(state, 17, state.l10n.tr("keybindings-move-pinned-up")),
-            keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-down")),
-        ]);
-        let folders_selection = keybinding_subsection(state.l10n.tr("keybindings-selection"), vec![
-            keybinding_row(state, 6, state.l10n.tr("keybindings-select-above")),
-            keybinding_row(state, 7, state.l10n.tr("keybindings-collapse")),
-            keybinding_row(state, 8, state.l10n.tr("keybindings-select-below")),
-            keybinding_row(state, 9, state.l10n.tr("keybindings-expand")),
-        ]);
-        let folders_section = keybinding_section(state.l10n.tr("keybindings-folders"), vec![
-            folders_management,
-            folders_open,
-            folders_pinned,
-            folders_selection,
-        ]);
+        let folders_management = keybinding_subsection(
+            state.l10n.tr("keybindings-management"),
+            vec![keybinding_row(
+                state,
+                5,
+                state.l10n.tr("keybindings-create-folder"),
+            )],
+        );
+        let folders_open = keybinding_subsection(
+            state.l10n.tr("keybindings-open"),
+            vec![
+                keybinding_row(state, 12, state.l10n.tr("keybindings-open-folder")),
+                keybinding_row(state, 13, state.l10n.tr("keybindings-open-selected")),
+            ],
+        );
+        let folders_pinned = keybinding_subsection(
+            state.l10n.tr("keybindings-pinned"),
+            vec![
+                keybinding_row(state, 14, state.l10n.tr("keybindings-pin")),
+                keybinding_row(state, 15, state.l10n.tr("keybindings-pin-selected")),
+                keybinding_row(state, 16, state.l10n.tr("keybindings-unpin")),
+                keybinding_row(state, 17, state.l10n.tr("keybindings-move-pinned-up")),
+                keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-down")),
+            ],
+        );
+        let folders_selection = keybinding_subsection(
+            state.l10n.tr("keybindings-selection"),
+            vec![
+                keybinding_row(state, 6, state.l10n.tr("keybindings-select-above")),
+                keybinding_row(state, 7, state.l10n.tr("keybindings-collapse")),
+                keybinding_row(state, 8, state.l10n.tr("keybindings-select-below")),
+                keybinding_row(state, 9, state.l10n.tr("keybindings-expand")),
+            ],
+        );
+        let folders_section = keybinding_section(
+            state.l10n.tr("keybindings-folders"),
+            vec![
+                folders_management,
+                folders_open,
+                folders_pinned,
+                folders_selection,
+            ],
+        );
 
         // Other Section
-        let other_history = keybinding_subsection(state.l10n.tr("keybindings-history"), vec![
-            keybinding_row(state, 10, state.l10n.tr("keybindings-undo")),
-            keybinding_row(state, 11, state.l10n.tr("keybindings-redo")),
-        ]);
-        let other_section = keybinding_section(state.l10n.tr("keybindings-other"), vec![
-            other_history,
-        ]);
+        let other_history = keybinding_subsection(
+            state.l10n.tr("keybindings-history"),
+            vec![
+                keybinding_row(state, 10, state.l10n.tr("keybindings-undo")),
+                keybinding_row(state, 11, state.l10n.tr("keybindings-redo")),
+            ],
+        );
+        let other_section =
+            keybinding_section(state.l10n.tr("keybindings-other"), vec![other_history]);
 
-        let bindings_column = column![
-            restore_btn,
-            images_section,
-            folders_section,
-            other_section,
-        ]
-        .spacing(16);
+        let bindings_column =
+            column![restore_btn, images_section, folders_section, other_section,].spacing(16);
 
-        scrollable(bindings_column)
-            .height(Length::Fill)
-            .into()
+        scrollable(bindings_column).height(Length::Fill).into()
     };
 
     let close_btn = button(text(state.l10n.tr("settings-close")))
@@ -303,19 +344,17 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         .style(iced::widget::button::primary);
 
     container(
-        column![
-            title,
-            tab_bar,
-            tab_content,
-            close_btn,
-        ]
-        .spacing(16)
-        .align_x(Alignment::Start),
+        column![title, tab_bar, tab_content, close_btn,]
+            .spacing(16)
+            .align_x(Alignment::Start),
     )
     .padding(24)
     .style(|theme: &iced::Theme| {
         let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
+        let border_color = Color {
+            a: 0.2,
+            ..palette.text
+        };
         iced::widget::container::Style {
             background: Some(iced::Background::Color(palette.background)),
             border: iced::Border {
@@ -330,5 +369,3 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     .height(Length::Fixed(500.0))
     .into()
 }
-
-

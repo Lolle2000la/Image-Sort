@@ -56,7 +56,10 @@ pub fn extract_image_metadata(
 
     if let Ok(modified) = meta.modified() {
         let datetime: chrono::DateTime<chrono::Local> = modified.into();
-        file_sec.insert("Modified".into(), datetime.format("%Y-%m-%d %H:%M:%S").to_string());
+        file_sec.insert(
+            "Modified".into(),
+            datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
+        );
     }
 
     if let Ok((w, h)) = crate::media::image_decoder::decode_image_dimensions(path) {

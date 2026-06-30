@@ -52,7 +52,8 @@ pub struct AppState {
     pub create_folder_placeholder: String,
     pub dragging_folder_divider: bool,
     pub dragging_metadata_divider: bool,
-    pub video_sender: Option<tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>>,
+    pub video_sender:
+        Option<tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>>,
     pub video_frame: Option<iced::widget::image::Handle>,
     pub video_position: f64,
     pub video_duration: f64,
@@ -159,7 +160,8 @@ impl AppState {
         self.selected_image = None;
         self.image_cache.clear();
         if let Some(ref sender) = self.video_sender {
-            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+            let _ =
+                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         self.video_frame = None;
         self.video_position = 0.0;
@@ -444,7 +446,9 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
 
                 // Check if this subfolder has any subfolders of its own!
                 let has_subdirs = std::fs::read_dir(&path)
-                    .map(|mut read| read.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false)))
+                    .map(|mut read| {
+                        read.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false))
+                    })
                     .unwrap_or(false);
 
                 let mut node_children = Vec::new();
@@ -807,7 +811,7 @@ mod tests {
     fn test_build_children_filters_files() {
         let dir = std::env::temp_dir().join(format!("mediasort_bc_filter_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        std::fs::create_dir(&dir.join("subdir")).unwrap();
+        std::fs::create_dir(dir.join("subdir")).unwrap();
         std::fs::write(dir.join("file.txt"), b"data").unwrap();
         std::fs::write(dir.join("another.jpg"), b"image").unwrap();
 

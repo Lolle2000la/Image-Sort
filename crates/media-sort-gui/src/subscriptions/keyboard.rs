@@ -4,31 +4,29 @@ use iced::Subscription;
 use crate::message::Message;
 
 pub fn keyboard_subscription() -> Subscription<Message> {
-    iced::event::listen_with(|event, status, _window| {
-        match event {
-            iced::Event::Keyboard(iced::keyboard::Event::KeyPressed { key, modifiers, .. }) => {
-                let is_exit_key = matches!(
-                    key,
-                    iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape)
-                        | iced::keyboard::Key::Named(iced::keyboard::key::Named::Enter)
-                        | iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab)
-                );
+    iced::event::listen_with(|event, status, _window| match event {
+        iced::Event::Keyboard(iced::keyboard::Event::KeyPressed { key, modifiers, .. }) => {
+            let is_exit_key = matches!(
+                key,
+                iced::keyboard::Key::Named(iced::keyboard::key::Named::Escape)
+                    | iced::keyboard::Key::Named(iced::keyboard::key::Named::Enter)
+                    | iced::keyboard::Key::Named(iced::keyboard::key::Named::Tab)
+            );
 
-                if status == iced::event::Status::Captured && !is_exit_key {
-                    return None;
-                }
-
-                key_to_name(key).map(|key_name| {
-                    Message::KeyCaptured(
-                        key_name,
-                        modifiers.control(),
-                        modifiers.shift(),
-                        modifiers.alt(),
-                    )
-                })
+            if status == iced::event::Status::Captured && !is_exit_key {
+                return None;
             }
-            _ => None,
+
+            key_to_name(key).map(|key_name| {
+                Message::KeyCaptured(
+                    key_name,
+                    modifiers.control(),
+                    modifiers.shift(),
+                    modifiers.alt(),
+                )
+            })
         }
+        _ => None,
     })
 }
 
@@ -98,7 +96,10 @@ pub fn keybinding_list(
         ("undo".into(), kb.undo.clone()),
         ("redo".into(), kb.redo.clone()),
         ("open_folder".into(), kb.open_folder.clone()),
-        ("open_selected_folder".into(), kb.open_selected_folder.clone()),
+        (
+            "open_selected_folder".into(),
+            kb.open_selected_folder.clone(),
+        ),
         ("pin".into(), kb.pin.clone()),
         ("pin_selected".into(), kb.pin_selected.clone()),
         ("unpin".into(), kb.unpin.clone()),

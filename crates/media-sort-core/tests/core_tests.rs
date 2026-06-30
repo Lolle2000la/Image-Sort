@@ -764,7 +764,7 @@ fn test_settings_error_display() {
 fn test_settings_error_from_io() {
     use std::io;
 
-    let io_err = io::Error::new(io::ErrorKind::Other, "test");
+    let io_err = io::Error::other("test");
     let se: SettingsError = io_err.into();
     assert!(matches!(se, SettingsError::Io(_)));
 }
@@ -1113,4 +1113,3 @@ fn test_wpf_settings_migration() {
     assert_eq!(store.keybindings.search_images.key, "I");
     assert!(store.keybindings.search_images.shift); // 4 is Shift
 }
-

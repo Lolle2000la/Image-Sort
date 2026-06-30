@@ -26,7 +26,10 @@ pub fn extract_audio_metadata(
 
     if let Ok(modified) = meta.modified() {
         let datetime: chrono::DateTime<chrono::Local> = modified.into();
-        file_sec.insert("Modified".into(), datetime.format("%Y-%m-%d %H:%M:%S").to_string());
+        file_sec.insert(
+            "Modified".into(),
+            datetime.format("%Y-%m-%d %H:%M:%S").to_string(),
+        );
     }
     dirs.insert("File".into(), file_sec);
 

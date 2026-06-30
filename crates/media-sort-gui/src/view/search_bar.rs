@@ -1,6 +1,6 @@
+use crate::message::Message;
 use iced::widget::{button, container, row, text, text_input};
 use iced::{Element, Length};
-use crate::message::Message;
 
 pub static SEARCH_INPUT_ID: iced::widget::Id = iced::widget::Id::new("search_bar");
 

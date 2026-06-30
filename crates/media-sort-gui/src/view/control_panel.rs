@@ -1,5 +1,5 @@
 use iced::widget::{button, column, container, row, text};
-use iced::{Element, Length, Color};
+use iced::{Color, Element, Length};
 
 use crate::message::Message;
 use crate::state::AppState;
@@ -16,27 +16,27 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
             .on_press(Message::OpenFolder(selected.clone()))
             .width(Length::Fill)
     } else {
-        button(text(state.l10n.tr("ui-open-selected-folder")).size(12))
-            .width(Length::Fill)
+        button(text(state.l10n.tr("ui-open-selected-folder")).size(12)).width(Length::Fill)
     };
 
-    let folder_box = container(
-        column![folder_header, open_folder_btn, open_sel_btn].spacing(8)
-    )
-    .padding(10)
-    .style(|theme: &iced::Theme| {
-        let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
-        iced::widget::container::Style {
-            background: Some(iced::Background::Color(palette.background)),
-            border: iced::Border {
-                radius: 6.0.into(),
-                width: 1.0,
-                color: border_color,
-            },
-            ..iced::widget::container::Style::default()
-        }
-    });
+    let folder_box = container(column![folder_header, open_folder_btn, open_sel_btn].spacing(8))
+        .padding(10)
+        .style(|theme: &iced::Theme| {
+            let palette = theme.palette();
+            let border_color = Color {
+                a: 0.2,
+                ..palette.text
+            };
+            iced::widget::container::Style {
+                background: Some(iced::Background::Color(palette.background)),
+                border: iced::Border {
+                    radius: 6.0.into(),
+                    width: 1.0,
+                    color: border_color,
+                },
+                ..iced::widget::container::Style::default()
+            }
+        });
 
     // 2. History section
     let history_header = text(state.l10n.tr("ui-history")).size(15);
@@ -45,8 +45,7 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
             .on_press(Message::Undo)
             .width(Length::Fill)
     } else {
-        button(text(state.l10n.tr("ui-undo")).size(12))
-            .width(Length::Fill)
+        button(text(state.l10n.tr("ui-undo")).size(12)).width(Length::Fill)
     };
 
     let redo_btn = if state.history.can_redo() {
@@ -54,30 +53,28 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
             .on_press(Message::Redo)
             .width(Length::Fill)
     } else {
-        button(text(state.l10n.tr("ui-redo")).size(12))
-            .width(Length::Fill)
+        button(text(state.l10n.tr("ui-redo")).size(12)).width(Length::Fill)
     };
 
-    let history_box = container(
-        column![
-            history_header,
-            row![undo_btn, redo_btn].spacing(6)
-        ].spacing(8)
-    )
-    .padding(10)
-    .style(|theme: &iced::Theme| {
-        let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
-        iced::widget::container::Style {
-            background: Some(iced::Background::Color(palette.background)),
-            border: iced::Border {
-                radius: 6.0.into(),
-                width: 1.0,
-                color: border_color,
-            },
-            ..iced::widget::container::Style::default()
-        }
-    });
+    let history_box =
+        container(column![history_header, row![undo_btn, redo_btn].spacing(6)].spacing(8))
+            .padding(10)
+            .style(|theme: &iced::Theme| {
+                let palette = theme.palette();
+                let border_color = Color {
+                    a: 0.2,
+                    ..palette.text
+                };
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(palette.background)),
+                    border: iced::Border {
+                        radius: 6.0.into(),
+                        width: 1.0,
+                        color: border_color,
+                    },
+                    ..iced::widget::container::Style::default()
+                }
+            });
 
     // 3. Settings section
     let settings_header = text(state.l10n.tr("ui-settings")).size(15);
@@ -99,12 +96,16 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
             open_settings_btn,
             keybindings_btn,
             credits_btn,
-        ].spacing(8)
+        ]
+        .spacing(8),
     )
     .padding(10)
     .style(|theme: &iced::Theme| {
         let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
+        let border_color = Color {
+            a: 0.2,
+            ..palette.text
+        };
         iced::widget::container::Style {
             background: Some(iced::Background::Color(palette.background)),
             border: iced::Border {
@@ -116,16 +117,9 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
         }
     });
 
-    container(
-        column![
-            folder_box,
-            history_box,
-            settings_box,
-        ]
-        .spacing(12)
-    )
-    .padding(6)
-    .width(Length::Fixed(220.0))
-    .height(Length::Fill)
-    .into()
+    container(column![folder_box, history_box, settings_box,].spacing(12))
+        .padding(6)
+        .width(Length::Fixed(220.0))
+        .height(Length::Fill)
+        .into()
 }

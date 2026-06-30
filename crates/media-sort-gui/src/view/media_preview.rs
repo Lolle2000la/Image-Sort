@@ -70,7 +70,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                     lucide_icons::Icon::Pause
                 }))
                 .font(iced::Font::with_name("lucide"))
-                .size(16)
+                .size(16),
             )
             .padding(8)
             .on_press(Message::VideoPlayPause);
@@ -78,7 +78,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             let stop_btn = button(
                 text(char::from(lucide_icons::Icon::Square))
                     .font(iced::Font::with_name("lucide"))
-                    .size(16)
+                    .size(16),
             )
             .padding(8)
             .on_press(Message::VideoStop);
@@ -101,13 +101,12 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             let time_label = text(time_str).size(13);
 
             let seek_val = state.video_position;
-            let seek_max = if state.video_duration > 0.0 { state.video_duration } else { 1.0 };
-            let seekbar = slider(
-                0.0..=seek_max,
-                seek_val,
-                Message::VideoSeek
-            )
-            .width(Length::Fill);
+            let seek_max = if state.video_duration > 0.0 {
+                state.video_duration
+            } else {
+                1.0
+            };
+            let seekbar = slider(0.0..=seek_max, seek_val, Message::VideoSeek).width(Length::Fill);
 
             let mute_btn = button(
                 text(char::from(if state.video_muted {
@@ -116,17 +115,13 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                     lucide_icons::Icon::Volume2
                 }))
                 .font(iced::Font::with_name("lucide"))
-                .size(16)
+                .size(16),
             )
             .padding(8)
             .on_press(Message::VideoMute);
 
-            let volume_slider = slider(
-                0.0..=100.0,
-                state.video_volume,
-                Message::VideoVolume
-            )
-            .width(Length::Fixed(80.0));
+            let volume_slider = slider(0.0..=100.0, state.video_volume, Message::VideoVolume)
+                .width(Length::Fixed(80.0));
 
             let controls_row = row![
                 play_pause_btn,
@@ -164,7 +159,10 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .center_y(Length::Fill)
         .style(|theme: &iced::Theme| {
             let palette = theme.palette();
-            let border_color = Color { a: 0.2, ..palette.text };
+            let border_color = Color {
+                a: 0.2,
+                ..palette.text
+            };
             iced::widget::container::Style {
                 background: Some(iced::Background::Color(palette.background)),
                 border: iced::Border {

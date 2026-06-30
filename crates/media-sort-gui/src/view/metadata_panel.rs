@@ -6,7 +6,10 @@ use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
     if !state.metadata_panel_expanded {
-        return iced::widget::Space::new().width(Length::Fixed(0.0)).height(Length::Fixed(0.0)).into();
+        return iced::widget::Space::new()
+            .width(Length::Fixed(0.0))
+            .height(Length::Fixed(0.0))
+            .into();
     }
 
     let header_row = row![
@@ -37,12 +40,11 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
                     section_name.clone()
                 };
 
-                let section_header =
-                    text(format!("[{}]", display_section))
-                        .size(12)
-                        .style(move |theme: &iced::Theme| text::Style {
-                            color: Some(theme.palette().primary),
-                        });
+                let section_header = text(format!("[{}]", display_section)).size(12).style(
+                    move |theme: &iced::Theme| text::Style {
+                        color: Some(theme.palette().primary),
+                    },
+                );
 
                 let mut field_list = column![].spacing(2);
                 for (tag_name, value) in fields {
@@ -50,7 +52,9 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
 
                     let line = row![
                         text(format!("{}:", display_tag)).size(11),
-                        text(value).size(11).shaping(iced::widget::text::Shaping::Advanced),
+                        text(value)
+                            .size(11)
+                            .shaping(iced::widget::text::Shaping::Advanced),
                     ]
                     .spacing(4);
                     field_list = field_list.push(line);
@@ -89,7 +93,10 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
                 border: iced::Border {
                     radius: 0.0.into(),
                     width: 1.0,
-                    color: Color { a: 0.15, ..palette.text },
+                    color: Color {
+                        a: 0.15,
+                        ..palette.text
+                    },
                 },
                 ..iced::widget::container::Style::default()
             }
@@ -97,7 +104,11 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
         .into()
 }
 
-fn localize_tag_name(section: &str, key: &str, l10n: &media_sort_core::l10n::Localization) -> String {
+fn localize_tag_name(
+    section: &str,
+    key: &str,
+    l10n: &media_sort_core::l10n::Localization,
+) -> String {
     let key_upper = key.to_ascii_uppercase();
     if section == "File" {
         match key_upper.as_str() {

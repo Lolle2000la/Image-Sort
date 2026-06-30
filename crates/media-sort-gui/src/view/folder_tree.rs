@@ -8,7 +8,10 @@ use crate::widgets::folder_icon;
 
 const INDENT_WIDTH: f32 = 20.0;
 
-pub fn folder_tree_view<'a>(tree: &'a [FolderNode], selected_folder: Option<&'a std::path::Path>) -> Element<'a, Message> {
+pub fn folder_tree_view<'a>(
+    tree: &'a [FolderNode],
+    selected_folder: Option<&'a std::path::Path>,
+) -> Element<'a, Message> {
     column(
         tree.iter()
             .enumerate()
@@ -46,7 +49,7 @@ fn render_node<'a>(
             }))
             .font(iced::Font::with_name("lucide"))
             .size(12)
-            .width(Length::Fixed(12.0))
+            .width(Length::Fixed(12.0)),
         )
         .on_press(Message::ToggleFolderExpand(node_path.clone()))
         .style(iced::widget::button::text)
@@ -60,7 +63,7 @@ fn render_node<'a>(
             text(char::from(lucide_icons::Icon::Pin))
                 .font(iced::Font::with_name("lucide"))
                 .size(11)
-                .color(Color::from_rgb(0.9, 0.45, 0.45))
+                .color(Color::from_rgb(0.9, 0.45, 0.45)),
         )
     } else {
         None
@@ -71,29 +74,33 @@ fn render_node<'a>(
             container(
                 text(format!("Alt+{}", root_index))
                     .size(9)
-                    .color(Color::from_rgb(0.7, 0.7, 0.7))
+                    .color(Color::from_rgb(0.7, 0.7, 0.7)),
             )
             .padding([2, 4])
             .style(|theme: &iced::Theme| {
                 let palette = theme.palette();
                 iced::widget::container::Style {
-                    background: Some(iced::Background::Color(Color { a: 0.1, ..palette.text })),
+                    background: Some(iced::Background::Color(Color {
+                        a: 0.1,
+                        ..palette.text
+                    })),
                     border: iced::Border {
                         radius: 3.0.into(),
                         width: 1.0,
-                        color: Color { a: 0.15, ..palette.text },
+                        color: Color {
+                            a: 0.15,
+                            ..palette.text
+                        },
                     },
                     ..Default::default()
                 }
-            })
+            }),
         )
     } else {
         None
     };
 
-    let mut row_content = row![icon]
-        .spacing(4)
-        .align_y(iced::Alignment::Center);
+    let mut row_content = row![icon].spacing(4).align_y(iced::Alignment::Center);
 
     if let Some(pin) = pin_indicator {
         row_content = row_content.push(pin);
@@ -103,7 +110,7 @@ fn render_node<'a>(
         text(&node.name)
             .size(14)
             .wrapping(iced::widget::text::Wrapping::None)
-            .shaping(iced::widget::text::Shaping::Advanced)
+            .shaping(iced::widget::text::Shaping::Advanced),
     );
 
     if let Some(badge) = shortcut_badge {
@@ -116,7 +123,7 @@ fn render_node<'a>(
         .style(move |theme: &iced::Theme, _status| {
             let palette = theme.palette();
             let base = iced::widget::button::Style::default();
-            let is_selected = selected_folder.map_or(false, |p| p == node.path);
+            let is_selected = selected_folder.is_some_and(|p| p == node.path);
             if node.is_current {
                 let border = if is_selected {
                     iced::Border {
@@ -134,7 +141,10 @@ fn render_node<'a>(
                     ..base
                 }
             } else if is_selected {
-                let selected_bg = Color { a: 0.4, ..palette.primary };
+                let selected_bg = Color {
+                    a: 0.4,
+                    ..palette.primary
+                };
                 iced::widget::button::Style {
                     background: Some(iced::Background::Color(selected_bg)),
                     text_color: palette.text,

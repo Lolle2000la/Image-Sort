@@ -1,14 +1,13 @@
+use libmpv_sys::*;
 use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int, c_void};
 use std::path::Path;
 use std::ptr;
-use libmpv_sys::*;
 
 const MPV_RENDER_PARAM_SW_SIZE: mpv_render_param_type = 17;
 const MPV_RENDER_PARAM_SW_FORMAT: mpv_render_param_type = 18;
 const MPV_RENDER_PARAM_SW_STRIDE: mpv_render_param_type = 19;
 const MPV_RENDER_PARAM_SW_POINTER: mpv_render_param_type = 20;
-
 
 pub struct MpvContext {
     pub handle: *mut mpv_handle,
@@ -28,25 +27,57 @@ impl MpvContext {
             let vo_name = CString::new("libmpv").unwrap();
             mpv_set_option_string(handle, b"vo\0".as_ptr() as *const c_char, vo_name.as_ptr());
             let keep_open = CString::new("yes").unwrap();
-            mpv_set_option_string(handle, b"keep-open\0".as_ptr() as *const c_char, keep_open.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"keep-open\0".as_ptr() as *const c_char,
+                keep_open.as_ptr(),
+            );
             let loop_file = CString::new("inf").unwrap();
-            mpv_set_option_string(handle, b"loop-file\0".as_ptr() as *const c_char, loop_file.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"loop-file\0".as_ptr() as *const c_char,
+                loop_file.as_ptr(),
+            );
             let hwdec = CString::new("auto").unwrap();
             mpv_set_option_string(handle, b"hwdec\0".as_ptr() as *const c_char, hwdec.as_ptr());
 
             let no = CString::new("no").unwrap();
             mpv_set_option_string(handle, b"sub-auto\0".as_ptr() as *const c_char, no.as_ptr());
-            mpv_set_option_string(handle, b"audio-file-auto\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"audio-file-auto\0".as_ptr() as *const c_char,
+                no.as_ptr(),
+            );
             mpv_set_option_string(handle, b"cache\0".as_ptr() as *const c_char, no.as_ptr());
 
             mpv_set_option_string(handle, b"vsync\0".as_ptr() as *const c_char, no.as_ptr());
-            mpv_set_option_string(handle, b"framedrop\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"framedrop\0".as_ptr() as *const c_char,
+                no.as_ptr(),
+            );
             let video_sync = CString::new("display-resample").unwrap();
-            mpv_set_option_string(handle, b"video-sync\0".as_ptr() as *const c_char, video_sync.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"video-sync\0".as_ptr() as *const c_char,
+                video_sync.as_ptr(),
+            );
             let video_timing_offset = CString::new("0").unwrap();
-            mpv_set_option_string(handle, b"video-timing-offset\0".as_ptr() as *const c_char, video_timing_offset.as_ptr());
-            mpv_set_option_string(handle, b"force-window\0".as_ptr() as *const c_char, no.as_ptr());
-            mpv_set_option_string(handle, b"input-default-bindings\0".as_ptr() as *const c_char, no.as_ptr());
+            mpv_set_option_string(
+                handle,
+                b"video-timing-offset\0".as_ptr() as *const c_char,
+                video_timing_offset.as_ptr(),
+            );
+            mpv_set_option_string(
+                handle,
+                b"force-window\0".as_ptr() as *const c_char,
+                no.as_ptr(),
+            );
+            mpv_set_option_string(
+                handle,
+                b"input-default-bindings\0".as_ptr() as *const c_char,
+                no.as_ptr(),
+            );
 
             let err = mpv_initialize(handle);
             if err < 0 {
@@ -119,7 +150,8 @@ impl MpvContext {
 
     pub fn load_file(&mut self, path: &Path) -> Result<(), String> {
         unsafe {
-            let path_str = CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;
+            let path_str =
+                CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;
             let mut cmd: [*const c_char; 3] = [
                 b"loadfile\0".as_ptr() as *const c_char,
                 path_str.as_ptr(),
@@ -158,7 +190,7 @@ impl MpvContext {
             let format = CString::new("rgba").unwrap();
             let mut size: [c_int; 2] = [width, height];
             let mut stride = (width * 4) as usize;
-            
+
             let mut params = [
                 mpv_render_param {
                     type_: MPV_RENDER_PARAM_SW_SIZE,
@@ -306,16 +338,11 @@ impl MpvContext {
 impl Drop for MpvContext {
     fn drop(&mut self) {
         unsafe {
-            mpv_render_context_set_update_callback(
-                self.render_ctx,
-                None,
-                ptr::null_mut(),
-            );
+            mpv_render_context_set_update_callback(self.render_ctx, None, ptr::null_mut());
 
             if !self.callback_context_raw.is_null() {
-                let _sender_box = Box::from_raw(
-                    self.callback_context_raw as *mut tokio::sync::mpsc::Sender<()>,
-                );
+                let _sender_box =
+                    Box::from_raw(self.callback_context_raw as *mut tokio::sync::mpsc::Sender<()>);
             }
 
             mpv_render_context_free(self.render_ctx);
@@ -388,7 +415,6 @@ pub async fn run_video_worker(
     unsafe {
         player.register_callback(wakeup_tx);
     }
-
 
     let max_buffer_size = (960 * 540 * 4) as usize;
     let mut pool = vec![

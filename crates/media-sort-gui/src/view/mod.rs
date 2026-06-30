@@ -1,4 +1,5 @@
 pub mod control_panel;
+pub mod credits_dialog;
 pub mod folder_panel;
 pub mod folder_tree;
 pub mod history_bar;
@@ -9,4 +10,3 @@ pub mod media_preview;
 pub mod metadata_panel;
 pub mod search_bar;
 pub mod settings_dialog;
-pub mod credits_dialog;

@@ -209,16 +209,25 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
         if let Some(val) = general.get("DarkMode").and_then(|v| v.as_bool()) {
             store.general.dark_mode = val;
         }
-        if let Some(val) = general.get("CheckForUpdatesOnStartup").and_then(|v| v.as_bool()) {
+        if let Some(val) = general
+            .get("CheckForUpdatesOnStartup")
+            .and_then(|v| v.as_bool())
+        {
             store.general.check_for_updates_on_startup = val;
         }
-        if let Some(val) = general.get("InstallPrereleaseBuilds").and_then(|v| v.as_bool()) {
+        if let Some(val) = general
+            .get("InstallPrereleaseBuilds")
+            .and_then(|v| v.as_bool())
+        {
             store.general.install_prerelease_builds = val;
         }
         if let Some(val) = general.get("AnimateGifs").and_then(|v| v.as_bool()) {
             store.general.animate_gifs = val;
         }
-        if let Some(val) = general.get("AnimateGifThumbnails").and_then(|v| v.as_bool()) {
+        if let Some(val) = general
+            .get("AnimateGifThumbnails")
+            .and_then(|v| v.as_bool())
+        {
             store.general.animate_gif_thumbnails = val;
         }
     }
@@ -285,27 +294,69 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
             })
         };
 
-        if let Some(b) = parse_binding("Move") { store.keybindings.move_to_folder = b; }
-        if let Some(b) = parse_binding("Delete") { store.keybindings.delete = b; }
-        if let Some(b) = parse_binding("Rename") { store.keybindings.rename = b; }
-        if let Some(b) = parse_binding("GoLeft") { store.keybindings.go_left = b; }
-        if let Some(b) = parse_binding("GoRight") { store.keybindings.go_right = b; }
-        if let Some(b) = parse_binding("CreateFolder") { store.keybindings.create_folder = b; }
-        if let Some(b) = parse_binding("FolderUp") { store.keybindings.folder_up = b; }
-        if let Some(b) = parse_binding("FolderLeft") { store.keybindings.folder_left = b; }
-        if let Some(b) = parse_binding("FolderDown") { store.keybindings.folder_down = b; }
-        if let Some(b) = parse_binding("FolderRight") { store.keybindings.folder_right = b; }
-        if let Some(b) = parse_binding("Undo") { store.keybindings.undo = b; }
-        if let Some(b) = parse_binding("Redo") { store.keybindings.redo = b; }
-        if let Some(b) = parse_binding("OpenFolder") { store.keybindings.open_folder = b; }
-        if let Some(b) = parse_binding("OpenSelectedFolder") { store.keybindings.open_selected_folder = b; }
-        if let Some(b) = parse_binding("Pin") { store.keybindings.pin = b; }
-        if let Some(b) = parse_binding("PinSelected") { store.keybindings.pin_selected = b; }
-        if let Some(b) = parse_binding("Unpin") { store.keybindings.unpin = b; }
-        if let Some(b) = parse_binding("MoveSelectedPinnedFolderUp") { store.keybindings.move_pinned_up = b; }
-        if let Some(b) = parse_binding("MoveSelectedPinnedFolderDown") { store.keybindings.move_pinned_down = b; }
-        if let Some(b) = parse_binding("SearchImages") { store.keybindings.search_images = b; }
-        if let Some(b) = parse_binding("ToggleMetadataPanel") { store.keybindings.toggle_metadata_panel = b; }
+        if let Some(b) = parse_binding("Move") {
+            store.keybindings.move_to_folder = b;
+        }
+        if let Some(b) = parse_binding("Delete") {
+            store.keybindings.delete = b;
+        }
+        if let Some(b) = parse_binding("Rename") {
+            store.keybindings.rename = b;
+        }
+        if let Some(b) = parse_binding("GoLeft") {
+            store.keybindings.go_left = b;
+        }
+        if let Some(b) = parse_binding("GoRight") {
+            store.keybindings.go_right = b;
+        }
+        if let Some(b) = parse_binding("CreateFolder") {
+            store.keybindings.create_folder = b;
+        }
+        if let Some(b) = parse_binding("FolderUp") {
+            store.keybindings.folder_up = b;
+        }
+        if let Some(b) = parse_binding("FolderLeft") {
+            store.keybindings.folder_left = b;
+        }
+        if let Some(b) = parse_binding("FolderDown") {
+            store.keybindings.folder_down = b;
+        }
+        if let Some(b) = parse_binding("FolderRight") {
+            store.keybindings.folder_right = b;
+        }
+        if let Some(b) = parse_binding("Undo") {
+            store.keybindings.undo = b;
+        }
+        if let Some(b) = parse_binding("Redo") {
+            store.keybindings.redo = b;
+        }
+        if let Some(b) = parse_binding("OpenFolder") {
+            store.keybindings.open_folder = b;
+        }
+        if let Some(b) = parse_binding("OpenSelectedFolder") {
+            store.keybindings.open_selected_folder = b;
+        }
+        if let Some(b) = parse_binding("Pin") {
+            store.keybindings.pin = b;
+        }
+        if let Some(b) = parse_binding("PinSelected") {
+            store.keybindings.pin_selected = b;
+        }
+        if let Some(b) = parse_binding("Unpin") {
+            store.keybindings.unpin = b;
+        }
+        if let Some(b) = parse_binding("MoveSelectedPinnedFolderUp") {
+            store.keybindings.move_pinned_up = b;
+        }
+        if let Some(b) = parse_binding("MoveSelectedPinnedFolderDown") {
+            store.keybindings.move_pinned_down = b;
+        }
+        if let Some(b) = parse_binding("SearchImages") {
+            store.keybindings.search_images = b;
+        }
+        if let Some(b) = parse_binding("ToggleMetadataPanel") {
+            store.keybindings.toggle_metadata_panel = b;
+        }
     }
 
     Some(store)

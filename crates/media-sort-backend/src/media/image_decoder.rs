@@ -44,4 +44,3 @@ fn apply_orientation(mut img: image::DynamicImage, path: &Path) -> image::Dynami
     }
     img
 }
-

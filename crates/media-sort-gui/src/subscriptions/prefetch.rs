@@ -1,6 +1,6 @@
-use std::path::PathBuf;
-use once_cell::sync::Lazy;
 use media_sort_core::media_type::MediaType;
+use once_cell::sync::Lazy;
+use std::path::PathBuf;
 
 use crate::message::Message;
 
@@ -40,8 +40,13 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
                     let render_w = 128;
                     let render_h = 128;
                     let mut buffer = vec![0u8; render_w * render_h * 4];
-                    if player.render_frame(render_w as i32, render_h as i32, &mut buffer).is_ok() {
-                        if let Some(rgba) = image::RgbaImage::from_raw(render_w as u32, render_h as u32, buffer) {
+                    if player
+                        .render_frame(render_w as i32, render_h as i32, &mut buffer)
+                        .is_ok()
+                    {
+                        if let Some(rgba) =
+                            image::RgbaImage::from_raw(render_w as u32, render_h as u32, buffer)
+                        {
                             let mut buf = std::io::Cursor::new(Vec::new());
                             if rgba.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
                                 let result = buf.into_inner();
@@ -51,13 +56,19 @@ pub fn generate_thumbnail(path: &PathBuf) -> Vec<u8> {
                         }
                     }
                 } else {
-                    tracing::warn!("generate_thumbnail: timed out waiting for video size for {:?}", path);
+                    tracing::warn!(
+                        "generate_thumbnail: timed out waiting for video size for {:?}",
+                        path
+                    );
                 }
             } else {
                 tracing::warn!("generate_thumbnail: failed to load file {:?}", path);
             }
         } else {
-            tracing::warn!("generate_thumbnail: failed to create MpvContext for {:?}", path);
+            tracing::warn!(
+                "generate_thumbnail: failed to create MpvContext for {:?}",
+                path
+            );
         }
     }
 

@@ -79,7 +79,9 @@ impl Localization {
     }
 
     pub fn get(&self, key: &str, args: &[(&str, &str)]) -> String {
-        let bundle = self.bundles.get(&self.current_lang)
+        let bundle = self
+            .bundles
+            .get(&self.current_lang)
             .or_else(|| self.bundles.get(&"en".parse().unwrap()));
         if let Some(bundle) = bundle {
             let mut errors = Vec::new();
@@ -103,9 +105,7 @@ impl Localization {
     }
 
     pub fn set_locale(&mut self, lang: &str) {
-        self.current_lang = lang
-            .parse()
-            .unwrap_or_else(|_| "en".parse().unwrap());
+        self.current_lang = lang.parse().unwrap_or_else(|_| "en".parse().unwrap());
     }
 
     pub fn locale(&self) -> String {

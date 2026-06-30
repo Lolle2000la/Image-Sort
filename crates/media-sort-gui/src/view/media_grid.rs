@@ -25,7 +25,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     let prev_btn = button(
         text(char::from(lucide_icons::Icon::ChevronLeft))
             .font(iced::Font::with_name("lucide"))
-            .size(16)
+            .size(16),
     )
     .on_press(Message::GoLeft);
 
@@ -33,7 +33,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     let next_btn = button(
         text(char::from(lucide_icons::Icon::ChevronRight))
             .font(iced::Font::with_name("lucide"))
-            .size(16)
+            .size(16),
     )
     .on_press(Message::GoRight);
 
@@ -42,11 +42,15 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     for (i, entry) in filtered.iter().enumerate() {
         let is_selected = state.selected_index == Some(i);
 
-        let thumbnail_content: Element<'_, Message> = if let Some(handle) = state.thumbnail_cache.peek(&entry.path) {
-            iced::widget::image(handle.clone()).width(Length::Fill).height(Length::Fill).into()
-        } else {
-            text("[IMG]").size(12).into()
-        };
+        let thumbnail_content: Element<'_, Message> =
+            if let Some(handle) = state.thumbnail_cache.peek(&entry.path) {
+                iced::widget::image(handle.clone())
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .into()
+            } else {
+                text("[IMG]").size(12).into()
+            };
 
         let thumbnail = container(thumbnail_content)
             .center_x(60)
@@ -91,8 +95,10 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         entries_row = entries_row.push(entry_button);
     }
 
-    let scrollable_row = scrollable(entries_row)
-        .direction(iced::widget::scrollable::Direction::Horizontal(iced::widget::scrollable::Scrollbar::default()));
+    let scrollable_row =
+        scrollable(entries_row).direction(iced::widget::scrollable::Direction::Horizontal(
+            iced::widget::scrollable::Scrollbar::default(),
+        ));
 
     container(
         row![
@@ -101,7 +107,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             next_btn
         ]
         .spacing(8)
-        .align_y(Alignment::Center)
+        .align_y(Alignment::Center),
     )
     .width(Length::Fill)
     .into()

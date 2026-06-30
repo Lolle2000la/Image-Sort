@@ -26,17 +26,30 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::VideoEvent(event) => {
             match event {
-                media_sort_backend::media::mpv_context::VideoEvent::FrameReady { path, width, height, rgba } => {
-                    let current_path = state.selected_index
-                        .and_then(|idx| state.filtered_media_entries().get(idx).map(|e| e.path.clone()));
+                media_sort_backend::media::mpv_context::VideoEvent::FrameReady {
+                    path,
+                    width,
+                    height,
+                    rgba,
+                } => {
+                    let current_path = state.selected_index.and_then(|idx| {
+                        state
+                            .filtered_media_entries()
+                            .get(idx)
+                            .map(|e| e.path.clone())
+                    });
                     if Some(path) == current_path {
                         state.video_rgba = Some(rgba);
                         state.video_width = width;
                         state.video_height = height;
-                        state.video_frame = Some(iced::widget::image::Handle::from_rgba(1, 1, vec![0]));
+                        state.video_frame =
+                            Some(iced::widget::image::Handle::from_rgba(1, 1, vec![0]));
                     }
                 }
-                media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress { position, duration } => {
+                media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress {
+                    position,
+                    duration,
+                } => {
                     state.video_position = position;
                     state.video_duration = duration;
                 }
@@ -54,25 +67,33 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::VideoSeek(pos) => {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos));
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos),
+                );
             }
             Task::none()
         }
         Message::VideoVolume(vol) => {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(vol));
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(vol));
             }
             Task::none()
         }
         Message::VideoMute => {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetMute(!state.video_muted));
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetMute(
+                        !state.video_muted,
+                    ),
+                );
             }
             Task::none()
         }
         Message::VideoPlayPause => {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
             }
             Task::none()
         }
@@ -109,44 +130,28 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             tasks.push(select_and_load_entry(state, 0));
             Task::batch(tasks)
         }
-        Message::PickFolder => {
-            Task::perform(
-                async {
-                    if let Some(handle) = rfd::AsyncFileDialog::new().pick_folder().await {
-                        Some(handle.path().to_path_buf())
-                    } else {
-                        None
-                    }
-                },
-                Message::PickFolderResult
-            )
-        }
+        Message::PickFolder => Task::perform(
+            async {
+                rfd::AsyncFileDialog::new().pick_folder().await.map(|handle| handle.path().to_path_buf())
+            },
+            Message::PickFolderResult,
+        ),
         Message::PickFolderResult(Some(path)) => {
-            return Task::done(Message::OpenFolder(path));
+            Task::done(Message::OpenFolder(path))
         }
-        Message::PickFolderResult(None) => {
-            Task::none()
-        }
-        Message::PickPinFolder => {
-            Task::perform(
-                async {
-                    if let Some(handle) = rfd::AsyncFileDialog::new().pick_folder().await {
-                        Some(handle.path().to_path_buf())
-                    } else {
-                        None
-                    }
-                },
-                Message::PickPinFolderResult
-            )
-        }
+        Message::PickFolderResult(None) => Task::none(),
+        Message::PickPinFolder => Task::perform(
+            async {
+                rfd::AsyncFileDialog::new().pick_folder().await.map(|handle| handle.path().to_path_buf())
+            },
+            Message::PickPinFolderResult,
+        ),
         Message::PickPinFolderResult(Some(path)) => {
             state.pin_folder(&path);
             let _ = state.settings.save();
             Task::none()
         }
-        Message::PickPinFolderResult(None) => {
-            Task::none()
-        }
+        Message::PickPinFolderResult(None) => Task::none(),
         Message::FolderSelected(path) => {
             state.selected_folder = Some(path);
             Task::none()
@@ -156,12 +161,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::SelectEntry(index) => {
-            select_and_load_entry(state, index)
-        }
+        Message::SelectEntry(index) => select_and_load_entry(state, index),
         Message::SearchQueryChanged(query) => {
             let previously_selected_path = state.selected_index.and_then(|idx| {
-                state.filtered_media_entries().get(idx).map(|entry| entry.path.clone())
+                state
+                    .filtered_media_entries()
+                    .get(idx)
+                    .map(|entry| entry.path.clone())
             });
 
             state.search_query = query;
@@ -250,10 +256,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
                         state.scan_media();
-                        if let Some(pos) = state
-                            .media_entries
-                            .iter()
-                            .position(|e| e.path == new_path)
+                        if let Some(pos) =
+                            state.media_entries.iter().position(|e| e.path == new_path)
                         {
                             return select_and_load_entry(state, pos);
                         }
@@ -340,7 +344,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::PinSelectedFolder => {
-            let path_to_pin = state.selected_folder.clone().or(state.current_folder.clone());
+            let path_to_pin = state
+                .selected_folder
+                .clone()
+                .or(state.current_folder.clone());
             if let Some(path) = path_to_pin {
                 state.pin_folder(&path);
                 let _ = state.settings.save();
@@ -363,8 +370,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::TriggerCreateFolder => {
-            if let Some(ref p) = state.selected_folder.as_ref().or(state.current_folder.as_ref()) {
-                state.creating_folder_parent = Some((*p).clone());
+            if let Some(p) = state
+                .selected_folder
+                .as_ref()
+                .or(state.current_folder.as_ref())
+            {
+                state.creating_folder_parent = Some(p.clone());
                 state.create_folder_input = String::new();
             }
             Task::none()
@@ -438,48 +449,65 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if key == "Enter" || key == "Esc" || key == "Tab" {
                     state.search_focused = false;
                     return iced::advanced::widget::operate(
-                        iced::advanced::widget::operation::focusable::unfocus()
+                        iced::advanced::widget::operation::focusable::unfocus(),
                     );
                 }
                 return Task::none();
             }
 
-            if key == "Space" && !state.search_focused && state.renaming_path.is_none() && state.creating_folder_parent.is_none() {
+            if key == "Space"
+                && !state.search_focused
+                && state.renaming_path.is_none()
+                && state.creating_folder_parent.is_none()
+            {
                 if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::TogglePause,
+                    );
                     return Task::none();
                 }
             }
 
             if key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause" {
                 if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::TogglePause,
+                    );
                     return Task::none();
                 }
             }
             if key == "MediaStop" {
                 if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+                    let _ =
+                        sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
                     return Task::none();
                 }
             }
             if key == "AudioVolumeUp" {
                 if let Some(ref sender) = state.video_sender {
                     let new_vol = (state.video_volume + 5.0).min(100.0);
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                    );
                     return Task::none();
                 }
             }
             if key == "AudioVolumeDown" {
                 if let Some(ref sender) = state.video_sender {
                     let new_vol = (state.video_volume - 5.0).max(0.0);
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                    );
                     return Task::none();
                 }
             }
             if key == "AudioVolumeMute" {
                 if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::SetMute(!state.video_muted));
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::SetMute(
+                            !state.video_muted,
+                        ),
+                    );
                     return Task::none();
                 }
             }
@@ -552,10 +580,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             }
                         }
                         "create_folder" => {
-                            if let Some(ref p) =
-                                state.selected_folder.as_ref().or(state.current_folder.as_ref())
+                            if let Some(p) = state
+                                .selected_folder
+                                .as_ref()
+                                .or(state.current_folder.as_ref())
                             {
-                                state.creating_folder_parent = Some((*p).clone());
+                                state.creating_folder_parent = Some(p.clone());
                                 state.create_folder_input = String::new();
                             }
                         }
@@ -594,7 +624,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                         "search_images" => {
                             state.search_focused = true;
-                            return iced::widget::operation::focus(crate::view::search_bar::SEARCH_INPUT_ID.clone());
+                            return iced::widget::operation::focus(
+                                crate::view::search_bar::SEARCH_INPUT_ID.clone(),
+                            );
                         }
                         _ => {}
                     }
@@ -641,13 +673,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     .arg(&path)
                     .spawn()
             } else if cfg!(target_os = "macos") {
-                std::process::Command::new("open")
-                    .arg(&path)
-                    .spawn()
+                std::process::Command::new("open").arg(&path).spawn()
             } else {
-                std::process::Command::new("xdg-open")
-                    .arg(&path)
-                    .spawn()
+                std::process::Command::new("xdg-open").arg(&path).spawn()
             };
             if let Err(e) = res {
                 log::error!("Failed to play video externally: {e}");
@@ -660,7 +688,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::ToggleReopenFolder => {
-            state.settings.general.reopen_last_opened_folder = !state.settings.general.reopen_last_opened_folder;
+            state.settings.general.reopen_last_opened_folder =
+                !state.settings.general.reopen_last_opened_folder;
             let _ = state.settings.save();
             Task::none()
         }
@@ -672,58 +701,59 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.dragging_metadata_divider = true;
             Task::none()
         }
-        Message::EventOccurred(event) => {
-            match event {
-                iced::Event::Window(iced::window::Event::CloseRequested) => {
-                    let _ = state.settings.save();
-                    window::latest().and_then(window::close)
-                }
-                iced::Event::Window(iced::window::Event::Resized(size)) => {
-                    state.settings.window_position.width = size.width.round() as u32;
-                    state.settings.window_position.height = size.height.round() as u32;
-                    Task::none()
-                }
-                iced::Event::Window(iced::window::Event::Moved(point)) => {
-                    state.settings.window_position.left = point.x.round() as i32;
-                    state.settings.window_position.top = point.y.round() as i32;
-                    Task::none()
-                }
-                iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
-                    if state.dragging_folder_divider {
-                        let new_width = position.x.round().clamp(100.0, 800.0) as u16;
-                        state.settings.general.folder_tree_width = new_width;
-                    }
-                    if state.dragging_metadata_divider {
-                        let window_width = state.settings.window_position.width as f32;
-                        let raw_width = window_width - position.x;
-                        let new_width = raw_width.round().clamp(100.0, 800.0) as u16;
-                        state.settings.metadata_panel.panel_width = new_width;
-                    }
-                    Task::none()
-                }
-                iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
-                    if state.dragging_folder_divider || state.dragging_metadata_divider {
-                        state.dragging_folder_divider = false;
-                        state.dragging_metadata_divider = false;
-                        let _ = state.settings.save();
-                    }
-                    Task::none()
-                }
-                _ => Task::none(),
+        Message::EventOccurred(event) => match event {
+            iced::Event::Window(iced::window::Event::CloseRequested) => {
+                let _ = state.settings.save();
+                window::latest().and_then(window::close)
             }
-        }
+            iced::Event::Window(iced::window::Event::Resized(size)) => {
+                state.settings.window_position.width = size.width.round() as u32;
+                state.settings.window_position.height = size.height.round() as u32;
+                Task::none()
+            }
+            iced::Event::Window(iced::window::Event::Moved(point)) => {
+                state.settings.window_position.left = point.x.round() as i32;
+                state.settings.window_position.top = point.y.round() as i32;
+                Task::none()
+            }
+            iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
+                if state.dragging_folder_divider {
+                    let new_width = position.x.round().clamp(100.0, 800.0) as u16;
+                    state.settings.general.folder_tree_width = new_width;
+                }
+                if state.dragging_metadata_divider {
+                    let window_width = state.settings.window_position.width as f32;
+                    let raw_width = window_width - position.x;
+                    let new_width = raw_width.round().clamp(100.0, 800.0) as u16;
+                    state.settings.metadata_panel.panel_width = new_width;
+                }
+                Task::none()
+            }
+            iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
+                if state.dragging_folder_divider || state.dragging_metadata_divider {
+                    state.dragging_folder_divider = false;
+                    state.dragging_metadata_divider = false;
+                    let _ = state.settings.save();
+                }
+                Task::none()
+            }
+            _ => Task::none(),
+        },
         Message::ToggleCheckForUpdates => {
-            state.settings.general.check_for_updates_on_startup = !state.settings.general.check_for_updates_on_startup;
+            state.settings.general.check_for_updates_on_startup =
+                !state.settings.general.check_for_updates_on_startup;
             let _ = state.settings.save();
             Task::none()
         }
         Message::ToggleInstallPrerelease => {
-            state.settings.general.install_prerelease_builds = !state.settings.general.install_prerelease_builds;
+            state.settings.general.install_prerelease_builds =
+                !state.settings.general.install_prerelease_builds;
             let _ = state.settings.save();
             Task::none()
         }
         Message::ToggleIntegrationWithWindows => {
-            state.settings.general.integration_with_windows = !state.settings.general.integration_with_windows;
+            state.settings.general.integration_with_windows =
+                !state.settings.general.integration_with_windows;
             let _ = state.settings.save();
             Task::none()
         }
@@ -745,7 +775,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::RestoreDefaultKeyBindings => {
-            state.settings.keybindings = media_sort_core::settings::keybindings::KeyBindings::default();
+            state.settings.keybindings =
+                media_sort_core::settings::keybindings::KeyBindings::default();
             let _ = state.settings.save();
             Task::none()
         }
@@ -923,22 +954,32 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         let start = index.saturating_sub(5);
         let end = (index + 6).min(filtered_len);
         let mut thumbnail_paths = Vec::new();
-        for i in start..end {
-            thumbnail_paths.push(filtered[i].path.clone());
+        for entry in filtered.iter().take(end).skip(start) {
+            thumbnail_paths.push(entry.path.clone());
         }
 
         // Pre-load the next and previous full images!
         let mut preload_tasks = Vec::new();
         if index + 1 < filtered_len {
             let next_entry = filtered[index + 1];
-            if next_entry.media_type == media_sort_core::media_type::MediaType::Image && !state.image_cache.contains(&next_entry.path) {
-                preload_tasks.push(load_full_image(next_entry.path.clone(), next_entry.media_type));
+            if next_entry.media_type == media_sort_core::media_type::MediaType::Image
+                && !state.image_cache.contains(&next_entry.path)
+            {
+                preload_tasks.push(load_full_image(
+                    next_entry.path.clone(),
+                    next_entry.media_type,
+                ));
             }
         }
         if index > 0 {
             let prev_entry = filtered[index - 1];
-            if prev_entry.media_type == media_sort_core::media_type::MediaType::Image && !state.image_cache.contains(&prev_entry.path) {
-                preload_tasks.push(load_full_image(prev_entry.path.clone(), prev_entry.media_type));
+            if prev_entry.media_type == media_sort_core::media_type::MediaType::Image
+                && !state.image_cache.contains(&prev_entry.path)
+            {
+                preload_tasks.push(load_full_image(
+                    prev_entry.path.clone(),
+                    prev_entry.media_type,
+                ));
             }
         }
 
@@ -949,7 +990,9 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         if media_type == media_sort_core::media_type::MediaType::Video {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()));
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()),
+                );
             }
             state.video_frame = None;
             state.video_rgba = None;
@@ -958,11 +1001,12 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_position = 0.0;
             state.video_duration = 0.0;
             if let Some(ref mut ap) = state.audio_player {
-                let _ = ap.stop();
+                ap.stop();
             }
         } else {
             if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
             }
             state.video_frame = None;
             state.video_rgba = None;
@@ -994,7 +1038,8 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.current_metadata = None;
         state.selected_image = None;
         if let Some(ref sender) = state.video_sender {
-            let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+            let _ =
+                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         state.video_frame = None;
         state.video_rgba = None;
@@ -1335,7 +1380,7 @@ mod tests {
         name: &str,
     ) -> (std::path::PathBuf, std::path::PathBuf, std::path::PathBuf) {
         let base = dirs::data_local_dir()
-            .unwrap_or_else(|| std::env::temp_dir())
+            .unwrap_or_else(std::env::temp_dir)
             .join("media-sort")
             .join("test");
         let root = base.join(format!("{}_{}", name, std::process::id()));

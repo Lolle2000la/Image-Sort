@@ -4,8 +4,7 @@ use iced::{Color, Element, Length};
 use crate::message::Message;
 use crate::state::AppState;
 use crate::view::{
-    control_panel, folder_panel, media_grid, media_preview, metadata_panel,
-    search_bar,
+    control_panel, folder_panel, media_grid, media_preview, metadata_panel, search_bar,
 };
 
 pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
@@ -26,8 +25,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ]
         .spacing(2)
         .align_y(iced::Alignment::Center);
-        let btn = iced::widget::button(btn_content)
-            .width(Length::Fill);
+        let btn = iced::widget::button(btn_content).width(Length::Fill);
         if state.selected_index.is_some() && state.selected_folder.is_some() {
             btn.on_press(Message::MoveMedia)
         } else {
@@ -75,13 +73,9 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .on_press(Message::ToggleMetadataPanel);
 
     // Row containing the search bar, Rename button, and Metadata button:
-    let search_rename_row = row![
-        search_bar,
-        rename_btn,
-        metadata_btn,
-    ]
-    .spacing(8)
-    .align_y(iced::Alignment::Center);
+    let search_rename_row = row![search_bar, rename_btn, metadata_btn,]
+        .spacing(8)
+        .align_y(iced::Alignment::Center);
 
     // Center area (the preview area and bottom action area):
     let media_column = column![
@@ -95,7 +89,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     .height(Length::Fill);
 
     let divider = divider_view(Message::StartDragFolderDivider);
-    
+
     let media_metadata_row = if state.metadata_panel_expanded {
         row![
             container(media_column)
@@ -108,11 +102,9 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .width(Length::Fill)
         .height(Length::Fill)
     } else {
-        row![
-            container(media_column)
-                .width(Length::Fill)
-                .height(Length::Fill),
-        ]
+        row![container(media_column)
+            .width(Length::Fill)
+            .height(Length::Fill),]
         .spacing(0)
         .width(Length::Fill)
         .height(Length::Fill)
@@ -158,9 +150,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .style(|_theme| iced::widget::container::Style {
-                        background: Some(iced::Background::Color(Color::from_rgba(0.0, 0.0, 0.0, 0.6))),
+                        background: Some(iced::Background::Color(Color::from_rgba(
+                            0.0, 0.0, 0.0, 0.6,
+                        ))),
                         ..iced::widget::container::Style::default()
-                    })
+                    }),
             );
         }
         return stack.into();
@@ -170,8 +164,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 }
 
 fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Element<'a, Message> {
-    let old_name = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
-    
+    let old_name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_default();
+
     let title = Text::new(state.l10n.tr("ui-rename-file")).size(18);
     let old_name_label = Text::new(state.l10n.get("ui-original", &[("name", &old_name)]))
         .size(12)
@@ -199,13 +196,16 @@ fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Elem
     container(
         column![title, old_name_label, input, buttons]
             .spacing(12)
-            .align_x(iced::Alignment::Start)
+            .align_x(iced::Alignment::Start),
     )
     .padding(20)
     .width(Length::Fixed(400.0))
     .style(|theme: &iced::Theme| {
         let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
+        let border_color = Color {
+            a: 0.2,
+            ..palette.text
+        };
         iced::widget::container::Style {
             background: Some(iced::Background::Color(palette.background)),
             border: iced::Border {
@@ -219,20 +219,27 @@ fn rename_modal_view<'a>(state: &'a AppState, path: &'a std::path::Path) -> Elem
     .into()
 }
 
-fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path) -> Element<'a, Message> {
-    let parent_name = parent.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_else(|| "/".to_string());
-    
+fn create_folder_modal_view<'a>(
+    state: &'a AppState,
+    parent: &'a std::path::Path,
+) -> Element<'a, Message> {
+    let parent_name = parent
+        .file_name()
+        .map(|n| n.to_string_lossy().to_string())
+        .unwrap_or_else(|| "/".to_string());
+
     let title = Text::new(state.l10n.tr("ui-create-folder-title")).size(18);
     let parent_label = Text::new(state.l10n.get("ui-parent", &[("name", &parent_name)]))
         .size(12)
         .color(Color::from_rgb(0.6, 0.6, 0.6))
         .shaping(iced::widget::text::Shaping::Advanced);
 
-    let input = iced::widget::text_input(&state.create_folder_placeholder, &state.create_folder_input)
-        .on_input(Message::CreateFolderInputChanged)
-        .on_submit(Message::SubmitCreateFolder)
-        .padding(8)
-        .size(14);
+    let input =
+        iced::widget::text_input(&state.create_folder_placeholder, &state.create_folder_input)
+            .on_input(Message::CreateFolderInputChanged)
+            .on_submit(Message::SubmitCreateFolder)
+            .padding(8)
+            .size(14);
 
     let submit_btn = iced::widget::button(text(state.l10n.tr("ui-create")).size(14))
         .on_press(Message::SubmitCreateFolder)
@@ -249,13 +256,16 @@ fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path
     container(
         column![title, parent_label, input, buttons]
             .spacing(12)
-            .align_x(iced::Alignment::Start)
+            .align_x(iced::Alignment::Start),
     )
     .padding(20)
     .width(Length::Fixed(400.0))
     .style(|theme: &iced::Theme| {
         let palette = theme.palette();
-        let border_color = Color { a: 0.2, ..palette.text };
+        let border_color = Color {
+            a: 0.2,
+            ..palette.text
+        };
         iced::widget::container::Style {
             background: Some(iced::Background::Color(palette.background)),
             border: iced::Border {
@@ -272,18 +282,25 @@ fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path
 fn divider_view<'a>(on_press: Message) -> Element<'a, Message> {
     mouse_area(
         container(
-            container(iced::widget::Space::new().width(Length::Fixed(2.0)).height(Length::Fill))
-                .style(|theme: &iced::Theme| {
-                    let palette = theme.palette();
-                    iced::widget::container::Style {
-                        background: Some(iced::Background::Color(Color { a: 0.15, ..palette.text })),
-                        ..Default::default()
-                    }
-                })
+            container(
+                iced::widget::Space::new()
+                    .width(Length::Fixed(2.0))
+                    .height(Length::Fill),
+            )
+            .style(|theme: &iced::Theme| {
+                let palette = theme.palette();
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(Color {
+                        a: 0.15,
+                        ..palette.text
+                    })),
+                    ..Default::default()
+                }
+            }),
         )
         .width(Length::Fixed(8.0))
         .height(Length::Fill)
-        .center_x(8.0)
+        .center_x(8.0),
     )
     .on_press(on_press)
     .interaction(iced::mouse::Interaction::ResizingHorizontally)
