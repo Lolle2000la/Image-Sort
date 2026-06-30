@@ -14,8 +14,6 @@ pub struct TrashStaging {
 }
 
 struct StagedFile {
-    #[allow(dead_code)]
-    original_path: PathBuf,
     staging_path: PathBuf,
 }
 
@@ -77,7 +75,6 @@ impl TrashStaging {
         path_utils::rename_or_copy_and_delete(path, &staging_path).map_err(ActionError::Io)?;
 
         let staged = StagedFile {
-            original_path: path.to_path_buf(),
             staging_path: staging_path.clone(),
         };
         self.staged.lock().push(staged);
