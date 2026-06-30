@@ -89,29 +89,20 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     .spacing(8)
     .height(Length::Fill);
 
-    let divider = mouse_area(
-        container(
-            container(iced::widget::Space::new().width(Length::Fixed(2.0)).height(Length::Fill))
-                .style(|theme: &iced::Theme| {
-                    let palette = theme.palette();
-                    iced::widget::container::Style {
-                        background: Some(iced::Background::Color(Color { a: 0.15, ..palette.text })),
-                        ..Default::default()
-                    }
-                })
-        )
-        .width(Length::Fixed(8.0))
+    let divider = divider_view(Message::StartDragFolderDivider);
+    
+    let media_metadata_row = if state.metadata_panel_expanded {
+        row![
+            container(media_column)
+                .width(Length::Fill)
+                .height(Length::Fill),
+            divider_view(Message::StartDragMetadataDivider),
+            metadata,
+        ]
+        .spacing(0)
+        .width(Length::Fill)
         .height(Length::Fill)
-        .center_x(8.0)
-    )
-    .on_press(Message::StartDragFolderDivider)
-    .interaction(iced::mouse::Interaction::ResizingHorizontally);
-
-    let main_content = row![
-        folder_panel,
-        divider,
-        control_panel,
-        iced::widget::Space::new().width(Length::Fixed(8.0)),
+    } else {
         row![
             container(media_column)
                 .width(Length::Fill)
@@ -120,7 +111,15 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ]
         .spacing(4)
         .width(Length::Fill)
-        .height(Length::Fill),
+        .height(Length::Fill)
+    };
+
+    let main_content = row![
+        folder_panel,
+        divider,
+        control_panel,
+        iced::widget::Space::new().width(Length::Fixed(8.0)),
+        media_metadata_row,
     ]
     .spacing(0)
     .height(Length::Fill);
@@ -263,5 +262,26 @@ fn create_folder_modal_view<'a>(state: &'a AppState, parent: &'a std::path::Path
             ..iced::widget::container::Style::default()
         }
     })
+    .into()
+}
+
+fn divider_view<'a>(on_press: Message) -> Element<'a, Message> {
+    mouse_area(
+        container(
+            container(iced::widget::Space::new().width(Length::Fixed(2.0)).height(Length::Fill))
+                .style(|theme: &iced::Theme| {
+                    let palette = theme.palette();
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(Color { a: 0.15, ..palette.text })),
+                        ..Default::default()
+                    }
+                })
+        )
+        .width(Length::Fixed(8.0))
+        .height(Length::Fill)
+        .center_x(8.0)
+    )
+    .on_press(on_press)
+    .interaction(iced::mouse::Interaction::ResizingHorizontally)
     .into()
 }

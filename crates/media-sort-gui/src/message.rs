@@ -46,6 +46,7 @@ pub enum Message {
 
     ToggleMetadataPanel,
     StartDragFolderDivider,
+    StartDragMetadataDivider,
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
 
     EditKeyBinding(usize),

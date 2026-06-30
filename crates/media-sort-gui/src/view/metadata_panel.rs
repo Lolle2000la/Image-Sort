@@ -6,10 +6,28 @@ use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
     if !state.metadata_panel_expanded {
-        let toggle_btn = button(text(format!("> {}", state.l10n.tr("ui-metadata"))))
-            .on_press(Message::ToggleMetadataPanel)
-            .style(iced::widget::button::secondary);
-        return container(toggle_btn).padding(4).into();
+        let label = state.l10n.tr("ui-metadata");
+        let vertical_text: String = label.chars()
+            .map(|c| c.to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let toggle_btn = button(
+            column![
+                text("<").size(10).align_x(iced::Alignment::Center),
+                text(vertical_text).size(10).line_height(1.1).align_x(iced::Alignment::Center),
+            ]
+            .align_x(iced::Alignment::Center)
+            .spacing(4)
+        )
+        .on_press(Message::ToggleMetadataPanel)
+        .style(iced::widget::button::secondary)
+        .padding(6);
+
+        return container(toggle_btn)
+            .height(Length::Fill)
+            .center_y(Length::Fill)
+            .padding(4)
+            .into();
     }
 
     let header_row = row![
@@ -27,8 +45,14 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
             let mut section_list = column![].spacing(8);
 
             for (section_name, fields) in metadata {
+                let display_section = if section_name == "File" {
+                    state.l10n.tr("metadata-section-file")
+                } else {
+                    section_name.clone()
+                };
+
                 let section_header =
-                    text(format!("[{}]", section_name))
+                    text(format!("[{}]", display_section))
                         .size(12)
                         .style(move |theme: &iced::Theme| text::Style {
                             color: Some(theme.palette().primary),
@@ -36,8 +60,20 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
 
                 let mut field_list = column![].spacing(2);
                 for (tag_name, value) in fields {
+                    let display_tag = if section_name == "File" {
+                        match tag_name.as_str() {
+                            "Name" => state.l10n.tr("metadata-field-name"),
+                            "Size" => state.l10n.tr("metadata-field-size"),
+                            "Modified" => state.l10n.tr("metadata-field-modified"),
+                            "Dimensions" => state.l10n.tr("metadata-field-dimensions"),
+                            _ => tag_name.clone(),
+                        }
+                    } else {
+                        tag_name.clone()
+                    };
+
                     let line = row![
-                        text(format!("{}:", tag_name)).size(11),
+                        text(format!("{}:", display_tag)).size(11),
                         text(value).size(11).shaping(iced::widget::text::Shaping::Advanced),
                     ]
                     .spacing(4);

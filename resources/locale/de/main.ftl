@@ -104,4 +104,11 @@ ui-video-playback-soon = Videowiedergabe demnächst verfügbar
 ui-rendering-not-implemented = MPV/wgpu-Rendering noch nicht implementiert
 ui-play-in-system-player = Im System-Player abspielen
 
+# Metadata fields
+metadata-section-file = Datei
+metadata-field-name = Name
+metadata-field-size = Größe
+metadata-field-modified = Geändert
+metadata-field-dimensions = Dimensionen
+
 

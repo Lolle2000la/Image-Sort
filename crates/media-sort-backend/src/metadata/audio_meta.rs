@@ -113,13 +113,13 @@ fn extract_flac_metadata(
 }
 
 fn extract_vorbis_comment_metadata(
-    _path: &Path,
+    path: &Path,
 ) -> Result<BTreeMap<String, BTreeMap<String, String>>, MetadataError> {
-    Ok(BTreeMap::new())
+    super::video_meta::extract_generic_container_metadata(path)
 }
 
 fn extract_generic_container_metadata(
-    _path: &Path,
+    path: &Path,
 ) -> Result<BTreeMap<String, BTreeMap<String, String>>, MetadataError> {
-    Ok(BTreeMap::new())
+    super::video_meta::extract_generic_container_metadata(path)
 }

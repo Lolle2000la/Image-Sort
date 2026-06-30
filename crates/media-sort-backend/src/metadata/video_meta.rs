@@ -95,8 +95,68 @@ fn extract_matroska_metadata(
     extract_generic_container_metadata(path)
 }
 
-fn extract_generic_container_metadata(
-    _path: &Path,
+pub fn extract_generic_container_metadata(
+    path: &Path,
 ) -> Result<BTreeMap<String, BTreeMap<String, String>>, MetadataError> {
-    Ok(BTreeMap::new())
+    use symphonia::core::formats::FormatOptions;
+    use symphonia::core::io::MediaSourceStream;
+    use symphonia::core::meta::MetadataOptions;
+    use symphonia::core::probe::Hint;
+
+    let mut sections = BTreeMap::new();
+
+    if let Ok(file) = std::fs::File::open(path) {
+        let mss = MediaSourceStream::new(Box::new(file), Default::default());
+        let mut hint = Hint::new();
+        if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+            hint.with_extension(ext);
+        }
+
+        let meta_opts = MetadataOptions::default();
+        let fmt_opts = FormatOptions::default();
+
+        if let Ok(probed) = symphonia::default::get_probe()
+            .format(&hint, mss, &fmt_opts, &meta_opts)
+        {
+            let mut format = probed.format;
+            let mut metadata = format.metadata();
+            let mut container_sec = BTreeMap::new();
+
+            // Get all revisions
+            while !metadata.is_latest() {
+                if let Some(revision) = metadata.pop() {
+                    for tag in revision.tags() {
+                        let key = match tag.std_key {
+                            Some(std_key) => format!("{:?}", std_key),
+                            None => tag.key.clone(),
+                        };
+                        let val = tag.value.to_string();
+                        if !val.trim().is_empty() {
+                            container_sec.insert(key, val);
+                        }
+                    }
+                }
+            }
+
+            // Also check the current/latest revision
+            if let Some(revision) = metadata.current() {
+                for tag in revision.tags() {
+                    let key = match tag.std_key {
+                        Some(std_key) => format!("{:?}", std_key),
+                        None => tag.key.clone(),
+                    };
+                    let val = tag.value.to_string();
+                    if !val.trim().is_empty() {
+                        container_sec.insert(key, val);
+                    }
+                }
+            }
+
+            if !container_sec.is_empty() {
+                sections.insert("Container Metadata".into(), container_sec);
+            }
+        }
+    }
+
+    Ok(sections)
 }

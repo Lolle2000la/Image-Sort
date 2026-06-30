@@ -104,4 +104,11 @@ ui-video-playback-soon = 動画の再生機能は近日公開予定です
 ui-rendering-not-implemented = MPV/wgpuのレンダリングはまだ実装されていません
 ui-play-in-system-player = システムのプレーヤーで再生する
 
+# Metadata fields
+metadata-section-file = ファイル
+metadata-field-name = 名前
+metadata-field-size = サイズ
+metadata-field-modified = 更新日時
+metadata-field-dimensions = 解像度
+
 

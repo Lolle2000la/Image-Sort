@@ -668,6 +668,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.dragging_folder_divider = true;
             Task::none()
         }
+        Message::StartDragMetadataDivider => {
+            state.dragging_metadata_divider = true;
+            Task::none()
+        }
         Message::EventOccurred(event) => {
             match event {
                 iced::Event::Window(iced::window::Event::CloseRequested) => {
@@ -689,11 +693,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         let new_width = position.x.round().clamp(100.0, 800.0) as u16;
                         state.settings.general.folder_tree_width = new_width;
                     }
+                    if state.dragging_metadata_divider {
+                        let window_width = state.settings.window_position.width as f32;
+                        let raw_width = window_width - position.x;
+                        let new_width = raw_width.round().clamp(100.0, 800.0) as u16;
+                        state.settings.metadata_panel.panel_width = new_width;
+                    }
                     Task::none()
                 }
                 iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
-                    if state.dragging_folder_divider {
+                    if state.dragging_folder_divider || state.dragging_metadata_divider {
                         state.dragging_folder_divider = false;
+                        state.dragging_metadata_divider = false;
                         let _ = state.settings.save();
                     }
                     Task::none()
