@@ -37,7 +37,6 @@ pub enum SettingsMessage {
     Save,
     RestoreDefaultKeyBindings,
     OpenKeybindings,
-    CloseKeybindings,
     EditKeyBinding(usize),
     ToggleMetadataPanel,
     StartDragFolderDivider,

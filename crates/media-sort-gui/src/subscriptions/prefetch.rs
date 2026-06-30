@@ -2,8 +2,6 @@ use media_sort_core::media_type::{MediaRegistry, MediaType};
 use once_cell::sync::Lazy;
 use std::path::PathBuf;
 
-use crate::message::Message;
-
 static MPV_MUTEX: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 
 pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
@@ -91,19 +89,6 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
     }
 
     Err(())
-}
-
-fn prefetch_stream() -> impl iced::futures::Stream<Item = Message> {
-    iced::stream::channel(64, |_output| async move {
-        loop {
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        }
-    })
-}
-
-#[allow(dead_code)]
-pub fn prefetch_subscription() -> iced::Subscription<Message> {
-    iced::Subscription::run(prefetch_stream)
 }
 
 #[cfg(test)]

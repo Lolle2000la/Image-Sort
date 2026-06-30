@@ -1,9 +1,7 @@
 mod app;
-mod cache;
 mod message;
 mod state;
 mod subscriptions;
-mod theme;
 mod update;
 mod view;
 mod widgets;

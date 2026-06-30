@@ -788,21 +788,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
-        Message::Settings(SettingsMessage::RestoreDefaultKeyBindings) => {
-            state.settings.keybindings =
-                media_sort_core::settings::keybindings::KeyBindings::default();
-            let _ = state.settings.save();
-            Task::none()
-        }
         Message::Settings(SettingsMessage::OpenKeybindings) => {
             state.show_settings = true;
             state.show_keybindings = true;
             Task::none()
         }
-        Message::Settings(SettingsMessage::CloseKeybindings) => {
-            state.show_keybindings = false;
-            state.editing_keybinding = None;
-            state.waiting_for_key = false;
+        Message::Settings(SettingsMessage::RestoreDefaultKeyBindings) => {
+            state.settings.keybindings =
+                media_sort_core::settings::keybindings::KeyBindings::default();
+            let _ = state.settings.save();
             Task::none()
         }
         Message::OpenCredits => {

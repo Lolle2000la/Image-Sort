@@ -3,7 +3,6 @@ use iced::{Color, Element};
 
 use crate::message::{MediaMessage, Message};
 
-#[allow(dead_code)]
 pub fn audio_controls_view() -> Element<'static, Message> {
     container(
         column![

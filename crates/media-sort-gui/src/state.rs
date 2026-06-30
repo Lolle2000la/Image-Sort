@@ -11,9 +11,6 @@ use media_sort_core::media_type::MediaType;
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
-#[allow(dead_code)]
-pub const PREFETCH_RADIUS: usize = 5;
-
 pub struct AppState {
     pub history: History,
     pub settings: SettingsStore,
@@ -78,7 +75,6 @@ pub struct AppState {
 /// Kept in sync for diagnostic / debug purposes only; auto-scroll now uses
 /// relative positions so it doesn't depend on this snapshot being current.
 #[derive(Debug, Clone, Copy, Default)]
-#[allow(dead_code)]
 pub struct MediaGridScrollState {
     /// Current horizontal scroll offset in pixels.
     pub offset_x: f32,
@@ -376,23 +372,6 @@ impl AppState {
                 self.build_folder_tree();
             }
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn save_settings_task(&self) -> iced::Task<crate::message::Message> {
-        let _ = self.settings.save();
-        iced::Task::none()
-    }
-
-    #[allow(dead_code)]
-    pub fn save_window_position(&mut self, position: iced::window::Position, size: iced::Size) {
-        if let iced::window::Position::Specific(point) = position {
-            self.settings.window_position.left = point.x as i32;
-            self.settings.window_position.top = point.y as i32;
-        }
-        self.settings.window_position.width = size.width as u32;
-        self.settings.window_position.height = size.height as u32;
-        let _ = self.settings.save();
     }
 
     pub fn select_folder_below(&mut self) {
