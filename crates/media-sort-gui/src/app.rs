@@ -939,6 +939,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.search_focused = false;
             Task::none()
         }
+        Message::GridScrolled(offset, viewport_width, content_width) => {
+            state.media_grid_scroll.offset_x = offset.x;
+            state.media_grid_scroll.viewport_width = viewport_width;
+            state.media_grid_scroll.content_width = content_width;
+            Task::none()
+        }
     }
 }
 
@@ -1016,6 +1022,8 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         let mut tasks = vec![load_metadata(state, index)];
 
+        tasks.push(scroll_to_selected_entry(state, index));
+
         if let Some(handle) = state.image_cache.get(&path) {
             state.selected_image = Some((path, handle.clone()));
         } else {
@@ -1047,6 +1055,49 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.video_height = 0;
         Task::none()
     }
+}
+
+/// Build a [`Task`] that scrolls the media grid so that the entry at
+/// `index` is clearly visible. We use a *relative* scroll position so we
+/// don't have to depend on `state.media_grid_scroll.viewport_width` being
+/// up to date — that snapshot can briefly lag behind the actual layout
+/// (e.g. when the user has just resized the window, or the very first
+/// `on_scroll` after opening a folder hasn't fired yet). If we used an
+/// absolute pixel offset computed from a stale viewport, we could end up
+/// "scrolling" to a position that doesn't actually bring the selected
+/// card into view. The scrollable resolves the relative position using
+/// its own, always-current, content and viewport widths.
+///
+/// The relative position is `index / (n - 1)`, so the selected card ends
+/// up at the corresponding proportional position in the content, well
+/// inside the viewport for any sane window size.
+fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message> {
+    use crate::view::media_grid::MEDIA_GRID_SCROLLABLE_ID;
+
+    let n = state.filtered_media_entries().len();
+    let Some(relative_x) = relative_position_for(index, n) else {
+        return Task::none();
+    };
+
+    iced::widget::operation::snap_to(
+        MEDIA_GRID_SCROLLABLE_ID.clone(),
+        iced::widget::scrollable::RelativeOffset {
+            x: Some(relative_x),
+            y: None,
+        },
+    )
+}
+
+/// Compute the relative horizontal scroll position (in `[0.0, 1.0]`) that
+/// corresponds to `index` in a list of `total` entries. Returns `None` when
+/// the list has zero or one entries, in which case there is nothing to
+/// scroll to.
+fn relative_position_for(index: usize, total: usize) -> Option<f32> {
+    if total <= 1 {
+        return None;
+    }
+    let clamped_index = index.min(total - 1);
+    Some(clamped_index as f32 / (total - 1) as f32)
 }
 
 fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
@@ -1804,6 +1855,39 @@ mod tests {
         assert!(state.current_metadata.is_some());
         let m = state.current_metadata.as_ref().unwrap();
         assert_eq!(m.get("EXIF").unwrap().get("Width").unwrap(), "1920");
+    }
+
+    #[test]
+    fn test_grid_scrolled_updates_viewport_state() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert_eq!(state.media_grid_scroll.viewport_width, 0.0);
+
+        let _ = update(
+            &mut state,
+            Message::GridScrolled(
+                iced::widget::scrollable::AbsoluteOffset { x: 120.0, y: 0.0 },
+                400.0,
+                1200.0,
+            ),
+        );
+        assert_eq!(state.media_grid_scroll.offset_x, 120.0);
+        assert_eq!(state.media_grid_scroll.viewport_width, 400.0);
+        assert_eq!(state.media_grid_scroll.content_width, 1200.0);
+    }
+
+    #[test]
+    fn test_relative_position_for_scrolling() {
+        // The relative position is the index normalised to [0.0, 1.0] over
+        // the filtered entry list. We rely on this internally so that the
+        // scroll resolves correctly even when our cached viewport snapshot
+        // is briefly stale.
+        assert_eq!(relative_position_for(0, 7), Some(0.0));
+        assert_eq!(relative_position_for(6, 7), Some(1.0));
+        assert!((relative_position_for(3, 7).unwrap() - 0.5).abs() < 1e-6);
+        assert_eq!(relative_position_for(0, 0), None);
+        assert_eq!(relative_position_for(0, 1), None);
+        // Out-of-range indices are clamped to the last entry.
+        assert_eq!(relative_position_for(99, 7), Some(1.0));
     }
 
     #[test]

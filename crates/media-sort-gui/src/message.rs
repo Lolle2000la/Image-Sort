@@ -95,4 +95,9 @@ pub enum Message {
     VideoMute,
     VideoPlayPause,
     VideoStop,
+
+    /// The media grid's horizontal scrollable reported a new viewport.
+    /// Carries the absolute scroll offset, the viewport width, and the
+    /// content width in pixels.
+    GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
 }

@@ -65,6 +65,27 @@ pub struct AppState {
     pub video_width: u32,
     pub video_height: u32,
     pub unsupported_files: HashSet<PathBuf>,
+
+    /// Last known viewport of the media grid's horizontal scrollable, used
+    /// to auto-scroll the currently selected entry into view when the
+    /// selection changes (e.g. via keyboard shortcuts).
+    pub media_grid_scroll: MediaGridScrollState,
+}
+
+/// Snapshot of the media grid's scrollable viewport. Updated whenever the
+/// scrollable reports a new viewport via its `on_scroll` callback.
+///
+/// Kept in sync for diagnostic / debug purposes only; auto-scroll now uses
+/// relative positions so it doesn't depend on this snapshot being current.
+#[derive(Debug, Clone, Copy, Default)]
+#[allow(dead_code)]
+pub struct MediaGridScrollState {
+    /// Current horizontal scroll offset in pixels.
+    pub offset_x: f32,
+    /// Width of the visible viewport in pixels.
+    pub viewport_width: f32,
+    /// Width of the scrollable content in pixels.
+    pub content_width: f32,
 }
 
 impl AppState {
@@ -147,6 +168,7 @@ impl AppState {
             video_width: 0,
             video_height: 0,
             unsupported_files: HashSet::new(),
+            media_grid_scroll: MediaGridScrollState::default(),
         }
     }
 

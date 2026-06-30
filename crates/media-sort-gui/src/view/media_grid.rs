@@ -1,8 +1,22 @@
-use iced::widget::{button, column, container, row, scrollable, text};
+use iced::widget::{button, column, container, row, scrollable, space, text};
 use iced::{Alignment, Color, Element, Length};
 
 use crate::message::Message;
 use crate::state::AppState;
+
+/// Identifier used to programmatically scroll the media grid's horizontal
+/// scrollable (e.g. to bring the currently selected entry into view).
+pub static MEDIA_GRID_SCROLLABLE_ID: iced::widget::Id =
+    iced::widget::Id::new("media_grid_scrollable");
+
+/// Width of a single thumbnail card in the media grid.
+pub const MEDIA_GRID_CARD_WIDTH: f32 = 60.0;
+/// Horizontal spacing between adjacent thumbnail cards in the media grid row.
+pub const MEDIA_GRID_CARD_SPACING: f32 = 8.0;
+/// Extra vertical space appended at the bottom of the media grid so that the
+/// horizontal scrollbar does not overlap with the file names below each
+/// thumbnail.
+const MEDIA_GRID_SCROLLBAR_CLEARANCE: f32 = 12.0;
 
 pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     let filtered = state.filtered_media_entries();
@@ -37,7 +51,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     )
     .on_press(Message::GoRight);
 
-    let mut entries_row = row![].spacing(8);
+    let mut entries_row = row![].spacing(MEDIA_GRID_CARD_SPACING);
 
     for (i, entry) in filtered.iter().enumerate() {
         let is_selected = state.selected_index == Some(i);
@@ -53,9 +67,9 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             };
 
         let thumbnail = container(thumbnail_content)
-            .center_x(60)
+            .center_x(MEDIA_GRID_CARD_WIDTH)
             .center_y(50)
-            .width(Length::Fixed(60.0))
+            .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH))
             .height(Length::Fixed(50.0))
             .style(move |theme: &iced::Theme| {
                 let palette = theme.palette();
@@ -85,7 +99,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         let card = column![thumbnail, file_name]
             .align_x(Alignment::Center)
             .spacing(2)
-            .width(Length::Fixed(60.0));
+            .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH));
 
         let idx = i;
         let entry_button = button(card)
@@ -95,10 +109,27 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         entries_row = entries_row.push(entry_button);
     }
 
-    let scrollable_row =
-        scrollable(entries_row).direction(iced::widget::scrollable::Direction::Horizontal(
+    // Wrap the row of cards in a column with empty space at the bottom. This
+    // pushes the file names (which sit below each thumbnail) clear of the
+    // horizontal scrollbar, so the bar can no longer cover them.
+    let scrollable_content = column![
+        entries_row,
+        space().height(Length::Fixed(MEDIA_GRID_SCROLLBAR_CLEARANCE))
+    ];
+
+    let scrollable_row = scrollable(scrollable_content)
+        .id(MEDIA_GRID_SCROLLABLE_ID.clone())
+        .direction(iced::widget::scrollable::Direction::Horizontal(
             iced::widget::scrollable::Scrollbar::default(),
-        ));
+        ))
+        .on_scroll(|viewport| {
+            let offset = viewport.absolute_offset();
+            Message::GridScrolled(
+                offset,
+                viewport.bounds().width,
+                viewport.content_bounds().width,
+            )
+        });
 
     container(
         row![
