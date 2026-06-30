@@ -2,7 +2,7 @@
 
 Sort your media files fast. Version 3.0 is a rewrite in Rust.
 
-![Screenshot from the user interface of Image Sort](https://github.com/Lolle2000la/Image-Sort/raw/master/Image-Sort-Screenshot.gif)
+![Screenshot from the user interface of Media Sort](https://github.com/Lolle2000la/Image-Sort/raw/master/Image-Sort-Screenshot.gif)
 
 ## What is Media Sort?
 
