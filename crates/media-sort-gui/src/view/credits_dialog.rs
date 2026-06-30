@@ -9,46 +9,17 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
     let leading_text = text(state.l10n.tr("ui-credits-leading")).size(13);
 
     let libraries = vec![
-        ("AdonisUI", "https://github.com/benruehl/adonis-ui"),
-        (
-            "AdonisUI.ClassicTheme",
-            "https://github.com/benruehl/adonis-ui",
-        ),
-        (
-            "coverlet.collector",
-            "https://github.com/coverlet-coverage/coverlet",
-        ),
-        ("DynamicData", "https://dynamic-data.org/"),
-        ("FlaUI", "https://github.com/FlaUI/FlaUI"),
-        ("GitVersion(Task)", "https://github.com/GitTools/GitVersion"),
-        ("Lazy Cache", "https://github.com/alastairtree/LazyCache"),
-        (
-            "Microsoft.CodeAnalysis.FxCopAnalyzers",
-            "https://github.com/dotnet/roslyn-analyzers",
-        ),
-        (
-            "Microsoft.Extensions.DependencyInjection",
-            "https://asp.net",
-        ),
-        (
-            "Microsoft.NET.Test.Sdk",
-            "https://github.com/microsoft/vstest/",
-        ),
-        ("Moq", "https://github.com/moq/moq4"),
-        (".NET Core", "https://dotnet.microsoft.com/"),
-        ("Octokit", "https://github.com/octokit/octokit.net"),
-        ("ReactiveUI", "https://www.reactiveui.net/"),
-        ("Semver", "https://github.com/maxhauser/semver"),
-        ("WIX TOOLSET", "https://wixtoolset.org/"),
-        (
-            "WPF Animated GIF",
-            "https://github.com/XamlAnimatedGif/WpfAnimatedGif",
-        ),
-        ("xunit", "https://github.com/xunit/xunit"),
-        (
-            "xunit.runner.visualstudio",
-            "https://github.com/xunit/visualstudio.xunit",
-        ),
+        ("Iced", "https://github.com/iced-rs/iced"),
+        ("Tokio", "https://github.com/tokio-rs/tokio"),
+        ("Symphonia", "https://github.com/pdeljanov/Symphonia"),
+        ("libmpv", "https://github.com/mpv-player/mpv"),
+        ("Kamadak EXIF", "https://github.com/kamadak/exif-rs"),
+        ("Fluent", "https://github.com/projectfluent/fluent-rs"),
+        ("Image", "https://github.com/image-rs/image"),
+        ("Trash", "https://github.com/Byron/trash-rs"),
+        ("Notify", "https://github.com/notify-rs/notify"),
+        ("RFD (Rust File Dialogs)", "https://github.com/PolyhedralDev/rfd"),
+        ("Rodio", "https://github.com/RustAudio/rodio"),
     ];
 
     let mut rows = Vec::with_capacity(libraries.len());
