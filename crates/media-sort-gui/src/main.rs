@@ -35,7 +35,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     iced::application(
         move || {
             let settings = SettingsStore::load().unwrap_or_default();
-            let state = crate::state::AppState::new(settings);
+            let state = crate::state::AppState::new(settings.clone());
             let mut startup_path = None;
 
             if state.settings.general.reopen_last_opened_folder {
@@ -55,12 +55,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            let task = if let Some(path) = startup_path {
-                iced::Task::done(crate::message::Message::Folder(
-                    crate::message::FolderMessage::Open(path),
-                ))
-            } else {
-                iced::Task::none()
+            let task = {
+                let loaded_settings =
+                    crate::message::Message::SettingsLoaded(Box::new(Ok(settings.clone())));
+                if let Some(path) = startup_path {
+                    iced::Task::batch([
+                        iced::Task::done(loaded_settings),
+                        iced::Task::done(crate::message::Message::Folder(
+                            crate::message::FolderMessage::Open(path),
+                        )),
+                    ])
+                } else {
+                    iced::Task::done(loaded_settings)
+                }
             };
 
             (state, task)

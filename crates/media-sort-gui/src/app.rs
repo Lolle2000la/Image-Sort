@@ -455,10 +455,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
             if state.search_focused {
                 if key == "Enter" || key == "Esc" || key == "Tab" {
-                    state.search_focused = false;
-                    return iced::advanced::widget::operate(
-                        iced::advanced::widget::operation::focusable::unfocus(),
-                    );
+                    return Task::done(Message::Media(MediaMessage::SearchBlurred));
                 }
                 return Task::none();
             }
@@ -769,6 +766,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
+        #[cfg(target_os = "windows")]
         Message::Settings(SettingsMessage::ToggleIntegrationWithWindows) => {
             state.settings.general.integration_with_windows =
                 !state.settings.general.integration_with_windows;
@@ -961,7 +959,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::Media(MediaMessage::SearchBlurred) => {
             state.search_focused = false;
-            Task::none()
+            iced::advanced::widget::operate(iced::advanced::widget::operation::focusable::unfocus())
         }
         Message::Media(MediaMessage::GridScrolled(offset, viewport_width, content_width)) => {
             state.media_grid_scroll.offset_x = offset.x;

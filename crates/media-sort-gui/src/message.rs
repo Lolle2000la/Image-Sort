@@ -7,7 +7,6 @@ use media_sort_core::settings::store::SettingsStore;
 #[derive(Debug, Clone)]
 pub enum Message {
     Tick(Instant),
-    #[allow(dead_code)]
     SettingsLoaded(Box<Result<SettingsStore, String>>),
     Quit,
     EventOccurred(iced::Event),
@@ -30,7 +29,7 @@ pub enum SettingsMessage {
     ToggleReopenFolder,
     ToggleCheckForUpdates,
     ToggleInstallPrerelease,
-    #[allow(dead_code)]
+    #[cfg(target_os = "windows")]
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
     ToggleAnimateThumbnails,
@@ -71,7 +70,6 @@ pub enum MediaMessage {
     SelectEntry(usize),
     SearchQueryChanged(String),
     SearchFocused,
-    #[allow(dead_code)]
     SearchBlurred,
     TriggerRename,
     RenameInputChanged(String),

@@ -216,7 +216,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             let integration_with_windows_cb =
                 checkbox(state.settings.general.integration_with_windows)
                     .label(state.l10n.tr("settings-windows-context-menu"))
-                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleIntegrationWithWindows))
+                    .on_toggle(toggle_integration_with_windows)
                     .size(16);
 
             settings_col = settings_col.push(
@@ -372,4 +372,9 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     .width(Length::Fixed(440.0))
     .height(Length::Fixed(500.0))
     .into()
+}
+
+#[cfg(target_os = "windows")]
+fn toggle_integration_with_windows(_: bool) -> Message {
+    Message::Settings(SettingsMessage::ToggleIntegrationWithWindows)
 }
