@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        description: Format staged Rust files
+        entry: cargo fmt --all --
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        description: Fix clippy lints on staged Rust files
+        entry: cargo clippy --fix --allow-dirty --allow-staged --all-targets -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
