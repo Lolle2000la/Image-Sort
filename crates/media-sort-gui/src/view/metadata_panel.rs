@@ -6,28 +6,7 @@ use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
     if !state.metadata_panel_expanded {
-        let label = state.l10n.tr("ui-metadata");
-        let vertical_text: String = label.chars()
-            .map(|c| c.to_string())
-            .collect::<Vec<_>>()
-            .join("\n");
-        let toggle_btn = button(
-            column![
-                text("<").size(10).align_x(iced::Alignment::Center),
-                text(vertical_text).size(10).line_height(1.1).align_x(iced::Alignment::Center),
-            ]
-            .align_x(iced::Alignment::Center)
-            .spacing(4)
-        )
-        .on_press(Message::ToggleMetadataPanel)
-        .style(iced::widget::button::secondary)
-        .padding(6);
-
-        return container(toggle_btn)
-            .height(Length::Fill)
-            .center_y(Length::Fill)
-            .padding(4)
-            .into();
+        return iced::widget::Space::new().width(Length::Fixed(0.0)).height(Length::Fixed(0.0)).into();
     }
 
     let header_row = row![

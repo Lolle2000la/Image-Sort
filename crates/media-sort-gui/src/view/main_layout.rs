@@ -70,10 +70,22 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         }
     };
 
-    // Row containing the search bar and Rename button:
+    // Metadata button:
+    let metadata_btn = {
+        let btn = iced::widget::button(text(state.l10n.tr("ui-metadata")).size(13))
+            .on_press(Message::ToggleMetadataPanel);
+        if state.metadata_panel_expanded {
+            btn.style(iced::widget::button::primary)
+        } else {
+            btn.style(iced::widget::button::secondary)
+        }
+    };
+
+    // Row containing the search bar, Rename button, and Metadata button:
     let search_rename_row = row![
         search_bar,
         rename_btn,
+        metadata_btn,
     ]
     .spacing(8)
     .align_y(iced::Alignment::Center);
@@ -107,9 +119,8 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
             container(media_column)
                 .width(Length::Fill)
                 .height(Length::Fill),
-            metadata,
         ]
-        .spacing(4)
+        .spacing(0)
         .width(Length::Fill)
         .height(Length::Fill)
     };
