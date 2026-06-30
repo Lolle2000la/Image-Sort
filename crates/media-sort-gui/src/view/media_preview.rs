@@ -3,6 +3,7 @@ use iced::{Alignment, Color, Element, Length};
 
 use crate::message::Message;
 use crate::state::AppState;
+use crate::widgets::video_player::video_player;
 
 pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
     let Some(index) = state.selected_index else {
@@ -63,106 +64,8 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             }
         }
         media_sort_core::media_type::MediaType::Video => {
-            use iced::widget::{button, column, row, slider, text};
-
-            let video_content: Element<'_, Message> = if state.video_rgba.is_some() {
-                crate::widgets::video_shader::video_shader_view(
-                    state.video_width,
-                    state.video_height,
-                    state.video_rgba.clone(),
-                )
-            } else if let Some(thumb_handle) = state.thumbnail_cache.peek(&entry.path) {
-                iced::widget::image(thumb_handle.clone())
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .into()
-            } else {
-                crate::widgets::video_canvas::video_canvas_view(entry.path.clone(), &state.l10n)
-            };
-
-            let play_pause_btn = button(
-                text(char::from(if state.video_paused {
-                    lucide_icons::Icon::Play
-                } else {
-                    lucide_icons::Icon::Pause
-                }))
-                .font(iced::Font::with_name("lucide"))
-                .size(16),
-            )
-            .padding(8)
-            .on_press(Message::VideoPlayPause);
-
-            let stop_btn = button(
-                text(char::from(lucide_icons::Icon::Square))
-                    .font(iced::Font::with_name("lucide"))
-                    .size(16),
-            )
-            .padding(8)
-            .on_press(Message::VideoStop);
-
-            let format_time = |secs: f64| {
-                if secs.is_nan() || secs.is_infinite() || secs < 0.0 {
-                    return "00:00".to_string();
-                }
-                let total_secs = secs.round() as i32;
-                let minutes = total_secs / 60;
-                let seconds = total_secs % 60;
-                format!("{:02}:{:02}", minutes, seconds)
-            };
-
-            let time_str = format!(
-                "{} / {}",
-                format_time(state.video_position),
-                format_time(state.video_duration)
-            );
-            let time_label = text(time_str).size(13);
-
-            let seek_val = state.video_position;
-            let seek_max = if state.video_duration > 0.0 {
-                state.video_duration
-            } else {
-                1.0
-            };
-            let seekbar = slider(0.0..=seek_max, seek_val, Message::VideoSeek).width(Length::Fill);
-
-            let mute_btn = button(
-                text(char::from(if state.video_muted {
-                    lucide_icons::Icon::VolumeX
-                } else {
-                    lucide_icons::Icon::Volume2
-                }))
-                .font(iced::Font::with_name("lucide"))
-                .size(16),
-            )
-            .padding(8)
-            .on_press(Message::VideoMute);
-
-            let volume_slider = slider(0.0..=100.0, state.video_volume, Message::VideoVolume)
-                .width(Length::Fixed(80.0));
-
-            let controls_row = row![
-                play_pause_btn,
-                stop_btn,
-                time_label,
-                seekbar,
-                mute_btn,
-                volume_slider,
-            ]
-            .spacing(12)
-            .align_y(iced::Alignment::Center)
-            .padding(8);
-
-            column![
-                container(video_content)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .center_x(Length::Fill)
-                    .center_y(Length::Fill),
-                controls_row
-            ]
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
+            let thumb = state.thumbnail_cache.peek(&entry.path).cloned();
+            video_player(entry.path.clone(), state, thumb)
         }
         media_sort_core::media_type::MediaType::Audio => {
             crate::widgets::video_canvas::audio_controls_view()
