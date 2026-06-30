@@ -217,22 +217,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::Media(MediaMessage::DeleteEntry(path)) => {
             let index_to_select = state.selected_index.unwrap_or(0);
-            match media_sort_backend::filesystem::trash_staging::TrashStaging::new() {
-                Ok(staging) => match staging.stage_file(&path) {
-                    Ok(handle) => {
-                        let action = media_sort_core::actions::delete_action::DeleteAction::new(
-                            &path, handle,
-                        );
-                        state.history.push_executed(Box::new(action));
-                        state.scan_media();
-                        return select_and_load_entry(state, index_to_select);
-                    }
-                    Err(e) => {
-                        log::error!("Cannot stage file for deletion: {e}");
-                    }
-                },
+            match media_sort_backend::filesystem::trash::delete_to_trash(&path) {
+                Ok(handle) => {
+                    let action =
+                        media_sort_core::actions::delete_action::DeleteAction::new(&path, handle);
+                    state.history.push_executed(Box::new(action));
+                    state.scan_media();
+                    return select_and_load_entry(state, index_to_select);
+                }
                 Err(e) => {
-                    log::error!("Cannot create trash staging: {e}");
+                    log::error!("Cannot delete to trash: {e}");
                 }
             }
             Task::none()

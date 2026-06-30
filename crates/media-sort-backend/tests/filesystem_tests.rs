@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use media_sort_backend::filesystem::scanner::scan_media_files;
-use media_sort_backend::filesystem::trash_staging::TrashStaging;
+use media_sort_backend::filesystem::trash::delete_to_trash;
 use media_sort_backend::filesystem::watcher::FileSystemEvent;
 
 static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -56,13 +56,6 @@ fn copy_fixture(fixture_name: &str, dest_dir: &Path) -> PathBuf {
     let dest = dest_dir.join(fixture_name);
     fs::copy(&src, &dest).expect("failed to copy fixture");
     dest
-}
-
-fn new_trash_staging() -> (TempDir, TrashStaging) {
-    let tmp = TempDir::new("trash");
-    let staging =
-        TrashStaging::new_in(tmp.path().to_path_buf()).expect("failed to create TrashStaging");
-    (tmp, staging)
 }
 
 #[test]
@@ -134,161 +127,14 @@ fn test_scan_with_fixtures() {
     assert_eq!(results.len(), 5, "expected all 5 fixture files to be found");
 }
 
-fn config_media_sort_dir() -> PathBuf {
-    dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("."))
-        .join("media-sort")
-}
+// ============================================================
+// Trash tests
+// ============================================================
 
 #[test]
-fn test_stage_and_restore() {
-    let base = config_media_sort_dir();
-    let tmp = TempDir::new_in(&base, "stage_restore");
-    let file = copy_fixture("test_image.jpg", tmp.path());
-    let original_content = fs::read(&file).unwrap();
-
-    let (_staging_tmp, staging) = new_trash_staging();
-
-    let mut handle = staging.stage_file(&file).expect("failed to stage file");
-    assert!(!file.exists(), "original file should be gone after staging");
-
-    handle.restore().expect("failed to restore file");
-    assert!(file.exists(), "original file should be back after restore");
-    let restored_content = fs::read(&file).unwrap();
-    assert_eq!(
-        original_content, restored_content,
-        "restored file content should match original"
-    );
-}
-
-#[test]
-fn test_double_stage() {
-    let base = config_media_sort_dir();
-    let tmp = TempDir::new_in(&base, "double_stage");
-    let file1 = copy_fixture("test_image.jpg", tmp.path());
-    let file2 = copy_fixture("test_image.png", tmp.path());
-
-    let (_staging_tmp, staging) = new_trash_staging();
-
-    let mut handle1 = staging
-        .stage_file(&file1)
-        .expect("failed to stage first file");
-    let mut handle2 = staging
-        .stage_file(&file2)
-        .expect("failed to stage second file");
-
-    assert!(!file1.exists(), "first file should be staged");
-    assert!(!file2.exists(), "second file should be staged");
-
-    handle1.restore().expect("failed to restore first file");
-    handle2.restore().expect("failed to restore second file");
-
-    assert!(file1.exists(), "first file should be restored");
-    assert!(file2.exists(), "second file should be restored");
-}
-
-#[test]
-#[ignore = "calls trash::delete() which interacts with the system trash daemon (KDE)"]
-fn test_stage_and_flush() {
-    let base = config_media_sort_dir();
-    let tmp = TempDir::new_in(&base, "stage_flush");
-    let file = copy_fixture("test_image.jpg", tmp.path());
-
-    let (_staging_tmp, staging) = new_trash_staging();
-
-    let mut handle = staging.stage_file(&file).expect("failed to stage file");
-    assert!(!file.exists(), "original should be gone");
-
-    handle
-        .flush_to_native_trash()
-        .expect("failed to flush to native trash");
-
-    match handle.restore() {
-        Err(e) => assert!(e.to_string().contains("already flushed")),
-        Ok(()) => panic!("restore after flush should fail"),
-    }
-}
-
-#[test]
-fn test_orphan_reconciliation_no_trash() {
-    let tmp = TempDir::new("orphan");
-    let staging_root = tmp.path().to_path_buf();
-
-    fs::create_dir_all(&staging_root).unwrap();
-
-    let orphan_dir1 = staging_root.join("0000000000000001");
-    fs::create_dir_all(&orphan_dir1).unwrap();
-    fs::write(orphan_dir1.join("orphan.txt"), b"leftover").unwrap();
-
-    let orphan_dir2 = staging_root.join("0000000000000002");
-    fs::create_dir_all(&orphan_dir2).unwrap();
-    fs::write(orphan_dir2.join("orphan2.txt"), b"also leftover").unwrap();
-
-    TrashStaging::reconcile_orphaned_trash(&staging_root);
-
-    assert!(!orphan_dir1.exists(), "orphan dir 1 should be cleaned up");
-    assert!(!orphan_dir2.exists(), "orphan dir 2 should be cleaned up");
-}
-
-#[test]
-#[ignore = "calls flush_all_to_native() which uses trash::delete()"]
-fn test_flush_all() {
-    let base = config_media_sort_dir();
-    let tmp = TempDir::new_in(&base, "flush_all");
-    let file1 = copy_fixture("test_image.jpg", tmp.path());
-    let file2 = copy_fixture("test_image.png", tmp.path());
-
-    let (_staging_tmp, staging) = new_trash_staging();
-
-    let mut handle1 = staging.stage_file(&file1).expect("failed to stage file1");
-    let mut handle2 = staging.stage_file(&file2).expect("failed to stage file2");
-
-    staging.flush_all_to_native();
-
-    assert!(
-        handle1.restore().is_err(),
-        "handle1 should fail after flush_all"
-    );
-    assert!(
-        handle2.restore().is_err(),
-        "handle2 should fail after flush_all"
-    );
-}
-
-#[test]
-#[ignore = "Drop calls flush_to_native_trash() which uses trash::delete()"]
-fn test_drop_flushes() {
-    let base = config_media_sort_dir();
-    let tmp = TempDir::new_in(&base, "drop_flushes");
-    let file = copy_fixture("test_image.jpg", tmp.path());
-
-    let (staging_tmp, staging) = new_trash_staging();
-    let staging_root = staging_tmp.path().to_path_buf();
-
-    let handle = staging.stage_file(&file).expect("failed to stage file");
-
-    let staging_path = {
-        let staged_entries: Vec<_> = fs::read_dir(&staging_root)
-            .unwrap()
-            .filter_map(|e| e.ok())
-            .collect();
-        assert!(
-            !staged_entries.is_empty(),
-            "staging dir should have entries"
-        );
-        staged_entries[0].path()
-    };
-    assert!(
-        staging_path.exists(),
-        "staged copy should exist before drop"
-    );
-
-    drop(handle);
-
-    assert!(
-        !staging_path.exists(),
-        "staged copy should be gone after drop"
-    );
+fn test_delete_to_trash_no_filename() {
+    let result = delete_to_trash(std::path::Path::new("/"));
+    assert!(result.is_err(), "should fail for path with no file name");
 }
 
 // ============================================================
@@ -337,13 +183,6 @@ fn test_file_system_event_renamed() {
         }
         _ => panic!("Expected Renamed variant"),
     }
-}
-
-#[test]
-fn test_trash_stage_no_file_name() {
-    let (_tmp, staging) = new_trash_staging();
-    let result = staging.stage_file(std::path::Path::new("/"));
-    assert!(result.is_err());
 }
 
 #[test]

@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use id3::TagLike;
 use image::GenericImageView;
 use media_sort_backend::filesystem::scanner;
-use media_sort_backend::filesystem::trash_staging::TrashStaging;
 use media_sort_backend::media::image_decoder;
 use media_sort_backend::media::thumbnail;
 use media_sort_backend::metadata::audio_meta::extract_audio_metadata;
@@ -211,10 +210,9 @@ fn test_thumbnail_dimensions_nonexistent() {
 
 #[test]
 fn test_trash_stage_nonexistent_file() {
-    let tmp = std::env::temp_dir().join(format!("trash_{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&tmp);
-    let staging = TrashStaging::new_in(tmp).unwrap();
-    let result = staging.stage_file(Path::new("/nonexistent/file_xyz.txt"));
+    let result = media_sort_backend::filesystem::trash::delete_to_trash(Path::new(
+        "/nonexistent/file_xyz.txt",
+    ));
     assert!(result.is_err());
 }
 
