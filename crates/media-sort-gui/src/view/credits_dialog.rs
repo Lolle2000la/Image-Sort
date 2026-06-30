@@ -10,7 +10,6 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let libraries = vec![
         ("ash", "https://github.com/ash-rs/ash"),
-        ("chrono", "https://github.com/chronotope/chrono"),
         ("crossbeam", "https://github.com/crossbeam-rs/crossbeam"),
         ("dirs", "https://github.com/dirs-dev/dirs-rs"),
         ("env_logger", "https://github.com/rust-cli/env_logger"),
