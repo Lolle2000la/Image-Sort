@@ -20,6 +20,22 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
         ("Notify", "https://github.com/notify-rs/notify"),
         ("RFD (Rust File Dialogs)", "https://github.com/PolyhedralDev/rfd"),
         ("Rodio", "https://github.com/RustAudio/rodio"),
+        ("Serde", "https://github.com/serde-rs/serde"),
+        ("thiserror", "https://github.com/dtolnay/thiserror"),
+        ("tracing", "https://github.com/tokio-rs/tracing"),
+        ("wgpu", "https://github.com/gfx-rs/wgpu"),
+        ("winit", "https://github.com/rust-windowing/winit"),
+        ("parking_lot", "https://github.com/Amanieu/parking_lot"),
+        ("crossbeam", "https://github.com/crossbeam-rs/crossbeam"),
+        ("walkdir", "https://github.com/BurntSushi/walkdir"),
+        ("id3", "https://github.com/polyfloyd/rust-id3"),
+        ("metaflac", "https://github.com/tazziden/metaflac-rs"),
+        ("mp4ameta", "https://github.com/sgr4/mp4ameta"),
+        ("ash", "https://github.com/ash-rs/ash"),
+        ("lru", "https://github.com/jeromefroe/lru-rs"),
+        ("log", "https://github.com/rust-lang/log"),
+        ("dirs", "https://github.com/dirs-dev/dirs-rs"),
+        ("strum", "https://github.com/Peternator7/strum"),
     ];
 
     let mut rows = Vec::with_capacity(libraries.len());
