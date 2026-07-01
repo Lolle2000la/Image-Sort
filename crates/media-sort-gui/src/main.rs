@@ -8,8 +8,67 @@ mod widgets;
 
 use iced::window;
 use media_sort_core::settings::store::SettingsStore;
+use serde::Deserialize;
+
+use crate::message::Message;
+use velopack::sources::HttpSource;
+use velopack::{UpdateCheck, UpdateManager};
+
+const GITHUB_REPO_ID: u64 = 119281525;
+
+#[derive(Deserialize)]
+struct GithubRepoMetadata {
+    html_url: String,
+}
+
+async fn fetch_canonical_release_url() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    let client = reqwest::Client::builder()
+        .user_agent("media-sort-gui-updater")
+        .build()?;
+
+    let url = format!("https://api.github.com/repositories/{}", GITHUB_REPO_ID);
+    let metadata: GithubRepoMetadata = client
+        .get(&url)
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    Ok(format!("{}/releases/latest/download/", metadata.html_url))
+}
+
+pub fn run_background_update() -> iced::Task<Message> {
+    iced::Task::perform(
+        async {
+            let target_url = fetch_canonical_release_url()
+                .await
+                .map_err(|e| e.to_string())?;
+
+            tokio::task::spawn_blocking(move || {
+                let source = HttpSource::new(&target_url);
+                let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
+
+                if let UpdateCheck::UpdateAvailable(updates) =
+                    um.check_for_updates().map_err(|e| e.to_string())?
+                {
+                    um.download_updates(&updates, None)
+                        .map_err(|e| e.to_string())?;
+                    um.apply_updates_and_restart(&*updates)
+                        .map_err(|e| e.to_string())?;
+                }
+                Ok(())
+            })
+            .await
+            .map_err(|e| e.to_string())?
+        },
+        crate::message::Message::UpdateCheckFinished,
+    )
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    velopack::VelopackApp::build().run();
+
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
@@ -57,22 +116,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 startup_path = Some(pic_dir);
             }
 
-            let task = {
-                let loaded_settings =
-                    crate::message::Message::SettingsLoaded(Box::new(Ok(settings.clone())));
-                if let Some(path) = startup_path {
-                    iced::Task::batch([
-                        iced::Task::done(loaded_settings),
-                        iced::Task::done(crate::message::Message::Folder(
-                            crate::message::FolderMessage::Open(path),
-                        )),
-                    ])
-                } else {
-                    iced::Task::done(loaded_settings)
-                }
-            };
+            let mut tasks = vec![];
+            tasks.push(iced::Task::done(crate::message::Message::SettingsLoaded(
+                Box::new(Ok(settings.clone())),
+            )));
 
-            (state, task)
+            if let Some(path) = startup_path {
+                tasks.push(iced::Task::done(crate::message::Message::Folder(
+                    crate::message::FolderMessage::Open(path),
+                )));
+            }
+
+            tasks.push(run_background_update());
+
+            (state, iced::Task::batch(tasks))
         },
         app::update,
         app::view,

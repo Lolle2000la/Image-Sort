@@ -1,0 +1,94 @@
+name: Automated Release Distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            exe_name: media-sort-gui
+          - os: windows-latest
+            platform: win
+            exe_name: media-sort-gui.exe
+          - os: macos-latest
+            platform: osx
+            exe_name: media-sort-gui
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Environment
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup .NET SDK (For vpk CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install System Dependencies (Linux Only)
+        if: matrix.os == 'ubuntu-latest'
+        run:           sudo apt-get update && sudo apt-get install -y libmpv-dev squashfs-tools
+
+      - name: Install System Dependencies (macOS Only)
+        if: matrix.os == 'macos-latest'
+        run: brew install mpv macdylibbundler
+
+      - name: Build Standalone Binary
+        run: cargo build --release
+
+      - name: Bundle libmpv (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          7z e mpv-dev.7z mpv-1.dll -otarget/release/ -y
+
+      - name: Install and Run Velopack Packager
+        shell: bash
+        run: |
+          dotnet tool install -g vpk
+          export PATH="$PATH:$HOME/.dotnet/tools"
+
+          RAW_VERSION="${{ github.ref_name }}"
+          CLEAN_VERSION="${RAW_VERSION#v}"
+
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }}
+
+          # Isolate binaries into a clean deployment folder to prevent packaging compiler artifacts
+          mkdir dist
+
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            mkdir -p "dist/Media Sort.app/Contents/MacOS"
+            mkdir -p "dist/Media Sort.app/Contents/Resources"
+            cp target/release/media-sort-gui "dist/Media Sort.app/Contents/MacOS/"
+            cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
+            cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
+
+            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
+
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }}
+          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp target/release/media-sort-gui.exe dist/
+            cp target/release/mpv-1.dll dist/
+            cp packaging/windows/icon.ico dist/
+
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }}
+          else
+            cp target/release/media-sort-gui dist/
+            cp "Image Sort.svg" dist/
+
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }}
+          fi
+
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --token ${{ secrets.GITHUB_TOKEN }}
