@@ -77,13 +77,13 @@ jobs:
 
             dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
 
-            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --channel ${{ matrix.platform }}
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp target/release/media-sort-gui.exe dist/
             cp target/release/mpv-1.dll dist/
             cp packaging/windows/icon.ico dist/
 
-            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "icon.ico" --channel ${{ matrix.platform }}
           else
             cp target/release/media-sort-gui dist/
             cp "Image Sort.svg" dist/
