@@ -9,7 +9,6 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
     let leading_text = text(state.l10n.tr("ui-credits-leading")).size(13);
 
     let libraries = vec![
-        ("crossbeam", "https://github.com/crossbeam-rs/crossbeam"),
         ("dirs", "https://github.com/dirs-dev/dirs-rs"),
         ("Fluent", "https://github.com/projectfluent/fluent-rs"),
         ("Iced", "https://github.com/iced-rs/iced"),
@@ -22,7 +21,6 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
         ("mp4ameta", "https://github.com/Saecki/rust-mp4ameta"),
         ("Notify", "https://github.com/notify-rs/notify"),
         ("once_cell", "https://github.com/matklad/once_cell"),
-        ("parking_lot", "https://github.com/Amanieu/parking_lot"),
         (
             "RFD (Rust File Dialogs)",
             "https://github.com/PolyMeilex/rfd",
