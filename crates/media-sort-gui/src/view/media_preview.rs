@@ -3,7 +3,6 @@ use iced::{Alignment, Color, Element, Length};
 
 use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
-use crate::widgets::stack::Stack;
 use crate::widgets::video_player::video_player;
 
 pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
@@ -78,15 +77,19 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .map(|m| format_file_size(m.len()))
         .unwrap_or_else(|_| "???".to_string());
 
+    let display_name = truncate_filename_middle(&entry.file_name, 80);
+
     let file_info = row![
-        text(&entry.file_name).size(11),
+        text(display_name)
+            .size(11)
+            .wrapping(iced::widget::text::Wrapping::None),
         space().width(Length::Fill),
         text(file_size_str).size(11),
     ]
     .spacing(4)
-    .padding([2, 6]);
+    .padding([4, 6]);
 
-    let file_info_overlay = container(file_info)
+    let file_info_bar = container(file_info)
         .width(Length::Fill)
         .style(move |theme: &iced::Theme| {
             let palette = theme.palette();
@@ -101,20 +104,14 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         });
 
     container(
-        Stack::new()
-            .push(
-                container(preview_element)
-                    .width(Length::Fill)
-                    .height(Length::Fill),
-            )
-            .push(
-                container(file_info_overlay)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .align_y(iced::alignment::Vertical::Bottom),
-            )
-            .width(Length::Fill)
-            .height(Length::Fill),
+        column![
+            container(preview_element)
+                .width(Length::Fill)
+                .height(Length::Fill),
+            file_info_bar,
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill),
     )
     .width(Length::Fill)
     .height(Length::Fill)
@@ -152,5 +149,33 @@ fn format_file_size(size: u64) -> String {
         format!("{} {}", size as u64, UNITS[unit_idx])
     } else {
         format!("{:.1} {}", size, UNITS[unit_idx])
+    }
+}
+
+fn truncate_filename_middle(name: &str, max_chars: usize) -> String {
+    if name.len() <= max_chars {
+        return name.to_string();
+    }
+
+    let (stem, ext) = match name.rfind('.') {
+        Some(dot_idx) => (&name[..dot_idx], &name[dot_idx..]),
+        None => (name, ""),
+    };
+
+    let ext_len = ext.len();
+    let keep = max_chars.saturating_sub(ext_len + 3);
+
+    if keep <= 4 {
+        let front = max_chars.saturating_sub(ext_len + 3);
+        format!("{}...{}", &name[..front.min(name.len())], ext)
+    } else {
+        let front = keep / 2;
+        let back = keep - front;
+        format!(
+            "{}...{}{}",
+            &stem[..front.min(stem.len())],
+            &stem[stem.len().saturating_sub(back)..],
+            ext
+        )
     }
 }
