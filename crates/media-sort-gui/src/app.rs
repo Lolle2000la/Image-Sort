@@ -1102,6 +1102,21 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         tasks.push(scroll_to_selected_entry(state, index));
 
+        state.selected_audio_cover = None;
+        if media_type == media_sort_core::media_type::MediaType::Audio {
+            if let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path) {
+                if let Ok(img) = image::load_from_memory(&bytes) {
+                    let rgba = img.to_rgba8();
+                    let (w, h) = rgba.dimensions();
+                    state.selected_audio_cover = Some(iced::widget::image::Handle::from_rgba(
+                        w,
+                        h,
+                        rgba.into_raw(),
+                    ));
+                }
+            }
+        }
+
         if let Some(handle) = state.image_cache.get(&path) {
             state.selected_image = Some((path, handle.clone()));
         } else {

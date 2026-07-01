@@ -25,7 +25,7 @@ pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError
     Ok(img.dimensions())
 }
 
-fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
+pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
     let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
     match ext.to_lowercase().as_str() {
         "mp3" | "aiff" | "wav" => {

@@ -14,7 +14,9 @@ pub fn audio_controls_view(
 ) -> Element<'_, Message> {
     let playing = state.audio_playing && !state.audio_player.as_ref().is_none_or(|p| p.is_paused());
 
-    let audio_content: Element<'_, Message> = if let Some(handle) = thumb {
+    let cover = state.selected_audio_cover.clone().or(thumb);
+
+    let audio_content: Element<'_, Message> = if let Some(handle) = cover {
         iced::widget::image(handle)
             .width(Length::Fill)
             .height(Length::Fill)

@@ -40,6 +40,8 @@ pub struct AppState {
     pub audio_volume: f64,
     pub audio_muted: bool,
 
+    pub selected_audio_cover: Option<iced::widget::image::Handle>,
+
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
@@ -148,6 +150,7 @@ impl AppState {
             audio_duration: 0.0,
             audio_volume: 100.0,
             audio_muted: false,
+            selected_audio_cover: None,
             thumbnail_cache: LruCache::new(cache_size),
             image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
             selected_folder: None,
