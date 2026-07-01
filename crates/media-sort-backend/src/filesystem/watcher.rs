@@ -14,7 +14,7 @@ pub enum FileSystemEvent {
 }
 
 pub struct FileWatcherHandle {
-    _debouncer: notify_debouncer_mini::Debouncer<notify::INotifyWatcher>,
+    _debouncer: notify_debouncer_mini::Debouncer<notify::RecommendedWatcher>,
 }
 
 pub fn watch_directory(path: &Path) -> (FileWatcherHandle, mpsc::Receiver<FileSystemEvent>) {

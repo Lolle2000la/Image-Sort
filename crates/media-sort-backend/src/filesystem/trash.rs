@@ -25,21 +25,39 @@ impl TrashRestoreHandle for NativeTrashRestore {
             return Err(ActionError::RestorationFailed("already flushed".into()));
         }
 
-        let items = trash::os_limited::list()
-            .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+        #[cfg(any(
+            target_os = "windows",
+            all(
+                unix,
+                not(target_os = "macos"),
+                not(target_os = "ios"),
+                not(target_os = "android")
+            )
+        ))]
+        {
+            let items = trash::os_limited::list()
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
 
-        let item = items
-            .into_iter()
-            .find(|i| i.original_path() == self.original_path)
-            .ok_or_else(|| {
-                ActionError::RestorationFailed("item not found in system trash".into())
-            })?;
+            let item = items
+                .into_iter()
+                .find(|i| i.original_path() == self.original_path)
+                .ok_or_else(|| {
+                    ActionError::RestorationFailed("item not found in system trash".into())
+                })?;
 
-        trash::os_limited::restore_all([item])
-            .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+            trash::os_limited::restore_all([item])
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
 
-        self.flushed = true;
-        Ok(())
+            self.flushed = true;
+            Ok(())
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            Err(ActionError::RestorationFailed(
+                "Programmatic trash restoration is not supported on macOS. Please restore the item manually from Finder.".into(),
+            ))
+        }
     }
 
     fn flush_to_native_trash(&mut self) -> Result<(), ActionError> {
