@@ -83,7 +83,7 @@ jobs:
             cp target/release/mpv-1.dll dist/
             cp packaging/windows/icon.ico dist/
 
-            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "icon.ico" --channel ${{ matrix.platform }}
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }}
           else
             cp target/release/media-sort-gui dist/
             cp "Image Sort.svg" dist/
