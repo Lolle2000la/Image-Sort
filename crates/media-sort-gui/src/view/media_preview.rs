@@ -3,6 +3,7 @@ use iced::{Alignment, Color, Element, Length};
 
 use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
+use crate::widgets::stack::Stack;
 use crate::widgets::video_player::video_player;
 
 pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
@@ -100,14 +101,20 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         });
 
     container(
-        column![
-            container(preview_element)
-                .width(Length::Fill)
-                .height(Length::Fill),
-            file_info_overlay,
-        ]
-        .width(Length::Fill)
-        .height(Length::Fill),
+        Stack::new()
+            .push(
+                container(preview_element)
+                    .width(Length::Fill)
+                    .height(Length::Fill),
+            )
+            .push(
+                container(file_info_overlay)
+                    .width(Length::Fill)
+                    .height(Length::Fill)
+                    .align_y(iced::alignment::Vertical::Bottom),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill),
     )
     .width(Length::Fill)
     .height(Length::Fill)
