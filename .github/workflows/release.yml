@@ -61,7 +61,10 @@ jobs:
           mkdir -p "target/release/Media Sort.app/Contents/MacOS"
           mv target/release/media-sort-gui "target/release/Media Sort.app/Contents/MacOS/"
 
-          # 2. Trace, clone, and deeply link dylibs via dylibbundler natively
+          # 2. Copy static plist file from repository
+          cp packaging/macos/Info.plist "target/release/Media Sort.app/Contents/"
+
+          # 3. Trace, clone, and deeply link dylibs via dylibbundler natively
           dylibbundler -od -b -x "target/release/Media Sort.app/Contents/MacOS/media-sort-gui" -d "target/release/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
 
       - name: Install and Run Velopack Packager
