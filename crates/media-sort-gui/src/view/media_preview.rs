@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, text};
+use iced::widget::{button, column, container, row, space, text};
 use iced::{Alignment, Color, Element, Length};
 
 use crate::message::{MediaMessage, Message};
@@ -73,27 +73,77 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         }
     };
 
-    container(preview_element)
+    let file_size_str = std::fs::metadata(&entry.path)
+        .map(|m| format_file_size(m.len()))
+        .unwrap_or_else(|_| "???".to_string());
+
+    let file_info = row![
+        text(&entry.file_name).size(11),
+        space().width(Length::Fill),
+        text(file_size_str).size(11),
+    ]
+    .spacing(4)
+    .padding([2, 6]);
+
+    let file_info_overlay = container(file_info)
         .width(Length::Fill)
-        .height(Length::Fill)
-        .center_x(Length::Fill)
-        .center_y(Length::Fill)
-        .padding(4)
-        .style(|theme: &iced::Theme| {
+        .style(move |theme: &iced::Theme| {
             let palette = theme.palette();
-            let border_color = Color {
-                a: 0.2,
-                ..palette.text
-            };
             iced::widget::container::Style {
-                background: Some(iced::Background::Color(palette.background)),
-                border: iced::Border {
-                    radius: 8.0.into(),
-                    width: 1.0,
-                    color: border_color,
-                },
+                background: Some(iced::Background::Color(Color {
+                    a: 0.35,
+                    ..palette.background
+                })),
+                text_color: Some(palette.text),
                 ..iced::widget::container::Style::default()
             }
-        })
-        .into()
+        });
+
+    container(
+        column![
+            container(preview_element)
+                .width(Length::Fill)
+                .height(Length::Fill),
+            file_info_overlay,
+        ]
+        .width(Length::Fill)
+        .height(Length::Fill),
+    )
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .center_x(Length::Fill)
+    .center_y(Length::Fill)
+    .padding(4)
+    .style(|theme: &iced::Theme| {
+        let palette = theme.palette();
+        let border_color = Color {
+            a: 0.2,
+            ..palette.text
+        };
+        iced::widget::container::Style {
+            background: Some(iced::Background::Color(palette.background)),
+            border: iced::Border {
+                radius: 8.0.into(),
+                width: 1.0,
+                color: border_color,
+            },
+            ..iced::widget::container::Style::default()
+        }
+    })
+    .into()
+}
+
+fn format_file_size(size: u64) -> String {
+    const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
+    let mut size = size as f64;
+    let mut unit_idx = 0;
+    while size >= 1024.0 && unit_idx < UNITS.len() - 1 {
+        size /= 1024.0;
+        unit_idx += 1;
+    }
+    if unit_idx == 0 {
+        format!("{} {}", size as u64, UNITS[unit_idx])
+    } else {
+        format!("{:.1} {}", size, UNITS[unit_idx])
+    }
 }
