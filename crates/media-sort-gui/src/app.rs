@@ -78,10 +78,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Video(VideoMessage::Seek(pos)) => {
-            if let Some(ref sender) = state.video_sender {
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos),
-                );
+            state.video_seek_position = Some(pos);
+            let should_seek = state
+                .video_last_seek_time
+                .is_none_or(|t| t.elapsed() >= std::time::Duration::from_millis(333));
+            if should_seek {
+                if let Some(ref sender) = state.video_sender {
+                    let _ = sender.try_send(
+                        media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos),
+                    );
+                }
+                state.video_last_seek_time = Some(std::time::Instant::now());
             }
             Task::none()
         }
@@ -1057,6 +1064,8 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_position = 0.0;
             state.video_duration = 0.0;
             state.video_ready = false;
+            state.video_seek_position = None;
+            state.video_last_seek_time = None;
             if let Some(ref mut ap) = state.audio_player {
                 ap.stop();
             }

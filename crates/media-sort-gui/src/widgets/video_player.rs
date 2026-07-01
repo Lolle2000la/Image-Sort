@@ -27,8 +27,10 @@ pub fn video_player<'a>(
         placeholder(path, &state.l10n)
     };
 
+    let display_position = state.video_seek_position.unwrap_or(state.video_position);
+
     let controls_row = media_controls::media_controls_view(
-        state.video_position,
+        display_position,
         state.video_duration,
         state.video_volume,
         state.video_muted,
