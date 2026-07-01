@@ -42,7 +42,7 @@ jobs:
 
       - name: Install System Dependencies (macOS Only)
         if: matrix.os == 'macos-latest'
-        run: brew install mpv macdylibbundler
+        run: brew install mpv dylibbundler
 
       - name: Build Standalone Binary
         run: cargo build --release --features velopack
