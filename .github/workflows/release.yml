@@ -45,6 +45,8 @@ jobs:
         run: brew install mpv dylibbundler
 
       - name: Build Standalone Binary
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
         run: cargo build --release --features velopack
 
       - name: Bundle libmpv (Windows)
