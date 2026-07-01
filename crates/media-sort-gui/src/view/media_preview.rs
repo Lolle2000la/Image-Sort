@@ -77,7 +77,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .map(|m| format_file_size(m.len()))
         .unwrap_or_else(|_| "???".to_string());
 
-    let display_name = truncate_filename_middle(&entry.file_name, 60);
+    let display_name = truncate_filename_middle(&entry.file_name, 40);
 
     let file_info = row![
         container(
