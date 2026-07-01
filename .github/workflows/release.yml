@@ -87,9 +87,8 @@ jobs:
           else
             cp target/release/media-sort-gui dist/
             cp "Image Sort.svg" dist/
-            printf '[Desktop Entry]\nName=Media Sort\nComment=Sort your media files fast\nExec=media-sort-gui\nIcon=Image Sort\nType=Application\nCategories=Graphics;AudioVideo;Utility;\n' > dist/ImageSort.desktop
 
-            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }}
           fi
 
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --token ${{ secrets.GITHUB_TOKEN }}
