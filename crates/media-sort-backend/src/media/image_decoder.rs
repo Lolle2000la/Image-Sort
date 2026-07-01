@@ -1,6 +1,33 @@
 use std::path::Path;
 
+use image::AnimationDecoder;
 use image::GenericImageView;
+
+pub fn is_animated_gif(path: &Path) -> Option<bool> {
+    if path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase() != "gif")
+        .unwrap_or(true)
+    {
+        return None;
+    }
+
+    let file = match std::fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return None,
+    };
+
+    let reader = std::io::BufReader::new(file);
+    let decoder = match image::codecs::gif::GifDecoder::new(reader) {
+        Ok(d) => d,
+        Err(_) => return None,
+    };
+
+    let mut frames = decoder.into_frames();
+    let animated = frames.next().is_some() && frames.next().is_some();
+    Some(animated)
+}
 
 pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
     let img = image::open(path)?;

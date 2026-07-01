@@ -7,7 +7,7 @@ use std::num::NonZeroUsize;
 
 use media_sort_backend::media::audio_decoder::AudioPlayer;
 use media_sort_core::history::History;
-use media_sort_core::media_type::MediaType;
+use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
@@ -214,8 +214,7 @@ impl AppState {
         if let Some(ref folder) = self.current_folder {
             let paths = media_sort_backend::filesystem::scanner::scan_media_files(folder);
             for p in paths {
-                let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
-                let media_type = detect_media_type(ext);
+                let media_type = detect_media_type(&p);
                 let file_name = p
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
@@ -582,61 +581,83 @@ fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bool> {
     None
 }
 
-pub(crate) fn detect_media_type(ext: &str) -> MediaType {
-    let ext = ext.to_lowercase();
-    for ty in [MediaType::Image, MediaType::Video, MediaType::Audio] {
-        if ty.extensions().contains(&ext.as_str()) {
-            return ty;
-        }
+pub(crate) fn detect_media_type(path: &std::path::Path) -> MediaType {
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let media_type = [MediaType::Image, MediaType::Video, MediaType::Audio]
+        .into_iter()
+        .find(|ty| ty.extensions().contains(&ext.as_str()))
+        .or_else(|| MediaRegistry::determine_type(&ext))
+        .unwrap_or(MediaType::Image);
+    if media_type == MediaType::Video
+        && media_sort_backend::media::image_decoder::is_animated_gif(path) == Some(false)
+    {
+        return MediaType::Image;
     }
-    MediaType::Image
+    media_type
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use media_sort_core::media_type::MediaType;
     use media_sort_core::models::MediaEntry;
     use media_sort_core::settings::store::SettingsStore;
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn test_detect_media_type_image() {
-        assert_eq!(detect_media_type("jpg"), MediaType::Image);
-        assert_eq!(detect_media_type("png"), MediaType::Image);
-        assert_eq!(detect_media_type("jpeg"), MediaType::Image);
-        assert_eq!(detect_media_type("bmp"), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.jpg")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.png")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.jpeg")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.bmp")), MediaType::Image);
     }
 
     #[test]
     fn test_detect_media_type_video() {
-        assert_eq!(detect_media_type("mp4"), MediaType::Video);
-        assert_eq!(detect_media_type("mkv"), MediaType::Video);
-        assert_eq!(detect_media_type("webm"), MediaType::Video);
-        assert_eq!(detect_media_type("mov"), MediaType::Video);
-        assert_eq!(detect_media_type("gif"), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.mp4")), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.mkv")), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.webm")), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.mov")), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.gif")), MediaType::Video);
     }
 
     #[test]
     fn test_detect_media_type_audio() {
-        assert_eq!(detect_media_type("mp3"), MediaType::Audio);
-        assert_eq!(detect_media_type("flac"), MediaType::Audio);
-        assert_eq!(detect_media_type("wav"), MediaType::Audio);
-        assert_eq!(detect_media_type("ogg"), MediaType::Audio);
+        assert_eq!(detect_media_type(Path::new("test.mp3")), MediaType::Audio);
+        assert_eq!(detect_media_type(Path::new("test.flac")), MediaType::Audio);
+        assert_eq!(detect_media_type(Path::new("test.wav")), MediaType::Audio);
+        assert_eq!(detect_media_type(Path::new("test.ogg")), MediaType::Audio);
     }
 
     #[test]
     fn test_detect_media_type_unknown_fallback() {
-        assert_eq!(detect_media_type("xyz"), MediaType::Image);
-        assert_eq!(detect_media_type(""), MediaType::Image);
-        assert_eq!(detect_media_type("doc"), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.xyz")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.doc")), MediaType::Image);
     }
 
     #[test]
     fn test_detect_media_type_case_insensitive() {
-        assert_eq!(detect_media_type("JPG"), MediaType::Image);
-        assert_eq!(detect_media_type("MP3"), MediaType::Audio);
-        assert_eq!(detect_media_type("Mp4"), MediaType::Video);
+        assert_eq!(detect_media_type(Path::new("test.JPG")), MediaType::Image);
+        assert_eq!(detect_media_type(Path::new("test.MP3")), MediaType::Audio);
+        assert_eq!(detect_media_type(Path::new("test.Mp4")), MediaType::Video);
+    }
+
+    #[test]
+    fn test_detect_media_type_static_gif() {
+        let dir = std::env::temp_dir().join("mediasort_test_static_gif");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("static.gif");
+
+        let img = image::RgbaImage::from_pixel(1, 1, image::Rgba([0, 0, 0, 255]));
+        img.save(&path).unwrap();
+
+        assert_eq!(detect_media_type(&path), MediaType::Image);
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

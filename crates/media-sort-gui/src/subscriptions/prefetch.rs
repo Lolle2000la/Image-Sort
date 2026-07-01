@@ -1,19 +1,14 @@
-use media_sort_core::media_type::{MediaRegistry, MediaType};
+use media_sort_core::media_type::MediaType;
 use once_cell::sync::Lazy;
 use std::path::PathBuf;
+
+use crate::state::detect_media_type;
 
 static MPV_MUTEX: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 
 pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
     tracing::info!("generate_thumbnail called for {:?}", path);
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-    let media_type = match MediaRegistry::determine_type(ext) {
-        Some(t) => t,
-        None => {
-            tracing::info!("generate_thumbnail: {:?} has no handler, skipping", path);
-            return Err(());
-        }
-    };
+    let media_type = detect_media_type(path);
 
     if media_type == MediaType::Audio {
         if let Ok(bytes) = media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
