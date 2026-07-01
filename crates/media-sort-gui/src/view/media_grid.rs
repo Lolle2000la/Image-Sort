@@ -62,6 +62,12 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                     .width(Length::Fill)
                     .height(Length::Fill)
                     .into()
+            } else if entry.media_type == media_sort_core::media_type::MediaType::Audio {
+                text(char::from(lucide_icons::Icon::Music))
+                    .font(iced::Font::with_name("lucide"))
+                    .size(24)
+                    .color(Color::from_rgb(0.5, 0.5, 0.6))
+                    .into()
             } else {
                 text("[IMG]").size(12).into()
             };

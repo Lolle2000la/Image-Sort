@@ -71,7 +71,8 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             video_player(entry.path.clone(), state, thumb)
         }
         media_sort_core::media_type::MediaType::Audio => {
-            crate::widgets::video_canvas::audio_controls_view(state)
+            let thumb = state.thumbnail_cache.peek(&entry.path).cloned();
+            crate::widgets::video_canvas::audio_controls_view(entry.path.clone(), state, thumb)
         }
     };
 

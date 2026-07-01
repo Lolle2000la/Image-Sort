@@ -1,12 +1,37 @@
+use std::path::PathBuf;
+
 use iced::widget::{column, container, text};
-use iced::{Color, Element, Length};
+use iced::{Color, Element, Font, Length};
 
 use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
 use crate::widgets::media_controls;
 
-pub fn audio_controls_view(state: &AppState) -> Element<'_, Message> {
+pub fn audio_controls_view(
+    _path: PathBuf,
+    state: &AppState,
+    thumb: Option<iced::widget::image::Handle>,
+) -> Element<'_, Message> {
     let playing = state.audio_playing && !state.audio_player.as_ref().is_none_or(|p| p.is_paused());
+
+    let audio_content: Element<'_, Message> = if let Some(handle) = thumb {
+        iced::widget::image(handle)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    } else {
+        container(
+            text(char::from(lucide_icons::Icon::Music))
+                .font(Font::with_name("lucide"))
+                .size(48)
+                .color(Color::from_rgb(0.4, 0.4, 0.45)),
+        )
+        .center_x(Length::Fill)
+        .center_y(Length::Fill)
+        .width(Length::Fill)
+        .height(Length::Fill)
+        .into()
+    };
 
     let controls = media_controls::media_controls_view(
         state.audio_position,
@@ -30,7 +55,7 @@ pub fn audio_controls_view(state: &AppState) -> Element<'_, Message> {
     });
 
     let content = column![
-        container(text("Audio Player").size(14))
+        container(audio_content)
             .center_x(Length::Fill)
             .center_y(Length::Fill)
             .width(Length::Fill)

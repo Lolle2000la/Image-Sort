@@ -20,7 +20,7 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
             Ok(bytes) => return Ok(bytes),
             Err(_) => {
                 let placeholder =
-                    image::RgbaImage::from_pixel(128, 128, image::Rgba([50, 50, 70, 255]));
+                    image::RgbaImage::from_pixel(128, 128, image::Rgba([60, 60, 80, 255]));
                 let mut buf = std::io::Cursor::new(Vec::new());
                 if placeholder
                     .write_to(&mut buf, image::ImageFormat::Png)
