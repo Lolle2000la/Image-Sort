@@ -5,7 +5,7 @@
     <key>CFBundleExecutable</key>
     <string>media-sort-gui</string>
     <key>CFBundleIdentifier</key>
-    <string>org.imagesort.MediaSort</string>
+    <string>org.mediasort.MediaSort</string>
     <key>CFBundleName</key>
     <string>Media Sort</string>
     <key>CFBundlePackageType</key>
