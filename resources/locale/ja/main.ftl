@@ -23,7 +23,7 @@ settings-updates = アップデート
 settings-check-updates = 起動時にアップデートを確認
 settings-install-prerelease = プレリリースビルドをインストール
 settings-windows-integration = Windowsとの統合
-settings-windows-context-menu = Windowsエクスプローラーのコンテキストメニューから直接Image Sortでフォルダを開くショートカットを追加します。
+settings-windows-context-menu = Windowsエクスプローラーのコンテキストメニューから直接Media Sortでフォルダを開くショートカットを追加します。
 settings-language = 言語
 
 # Key bindings
@@ -99,7 +99,7 @@ ui-loading-metadata = メタデータを読み込み中...
 ui-select-file-metadata = メタデータを表示するファイルを選択
 ui-search-placeholder = 検索...
 ui-credits-title = クレジット
-ui-credits-leading = これらのオープンソースプロジェクトがImage Sortを可能にしました：
+ui-credits-leading = これらのオープンソースプロジェクトがMedia Sortを可能にしました：
 ui-enter-new-name = 新しい名前を入力してください...
 ui-folder-name-placeholder = フォルダ名...
 ui-video-playback-soon = 動画の再生機能は近日公開予定です

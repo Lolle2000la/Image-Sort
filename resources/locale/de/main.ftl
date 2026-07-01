@@ -23,7 +23,7 @@ settings-updates = Updates
 settings-check-updates = Beim Start nach Updates suchen
 settings-install-prerelease = Vorabversionen installieren
 settings-windows-integration = Windows-Integration
-settings-windows-context-menu = Eine Verknüpfung zum Öffnen eines Ordners in Image Sort direkt aus dem Kontextmenü im Windows Explorer hinzufügen.
+settings-windows-context-menu = Eine Verknüpfung zum Öffnen eines Ordners in Media Sort direkt aus dem Kontextmenü im Windows Explorer hinzufügen.
 settings-language = Sprache
 
 # Key bindings
@@ -99,7 +99,7 @@ ui-loading-metadata = Metadaten werden geladen...
 ui-select-file-metadata = Datei auswählen, um Metadaten anzuzeigen
 ui-search-placeholder = Suchen...
 ui-credits-title = Danksagungen
-ui-credits-leading = Diese Open-Source-Projekte haben Image Sort ermöglicht:
+ui-credits-leading = Diese Open-Source-Projekte haben Media Sort ermöglicht:
 ui-enter-new-name = Geben Sie einen neuen Namen ein...
 ui-folder-name-placeholder = Ordnername...
 ui-video-playback-soon = Videowiedergabe demnächst verfügbar

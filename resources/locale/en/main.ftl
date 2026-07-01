@@ -23,7 +23,7 @@ settings-updates = Updates
 settings-check-updates = Check for updates on startup
 settings-install-prerelease = Install prerelease builds
 settings-windows-integration = Integration with Windows
-settings-windows-context-menu = Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.
+settings-windows-context-menu = Add a shortcut to open a folder in Media Sort directly from the context menu in Windows Explorer.
 settings-language = Language
 
 # Key bindings
@@ -99,7 +99,7 @@ ui-loading-metadata = Loading metadata...
 ui-select-file-metadata = Select a file to view metadata
 ui-search-placeholder = Search...
 ui-credits-title = Credits
-ui-credits-leading = These open source projects made Image Sort possible:
+ui-credits-leading = These open source projects made Media Sort possible:
 ui-enter-new-name = Enter new name...
 ui-folder-name-placeholder = Folder name...
 ui-video-playback-soon = Video playback coming soon
