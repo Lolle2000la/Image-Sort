@@ -16,13 +16,19 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
     };
 
     if media_type == MediaType::Audio {
-        let placeholder = image::RgbaImage::from_pixel(128, 128, image::Rgba([50, 50, 70, 255]));
-        let mut buf = std::io::Cursor::new(Vec::new());
-        if placeholder
-            .write_to(&mut buf, image::ImageFormat::Png)
-            .is_ok()
-        {
-            return Ok(buf.into_inner());
+        match media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128) {
+            Ok(bytes) => return Ok(bytes),
+            Err(_) => {
+                let placeholder =
+                    image::RgbaImage::from_pixel(128, 128, image::Rgba([50, 50, 70, 255]));
+                let mut buf = std::io::Cursor::new(Vec::new());
+                if placeholder
+                    .write_to(&mut buf, image::ImageFormat::Png)
+                    .is_ok()
+                {
+                    return Ok(buf.into_inner());
+                }
+            }
         }
         return Err(());
     }
