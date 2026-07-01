@@ -52,7 +52,6 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
             .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
         Ok(Box::new(NativeTrashRestore {
             original_path,
-            trash_path: None,
             flushed: false,
         }))
     }
@@ -70,7 +69,7 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
 
 struct NativeTrashRestore {
     original_path: PathBuf,
-    #[allow(dead_code)]
+    #[cfg(target_os = "macos")]
     trash_path: Option<PathBuf>,
     flushed: bool,
 }
