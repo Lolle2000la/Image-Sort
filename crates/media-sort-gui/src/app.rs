@@ -120,7 +120,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
             Err(err) => {
-                log::error!("Failed to load settings: {err}");
+                tracing::error!("Failed to load settings: {err}");
                 Task::none()
             }
         },
@@ -211,7 +211,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     match MoveAction::new(&entry.path, &target_folder) {
                         Ok(mut action) => {
                             if let Err(e) = action.execute() {
-                                log::error!("Move failed: {e}");
+                                tracing::error!("Move failed: {e}");
                             } else {
                                 state.history.push_executed(Box::new(action));
                                 state.scan_media();
@@ -219,7 +219,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             }
                         }
                         Err(e) => {
-                            log::error!("Cannot create move action: {e}");
+                            tracing::error!("Cannot create move action: {e}");
                         }
                     }
                 }
@@ -237,7 +237,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     return select_and_load_entry(state, index_to_select);
                 }
                 Err(e) => {
-                    log::error!("Cannot delete to trash: {e}");
+                    tracing::error!("Cannot delete to trash: {e}");
                 }
             }
             Task::none()
@@ -262,7 +262,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             match RenameAction::new(&path, &new_name) {
                 Ok(mut action) => {
                     if let Err(e) = action.execute() {
-                        log::error!("Rename failed: {e}");
+                        tracing::error!("Rename failed: {e}");
                     } else {
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
@@ -275,7 +275,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     }
                 }
                 Err(e) => {
-                    log::error!("Cannot create rename action: {e}");
+                    tracing::error!("Cannot create rename action: {e}");
                 }
             }
             Task::none()
@@ -310,7 +310,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if !folder_name.is_empty() {
                     let new_dir = parent.join(&folder_name);
                     if let Err(e) = std::fs::create_dir_all(&new_dir) {
-                        log::error!("Failed to create folder: {e}");
+                        tracing::error!("Failed to create folder: {e}");
                     } else {
                         if state.current_folder.is_some() {
                             state.build_folder_tree();
@@ -331,7 +331,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Media(MediaMessage::Undo) => {
             let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.undo() {
-                log::error!("Undo failed: {e}");
+                tracing::error!("Undo failed: {e}");
             } else {
                 state.scan_media();
                 return select_and_load_entry(state, index);
@@ -341,7 +341,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Media(MediaMessage::Redo) => {
             let index = state.selected_index.unwrap_or(0);
             if let Err(e) = state.history.redo() {
-                log::error!("Redo failed: {e}");
+                tracing::error!("Redo failed: {e}");
             } else {
                 state.scan_media();
                 return select_and_load_entry(state, index);
@@ -405,7 +405,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
             Err(err) => {
-                log::error!("Metadata load failed: {err}");
+                tracing::error!("Metadata load failed: {err}");
                 state.current_metadata = None;
                 Task::none()
             }
@@ -825,7 +825,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let entries = state.filtered_media_entries();
                     if let Some(entry) = entries.get(index) {
                         if let Err(e) = player.play(&entry.path) {
-                            log::error!("Audio play failed: {e}");
+                            tracing::error!("Audio play failed: {e}");
                         } else {
                             state.audio_playing = true;
                             state.audio_duration = player.duration();
@@ -846,7 +846,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Media(MediaMessage::AudioSeek(pos)) => {
             if let Some(ref player) = state.audio_player {
                 if let Err(e) = player.seek(pos) {
-                    log::error!("Audio seek failed: {e}");
+                    tracing::error!("Audio seek failed: {e}");
                 }
             }
             Task::none()
@@ -900,7 +900,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     }
                 }
                 Err(err) => {
-                    log::error!("Failed to load full image: {err}");
+                    tracing::error!("Failed to load full image: {err}");
                     if let Some(idx) = state.selected_index {
                         let entries = state.filtered_media_entries();
                         if let Some(entry) = entries.get(idx) {
@@ -938,7 +938,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         match MoveAction::new(&entry.path, target_folder) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
-                                    log::error!("Move failed: {e}");
+                                    tracing::error!("Move failed: {e}");
                                 } else {
                                     state.history.push_executed(Box::new(action));
                                     state.scan_media();
@@ -946,7 +946,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 }
                             }
                             Err(e) => {
-                                log::error!("Cannot create move action: {e}");
+                                tracing::error!("Cannot create move action: {e}");
                             }
                         }
                     }
@@ -964,7 +964,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         match MoveAction::new(&entry.path, &target_folder) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
-                                    log::error!("Move failed: {e}");
+                                    tracing::error!("Move failed: {e}");
                                 } else {
                                     state.history.push_executed(Box::new(action));
                                     state.scan_media();
@@ -972,7 +972,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 }
                             }
                             Err(e) => {
-                                log::error!("Cannot create move action: {e}");
+                                tracing::error!("Cannot create move action: {e}");
                             }
                         }
                     }
@@ -1073,7 +1073,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
                 if let Some(ref player) = state.audio_player {
                     player.stop();
                     if let Err(e) = player.play(&path) {
-                        log::error!("Audio play failed: {e}");
+                        tracing::error!("Audio play failed: {e}");
                         state.audio_playing = false;
                     } else {
                         state.audio_duration = player.duration();
@@ -1225,7 +1225,7 @@ fn open_externally(path: &std::path::Path) {
         std::process::Command::new("xdg-open").arg(path).spawn()
     };
     if let Err(e) = res {
-        log::error!("Failed to open file externally: {e}");
+        tracing::error!("Failed to open file externally: {e}");
     }
 }
 

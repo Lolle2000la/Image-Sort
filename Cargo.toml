@@ -18,7 +18,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 parking_lot = "0.12"
 crossbeam-channel = "0.5"
 
@@ -61,8 +61,6 @@ rodio = { version = "0.22", default-features = false, features = [
     "mp3",
     "playback",
 ] }
-ash = "0.38"
-raw-window-handle = "0.6"
 id3 = "1"
 metaflac = "0.2"
 mp4ameta = "0.13"
@@ -76,12 +74,8 @@ iced = { version = "0.14", features = [
     "advanced-shaping",
 ] }
 iced_wgpu = "0.14"
-wgpu = "24"
-winit = "0.30"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
 lru = "0.18"
-env_logger = "0.11"
-log = "0.4"
 rfd = "0.17"
 
 [profile.dev.package."*"]

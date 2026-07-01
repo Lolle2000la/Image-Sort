@@ -9,17 +9,14 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
     let leading_text = text(state.l10n.tr("ui-credits-leading")).size(13);
 
     let libraries = vec![
-        ("ash", "https://github.com/ash-rs/ash"),
         ("crossbeam", "https://github.com/crossbeam-rs/crossbeam"),
         ("dirs", "https://github.com/dirs-dev/dirs-rs"),
-        ("env_logger", "https://github.com/rust-cli/env_logger"),
         ("Fluent", "https://github.com/projectfluent/fluent-rs"),
         ("Iced", "https://github.com/iced-rs/iced"),
         ("id3", "https://github.com/polyfloyd/rust-id3"),
         ("Image", "https://github.com/image-rs/image"),
         ("Kamadak EXIF", "https://github.com/kamadak/exif-rs"),
         ("libmpv", "https://github.com/mpv-player/mpv"),
-        ("log", "https://github.com/rust-lang/log"),
         ("lru", "https://github.com/jeromefroe/lru-rs"),
         ("metaflac", "https://github.com/jameshurst/rust-metaflac"),
         ("mp4ameta", "https://github.com/Saecki/rust-mp4ameta"),
@@ -27,27 +24,21 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
         ("once_cell", "https://github.com/matklad/once_cell"),
         ("parking_lot", "https://github.com/Amanieu/parking_lot"),
         (
-            "raw-window-handle",
-            "https://github.com/rust-windowing/raw-window-handle",
-        ),
-        (
             "RFD (Rust File Dialogs)",
             "https://github.com/PolyMeilex/rfd",
         ),
         ("Rodio", "https://github.com/RustAudio/rodio"),
         ("Serde", "https://github.com/serde-rs/serde"),
         ("serde_json", "https://github.com/serde-rs/json"),
-        ("smol_str", "https://github.com/rust-analyzer/smol_str"),
         ("strum", "https://github.com/Peternator7/strum"),
         ("Symphonia", "https://github.com/pdeljanov/Symphonia"),
         ("thiserror", "https://github.com/dtolnay/thiserror"),
         ("Tokio", "https://github.com/tokio-rs/tokio"),
         ("tracing", "https://github.com/tokio-rs/tracing"),
+        ("tracing-subscriber", "https://github.com/tokio-rs/tracing"),
         ("Trash", "https://github.com/Byron/trash-rs"),
         ("unic-langid", "https://github.com/zbraniecki/unic-locale"),
         ("walkdir", "https://github.com/BurntSushi/walkdir"),
-        ("wgpu", "https://github.com/gfx-rs/wgpu"),
-        ("winit", "https://github.com/rust-windowing/winit"),
     ];
 
     let mut rows = Vec::with_capacity(libraries.len());

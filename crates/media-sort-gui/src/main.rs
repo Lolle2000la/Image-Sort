@@ -10,7 +10,12 @@ use iced::window;
 use media_sort_core::settings::store::SettingsStore;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive("info".parse().unwrap()),
+        )
+        .init();
 
     let discovered =
         media_sort_backend::media::mpv_context::MpvContext::query_supported_extensions();
