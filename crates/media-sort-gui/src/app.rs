@@ -49,7 +49,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             .get(idx)
                             .map(|e| e.path.clone())
                     });
-                    if Some(path) == current_path {
+                    if Some(path) == current_path && state.video_ready {
                         state.video_rgba = Some(rgba);
                         state.video_width = width;
                         state.video_height = height;
@@ -63,6 +63,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 } => {
                     state.video_position = position;
                     state.video_duration = duration;
+                    state.video_ready = true;
                 }
                 media_sort_backend::media::mpv_context::VideoEvent::Muted(muted) => {
                     state.video_muted = muted;
@@ -1055,6 +1056,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_height = 0;
             state.video_position = 0.0;
             state.video_duration = 0.0;
+            state.video_ready = false;
             if let Some(ref mut ap) = state.audio_player {
                 ap.stop();
             }
@@ -1069,6 +1071,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_rgba = None;
             state.video_width = 0;
             state.video_height = 0;
+            state.video_ready = false;
             if state.audio_playing
                 && let Some(ref player) = state.audio_player
             {
@@ -1089,6 +1092,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_rgba = None;
             state.video_width = 0;
             state.video_height = 0;
+            state.video_ready = false;
             if state.audio_playing {
                 if let Some(ref player) = state.audio_player {
                     player.stop();
@@ -1145,6 +1149,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.video_rgba = None;
         state.video_width = 0;
         state.video_height = 0;
+        state.video_ready = false;
         Task::none()
     }
 }
