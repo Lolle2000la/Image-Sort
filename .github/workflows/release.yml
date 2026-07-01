@@ -44,17 +44,20 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: brew install mpv dylibbundler
 
-      - name: Build Standalone Binary
-        env:
-          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-        run: cargo build --release --features velopack
-
-      - name: Bundle libmpv (Windows)
+      - name: Setup libmpv Link Libraries (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
+          mkdir -p target/release
           curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
           7z e mpv-dev.7z mpv-1.dll -otarget/release/ -y
+          7z e mpv-dev.7z mpv.lib -otarget/release/ -y
+
+      - name: Build Standalone Binary
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L target/release' || '' }}
+        run: cargo build --release --features velopack
 
       - name: Install and Run Velopack Packager
         shell: bash
