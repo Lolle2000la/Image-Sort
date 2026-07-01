@@ -78,6 +78,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .height(Length::Fill)
         .center_x(Length::Fill)
         .center_y(Length::Fill)
+        .padding(4)
         .style(|theme: &iced::Theme| {
             let palette = theme.palette();
             let border_color = Color {
