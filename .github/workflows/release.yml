@@ -50,8 +50,9 @@ jobs:
         run: |
           mkdir -p libs
           curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
-          7z e mpv-dev.7z mpv-1.dll -olibs -y
-          7z e mpv-dev.7z mpv.lib -olibs -y
+          7z e mpv-dev.7z libmpv-2.dll -olibs -y
+          7z e mpv-dev.7z libmpv.dll.a -olibs -y
+          mv libs/libmpv.dll.a libs/mpv.lib
 
       - name: Build Standalone Binary
         env:
@@ -91,7 +92,7 @@ jobs:
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp target/release/media-sort-gui.exe dist/
-            cp libs/mpv-1.dll dist/
+            cp libs/libmpv-2.dll dist/
             cp packaging/windows/icon.ico dist/
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }}
