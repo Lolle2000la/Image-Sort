@@ -95,8 +95,16 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
 
         let file_name = text(&entry.file_name)
             .size(10)
-            .shaping(iced::widget::text::Shaping::Advanced);
-        let card = column![thumbnail, file_name]
+            .shaping(iced::widget::text::Shaping::Advanced)
+            .wrapping(iced::widget::text::Wrapping::Glyph);
+
+        let file_name_container = container(file_name)
+            .width(Length::Fill)
+            .height(Length::Fixed(26.0))
+            .align_x(Alignment::Center)
+            .clip(true);
+
+        let card = column![thumbnail, file_name_container]
             .align_x(Alignment::Center)
             .spacing(2)
             .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH));

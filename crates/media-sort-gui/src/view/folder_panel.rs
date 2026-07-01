@@ -54,6 +54,7 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
             vertical: iced::widget::scrollable::Scrollbar::default(),
             horizontal: iced::widget::scrollable::Scrollbar::default(),
         })
+        .width(Length::Fill)
         .height(Length::Fill);
 
     container(column![buttons_row, scrollable_tree,].spacing(6))
