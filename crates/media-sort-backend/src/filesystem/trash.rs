@@ -22,8 +22,8 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
 
         let success: bool = objc2::msg_send![
             &file_manager,
-            trashItemAtURL: &*url
-            resultingItemURL: &mut resulting_url
+            trashItemAtURL: &*url,
+            resultingItemURL: &mut resulting_url,
             error: &mut error
         ];
 
