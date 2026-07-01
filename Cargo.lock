@@ -2686,6 +2686,8 @@ dependencies = [
  "mp4ameta",
  "notify",
  "notify-debouncer-mini",
+ "objc2 0.6.4",
+ "objc2-foundation 0.3.2",
  "rodio",
  "serde",
  "strum",
