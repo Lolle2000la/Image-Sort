@@ -149,11 +149,13 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateThumbnails))
             .size(16);
 
+        #[cfg(feature = "velopack")]
         let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
             .label(state.l10n.tr("settings-check-updates"))
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleCheckForUpdates))
             .size(16);
 
+        #[cfg(feature = "velopack")]
         let install_prerelease_cb = checkbox(state.settings.general.install_prerelease_builds)
             .label(state.l10n.tr("settings-install-prerelease"))
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleInstallPrerelease))
@@ -182,14 +184,23 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 animate_thumbs_cb,
             ]
             .spacing(8),
-            column![
-                text(state.l10n.tr("settings-updates"))
-                    .font(BOLD_FONT)
-                    .size(14),
-                check_updates_cb,
-                install_prerelease_cb,
-            ]
-            .spacing(8),
+        ];
+
+        #[cfg(feature = "velopack")]
+        {
+            settings_col = settings_col.push(
+                column![
+                    text(state.l10n.tr("settings-updates"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    check_updates_cb,
+                    install_prerelease_cb,
+                ]
+                .spacing(8),
+            );
+        }
+
+        settings_col = settings_col.push(
             column![
                 text(state.l10n.tr("settings-language"))
                     .font(BOLD_FONT)
@@ -208,8 +219,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 .width(Length::Fixed(200.0)),
             ]
             .spacing(8),
-        ]
-        .spacing(16);
+        );
 
         #[cfg(target_os = "windows")]
         {

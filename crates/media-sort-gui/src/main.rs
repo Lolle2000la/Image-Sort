@@ -8,20 +8,22 @@ mod widgets;
 
 use iced::window;
 use media_sort_core::settings::store::SettingsStore;
+#[cfg(feature = "velopack")]
 use serde::Deserialize;
 
 use crate::message::Message;
-use velopack::sources::HttpSource;
-use velopack::{UpdateCheck, UpdateManager};
 
+#[cfg(feature = "velopack")]
 const GITHUB_REPO_ID: u64 = 119281525;
 
+#[cfg(feature = "velopack")]
 #[derive(Deserialize)]
 struct GithubRepoMetadata {
     html_url: String,
 }
 
-async fn fetch_canonical_release_url() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+#[cfg(feature = "velopack")]
+async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::builder()
         .user_agent("media-sort-gui-updater")
         .build()?;
@@ -35,38 +37,59 @@ async fn fetch_canonical_release_url() -> Result<String, Box<dyn std::error::Err
         .json()
         .await?;
 
-    Ok(format!("{}/releases/latest/download/", metadata.html_url))
+    Ok(metadata.html_url)
 }
 
-pub fn run_background_update() -> iced::Task<Message> {
-    iced::Task::perform(
-        async {
-            let target_url = fetch_canonical_release_url()
+pub fn run_background_update(
+    settings: &media_sort_core::settings::general::GeneralSettings,
+) -> iced::Task<Message> {
+    #[cfg(not(feature = "velopack"))]
+    {
+        let _ = settings;
+        iced::Task::none()
+    }
+
+    #[cfg(feature = "velopack")]
+    {
+        if !settings.check_for_updates_on_startup {
+            return iced::Task::none();
+        }
+
+        let allow_prerelease =
+            settings.install_prerelease_builds || env!("CARGO_PKG_VERSION").contains('-');
+
+        iced::Task::perform(
+            async move {
+                let repo_url = fetch_canonical_repo_url()
+                    .await
+                    .map_err(|e| e.to_string())?;
+
+                tokio::task::spawn_blocking(move || {
+                    let source =
+                        velopack::sources::GithubSource::new(&repo_url, None, allow_prerelease);
+                    let um = velopack::UpdateManager::new(source, None, None)
+                        .map_err(|e| e.to_string())?;
+
+                    if let velopack::UpdateCheck::UpdateAvailable(updates) =
+                        um.check_for_updates().map_err(|e| e.to_string())?
+                    {
+                        um.download_updates(&updates, None)
+                            .map_err(|e| e.to_string())?;
+                        um.apply_updates_and_restart(&*updates)
+                            .map_err(|e| e.to_string())?;
+                    }
+                    Ok(())
+                })
                 .await
-                .map_err(|e| e.to_string())?;
-
-            tokio::task::spawn_blocking(move || {
-                let source = HttpSource::new(&target_url);
-                let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
-
-                if let UpdateCheck::UpdateAvailable(updates) =
-                    um.check_for_updates().map_err(|e| e.to_string())?
-                {
-                    um.download_updates(&updates, None)
-                        .map_err(|e| e.to_string())?;
-                    um.apply_updates_and_restart(&*updates)
-                        .map_err(|e| e.to_string())?;
-                }
-                Ok(())
-            })
-            .await
-            .map_err(|e| e.to_string())?
-        },
-        crate::message::Message::UpdateCheckFinished,
-    )
+                .map_err(|e| e.to_string())?
+            },
+            crate::message::Message::UpdateCheckFinished,
+        )
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(feature = "velopack")]
     velopack::VelopackApp::build().run();
 
     tracing_subscriber::fmt()
@@ -127,7 +150,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )));
             }
 
-            tasks.push(run_background_update());
+            tasks.push(run_background_update(&settings.general));
 
             (state, iced::Task::batch(tasks))
         },

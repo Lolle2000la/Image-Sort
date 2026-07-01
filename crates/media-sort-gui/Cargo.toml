@@ -3,6 +3,10 @@ name = "media-sort-gui"
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+velopack = ["dep:velopack", "dep:reqwest"]
+
 [dependencies]
 media-sort-core = { path = "../media-sort-core" }
 media-sort-backend = { path = "../media-sort-backend" }
@@ -21,5 +25,5 @@ dirs = { workspace = true }
 once_cell.workspace = true
 serde = { workspace = true }
 
-velopack = "1.2"
-reqwest = { version = "0.12", features = ["json"] }
+velopack = { version = "1.2", optional = true }
+reqwest = { version = "0.12", features = ["json"], optional = true }
