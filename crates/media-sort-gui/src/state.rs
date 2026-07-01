@@ -34,6 +34,12 @@ pub struct AppState {
 
     pub audio_player: Option<AudioPlayer>,
 
+    pub audio_playing: bool,
+    pub audio_position: f64,
+    pub audio_duration: f64,
+    pub audio_volume: f64,
+    pub audio_muted: bool,
+
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
@@ -137,6 +143,11 @@ impl AppState {
             show_settings: false,
             show_keybindings: false,
             audio_player,
+            audio_playing: false,
+            audio_position: 0.0,
+            audio_duration: 0.0,
+            audio_volume: 100.0,
+            audio_muted: false,
             thumbnail_cache: LruCache::new(cache_size),
             image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
             selected_folder: None,
@@ -188,6 +199,11 @@ impl AppState {
         self.video_position = 0.0;
         self.video_duration = 0.0;
         self.unsupported_files.clear();
+        if let Some(ref player) = self.audio_player {
+            player.stop();
+        }
+        self.audio_playing = false;
+        self.audio_position = 0.0;
     }
 
     pub fn scan_media(&mut self) {

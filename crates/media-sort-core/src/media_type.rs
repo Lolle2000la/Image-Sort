@@ -23,7 +23,9 @@ impl MediaType {
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
             MediaType::Image => NATIVE_IMAGE_EXTS,
-            MediaType::Video => &["mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v", "gif"],
+            MediaType::Video => &[
+                "mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v", "gif",
+            ],
             MediaType::Audio => NATIVE_AUDIO_EXTS,
         }
     }

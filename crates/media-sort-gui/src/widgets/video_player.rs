@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
-use iced::widget::{button, column, container, row, slider, text};
-use iced::{Alignment, Background, Border, Color, Element, Font, Length};
+use iced::widget::{button, column, container, row, text};
+use iced::{Alignment, Border, Color, Element, Font, Length};
 
 use crate::message::{Message, VideoMessage};
 use crate::state::AppState;
+use crate::widgets::media_controls;
 
 pub fn video_player<'a>(
     path: PathBuf,
@@ -26,71 +27,22 @@ pub fn video_player<'a>(
         placeholder(path, &state.l10n)
     };
 
-    let play_pause_btn = button(
-        text(char::from(if state.video_paused {
-            lucide_icons::Icon::Play
-        } else {
-            lucide_icons::Icon::Pause
-        }))
-        .font(Font::with_name("lucide"))
-        .size(16),
+    let controls_row = media_controls::media_controls_view(
+        state.video_position,
+        state.video_duration,
+        state.video_volume,
+        state.video_muted,
+        !state.video_paused,
     )
-    .padding(8)
-    .on_press(Message::Video(VideoMessage::PlayPause));
-
-    let stop_btn = button(
-        text(char::from(lucide_icons::Icon::Square))
-            .font(Font::with_name("lucide"))
-            .size(16),
-    )
-    .padding(8)
-    .on_press(Message::Video(VideoMessage::Stop));
-
-    let time_str = format!(
-        "{} / {}",
-        format_time(state.video_position),
-        format_time(state.video_duration)
-    );
-    let time_label = text(time_str).size(13);
-
-    let seek_max = if state.video_duration > 0.0 {
-        state.video_duration
-    } else {
-        1.0
-    };
-    let seekbar = slider(0.0..=seek_max, state.video_position, |v| {
-        Message::Video(VideoMessage::Seek(v))
-    })
-    .width(Length::Fill);
-
-    let mute_btn = button(
-        text(char::from(if state.video_muted {
-            lucide_icons::Icon::VolumeX
-        } else {
-            lucide_icons::Icon::Volume2
-        }))
-        .font(Font::with_name("lucide"))
-        .size(16),
-    )
-    .padding(8)
-    .on_press(Message::Video(VideoMessage::Mute));
-
-    let volume_slider = slider(0.0..=100.0, state.video_volume, |v| {
-        Message::Video(VideoMessage::Volume(v))
-    })
-    .width(Length::Fixed(80.0));
-
-    let controls_row = row![
-        play_pause_btn,
-        stop_btn,
-        time_label,
-        seekbar,
-        mute_btn,
-        volume_slider,
-    ]
-    .spacing(12)
-    .align_y(Alignment::Center)
-    .padding(8);
+    .map(|msg| match msg {
+        media_controls::MediaControlMessage::PlayPause => Message::Video(VideoMessage::PlayPause),
+        media_controls::MediaControlMessage::Stop => Message::Video(VideoMessage::Stop),
+        media_controls::MediaControlMessage::Seek(v) => Message::Video(VideoMessage::Seek(v)),
+        media_controls::MediaControlMessage::SetVolume(v) => {
+            Message::Video(VideoMessage::Volume(v))
+        }
+        media_controls::MediaControlMessage::ToggleMute => Message::Video(VideoMessage::Mute),
+    });
 
     column![
         container(video_content)
@@ -132,24 +84,20 @@ fn placeholder(
     .center_y(Length::Fill)
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(|_theme| container::Style {
-        background: Some(Background::Color(Color::from_rgb(0.05, 0.05, 0.08))),
-        border: Border {
-            radius: 8.0.into(),
-            width: 1.0,
-            color: Color::from_rgb(0.2, 0.2, 0.25),
-        },
-        ..container::Style::default()
+    .style(|theme: &iced::Theme| {
+        let palette = theme.palette();
+        container::Style {
+            border: Border {
+                radius: 8.0.into(),
+                width: 1.0,
+                color: Color {
+                    a: 0.2,
+                    ..palette.text
+                },
+            },
+            text_color: Some(palette.text),
+            ..container::Style::default()
+        }
     })
     .into()
-}
-
-fn format_time(secs: f64) -> String {
-    if secs.is_nan() || secs.is_infinite() || secs < 0.0 {
-        return "00:00".to_string();
-    }
-    let total_secs = secs.round() as i32;
-    let minutes = total_secs / 60;
-    let seconds = total_secs % 60;
-    format!("{:02}:{:02}", minutes, seconds)
 }

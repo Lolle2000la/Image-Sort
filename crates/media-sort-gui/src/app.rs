@@ -18,6 +18,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let _ = state.settings.save();
                 return window::latest().and_then(window::close);
             }
+            if let Some(ref player) = state.audio_player {
+                if state.audio_playing {
+                    if player.empty() {
+                        state.audio_playing = false;
+                        state.audio_position = 0.0;
+                    } else {
+                        state.audio_position = player.position();
+                        state.audio_duration = player.duration();
+                    }
+                }
+            }
             Task::none()
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
@@ -802,31 +813,59 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::Media(MediaMessage::PlayAudio) => {
+        Message::Media(MediaMessage::AudioPlayPause) => {
             if let Some(ref player) = state.audio_player {
-                if let Some(index) = state.selected_index {
+                if player.is_paused() {
+                    player.resume();
+                    state.audio_playing = true;
+                } else if state.audio_playing {
+                    player.pause();
+                    state.audio_playing = false;
+                } else if let Some(index) = state.selected_index {
                     let entries = state.filtered_media_entries();
                     if let Some(entry) = entries.get(index) {
-                        player.stop();
                         if let Err(e) = player.play(&entry.path) {
                             log::error!("Audio play failed: {e}");
                         } else {
-                            player.resume();
+                            state.audio_playing = true;
+                            state.audio_duration = player.duration();
                         }
                     }
                 }
             }
             Task::none()
         }
-        Message::Media(MediaMessage::PauseAudio) => {
-            if let Some(ref player) = state.audio_player {
-                player.pause();
-            }
-            Task::none()
-        }
         Message::Media(MediaMessage::StopAudio) => {
             if let Some(ref player) = state.audio_player {
                 player.stop();
+            }
+            state.audio_playing = false;
+            state.audio_position = 0.0;
+            Task::none()
+        }
+        Message::Media(MediaMessage::AudioSeek(pos)) => {
+            if let Some(ref player) = state.audio_player {
+                if let Err(e) = player.seek(pos) {
+                    log::error!("Audio seek failed: {e}");
+                }
+            }
+            Task::none()
+        }
+        Message::Media(MediaMessage::AudioSetVolume(vol)) => {
+            if let Some(ref player) = state.audio_player {
+                player.set_volume(vol as f32 / 100.0);
+            }
+            state.audio_volume = vol;
+            Task::none()
+        }
+        Message::Media(MediaMessage::AudioToggleMute) => {
+            state.audio_muted = !state.audio_muted;
+            if let Some(ref player) = state.audio_player {
+                if state.audio_muted {
+                    player.set_volume(0.0);
+                } else {
+                    player.set_volume(state.audio_volume as f32 / 100.0);
+                }
             }
             Task::none()
         }
@@ -1019,6 +1058,28 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             if let Some(ref mut ap) = state.audio_player {
                 ap.stop();
             }
+            state.audio_playing = false;
+            state.audio_position = 0.0;
+        } else if media_type == media_sort_core::media_type::MediaType::Audio {
+            if let Some(ref sender) = state.video_sender {
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+            }
+            state.video_frame = None;
+            state.video_rgba = None;
+            state.video_width = 0;
+            state.video_height = 0;
+            if state.audio_playing {
+                if let Some(ref player) = state.audio_player {
+                    player.stop();
+                    if let Err(e) = player.play(&path) {
+                        log::error!("Audio play failed: {e}");
+                        state.audio_playing = false;
+                    } else {
+                        state.audio_duration = player.duration();
+                    }
+                }
+            }
         } else {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender
@@ -1028,6 +1089,13 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_rgba = None;
             state.video_width = 0;
             state.video_height = 0;
+            if state.audio_playing {
+                if let Some(ref player) = state.audio_player {
+                    player.stop();
+                }
+                state.audio_playing = false;
+                state.audio_position = 0.0;
+            }
         }
 
         let mut tasks = vec![load_metadata(state, index)];

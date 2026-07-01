@@ -21,7 +21,9 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             .into();
     };
 
-    if state.unsupported_files.contains(&entry.path) {
+    if entry.media_type == media_sort_core::media_type::MediaType::Image
+        && state.unsupported_files.contains(&entry.path)
+    {
         return container(
             column![
                 text(state.l10n.tr("ui-file-not-supported")).size(14),
@@ -69,7 +71,7 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             video_player(entry.path.clone(), state, thumb)
         }
         media_sort_core::media_type::MediaType::Audio => {
-            crate::widgets::video_canvas::audio_controls_view()
+            crate::widgets::video_canvas::audio_controls_view(state)
         }
     };
 
@@ -83,26 +85,27 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
                 .size(11)
                 .wrapping(iced::widget::text::Wrapping::None),
         )
-            .width(Length::Fill)
-            .clip(true),
+        .width(Length::Fill)
+        .clip(true),
         text(file_size_str).size(11),
     ]
     .spacing(8)
     .padding([4, 6]);
 
-    let file_info_bar = container(file_info)
-        .width(Length::Fill)
-        .style(move |theme: &iced::Theme| {
-            let palette = theme.palette();
-            iced::widget::container::Style {
-                background: Some(iced::Background::Color(Color {
-                    a: 0.35,
-                    ..palette.background
-                })),
-                text_color: Some(palette.text),
-                ..iced::widget::container::Style::default()
-            }
-        });
+    let file_info_bar =
+        container(file_info)
+            .width(Length::Fill)
+            .style(move |theme: &iced::Theme| {
+                let palette = theme.palette();
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(Color {
+                        a: 0.35,
+                        ..palette.background
+                    })),
+                    text_color: Some(palette.text),
+                    ..iced::widget::container::Style::default()
+                }
+            });
 
     container(
         column![

@@ -88,9 +88,11 @@ pub enum MediaMessage {
     ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
     OpenExternal(PathBuf),
-    PlayAudio,
-    PauseAudio,
     StopAudio,
+    AudioSeek(f64),
+    AudioSetVolume(f64),
+    AudioToggleMute,
+    AudioPlayPause,
 }
 
 #[derive(Debug, Clone)]
