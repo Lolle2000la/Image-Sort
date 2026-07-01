@@ -475,6 +475,14 @@ pub async fn run_video_worker(
                     }
                     VideoCommand::Deactivate => {
                         player.set_paused(true);
+                        // SAFETY: send "stop" command to release the current file handle and
+                        // flush internal mpv caches, preventing file locks that would block
+                        // rename/move/delete operations on the last-played video.
+                        unsafe {
+                            let mut cmd: [*const c_char; 2] =
+                                [c"stop".as_ptr(), std::ptr::null()];
+                            mpv_command(player.handle, cmd.as_mut_ptr());
+                        }
                         is_active = false;
                     }
                 }
