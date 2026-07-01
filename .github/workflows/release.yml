@@ -77,7 +77,7 @@ jobs:
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
             cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
 
-            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
+            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s /opt/homebrew/lib
 
             vpk pack -u ImageSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
