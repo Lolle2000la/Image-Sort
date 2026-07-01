@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, row, space, text};
+use iced::widget::{button, column, container, row, text};
 use iced::{Alignment, Color, Element, Length};
 
 use crate::message::{MediaMessage, Message};
@@ -77,16 +77,19 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .map(|m| format_file_size(m.len()))
         .unwrap_or_else(|_| "???".to_string());
 
-    let display_name = truncate_filename_middle(&entry.file_name, 80);
+    let display_name = truncate_filename_middle(&entry.file_name, 60);
 
     let file_info = row![
-        text(display_name)
-            .size(11)
-            .wrapping(iced::widget::text::Wrapping::None),
-        space().width(Length::Fill),
+        container(
+            text(display_name)
+                .size(11)
+                .wrapping(iced::widget::text::Wrapping::None),
+        )
+        .width(Length::Fill)
+        .clip(true),
         text(file_size_str).size(11),
     ]
-    .spacing(4)
+    .spacing(8)
     .padding([4, 6]);
 
     let file_info_bar = container(file_info)
