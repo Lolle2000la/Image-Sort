@@ -65,7 +65,12 @@ jobs:
           RAW_VERSION="${{ github.ref_name }}"
           CLEAN_VERSION="${RAW_VERSION#v}"
 
-          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }}
+          DOWNLOAD_FLAGS=""
+          if [[ "$RAW_VERSION" == *"-"* ]]; then
+            DOWNLOAD_FLAGS="--pre"
+          fi
+
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }} $DOWNLOAD_FLAGS
 
           # Isolate binaries into a clean deployment folder to prevent packaging compiler artifacts
           mkdir dist
@@ -93,4 +98,4 @@ jobs:
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }}
           fi
 
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --merge --token ${{ secrets.GITHUB_TOKEN }}
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
