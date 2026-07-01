@@ -73,7 +73,7 @@ jobs:
             mkdir -p "dist/Media Sort.app/Contents/Resources"
             cp target/release/media-sort-gui "dist/Media Sort.app/Contents/MacOS/"
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
-            cp "Image Sort.svg" "dist/Media Sort.app/Contents/Resources/"
+            cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
 
             dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
 
@@ -81,7 +81,7 @@ jobs:
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp target/release/media-sort-gui.exe dist/
             cp target/release/mpv-1.dll dist/
-            cp "Image Sort.svg" dist/
+            cp packaging/windows/icon.ico dist/
 
             vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
           else
