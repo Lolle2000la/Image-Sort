@@ -5,7 +5,7 @@ use media_sort_core::actions::reversible::ActionError;
 
 #[cfg(target_os = "macos")]
 fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
-    use objc2::rc::Id;
+    use objc2::rc::Retained;
     use objc2_foundation::{NSError, NSFileManager, NSString, NSURL};
 
     let path_str = path
@@ -29,7 +29,7 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
 
         if !success || resulting_url.is_null() {
             let err_msg = if !error.is_null() {
-                let err = Id::retain(error).unwrap();
+                let err = Retained::retain(error).unwrap();
                 err.localizedDescription().to_string()
             } else {
                 "Cocoa trashItemAtURL failed".to_string()
@@ -37,7 +37,7 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
             return Err(ActionError::Io(std::io::Error::other(err_msg)));
         }
 
-        let res_id = Id::retain(resulting_url).unwrap();
+        let res_id = Retained::retain(resulting_url).unwrap();
         let path_nsstring = res_id.path().unwrap();
         Ok(PathBuf::from(path_nsstring.to_string()))
     }
@@ -115,6 +115,10 @@ impl TrashRestoreHandle for NativeTrashRestore {
                         "Trash item no longer exists or trash was emptied".into(),
                     ));
                 }
+                if let Some(parent) = self.original_path.parent() {
+                    std::fs::create_dir_all(parent).map_err(|e| ActionError::Io(e))?;
+                }
+
                 std::fs::rename(trash_item_path, &self.original_path)
                     .map_err(|e| ActionError::Io(e))?;
 
