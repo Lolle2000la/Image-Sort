@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use iced::widget::{button, column, container, row, text};
-use iced::{Alignment, Border, Color, Element, Font, Length};
+use iced::{Alignment, Element, Font, Length};
 
 use crate::message::{Message, VideoMessage};
 use crate::state::AppState;
@@ -84,20 +84,6 @@ fn placeholder(
     .center_y(Length::Fill)
     .width(Length::Fill)
     .height(Length::Fill)
-    .style(|theme: &iced::Theme| {
-        let palette = theme.palette();
-        container::Style {
-            border: Border {
-                radius: 8.0.into(),
-                width: 1.0,
-                color: Color {
-                    a: 0.2,
-                    ..palette.text
-                },
-            },
-            text_color: Some(palette.text),
-            ..container::Style::default()
-        }
-    })
+    .style(|_theme| container::Style::default())
     .into()
 }

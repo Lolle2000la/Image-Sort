@@ -70,20 +70,5 @@ pub fn audio_controls_view(
     container(content)
         .width(Length::Fill)
         .height(Length::Fill)
-        .style(|theme: &iced::Theme| {
-            let palette = theme.palette();
-            iced::widget::container::Style {
-                border: iced::Border {
-                    radius: 8.0.into(),
-                    width: 1.0,
-                    color: Color {
-                        a: 0.2,
-                        ..palette.text
-                    },
-                },
-                text_color: Some(palette.text),
-                ..iced::widget::container::Style::default()
-            }
-        })
         .into()
 }
