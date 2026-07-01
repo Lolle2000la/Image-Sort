@@ -70,8 +70,10 @@ jobs:
 
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             mkdir -p "dist/Media Sort.app/Contents/MacOS"
+            mkdir -p "dist/Media Sort.app/Contents/Resources"
             cp target/release/media-sort-gui "dist/Media Sort.app/Contents/MacOS/"
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
+            cp "Image Sort.svg" "dist/Media Sort.app/Contents/Resources/"
 
             dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
 
@@ -79,10 +81,13 @@ jobs:
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
             cp target/release/media-sort-gui.exe dist/
             cp target/release/mpv-1.dll dist/
+            cp "Image Sort.svg" dist/
 
             vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
           else
             cp target/release/media-sort-gui dist/
+            cp "Image Sort.svg" dist/
+            printf '[Desktop Entry]\nName=Media Sort\nComment=Sort your media files fast\nExec=media-sort-gui\nIcon=Image Sort\nType=Application\nCategories=Graphics;AudioVideo;Utility;\n' > dist/ImageSort.desktop
 
             vpk pack -u ImageSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
           fi
