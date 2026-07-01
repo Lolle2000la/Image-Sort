@@ -78,15 +78,25 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
         return Err(());
     }
 
-    if let Ok(img) = image::open(path) {
-        let thumbnail = img.thumbnail(128, 128);
-        let mut buf = std::io::Cursor::new(Vec::new());
-        if thumbnail
-            .write_to(&mut buf, image::ImageFormat::Png)
-            .is_ok()
-        {
-            return Ok(buf.into_inner());
-        }
+    let reader = match image::ImageReader::open(path) {
+        Ok(r) => r,
+        Err(_) => return Err(()),
+    };
+    let img = match reader.with_guessed_format() {
+        Ok(r) => match r.decode() {
+            Ok(img) => img,
+            Err(_) => return Err(()),
+        },
+        Err(_) => return Err(()),
+    };
+
+    let thumbnail = img.thumbnail(128, 128);
+    let mut buf = std::io::Cursor::new(Vec::new());
+    if thumbnail
+        .write_to(&mut buf, image::ImageFormat::Png)
+        .is_ok()
+    {
+        return Ok(buf.into_inner());
     }
 
     Err(())

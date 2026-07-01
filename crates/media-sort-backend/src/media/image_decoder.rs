@@ -30,7 +30,9 @@ pub fn is_animated_gif(path: &Path) -> Option<bool> {
 }
 
 pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
-    let img = image::open(path)?;
+    let img = image::ImageReader::open(path)?
+        .with_guessed_format()?
+        .decode()?;
     Ok(apply_orientation(img, path))
 }
 
@@ -44,7 +46,9 @@ pub fn generate_thumbnail(
     max_width: u32,
     max_height: u32,
 ) -> Result<image::DynamicImage, image::ImageError> {
-    let img = image::open(path)?;
+    let img = image::ImageReader::open(path)?
+        .with_guessed_format()?
+        .decode()?;
     let img = apply_orientation(img, path);
     Ok(img.thumbnail(max_width, max_height))
 }

@@ -8,7 +8,10 @@ pub fn generate_thumbnail(
 ) -> Result<Vec<u8>, image::ImageError> {
     let img = match extract_audio_cover(path) {
         Some(bytes) => image::load_from_memory(&bytes)?,
-        None => image::open(path)?,
+        None => {
+            let reader = image::ImageReader::open(path)?;
+            reader.with_guessed_format()?.decode()?
+        }
     };
 
     let thumb = img.thumbnail(max_width, max_height);
@@ -20,7 +23,10 @@ pub fn generate_thumbnail(
 pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
     let img = match extract_audio_cover(path) {
         Some(bytes) => image::load_from_memory(&bytes)?,
-        None => image::open(path)?,
+        None => {
+            let reader = image::ImageReader::open(path)?;
+            reader.with_guessed_format()?.decode()?
+        }
     };
     Ok(img.dimensions())
 }
