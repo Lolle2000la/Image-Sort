@@ -77,16 +77,14 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .map(|m| format_file_size(m.len()))
         .unwrap_or_else(|_| "???".to_string());
 
-    let display_name = truncate_filename_middle(&entry.file_name, 40);
-
     let file_info = row![
         container(
-            text(display_name)
+            text(&entry.file_name)
                 .size(11)
                 .wrapping(iced::widget::text::Wrapping::None),
         )
-        .width(Length::Fill)
-        .clip(true),
+            .width(Length::Fill)
+            .clip(true),
         text(file_size_str).size(11),
     ]
     .spacing(8)
@@ -152,33 +150,5 @@ fn format_file_size(size: u64) -> String {
         format!("{} {}", size as u64, UNITS[unit_idx])
     } else {
         format!("{:.1} {}", size, UNITS[unit_idx])
-    }
-}
-
-fn truncate_filename_middle(name: &str, max_chars: usize) -> String {
-    if name.len() <= max_chars {
-        return name.to_string();
-    }
-
-    let (stem, ext) = match name.rfind('.') {
-        Some(dot_idx) => (&name[..dot_idx], &name[dot_idx..]),
-        None => (name, ""),
-    };
-
-    let ext_len = ext.len();
-    let keep = max_chars.saturating_sub(ext_len + 3);
-
-    if keep <= 4 {
-        let front = max_chars.saturating_sub(ext_len + 3);
-        format!("{}...{}", &name[..front.min(name.len())], ext)
-    } else {
-        let front = keep / 2;
-        let back = keep - front;
-        format!(
-            "{}...{}{}",
-            &stem[..front.min(stem.len())],
-            &stem[stem.len().saturating_sub(back)..],
-            ext
-        )
     }
 }
