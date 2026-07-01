@@ -1,0 +1,74 @@
+name: Automated Release Distribution
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+            exe_name: media-sort-gui
+          - os: windows-latest
+            platform: win
+            exe_name: media-sort-gui.exe
+          - os: macos-latest
+            platform: osx
+            exe_name: media-sort-gui
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust Environment
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup .NET SDK (For vpk CLI)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install System Dependencies (Linux Only)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libmpv-dev
+
+      - name: Install System Dependencies (macOS Only)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install mpv macdylibbundler
+
+      - name: Build Standalone Binary
+        run: cargo build --release
+
+      - name: Bundle libmpv (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          7z e mpv-dev.7z mpv-1.dll -otarget/release/ -y
+
+      - name: Bundle macOS Dynamic Libraries
+        if: matrix.os == 'macos-latest'
+        run: |
+          cp /opt/homebrew/lib/libmpv.2.dylib target/release/
+          install_name_tool -change /opt/homebrew/lib/libmpv.2.dylib @executable_path/libmpv.2.dylib target/release/media-sort-gui
+          dylibbundler -od -b -x target/release/media-sort-gui -d target/release/
+
+      - name: Install and Run Velopack Packager
+        shell: bash
+        run: |
+          dotnet tool install -g vpk
+
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }}
+
+          vpk pack -u ImageSort -v ${{ github.ref_name }} -p target/release -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
+
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --token ${{ secrets.GITHUB_TOKEN }}

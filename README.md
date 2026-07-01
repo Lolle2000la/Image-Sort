@@ -85,4 +85,42 @@ cargo build --release
 cargo run --release
 ```
 
-Pre-built binaries for Linux, macOS, and Windows will ship with the v3.0 release.
+Pre-built binaries for Linux, Windows, and macOS are provided with automatic updates via the GitHub Releases page.
+
+## Installation
+
+Pre-compiled standalone binaries with automatic updates are provided for Linux, Windows, and macOS via the [GitHub Releases](https://github.com/Lolle2000la/Image-Sort/releases) page.
+
+### Requirements
+
+All platforms require **libmpv** to be installed on your system to manage video and audio playback pipelines.
+
+### Platform Setup Instructions
+
+#### Linux (.AppImage)
+
+1. Download the latest `.AppImage` from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+2. Grant executable permissions and launch:
+   ```bash
+   chmod +x MediaSort-Linux.AppImage
+   ./MediaSort-Linux.AppImage
+   ```
+
+#### Windows (Setup.exe)
+
+1. Download the standalone `Setup.exe` from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+2. Run the installer wrapper to deploy the application to your local system.
+
+#### macOS (.app Bundle)
+
+Because this open-source variant is published without a paid Apple Developer ID signature, macOS will flag the application bundle as untrusted under Gatekeeper rules.
+
+**To install and execute:**
+
+1. Download and extract the `.zip` archive from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+2. Drag `Media Sort.app` to your `/Applications` directory.
+3. Open a terminal and strip the quarantine flag appended by your browser:
+   ```bash
+   xattr -cr /Applications/Media\ Sort.app
+   ```
+4. Alternatively, try launching the program normally. When blocked, navigate through **System Settings > Privacy & Security**, scroll to the **Security** section, and click **Open Anyway**.

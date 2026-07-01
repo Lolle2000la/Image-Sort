@@ -19,3 +19,7 @@ lucide-icons = "1.21"
 bytemuck = "1"
 dirs = { workspace = true }
 once_cell.workspace = true
+serde = { workspace = true }
+
+velopack = "1.2"
+reqwest = { version = "0.12", features = ["json"] }

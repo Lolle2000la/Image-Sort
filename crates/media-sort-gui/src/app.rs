@@ -132,6 +132,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
+        Message::UpdateCheckFinished(result) => {
+            match result {
+                Ok(()) => tracing::info!("Update check completed, no update available"),
+                Err(e) => tracing::info!("Update check result: {e}"),
+            }
+            Task::none()
+        }
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;
