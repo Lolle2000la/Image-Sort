@@ -1,5 +1,5 @@
-use iced::widget::text;
 use iced::Element;
+use iced::widget::text;
 
 pub fn folder_icon() -> Element<'static, super::super::message::Message> {
     text(char::from(lucide_icons::Icon::Folder))

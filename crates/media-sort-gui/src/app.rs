@@ -18,15 +18,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let _ = state.settings.save();
                 return window::latest().and_then(window::close);
             }
-            if let Some(ref player) = state.audio_player {
-                if state.audio_playing {
-                    if player.empty() {
-                        state.audio_playing = false;
-                        state.audio_position = 0.0;
-                    } else {
-                        state.audio_position = player.position();
-                        state.audio_duration = player.duration();
-                    }
+            if let Some(ref player) = state.audio_player
+                && state.audio_playing
+            {
+                if player.empty() {
+                    state.audio_playing = false;
+                    state.audio_position = 0.0;
+                } else {
+                    state.audio_position = player.position();
+                    state.audio_duration = player.duration();
                 }
             }
             Task::none()
@@ -482,48 +482,46 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 return Task::done(Message::Quit);
             }
 
-            if key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause" {
-                if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(
-                        media_sort_backend::media::mpv_context::VideoCommand::TogglePause,
-                    );
-                    return Task::none();
-                }
+            if (key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause")
+                && let Some(ref sender) = state.video_sender
+            {
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                return Task::none();
             }
-            if key == "MediaStop" {
-                if let Some(ref sender) = state.video_sender {
-                    let _ =
-                        sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
-                    return Task::none();
-                }
+            if key == "MediaStop"
+                && let Some(ref sender) = state.video_sender
+            {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+                return Task::none();
             }
-            if key == "AudioVolumeUp" {
-                if let Some(ref sender) = state.video_sender {
-                    let new_vol = (state.video_volume + 5.0).min(100.0);
-                    let _ = sender.try_send(
-                        media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
-                    );
-                    return Task::none();
-                }
+            if key == "AudioVolumeUp"
+                && let Some(ref sender) = state.video_sender
+            {
+                let new_vol = (state.video_volume + 5.0).min(100.0);
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                );
+                return Task::none();
             }
-            if key == "AudioVolumeDown" {
-                if let Some(ref sender) = state.video_sender {
-                    let new_vol = (state.video_volume - 5.0).max(0.0);
-                    let _ = sender.try_send(
-                        media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
-                    );
-                    return Task::none();
-                }
+            if key == "AudioVolumeDown"
+                && let Some(ref sender) = state.video_sender
+            {
+                let new_vol = (state.video_volume - 5.0).max(0.0);
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                );
+                return Task::none();
             }
-            if key == "AudioVolumeMute" {
-                if let Some(ref sender) = state.video_sender {
-                    let _ = sender.try_send(
-                        media_sort_backend::media::mpv_context::VideoCommand::SetMute(
-                            !state.video_muted,
-                        ),
-                    );
-                    return Task::none();
-                }
+            if key == "AudioVolumeMute"
+                && let Some(ref sender) = state.video_sender
+            {
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetMute(
+                        !state.video_muted,
+                    ),
+                );
+                return Task::none();
             }
             if key == "MediaTrackNext" {
                 return Task::done(Message::Media(MediaMessage::GoRight));
@@ -575,12 +573,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         "move_to_folder" => {
                             if let Some(index) = state.selected_index {
                                 let filtered = state.filtered_media_entries();
-                                if let Some(_entry) = filtered.get(index) {
-                                    if let Some(ref dest) = state.selected_folder {
-                                        return Task::done(Message::Media(
-                                            MediaMessage::MoveToFolder(dest.clone()),
-                                        ));
-                                    }
+                                if let Some(_entry) = filtered.get(index)
+                                    && let Some(ref dest) = state.selected_folder
+                                {
+                                    return Task::done(Message::Media(MediaMessage::MoveToFolder(
+                                        dest.clone(),
+                                    )));
                                 }
                             }
                         }
@@ -665,13 +663,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 }
             }
 
-            if alt && !ctrl && !shift {
-                if let Some(c) = key.chars().next() {
-                    if c.is_ascii_digit() && c != '0' {
-                        let digit = c.to_digit(10).unwrap() as u8;
-                        return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
-                    }
-                }
+            if alt
+                && !ctrl
+                && !shift
+                && let Some(c) = key.chars().next()
+                && c.is_ascii_digit()
+                && c != '0'
+            {
+                let digit = c.to_digit(10).unwrap() as u8;
+                return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
             }
 
             Task::none()
@@ -844,10 +844,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Media(MediaMessage::AudioSeek(pos)) => {
-            if let Some(ref player) = state.audio_player {
-                if let Err(e) = player.seek(pos) {
-                    tracing::error!("Audio seek failed: {e}");
-                }
+            if let Some(ref player) = state.audio_player
+                && let Err(e) = player.seek(pos)
+            {
+                tracing::error!("Audio seek failed: {e}");
             }
             Task::none()
         }
@@ -892,10 +892,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.image_cache.push(path.clone(), handle.clone());
                     if let Some(idx) = state.selected_index {
                         let entries = state.filtered_media_entries();
-                        if let Some(entry) = entries.get(idx) {
-                            if entry.path == path {
-                                state.selected_image = Some((path, handle));
-                            }
+                        if let Some(entry) = entries.get(idx)
+                            && entry.path == path
+                        {
+                            state.selected_image = Some((path, handle));
                         }
                     }
                 }
@@ -903,10 +903,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     tracing::error!("Failed to load full image: {err}");
                     if let Some(idx) = state.selected_index {
                         let entries = state.filtered_media_entries();
-                        if let Some(entry) = entries.get(idx) {
-                            if entry.path == path {
-                                state.selected_image = None;
-                            }
+                        if let Some(entry) = entries.get(idx)
+                            && entry.path == path
+                        {
+                            state.selected_image = None;
                         }
                     }
                 }
@@ -914,10 +914,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Media(MediaMessage::GoLeft) => {
-            if let Some(idx) = state.selected_index {
-                if idx > 0 {
-                    return select_and_load_entry(state, idx - 1);
-                }
+            if let Some(idx) = state.selected_index
+                && idx > 0
+            {
+                return select_and_load_entry(state, idx - 1);
             }
             Task::none()
         }
@@ -931,23 +931,23 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Media(MediaMessage::MoveActive) => {
-            if let Some(index) = state.selected_index {
-                if let Some(ref target_folder) = state.selected_folder {
-                    let filtered = state.filtered_media_entries();
-                    if let Some(entry) = filtered.get(index) {
-                        match MoveAction::new(&entry.path, target_folder) {
-                            Ok(mut action) => {
-                                if let Err(e) = action.execute() {
-                                    tracing::error!("Move failed: {e}");
-                                } else {
-                                    state.history.push_executed(Box::new(action));
-                                    state.scan_media();
-                                    return select_and_load_entry(state, index);
-                                }
+            if let Some(index) = state.selected_index
+                && let Some(ref target_folder) = state.selected_folder
+            {
+                let filtered = state.filtered_media_entries();
+                if let Some(entry) = filtered.get(index) {
+                    match MoveAction::new(&entry.path, target_folder) {
+                        Ok(mut action) => {
+                            if let Err(e) = action.execute() {
+                                tracing::error!("Move failed: {e}");
+                            } else {
+                                state.history.push_executed(Box::new(action));
+                                state.scan_media();
+                                return select_and_load_entry(state, index);
                             }
-                            Err(e) => {
-                                tracing::error!("Cannot create move action: {e}");
-                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Cannot create move action: {e}");
                         }
                     }
                 }
@@ -1069,15 +1069,15 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
             state.video_rgba = None;
             state.video_width = 0;
             state.video_height = 0;
-            if state.audio_playing {
-                if let Some(ref player) = state.audio_player {
-                    player.stop();
-                    if let Err(e) = player.play(&path) {
-                        tracing::error!("Audio play failed: {e}");
-                        state.audio_playing = false;
-                    } else {
-                        state.audio_duration = player.duration();
-                    }
+            if state.audio_playing
+                && let Some(ref player) = state.audio_player
+            {
+                player.stop();
+                if let Err(e) = player.play(&path) {
+                    tracing::error!("Audio play failed: {e}");
+                    state.audio_playing = false;
+                } else {
+                    state.audio_duration = player.duration();
                 }
             }
         } else {
@@ -1103,18 +1103,17 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         tasks.push(scroll_to_selected_entry(state, index));
 
         state.selected_audio_cover = None;
-        if media_type == media_sort_core::media_type::MediaType::Audio {
-            if let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path) {
-                if let Ok(img) = image::load_from_memory(&bytes) {
-                    let rgba = img.to_rgba8();
-                    let (w, h) = rgba.dimensions();
-                    state.selected_audio_cover = Some(iced::widget::image::Handle::from_rgba(
-                        w,
-                        h,
-                        rgba.into_raw(),
-                    ));
-                }
-            }
+        if media_type == media_sort_core::media_type::MediaType::Audio
+            && let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path)
+            && let Ok(img) = image::load_from_memory(&bytes)
+        {
+            let rgba = img.to_rgba8();
+            let (w, h) = rgba.dimensions();
+            state.selected_audio_cover = Some(iced::widget::image::Handle::from_rgba(
+                w,
+                h,
+                rgba.into_raw(),
+            ));
         }
 
         if let Some(handle) = state.image_cache.get(&path) {
@@ -2041,7 +2040,9 @@ mod tests {
 
     #[test]
     fn test_tick_should_exit_saves_settings() {
-        std::env::set_var("UI_TEST", "1");
+        unsafe {
+            std::env::set_var("UI_TEST", "1");
+        }
         let mut state = AppState::new(SettingsStore::default());
         state.settings.general.dark_mode = true;
         state.should_exit = true;
@@ -2054,6 +2055,8 @@ mod tests {
         if test_path.exists() {
             let _ = std::fs::remove_file(test_path);
         }
-        std::env::remove_var("UI_TEST");
+        unsafe {
+            std::env::remove_var("UI_TEST");
+        }
     }
 }

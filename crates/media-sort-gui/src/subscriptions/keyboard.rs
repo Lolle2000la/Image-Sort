@@ -1,5 +1,5 @@
-use iced::keyboard::{self, Key};
 use iced::Subscription;
+use iced::keyboard::{self, Key};
 
 use crate::message::Message;
 

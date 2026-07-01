@@ -46,20 +46,18 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
                     if player
                         .render_frame(render_w as i32, render_h as i32, &mut buffer)
                         .is_ok()
-                    {
-                        if let Some(rgba) =
+                        && let Some(rgba) =
                             image::RgbaImage::from_raw(render_w as u32, render_h as u32, buffer)
-                        {
-                            let mut buf = std::io::Cursor::new(Vec::new());
-                            if rgba.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
-                                let result = buf.into_inner();
-                                tracing::info!(
-                                    "generate_thumbnail: successfully extracted thumbnail for {:?}, len: {}",
-                                    path,
-                                    result.len()
-                                );
-                                return Ok(result);
-                            }
+                    {
+                        let mut buf = std::io::Cursor::new(Vec::new());
+                        if rgba.write_to(&mut buf, image::ImageFormat::Png).is_ok() {
+                            let result = buf.into_inner();
+                            tracing::info!(
+                                "generate_thumbnail: successfully extracted thumbnail for {:?}, len: {}",
+                                path,
+                                result.len()
+                            );
+                            return Ok(result);
                         }
                     }
                 } else {

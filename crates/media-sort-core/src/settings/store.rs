@@ -70,10 +70,10 @@ pub struct SettingsStore {
 
 impl SettingsStore {
     pub fn config_path() -> PathBuf {
-        if let Ok(val) = std::env::var("UI_TEST") {
-            if !val.is_empty() {
-                return PathBuf::from("ui_test_config.toml");
-            }
+        if let Ok(val) = std::env::var("UI_TEST")
+            && !val.is_empty()
+        {
+            return PathBuf::from("ui_test_config.toml");
         }
         let base = dirs::config_dir()
             .unwrap_or_else(|| PathBuf::from("."))
@@ -94,17 +94,16 @@ impl SettingsStore {
         // Search for existing JSON config files to migrate
         let mut migrated_settings: Option<SettingsStore> = None;
 
-        if let Ok(val) = std::env::var("UI_TEST") {
-            if !val.is_empty() {
-                let old_json_path = PathBuf::from("ui_test_config.json");
-                if old_json_path.exists() {
-                    if let Ok(data) = std::fs::read_to_string(&old_json_path) {
-                        if let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data) {
-                            store.custom_path = Some(toml_path.clone());
-                            migrated_settings = Some(store);
-                        }
-                    }
-                }
+        if let Ok(val) = std::env::var("UI_TEST")
+            && !val.is_empty()
+        {
+            let old_json_path = PathBuf::from("ui_test_config.json");
+            if old_json_path.exists()
+                && let Ok(data) = std::fs::read_to_string(&old_json_path)
+                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
+            {
+                store.custom_path = Some(toml_path.clone());
+                migrated_settings = Some(store);
             }
         }
 
@@ -119,13 +118,12 @@ impl SettingsStore {
                 base.join("config.json")
             };
 
-            if rust_json_path.exists() {
-                if let Ok(data) = std::fs::read_to_string(&rust_json_path) {
-                    if let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data) {
-                        store.custom_path = Some(toml_path.clone());
-                        migrated_settings = Some(store);
-                    }
-                }
+            if rust_json_path.exists()
+                && let Ok(data) = std::fs::read_to_string(&rust_json_path)
+                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
+            {
+                store.custom_path = Some(toml_path.clone());
+                migrated_settings = Some(store);
             }
         }
 
@@ -140,13 +138,12 @@ impl SettingsStore {
                 wpf_base.join("config.json")
             };
 
-            if wpf_json_path.exists() {
-                if let Ok(data) = std::fs::read_to_string(&wpf_json_path) {
-                    if let Some(mut store) = parse_wpf_settings(&data) {
-                        store.custom_path = Some(toml_path.clone());
-                        migrated_settings = Some(store);
-                    }
-                }
+            if wpf_json_path.exists()
+                && let Ok(data) = std::fs::read_to_string(&wpf_json_path)
+                && let Some(mut store) = parse_wpf_settings(&data)
+            {
+                store.custom_path = Some(toml_path.clone());
+                migrated_settings = Some(store);
             }
         }
 
@@ -235,15 +232,14 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
     }
 
     // 2. PinnedFolders settings
-    if let Some(pinned) = json.get("PinnedFolders") {
-        if let Some(folders_val) = pinned.get("PinnedFolders") {
-            if let Some(arr) = folders_val.as_array() {
-                store.pinned_folders.paths = arr
-                    .iter()
-                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                    .collect();
-            }
-        }
+    if let Some(pinned) = json.get("PinnedFolders")
+        && let Some(folders_val) = pinned.get("PinnedFolders")
+        && let Some(arr) = folders_val.as_array()
+    {
+        store.pinned_folders.paths = arr
+            .iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect();
     }
 
     // 3. MetadataPanel settings

@@ -104,9 +104,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .width(Length::Fill)
         .height(Length::Fill)
     } else {
-        row![container(media_column)
-            .width(Length::Fill)
-            .height(Length::Fill),]
+        row![
+            container(media_column)
+                .width(Length::Fill)
+                .height(Length::Fill),
+        ]
         .spacing(0)
         .width(Length::Fill)
         .height(Length::Fill)

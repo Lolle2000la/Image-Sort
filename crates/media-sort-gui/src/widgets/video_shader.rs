@@ -279,30 +279,29 @@ impl Primitive for VideoPrimitive {
             pipeline.height = self.height;
         }
 
-        if let Some(texture) = &pipeline.texture {
-            if let Some(rgba) = &self.rgba {
-                if !rgba.is_empty() {
-                    queue.write_texture(
-                        wgpu::TexelCopyTextureInfo {
-                            texture,
-                            mip_level: 0,
-                            origin: wgpu::Origin3d::ZERO,
-                            aspect: wgpu::TextureAspect::All,
-                        },
-                        rgba,
-                        wgpu::TexelCopyBufferLayout {
-                            offset: 0,
-                            bytes_per_row: Some(self.width * 4),
-                            rows_per_image: Some(self.height),
-                        },
-                        wgpu::Extent3d {
-                            width: self.width,
-                            height: self.height,
-                            depth_or_array_layers: 1,
-                        },
-                    );
-                }
-            }
+        if let Some(texture) = &pipeline.texture
+            && let Some(rgba) = &self.rgba
+            && !rgba.is_empty()
+        {
+            queue.write_texture(
+                wgpu::TexelCopyTextureInfo {
+                    texture,
+                    mip_level: 0,
+                    origin: wgpu::Origin3d::ZERO,
+                    aspect: wgpu::TextureAspect::All,
+                },
+                rgba,
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(self.width * 4),
+                    rows_per_image: Some(self.height),
+                },
+                wgpu::Extent3d {
+                    width: self.width,
+                    height: self.height,
+                    depth_or_array_layers: 1,
+                },
+            );
         }
     }
 

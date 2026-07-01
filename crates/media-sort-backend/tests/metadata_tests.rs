@@ -231,12 +231,14 @@ fn test_extract_audio_metadata_wav() {
     tag.write_to_path(&path, id3::Version::Id3v24).unwrap();
     let result = extract_audio_metadata(&path);
     assert!(result.is_ok());
-    assert!(result
-        .as_ref()
-        .unwrap()
-        .get("ID3 Metadata")
-        .and_then(|s| s.get("Title"))
-        .is_some_and(|t| t == "Test Title"));
+    assert!(
+        result
+            .as_ref()
+            .unwrap()
+            .get("ID3 Metadata")
+            .and_then(|s| s.get("Title"))
+            .is_some_and(|t| t == "Test Title")
+    );
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -251,12 +253,14 @@ fn test_extract_audio_metadata_aiff() {
     tag.write_to_path(&path, id3::Version::Id3v24).unwrap();
     let result = extract_audio_metadata(&path);
     assert!(result.is_ok());
-    assert!(result
-        .as_ref()
-        .unwrap()
-        .get("ID3 Metadata")
-        .and_then(|s| s.get("Title"))
-        .is_some_and(|t| t == "AIFF Title"));
+    assert!(
+        result
+            .as_ref()
+            .unwrap()
+            .get("ID3 Metadata")
+            .and_then(|s| s.get("Title"))
+            .is_some_and(|t| t == "AIFF Title")
+    );
     std::fs::remove_dir_all(&dir).ok();
 }
 

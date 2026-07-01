@@ -93,11 +93,13 @@ impl MpvContext {
         let sender_box = Box::new(sender);
         self.callback_context_raw = Box::into_raw(sender_box) as *mut c_void;
 
-        mpv_render_context_set_update_callback(
-            self.render_ctx,
-            Some(mpv_wakeup_callback),
-            self.callback_context_raw,
-        );
+        unsafe {
+            mpv_render_context_set_update_callback(
+                self.render_ctx,
+                Some(mpv_wakeup_callback),
+                self.callback_context_raw,
+            );
+        }
     }
 
     pub fn has_frame_ready(&self) -> bool {
@@ -502,8 +504,8 @@ pub async fn run_video_worker(
                     // 2. Only check guards if libmpv explicitly indicates a new frame is ready
                     if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
                         // 3. Drop-frame protection: only parse paths and extract pixels if the channel is clear
-                        if event_tx.capacity() > 0 {
-                            if let Some(current_p_str) = player.get_current_path() {
+                        if event_tx.capacity() > 0
+                            && let Some(current_p_str) = player.get_current_path() {
                                 let current_p = std::path::PathBuf::from(current_p_str);
                                 let paths_match = current_p == current_video_path
                                     || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
@@ -528,8 +530,8 @@ pub async fn run_video_worker(
                                             }
                                         }
 
-                                        if let Some(arc_buf) = free_buffer {
-                                            if let Some(target_vec) = std::sync::Arc::get_mut(arc_buf) {
+                                        if let Some(arc_buf) = free_buffer
+                                            && let Some(target_vec) = std::sync::Arc::get_mut(arc_buf) {
                                                 target_vec.resize(size, 0);
 
                                                 if player.render_frame(render_w, render_h, target_vec).is_ok() {
@@ -541,11 +543,9 @@ pub async fn run_video_worker(
                                                     });
                                                 }
                                             }
-                                        }
                                     }
                                 }
                             }
-                        }
                     }
                 }
             }

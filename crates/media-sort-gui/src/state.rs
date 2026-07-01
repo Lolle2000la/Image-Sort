@@ -365,30 +365,30 @@ impl AppState {
     }
 
     pub fn move_pinned_folder_up(&mut self, path: &Path) {
-        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path) {
-            if pos > 0 {
-                self.pinned_folders.swap(pos, pos - 1);
-                self.settings.pinned_folders.paths = self
-                    .pinned_folders
-                    .iter()
-                    .map(|p| p.path.display().to_string())
-                    .collect();
-                self.build_folder_tree();
-            }
+        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path)
+            && pos > 0
+        {
+            self.pinned_folders.swap(pos, pos - 1);
+            self.settings.pinned_folders.paths = self
+                .pinned_folders
+                .iter()
+                .map(|p| p.path.display().to_string())
+                .collect();
+            self.build_folder_tree();
         }
     }
 
     pub fn move_pinned_folder_down(&mut self, path: &Path) {
-        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path) {
-            if pos < self.pinned_folders.len() - 1 {
-                self.pinned_folders.swap(pos, pos + 1);
-                self.settings.pinned_folders.paths = self
-                    .pinned_folders
-                    .iter()
-                    .map(|p| p.path.display().to_string())
-                    .collect();
-                self.build_folder_tree();
-            }
+        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path)
+            && pos < self.pinned_folders.len() - 1
+        {
+            self.pinned_folders.swap(pos, pos + 1);
+            self.settings.pinned_folders.paths = self
+                .pinned_folders
+                .iter()
+                .map(|p| p.path.display().to_string())
+                .collect();
+            self.build_folder_tree();
         }
     }
 
@@ -415,12 +415,11 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        if let Some(ref selected) = self.selected_folder {
-            if let Some(idx) = visible.iter().position(|p| p == selected) {
-                if idx > 0 {
-                    self.selected_folder = Some(visible[idx - 1].clone());
-                }
-            }
+        if let Some(ref selected) = self.selected_folder
+            && let Some(idx) = visible.iter().position(|p| p == selected)
+            && idx > 0
+        {
+            self.selected_folder = Some(visible[idx - 1].clone());
         }
     }
 
@@ -438,10 +437,10 @@ impl AppState {
             if expanded {
                 set_expand_recursive(&mut self.folder_tree, &selected, false);
             } else {
-                if let Some(parent) = selected.parent() {
-                    if find_node_expanded(&self.folder_tree, parent).is_some() {
-                        self.selected_folder = Some(parent.to_path_buf());
-                    }
+                if let Some(parent) = selected.parent()
+                    && find_node_expanded(&self.folder_tree, parent).is_some()
+                {
+                    self.selected_folder = Some(parent.to_path_buf());
                 }
             }
         }

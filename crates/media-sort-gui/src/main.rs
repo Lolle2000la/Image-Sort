@@ -41,21 +41,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let state = crate::state::AppState::new(settings.clone());
             let mut startup_path = None;
 
-            if state.settings.general.reopen_last_opened_folder {
-                if let Some(ref last_path_str) = state.settings.general.last_opened_folder {
-                    let last_path = std::path::PathBuf::from(last_path_str);
-                    if last_path.exists() {
-                        startup_path = Some(last_path);
-                    }
+            if state.settings.general.reopen_last_opened_folder
+                && let Some(ref last_path_str) = state.settings.general.last_opened_folder
+            {
+                let last_path = std::path::PathBuf::from(last_path_str);
+                if last_path.exists() {
+                    startup_path = Some(last_path);
                 }
             }
 
-            if startup_path.is_none() {
-                if let Some(pic_dir) = dirs::picture_dir() {
-                    if pic_dir.exists() {
-                        startup_path = Some(pic_dir);
-                    }
-                }
+            if startup_path.is_none()
+                && let Some(pic_dir) = dirs::picture_dir()
+                && pic_dir.exists()
+            {
+                startup_path = Some(pic_dir);
             }
 
             let task = {

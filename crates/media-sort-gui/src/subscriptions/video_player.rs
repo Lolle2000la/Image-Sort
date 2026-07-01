@@ -1,6 +1,6 @@
 use crate::message::{Message, VideoMessage};
-use iced::futures::SinkExt;
 use iced::Subscription;
+use iced::futures::SinkExt;
 use media_sort_backend::media::mpv_context::start_video_worker;
 use tokio::sync::mpsc;
 

@@ -632,12 +632,13 @@ fn test_settings_empty_json_uses_defaults() {
 #[test]
 fn test_l10n_init() {
     let loc = Localization::init("en");
-    assert!(!loc
-        .get(
+    assert!(
+        !loc.get(
             "move-action-message",
             &[("file_name", "test.jpg"), ("directory", "/home")]
         )
-        .is_empty());
+        .is_empty()
+    );
 }
 
 #[test]

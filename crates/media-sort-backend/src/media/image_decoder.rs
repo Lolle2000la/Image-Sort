@@ -52,20 +52,19 @@ pub fn generate_thumbnail(
 fn apply_orientation(mut img: image::DynamicImage, path: &Path) -> image::DynamicImage {
     if let Ok(file) = std::fs::File::open(path) {
         let mut buf_reader = std::io::BufReader::new(&file);
-        if let Ok(exif) = exif::Reader::new().read_from_container(&mut buf_reader) {
-            if let Some(field) = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY) {
-                if let Some(val) = field.value.get_uint(0) {
-                    match val {
-                        2 => img = img.fliph(),
-                        3 => img = img.rotate180(),
-                        4 => img = img.flipv(),
-                        5 => img = img.fliph().rotate270(),
-                        6 => img = img.rotate90(),
-                        7 => img = img.fliph().rotate90(),
-                        8 => img = img.rotate270(),
-                        _ => {}
-                    }
-                }
+        if let Ok(exif) = exif::Reader::new().read_from_container(&mut buf_reader)
+            && let Some(field) = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+            && let Some(val) = field.value.get_uint(0)
+        {
+            match val {
+                2 => img = img.fliph(),
+                3 => img = img.rotate180(),
+                4 => img = img.flipv(),
+                5 => img = img.fliph().rotate270(),
+                6 => img = img.rotate90(),
+                7 => img = img.fliph().rotate90(),
+                8 => img = img.rotate270(),
+                _ => {}
             }
         }
     }

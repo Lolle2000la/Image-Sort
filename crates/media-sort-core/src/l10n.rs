@@ -85,16 +85,16 @@ impl Localization {
             .or_else(|| self.bundles.get(&"en".parse().unwrap()));
         if let Some(bundle) = bundle {
             let mut errors = Vec::new();
-            if let Some(pattern) = bundle.get_message(key) {
-                if let Some(value) = pattern.value() {
-                    let mut args_map = fluent::FluentArgs::new();
-                    for (k, v) in args {
-                        args_map.set(*k, *v);
-                    }
-                    return bundle
-                        .format_pattern(value, Some(&args_map), &mut errors)
-                        .into_owned();
+            if let Some(pattern) = bundle.get_message(key)
+                && let Some(value) = pattern.value()
+            {
+                let mut args_map = fluent::FluentArgs::new();
+                for (k, v) in args {
+                    args_map.set(*k, *v);
                 }
+                return bundle
+                    .format_pattern(value, Some(&args_map), &mut errors)
+                    .into_owned();
             }
         }
         key.to_string()

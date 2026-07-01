@@ -103,8 +103,8 @@ fn extract_matroska_metadata(
 pub fn extract_generic_container_metadata(
     path: &Path,
 ) -> Result<BTreeMap<String, BTreeMap<String, String>>, MetadataError> {
-    use symphonia::core::formats::probe::Hint;
     use symphonia::core::formats::FormatOptions;
+    use symphonia::core::formats::probe::Hint;
     use symphonia::core::io::MediaSourceStream;
     use symphonia::core::meta::MetadataOptions;
 

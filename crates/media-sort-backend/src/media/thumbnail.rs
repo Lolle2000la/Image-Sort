@@ -30,13 +30,13 @@ pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
     match ext.to_lowercase().as_str() {
         "mp3" | "aiff" | "wav" => {
             let tag = id3::Tag::read_from_path(path).ok()?;
-            let cover = tag.pictures().next().map(|p| p.data.clone());
-            cover
+
+            tag.pictures().next().map(|p| p.data.clone())
         }
         "flac" => {
             let tag = metaflac::Tag::read_from_path(path).ok()?;
-            let cover = tag.pictures().next().map(|p| p.data.clone());
-            cover
+
+            tag.pictures().next().map(|p| p.data.clone())
         }
         "mp4" | "m4a" | "m4v" | "mov" | "aac" => {
             let mut file = std::fs::File::open(path).ok()?;
@@ -44,8 +44,8 @@ pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
             tag.artwork().map(|img| img.data.to_vec())
         }
         _ => {
-            use symphonia::core::formats::probe::Hint;
             use symphonia::core::formats::FormatOptions;
+            use symphonia::core::formats::probe::Hint;
             use symphonia::core::io::MediaSourceStream;
             use symphonia::core::meta::MetadataOptions;
 
@@ -67,17 +67,17 @@ pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
 
             let mut metadata = format.metadata();
 
-            if let Some(revision) = metadata.current() {
-                if let Some(visual) = revision.media.visuals.first() {
-                    return Some(visual.data.to_vec());
-                }
+            if let Some(revision) = metadata.current()
+                && let Some(visual) = revision.media.visuals.first()
+            {
+                return Some(visual.data.to_vec());
             }
 
             while !metadata.is_latest() {
-                if let Some(revision) = metadata.pop() {
-                    if let Some(visual) = revision.media.visuals.first() {
-                        return Some(visual.data.to_vec());
-                    }
+                if let Some(revision) = metadata.pop()
+                    && let Some(visual) = revision.media.visuals.first()
+                {
+                    return Some(visual.data.to_vec());
                 }
             }
             None
