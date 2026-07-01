@@ -42,8 +42,7 @@ jobs:
 
       - name: Install System Dependencies (macOS Only)
         if: matrix.os == 'macos-latest'
-        run: |
-          brew install mpv macdylibbundler
+        run: brew install mpv macdylibbundler
 
       - name: Build Standalone Binary
         run: cargo build --release
@@ -55,20 +54,31 @@ jobs:
           curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
           7z e mpv-dev.7z mpv-1.dll -otarget/release/ -y
 
-      - name: Bundle macOS Dynamic Libraries
+      - name: Bundle macOS Dynamic Libraries & App Structure
         if: matrix.os == 'macos-latest'
         run: |
-          cp /opt/homebrew/lib/libmpv.2.dylib target/release/
-          install_name_tool -change /opt/homebrew/lib/libmpv.2.dylib @executable_path/libmpv.2.dylib target/release/media-sort-gui
-          dylibbundler -od -b -x target/release/media-sort-gui -d target/release/
+          # 1. Structure the canonical macOS App Bundle hierarchy
+          mkdir -p "target/release/Media Sort.app/Contents/MacOS"
+          mv target/release/media-sort-gui "target/release/Media Sort.app/Contents/MacOS/"
+
+          # 2. Trace, clone, and deeply link dylibs via dylibbundler natively
+          dylibbundler -od -b -x "target/release/Media Sort.app/Contents/MacOS/media-sort-gui" -d "target/release/Media Sort.app/Contents/MacOS/" -s /opt/homebrew/lib
 
       - name: Install and Run Velopack Packager
         shell: bash
         run: |
           dotnet tool install -g vpk
 
-          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }}
+          # Strip leading 'v' from tag for vpk version parsing
+          RAW_VERSION="${{ github.ref_name }}"
+          CLEAN_VERSION="${RAW_VERSION#v}"
 
-          vpk pack -u ImageSort -v ${{ github.ref_name }} -p target/release -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
+          vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }} --allowMissing
+
+          if [ "${{ matrix.os }}" = "macos-latest" ]; then
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p target/release -e "Media Sort.app" --channel ${{ matrix.platform }}
+          else
+            vpk pack -u ImageSort -v "$CLEAN_VERSION" -p target/release -e ${{ matrix.exe_name }} --channel ${{ matrix.platform }}
+          fi
 
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --token ${{ secrets.GITHUB_TOKEN }}
