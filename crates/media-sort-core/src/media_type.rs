@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 use strum::EnumIter;
 
 pub static NATIVE_IMAGE_EXTS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "bmp", "tiff", "tif", "ico", "webp", "jxl", "heic", "heif", "avif",
+    "png", "jpg", "jpeg", "bmp", "tiff", "tif", "ico", "webp", "jxl", "heic", "heif", "avif",
 ];
 pub static NATIVE_AUDIO_EXTS: &[&str] = &[
     "mp3", "flac", "ogg", "wav", "aac", "m4a", "wma", "opus", "aiff",
@@ -23,7 +23,7 @@ impl MediaType {
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
             MediaType::Image => NATIVE_IMAGE_EXTS,
-            MediaType::Video => &["mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v"],
+            MediaType::Video => &["mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v", "gif"],
             MediaType::Audio => NATIVE_AUDIO_EXTS,
         }
     }
