@@ -605,7 +605,7 @@ mod tests {
         assert_eq!(detect_media_type("jpg"), MediaType::Image);
         assert_eq!(detect_media_type("png"), MediaType::Image);
         assert_eq!(detect_media_type("jpeg"), MediaType::Image);
-        assert_eq!(detect_media_type("gif"), MediaType::Image);
+        assert_eq!(detect_media_type("bmp"), MediaType::Image);
     }
 
     #[test]
@@ -614,6 +614,7 @@ mod tests {
         assert_eq!(detect_media_type("mkv"), MediaType::Video);
         assert_eq!(detect_media_type("webm"), MediaType::Video);
         assert_eq!(detect_media_type("mov"), MediaType::Video);
+        assert_eq!(detect_media_type("gif"), MediaType::Video);
     }
 
     #[test]

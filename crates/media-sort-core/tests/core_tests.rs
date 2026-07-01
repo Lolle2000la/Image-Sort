@@ -437,7 +437,6 @@ fn test_image_extensions() {
     assert!(exts.contains(&"png"));
     assert!(exts.contains(&"jpg"));
     assert!(exts.contains(&"jpeg"));
-    assert!(exts.contains(&"gif"));
     assert!(exts.contains(&"bmp"));
     assert!(exts.contains(&"webp"));
 }
@@ -450,6 +449,7 @@ fn test_video_extensions() {
     assert!(exts.contains(&"webm"));
     assert!(exts.contains(&"avi"));
     assert!(exts.contains(&"mov"));
+    assert!(exts.contains(&"gif"));
 }
 
 #[test]

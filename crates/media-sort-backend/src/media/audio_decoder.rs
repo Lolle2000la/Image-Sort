@@ -3,7 +3,7 @@ use std::path::Path;
 use std::sync::Mutex;
 use std::time::Duration;
 
-use rodio::{Decoder, OutputStream, Sink, Source};
+use rodio::{Decoder, DeviceSinkBuilder, Player, Source};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -30,8 +30,8 @@ impl From<rodio::PlayError> for AudioError {
     }
 }
 
-impl From<rodio::StreamError> for AudioError {
-    fn from(e: rodio::StreamError) -> Self {
+impl From<rodio::DeviceSinkError> for AudioError {
+    fn from(e: rodio::DeviceSinkError) -> Self {
         AudioError::Playback(e.to_string())
     }
 }
@@ -43,16 +43,17 @@ impl From<rodio::source::SeekError> for AudioError {
 }
 
 pub struct AudioPlayer {
-    _stream: OutputStream,
-    sink: Sink,
+    _sink: rodio::MixerDeviceSink,
+    player: Player,
     duration: Mutex<f64>,
 }
 
 fn probe_duration(path: &Path) -> Option<f64> {
-    use symphonia::core::formats::FormatOptions;
+    use symphonia::core::formats::probe::Hint;
+    use symphonia::core::formats::{FormatOptions, TrackType};
     use symphonia::core::io::MediaSourceStream;
     use symphonia::core::meta::MetadataOptions;
-    use symphonia::core::probe::Hint;
+    use symphonia::core::units::Timestamp;
 
     let file = File::open(path).ok()?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -60,68 +61,69 @@ fn probe_duration(path: &Path) -> Option<f64> {
     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
         hint.with_extension(ext);
     }
-    let probed = symphonia::default::get_probe()
-        .format(
+    let format = symphonia::default::get_probe()
+        .probe(
             &hint,
             mss,
-            &FormatOptions::default(),
-            &MetadataOptions::default(),
+            FormatOptions::default(),
+            MetadataOptions::default(),
         )
         .ok()?;
-    let track = probed.format.default_track()?;
-    let params = &track.codec_params;
-    let tb = params.time_base?;
-    let frames = params.n_frames?;
-    Some(tb.calc_time(frames).seconds as f64 + tb.calc_time(frames).frac as f64)
+    let track = format.default_track(TrackType::Audio)?;
+    let tb = track.time_base?;
+    let frames = track.num_frames?;
+    let ts = Timestamp::try_from(frames).ok()?;
+    let time = tb.calc_time(ts)?;
+    Some(time.as_secs_f64())
 }
 
 impl AudioPlayer {
     pub fn new() -> Result<Self, AudioError> {
-        let (stream, stream_handle) = OutputStream::try_default()?;
-        let sink = Sink::try_new(&stream_handle)?;
+        let sink = DeviceSinkBuilder::open_default_sink()?;
+        let player = Player::connect_new(sink.mixer());
         Ok(Self {
-            _stream: stream,
-            sink,
+            _sink: sink,
+            player,
             duration: Mutex::new(0.0),
         })
     }
 
     pub fn play(&self, path: &Path) -> Result<(), AudioError> {
         let file = File::open(path)?;
-        let decoder = Decoder::new(file)?;
+        let decoder = Decoder::try_from(file)?;
         let dur = probe_duration(path)
             .or_else(|| decoder.total_duration().map(|d| d.as_secs_f64()))
             .unwrap_or(0.0);
-        self.sink.append(decoder);
+        self.player.append(decoder);
         if let Ok(mut d) = self.duration.lock() {
             *d = dur;
         }
-        self.sink.play();
+        self.player.play();
         Ok(())
     }
 
     pub fn pause(&self) {
-        self.sink.pause();
+        self.player.pause();
     }
 
     pub fn resume(&self) {
-        self.sink.play();
+        self.player.play();
     }
 
     pub fn stop(&self) {
-        self.sink.stop();
+        self.player.stop();
     }
 
     pub fn is_paused(&self) -> bool {
-        self.sink.is_paused()
+        self.player.is_paused()
     }
 
     pub fn empty(&self) -> bool {
-        self.sink.empty()
+        self.player.empty()
     }
 
     pub fn position(&self) -> f64 {
-        self.sink.get_pos().as_secs_f64()
+        self.player.get_pos().as_secs_f64()
     }
 
     pub fn duration(&self) -> f64 {
@@ -129,16 +131,16 @@ impl AudioPlayer {
     }
 
     pub fn volume(&self) -> f32 {
-        self.sink.volume()
+        self.player.volume()
     }
 
     pub fn set_volume(&self, vol: f32) {
-        self.sink.set_volume(vol);
+        self.player.set_volume(vol);
     }
 
     pub fn seek(&self, pos_secs: f64) -> Result<(), AudioError> {
         let dur = Duration::from_secs_f64(pos_secs.max(0.0));
-        self.sink.try_seek(dur)?;
+        self.player.try_seek(dur)?;
         Ok(())
     }
 }

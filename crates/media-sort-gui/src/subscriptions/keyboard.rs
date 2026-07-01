@@ -173,7 +173,6 @@ pub fn format_keybinding(binding: &media_sort_core::settings::keybindings::KeyBi
 mod tests {
     use super::*;
     use media_sort_core::settings::keybindings::{KeyBinding, KeyBindings};
-    use smol_str::SmolStr;
 
     #[test]
     fn test_key_to_name_named_keys() {
@@ -214,11 +213,11 @@ mod tests {
     #[test]
     fn test_key_to_name_character() {
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Character(SmolStr::new("a"))),
+            key_to_name(iced::keyboard::Key::Character("a".into())),
             Some("A".into())
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Character(SmolStr::new("z"))),
+            key_to_name(iced::keyboard::Key::Character("z".into())),
             Some("Z".into())
         );
     }
@@ -226,10 +225,7 @@ mod tests {
     #[test]
     fn test_key_to_name_unknown() {
         assert_eq!(key_to_name(iced::keyboard::Key::Unidentified), None);
-        assert_eq!(
-            key_to_name(iced::keyboard::Key::Character(SmolStr::new(""))),
-            None
-        );
+        assert_eq!(key_to_name(iced::keyboard::Key::Character("".into())), None);
     }
 
     #[test]

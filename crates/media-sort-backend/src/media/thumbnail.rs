@@ -41,16 +41,13 @@ pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
         "mp4" | "m4a" | "m4v" | "mov" | "aac" => {
             let mut file = std::fs::File::open(path).ok()?;
             let tag = mp4ameta::Tag::read_from(&mut file).ok()?;
-            tag.artwork().and_then(|data| match data {
-                mp4ameta::Data::Jpeg(bytes) | mp4ameta::Data::Png(bytes) => Some(bytes),
-                _ => None,
-            })
+            tag.artwork().map(|img| img.data.to_vec())
         }
         _ => {
+            use symphonia::core::formats::probe::Hint;
             use symphonia::core::formats::FormatOptions;
             use symphonia::core::io::MediaSourceStream;
             use symphonia::core::meta::MetadataOptions;
-            use symphonia::core::probe::Hint;
 
             let file = std::fs::File::open(path).ok()?;
             let mss = MediaSourceStream::new(Box::new(file), Default::default());
@@ -59,27 +56,26 @@ pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {
                 hint.with_extension(ext);
             }
 
-            let probed = symphonia::default::get_probe()
-                .format(
+            let mut format = symphonia::default::get_probe()
+                .probe(
                     &hint,
                     mss,
-                    &FormatOptions::default(),
-                    &MetadataOptions::default(),
+                    FormatOptions::default(),
+                    MetadataOptions::default(),
                 )
                 .ok()?;
 
-            let mut format = probed.format;
             let mut metadata = format.metadata();
 
             if let Some(revision) = metadata.current() {
-                if let Some(visual) = revision.visuals().first() {
+                if let Some(visual) = revision.media.visuals.first() {
                     return Some(visual.data.to_vec());
                 }
             }
 
             while !metadata.is_latest() {
                 if let Some(revision) = metadata.pop() {
-                    if let Some(visual) = revision.visuals().first() {
+                    if let Some(visual) = revision.media.visuals.first() {
                         return Some(visual.data.to_vec());
                     }
                 }

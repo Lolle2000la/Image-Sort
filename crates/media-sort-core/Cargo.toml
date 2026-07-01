@@ -15,4 +15,4 @@ unic-langid.workspace = true
 once_cell.workspace = true
 strum.workspace = true
 dirs.workspace = true
-toml = "0.8"
+toml = "1.1"

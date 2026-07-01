@@ -81,8 +81,10 @@ fn extract_mp4_metadata(
         mp4_section.insert("Genre".into(), genre.to_string());
     }
     if let Some(track) = tag.track_number() {
-        mp4_section.insert("Track".into(), track.0.to_string());
-        mp4_section.insert("Total Tracks".into(), track.1.to_string());
+        mp4_section.insert("Track".into(), track.to_string());
+    }
+    if let Some(total) = tag.total_tracks() {
+        mp4_section.insert("Total Tracks".into(), total.to_string());
     }
 
     if !mp4_section.is_empty() {
@@ -101,10 +103,10 @@ fn extract_matroska_metadata(
 pub fn extract_generic_container_metadata(
     path: &Path,
 ) -> Result<BTreeMap<String, BTreeMap<String, String>>, MetadataError> {
+    use symphonia::core::formats::probe::Hint;
     use symphonia::core::formats::FormatOptions;
     use symphonia::core::io::MediaSourceStream;
     use symphonia::core::meta::MetadataOptions;
-    use symphonia::core::probe::Hint;
 
     let mut sections = BTreeMap::new();
 
@@ -118,22 +120,21 @@ pub fn extract_generic_container_metadata(
         let meta_opts = MetadataOptions::default();
         let fmt_opts = FormatOptions::default();
 
-        if let Ok(probed) =
-            symphonia::default::get_probe().format(&hint, mss, &fmt_opts, &meta_opts)
+        if let Ok(mut format) =
+            symphonia::default::get_probe().probe(&hint, mss, fmt_opts, meta_opts)
         {
-            let mut format = probed.format;
             let mut metadata = format.metadata();
             let mut container_sec = BTreeMap::new();
 
             // Get all revisions
             while !metadata.is_latest() {
                 if let Some(revision) = metadata.pop() {
-                    for tag in revision.tags() {
-                        let key = match tag.std_key {
+                    for tag in &revision.media.tags {
+                        let key = match &tag.std {
                             Some(std_key) => format!("{:?}", std_key),
-                            None => tag.key.clone(),
+                            None => tag.raw.key.clone(),
                         };
-                        let val = tag.value.to_string();
+                        let val = tag.raw.value.to_string();
                         if !val.trim().is_empty() {
                             container_sec.insert(key, val);
                         }
@@ -143,12 +144,12 @@ pub fn extract_generic_container_metadata(
 
             // Also check the current/latest revision
             if let Some(revision) = metadata.current() {
-                for tag in revision.tags() {
-                    let key = match tag.std_key {
+                for tag in &revision.media.tags {
+                    let key = match &tag.std {
                         Some(std_key) => format!("{:?}", std_key),
-                        None => tag.key.clone(),
+                        None => tag.raw.key.clone(),
                     };
-                    let val = tag.value.to_string();
+                    let val = tag.raw.value.to_string();
                     if !val.trim().is_empty() {
                         container_sec.insert(key, val);
                     }
