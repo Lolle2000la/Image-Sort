@@ -14,14 +14,41 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            platform: linux
-            exe_name: media-sort-gui
+          # Windows Releases
           - os: windows-latest
-            platform: win
+            platform: win-x64
+            target: x86_64-pc-windows-msvc
             exe_name: media-sort-gui.exe
+            mpv_arch: x86_64
+          - os: windows-latest
+            platform: win-x86
+            target: i686-pc-windows-msvc
+            exe_name: media-sort-gui.exe
+            mpv_arch: i686
+          - os: windows-latest
+            platform: win-arm64
+            target: aarch64-pc-windows-msvc
+            exe_name: media-sort-gui.exe
+            mpv_arch: aarch64
+
+          # Linux Releases
+          - os: ubuntu-latest
+            platform: linux-x64
+            target: x86_64-unknown-linux-gnu
+            exe_name: media-sort-gui
+          - os: ubuntu-latest
+            platform: linux-arm64
+            target: aarch64-unknown-linux-gnu
+            exe_name: media-sort-gui
+
+          # macOS Releases
           - os: macos-latest
-            platform: osx
+            platform: osx-x64
+            target: x86_64-apple-darwin
+            exe_name: media-sort-gui
+          - os: macos-latest
+            platform: osx-arm64
+            target: aarch64-apple-darwin
             exe_name: media-sort-gui
 
     steps:
@@ -38,7 +65,13 @@ jobs:
 
       - name: Install System Dependencies (Linux Only)
         if: matrix.os == 'ubuntu-latest'
-        run:           sudo apt-get update && sudo apt-get install -y libmpv-dev squashfs-tools
+        run: sudo apt-get update && sudo apt-get install -y libmpv-dev squashfs-tools
+
+      - name: Install Linux Cross-Compilation Toolchains (ARM64)
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
 
       - name: Install System Dependencies (macOS Only)
         if: matrix.os == 'macos-latest'
@@ -49,7 +82,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p libs
-          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-${{ matrix.mpv_arch }}-20260610-git-304426c.7z
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
@@ -58,8 +91,12 @@ jobs:
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
           LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
-          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        run: cargo build --release --features velopack
+          RUSTFLAGS: >-
+            ${{ matrix.os == 'windows-latest' && '-L native=libs' ||
+                matrix.target == 'aarch64-unknown-linux-gnu' && '-C linker=aarch64-linux-gnu-gcc' || '' }}
+        run: |
+          rustup target add ${{ matrix.target }}
+          cargo build --release --target ${{ matrix.target }} --features velopack
 
       - name: Install and Run Velopack Packager
         shell: bash
@@ -77,30 +114,30 @@ jobs:
 
           vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }} $DOWNLOAD_FLAGS
 
-          # Isolate binaries into a clean deployment folder to prevent packaging compiler artifacts
+          TARGET_DIR="target/${{ matrix.target }}/release"
           mkdir dist
 
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             mkdir -p "dist/Media Sort.app/Contents/MacOS"
             mkdir -p "dist/Media Sort.app/Contents/Resources"
-            cp target/release/media-sort-gui "dist/Media Sort.app/Contents/MacOS/"
+            cp "$TARGET_DIR/media-sort-gui" "dist/Media Sort.app/Contents/MacOS/"
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
             cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
 
             dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s /opt/homebrew/lib
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/release/media-sort-gui.exe dist/
+            cp "$TARGET_DIR/media-sort-gui.exe" dist/
             cp libs/libmpv-2.dll dist/
             cp packaging/windows/icon.ico dist/
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           else
-            cp target/release/media-sort-gui dist/
+            cp "$TARGET_DIR/media-sort-gui" dist/
             cp "Image Sort.svg" dist/
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           fi
 
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
