@@ -153,6 +153,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let settings = SettingsStore::load().unwrap_or_default();
 
+    let icon =
+        window::icon::from_file_data(include_bytes!("../../../packaging/windows/icon.ico"), None)
+            .ok();
+
     let window_settings = window::Settings {
         position: window::Position::Specific(iced::Point::new(
             settings.window_position.left as f32,
@@ -162,6 +166,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             settings.window_position.width as f32,
             settings.window_position.height as f32,
         ),
+        icon,
         ..window::Settings::default()
     };
 
@@ -219,6 +224,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         app::update,
         app::view,
     )
+    .settings(iced::Settings {
+        id: Some(String::from("MediaSort")),
+        ..iced::Settings::default()
+    })
     .title("Media Sort")
     .theme(app::theme)
     .subscription(app::subscription)
