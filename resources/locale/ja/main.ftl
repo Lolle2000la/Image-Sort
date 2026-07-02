@@ -147,4 +147,9 @@ metadata-field-gpslatitude = 緯度
 metadata-field-gpslongitude = 経度
 metadata-field-gpsaltitude = 高度
 
+update-available-title = アップデートがあります
+update-available-body = バージョン{version}が利用可能です。今すぐダウンロードしてインストールしますか？
+update-confirm = アップデート
+update-dismiss = 後で
+
 

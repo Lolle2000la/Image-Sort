@@ -136,6 +136,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         overlays.push(crate::view::credits_dialog::credits_dialog_view(state));
     }
 
+    #[cfg(feature = "velopack")]
+    if state.show_update_prompt {
+        overlays.push(crate::view::update_prompt::update_prompt_view(state));
+    }
+
     if let Some(ref path) = state.renaming_path {
         overlays
             .push(crate::widgets::rename_modal::rename_modal_view(state, path).map(Message::Media));

@@ -74,6 +74,11 @@ pub struct AppState {
     pub video_height: u32,
     pub unsupported_files: HashSet<PathBuf>,
 
+    #[cfg(feature = "velopack")]
+    pub pending_update: Option<velopack::UpdateInfo>,
+    #[cfg(feature = "velopack")]
+    pub show_update_prompt: bool,
+
     /// Last known viewport of the media grid's horizontal scrollable, used
     /// to auto-scroll the currently selected entry into view when the
     /// selection changes (e.g. via keyboard shortcuts).
@@ -184,6 +189,10 @@ impl AppState {
             video_width: 0,
             video_height: 0,
             unsupported_files: HashSet::new(),
+            #[cfg(feature = "velopack")]
+            pending_update: None,
+            #[cfg(feature = "velopack")]
+            show_update_prompt: false,
             media_grid_scroll: MediaGridScrollState::default(),
         }
     }

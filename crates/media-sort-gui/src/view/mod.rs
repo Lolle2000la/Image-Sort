@@ -8,3 +8,5 @@ pub mod media_preview;
 pub mod metadata_panel;
 pub mod search_bar;
 pub mod settings_dialog;
+#[cfg(feature = "velopack")]
+pub mod update_prompt;

@@ -147,4 +147,9 @@ metadata-field-gpslatitude = Breitengrad
 metadata-field-gpslongitude = Längengrad
 metadata-field-gpsaltitude = Höhe
 
+update-available-title = Update verfügbar
+update-available-body = Version {version} ist verfügbar. Möchten Sie sie jetzt herunterladen und installieren?
+update-confirm = Aktualisieren
+update-dismiss = Nicht jetzt
+
 

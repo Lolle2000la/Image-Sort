@@ -103,6 +103,11 @@ ui-credits-leading = These open source projects made Media Sort possible:
 ui-enter-new-name = Enter new name...
 ui-folder-name-placeholder = Folder name...
 ui-video-playback-soon = Video playback coming soon
+
+update-available-title = Update Available
+update-available-body = Version {version} is available. Would you like to download and install it now?
+update-confirm = Update
+update-dismiss = Not now
 ui-rendering-not-implemented = MPV/wgpu rendering not yet implemented
 ui-play-in-system-player = Play in system player
 

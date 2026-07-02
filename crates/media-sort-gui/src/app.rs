@@ -142,18 +142,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
-        Message::UpdateCheckFinished(result) => {
-            match result {
-                Ok(()) => tracing::info!("Update check completed, no update available"),
-                Err(e) => tracing::info!("Update check result: {e}"),
-            }
-            Task::none()
-        }
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;
             Task::none()
         }
+
+        #[cfg(feature = "velopack")]
+        Message::Update(update_msg) => handle_update_message(state, update_msg),
 
         Message::Folder(FolderMessage::Open(path)) => {
             state.open_folder(&path);
@@ -784,12 +780,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             _ => Task::none(),
         },
+        #[cfg(feature = "velopack")]
         Message::Settings(SettingsMessage::ToggleCheckForUpdates) => {
             state.settings.general.check_for_updates_on_startup =
                 !state.settings.general.check_for_updates_on_startup;
             let _ = state.settings.save();
             Task::none()
         }
+        #[cfg(feature = "velopack")]
         Message::Settings(SettingsMessage::ToggleInstallPrerelease) => {
             state.settings.general.install_prerelease_builds =
                 !state.settings.general.install_prerelease_builds;
@@ -1188,6 +1186,58 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.video_height = 0;
         state.video_ready = false;
         Task::none()
+    }
+}
+
+#[cfg(feature = "velopack")]
+fn handle_update_message(
+    state: &mut AppState,
+    msg: crate::message::UpdateMessage,
+) -> Task<Message> {
+    use crate::message::UpdateMessage;
+    match msg {
+        UpdateMessage::CheckForUpdates => {
+            let settings = state.settings.general.clone();
+            Task::perform(
+                async move { crate::check_for_update_async(&settings).await },
+                |result| match result {
+                    Ok(Some(info)) => Message::Update(UpdateMessage::UpdateAvailable(info)),
+                    Ok(None) => Message::Update(UpdateMessage::NoUpdateFound),
+                    Err(e) => Message::Update(UpdateMessage::UpdateFailed(e)),
+                },
+            )
+        }
+        UpdateMessage::UpdateAvailable(info) => {
+            state.show_update_prompt = true;
+            state.pending_update = Some(info);
+            Task::none()
+        }
+        UpdateMessage::NoUpdateFound => {
+            tracing::info!("Update check completed, no update available");
+            Task::none()
+        }
+        UpdateMessage::UserConfirmedUpdate(info) => {
+            state.show_update_prompt = false;
+            state.pending_update = None;
+            Task::perform(
+                crate::download_and_apply_async(info),
+                |result| match result {
+                    Ok(()) => Message::Update(UpdateMessage::UpdateFailed(
+                        "Update applied, restarting...".into(),
+                    )),
+                    Err(e) => Message::Update(UpdateMessage::UpdateFailed(e)),
+                },
+            )
+        }
+        UpdateMessage::UpdateFailed(e) => {
+            tracing::error!("Update failed: {e}");
+            Task::none()
+        }
+        UpdateMessage::DismissUpdatePrompt => {
+            state.show_update_prompt = false;
+            state.pending_update = None;
+            Task::none()
+        }
     }
 }
 

@@ -8,7 +8,6 @@ use media_sort_core::settings::store::SettingsStore;
 pub enum Message {
     Tick(Instant),
     SettingsLoaded(Box<Result<SettingsStore, String>>),
-    UpdateCheckFinished(Result<(), String>),
     Quit,
     EventOccurred(iced::Event),
     OpenCredits,
@@ -20,6 +19,9 @@ pub enum Message {
     Folder(FolderMessage),
     Media(MediaMessage),
     Video(VideoMessage),
+
+    #[cfg(feature = "velopack")]
+    Update(UpdateMessage),
 }
 
 #[derive(Debug, Clone)]
@@ -28,7 +30,9 @@ pub enum SettingsMessage {
     Close,
     ToggleDarkMode,
     ToggleReopenFolder,
+    #[cfg(feature = "velopack")]
     ToggleCheckForUpdates,
+    #[cfg(feature = "velopack")]
     ToggleInstallPrerelease,
     #[cfg(target_os = "windows")]
     ToggleIntegrationWithWindows,
@@ -106,4 +110,15 @@ pub enum VideoMessage {
     PlayPause,
     Stop,
     PlayExternally(PathBuf),
+}
+
+#[cfg(feature = "velopack")]
+#[derive(Debug, Clone)]
+pub enum UpdateMessage {
+    CheckForUpdates,
+    UpdateAvailable(velopack::UpdateInfo),
+    NoUpdateFound,
+    UserConfirmedUpdate(velopack::UpdateInfo),
+    UpdateFailed(String),
+    DismissUpdatePrompt,
 }
