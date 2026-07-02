@@ -191,7 +191,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         Message::Folder(FolderMessage::PickPinResult(None)) => Task::none(),
         Message::Folder(FolderMessage::Selected(path)) => {
-            state.selected_folder = Some(path);
+            state.set_selected_folder(path);
             Task::none()
         }
         Message::Folder(FolderMessage::ToggleExpand(path)) => {
@@ -2194,6 +2194,9 @@ mod tests {
 
     #[test]
     fn test_tick_should_exit_saves_settings() {
+        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+        let _guard = LOCK.lock().unwrap();
+
         unsafe {
             std::env::set_var("UI_TEST", "1");
         }

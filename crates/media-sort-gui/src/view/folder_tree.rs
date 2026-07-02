@@ -29,7 +29,9 @@ fn render_node<'a>(
     root_index: usize,
     selected_folder: Option<&'a std::path::Path>,
 ) -> Element<'a, Message> {
-    let icon = if node.is_expanded && !node.children.is_empty() {
+    let icon = if node.is_parent_nav {
+        folder_icon::arrow_up_icon()
+    } else if node.is_expanded && !node.children.is_empty() {
         folder_icon::open_folder_icon()
     } else {
         folder_icon::folder_icon()
@@ -120,8 +122,13 @@ fn render_node<'a>(
     }
 
     // Folder selection button
+    let folder_action = if node.is_parent_nav {
+        FolderMessage::Open(node_path.clone())
+    } else {
+        FolderMessage::Selected(node_path.clone())
+    };
     let select_button = button(row_content)
-        .on_press(Message::Folder(FolderMessage::Selected(node_path.clone())))
+        .on_press(Message::Folder(folder_action))
         .style(move |theme: &iced::Theme, _status| {
             let palette = theme.palette();
             let base = iced::widget::button::Style::default();

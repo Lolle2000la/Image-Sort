@@ -14,3 +14,10 @@ pub fn open_folder_icon() -> Element<'static, super::super::message::Message> {
         .size(16)
         .into()
 }
+
+pub fn arrow_up_icon() -> Element<'static, super::super::message::Message> {
+    text(char::from(lucide_icons::Icon::ArrowUp))
+        .font(iced::Font::with_name("lucide"))
+        .size(16)
+        .into()
+}

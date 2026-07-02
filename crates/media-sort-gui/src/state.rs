@@ -45,6 +45,7 @@ pub struct AppState {
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
+    selected_folder_idx: Option<usize>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
     pub renaming_path: Option<PathBuf>,
     pub rename_input_value: String,
@@ -162,6 +163,7 @@ impl AppState {
             thumbnail_cache: LruCache::new(cache_size),
             image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
             selected_folder: None,
+            selected_folder_idx: None,
             selected_image: None,
             renaming_path: None,
             rename_input_value: String::new(),
@@ -207,6 +209,7 @@ impl AppState {
         self.selected_index = None;
         self.current_metadata = None;
         self.selected_folder = None;
+        self.selected_folder_idx = None;
         self.selected_image = None;
         self.image_cache.clear();
         if let Some(ref sender) = self.video_sender {
@@ -278,6 +281,7 @@ impl AppState {
 
         // 1. Build current folder root node
         let mut children = build_children(&root, self.current_folder.as_deref());
+
         fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
             for node in nodes {
                 if set.contains(&node.path) {
@@ -288,6 +292,11 @@ impl AppState {
         }
         restore_expansion(&mut children, &expanded_paths);
 
+        // Prepend parent chain as collapsed children of the current folder
+        for node in build_parent_chain(&root) {
+            children.insert(0, node);
+        }
+
         let root_node = FolderNode {
             path: root.clone(),
             name: root
@@ -297,6 +306,7 @@ impl AppState {
             children,
             is_current: true,
             is_expanded: expanded_paths.is_empty() || expanded_paths.contains(&root),
+            is_parent_nav: false,
         };
         self.folder_tree.push(root_node);
 
@@ -310,12 +320,18 @@ impl AppState {
             let mut pinned_children = build_children(&pinned.path, self.current_folder.as_deref());
             restore_expansion(&mut pinned_children, &expanded_paths);
 
+            // Prepend parent chain as collapsed children of pinned folder
+            for node in build_parent_chain(&pinned.path) {
+                pinned_children.insert(0, node);
+            }
+
             let pinned_node = FolderNode {
                 path: pinned.path.clone(),
                 name: pinned.name.clone(),
                 children: pinned_children,
                 is_current: false,
                 is_expanded: expanded_paths.contains(&pinned.path),
+                is_parent_nav: false,
             };
             self.folder_tree.push(pinned_node);
         }
@@ -407,21 +423,24 @@ impl AppState {
         }
     }
 
+    pub fn set_selected_folder(&mut self, path: PathBuf) {
+        self.selected_folder = Some(path.clone());
+        let visible = self.collect_visible_folders();
+        self.selected_folder_idx = visible.iter().rposition(|p| *p == path);
+    }
+
     pub fn select_folder_below(&mut self) {
         let visible = self.collect_visible_folders();
         if visible.is_empty() {
             return;
         }
-        if let Some(ref selected) = self.selected_folder {
-            if let Some(idx) = visible.iter().position(|p| p == selected) {
-                if idx + 1 < visible.len() {
-                    self.selected_folder = Some(visible[idx + 1].clone());
-                }
-            } else {
-                self.selected_folder = Some(visible[0].clone());
-            }
-        } else {
-            self.selected_folder = Some(visible[0].clone());
+        let next = self
+            .selected_folder_idx
+            .map(|i| (i + 1).min(visible.len()))
+            .unwrap_or(0);
+        if next < visible.len() {
+            self.selected_folder = Some(visible[next].clone());
+            self.selected_folder_idx = Some(next);
         }
     }
 
@@ -430,11 +449,11 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        if let Some(ref selected) = self.selected_folder
-            && let Some(idx) = visible.iter().position(|p| p == selected)
+        if let Some(idx) = self.selected_folder_idx
             && idx > 0
         {
             self.selected_folder = Some(visible[idx - 1].clone());
+            self.selected_folder_idx = Some(idx - 1);
         }
     }
 
@@ -495,7 +514,8 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                         name: String::new(),
                         children: Vec::new(),
                         is_current: false,
-                        is_expanded: false,
+                        is_expanded: true,
+                        is_parent_nav: false,
                     });
                 }
 
@@ -505,6 +525,7 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                     children: node_children,
                     is_current,
                     is_expanded: false,
+                    is_parent_nav: false,
                 };
                 children.push(node);
             }
@@ -516,6 +537,52 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
 
 fn is_dummy_or_empty(children: &[FolderNode]) -> bool {
     children.is_empty() || (children.len() == 1 && children[0].path.as_os_str().is_empty())
+}
+
+fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
+    let mut ancestors: Vec<std::path::PathBuf> = Vec::new();
+    let mut parent = current.to_path_buf();
+    while parent.pop() {
+        if parent.as_os_str().is_empty() {
+            break;
+        }
+        ancestors.push(parent.clone());
+    }
+
+    if ancestors.is_empty() {
+        return Vec::new();
+    }
+
+    ancestors.reverse();
+    let mut prev: Option<FolderNode> = None;
+
+    for ancestor in ancestors {
+        let name = ancestor
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| ancestor.display().to_string());
+
+        let mut children = build_children(&ancestor, None);
+        if let Some(p) = prev.take() {
+            children.insert(0, p);
+        }
+
+        let node = FolderNode {
+            path: ancestor.clone(),
+            name,
+            children,
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+        prev = Some(node);
+    }
+
+    if let Some(rootmost) = prev {
+        vec![rootmost]
+    } else {
+        Vec::new()
+    }
 }
 
 fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
@@ -783,6 +850,7 @@ mod tests {
             children: vec![],
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
         let child_path = PathBuf::from("/root/sub");
         let found = toggle_expand_recursive(&mut root.children, &child_path);
@@ -793,6 +861,7 @@ mod tests {
             children: vec![],
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
         root.children = vec![child];
         let found = toggle_expand_recursive(&mut root.children, &child_path);
@@ -808,6 +877,7 @@ mod tests {
             children: vec![],
             is_current: false,
             is_expanded: true,
+            is_parent_nav: false,
         };
         let mut children = vec![child];
         let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"));
@@ -823,6 +893,7 @@ mod tests {
             children: vec![],
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
         let child = FolderNode {
             path: PathBuf::from("/root/sub"),
@@ -830,6 +901,7 @@ mod tests {
             children: vec![grandchild],
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
         let mut children = vec![child];
         let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"));
@@ -926,6 +998,7 @@ mod tests {
                     children: Vec::new(),
                     is_current: false,
                     is_expanded: false,
+                    is_parent_nav: false,
                 },
                 FolderNode {
                     path: p_sub2.clone(),
@@ -933,10 +1006,12 @@ mod tests {
                     children: Vec::new(),
                     is_current: false,
                     is_expanded: false,
+                    is_parent_nav: false,
                 },
             ],
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
 
         let node_root2 = FolderNode {
@@ -945,6 +1020,7 @@ mod tests {
             children: Vec::new(),
             is_current: false,
             is_expanded: false,
+            is_parent_nav: false,
         };
 
         state.folder_tree = vec![node_root1, node_root2];

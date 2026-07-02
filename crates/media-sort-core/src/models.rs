@@ -16,6 +16,7 @@ pub struct FolderNode {
     pub children: Vec<FolderNode>,
     pub is_current: bool,
     pub is_expanded: bool,
+    pub is_parent_nav: bool,
 }
 
 #[derive(Debug, Clone)]
