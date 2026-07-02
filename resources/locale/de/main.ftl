@@ -18,7 +18,6 @@ settings-dark-mode = Dunkelmodus
 settings-reopen-folder = Letzten geöffneten Ordner beim Start erneut öffnen
 settings-animated-gifs = Animierte GIFs
 settings-play-gifs = Animierte GIFs abspielen
-settings-preview-gifs = Animierte GIFs in Vorschaubildern anzeigen
 settings-updates = Updates
 settings-check-updates = Beim Start nach Updates suchen
 settings-install-prerelease = Vorabversionen installieren

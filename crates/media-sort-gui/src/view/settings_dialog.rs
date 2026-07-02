@@ -145,11 +145,6 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
             .size(16);
 
-        let animate_thumbs_cb = checkbox(state.settings.general.animate_gif_thumbnails)
-            .label(state.l10n.tr("settings-preview-gifs"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateThumbnails))
-            .size(16);
-
         #[cfg(feature = "velopack")]
         let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
             .label(state.l10n.tr("settings-check-updates"))
@@ -182,7 +177,6 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                     .font(BOLD_FONT)
                     .size(14),
                 animate_gifs_cb,
-                animate_thumbs_cb,
             ]
             .spacing(8),
         ];

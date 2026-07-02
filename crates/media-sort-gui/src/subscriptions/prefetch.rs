@@ -2,13 +2,14 @@ use media_sort_core::media_type::MediaType;
 use once_cell::sync::Lazy;
 use std::path::PathBuf;
 
-use crate::state::detect_media_type;
-
 static MPV_MUTEX: Lazy<std::sync::Mutex<()>> = Lazy::new(|| std::sync::Mutex::new(()));
 
+/// Generate a thumbnail for the given file. GIFs are always decoded as
+/// images here regardless of animation settings — the image path is much
+/// lighter on resources for grid thumbnails.
 pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
     tracing::info!("generate_thumbnail called for {:?}", path);
-    let media_type = detect_media_type(path);
+    let media_type = crate::state::detect_media_type(path, false);
 
     if media_type == MediaType::Audio {
         if let Ok(bytes) = media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)

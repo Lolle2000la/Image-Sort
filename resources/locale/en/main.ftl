@@ -18,7 +18,6 @@ settings-dark-mode = Dark Mode
 settings-reopen-folder = Reopen last opened folder on startup
 settings-animated-gifs = Animated Gifs
 settings-play-gifs = Play animated gifs
-settings-preview-gifs = Preview animated gifs in thumbnails
 settings-updates = Updates
 settings-check-updates = Check for updates on startup
 settings-install-prerelease = Install prerelease builds

@@ -232,7 +232,7 @@ impl AppState {
         if let Some(ref folder) = self.current_folder {
             let paths = media_sort_backend::filesystem::scanner::scan_media_files(folder);
             for p in paths {
-                let media_type = detect_media_type(&p);
+                let media_type = detect_media_type(&p, self.settings.general.animate_gifs);
                 let file_name = p
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
@@ -662,7 +662,7 @@ fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bool> {
     None
 }
 
-pub(crate) fn detect_media_type(path: &std::path::Path) -> MediaType {
+pub(crate) fn detect_media_type(path: &std::path::Path, animate_gifs: bool) -> MediaType {
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
@@ -673,10 +673,13 @@ pub(crate) fn detect_media_type(path: &std::path::Path) -> MediaType {
         .find(|ty| ty.extensions().contains(&ext.as_str()))
         .or_else(|| MediaRegistry::determine_type(&ext))
         .unwrap_or(MediaType::Image);
-    if media_type == MediaType::Video
-        && media_sort_backend::media::image_decoder::is_animated_gif(path) == Some(false)
-    {
-        return MediaType::Image;
+    if media_type == MediaType::Video && ext == "gif" {
+        if media_sort_backend::media::image_decoder::is_animated_gif(path) == Some(false) {
+            return MediaType::Image;
+        }
+        if !animate_gifs {
+            return MediaType::Image;
+        }
     }
     media_type
 }
@@ -690,41 +693,95 @@ mod tests {
 
     #[test]
     fn test_detect_media_type_image() {
-        assert_eq!(detect_media_type(Path::new("test.jpg")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test.png")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test.jpeg")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test.bmp")), MediaType::Image);
+        assert_eq!(
+            detect_media_type(Path::new("test.jpg"), true),
+            MediaType::Image
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.png"), true),
+            MediaType::Image
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.jpeg"), true),
+            MediaType::Image
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.bmp"), true),
+            MediaType::Image
+        );
     }
 
     #[test]
     fn test_detect_media_type_video() {
-        assert_eq!(detect_media_type(Path::new("test.mp4")), MediaType::Video);
-        assert_eq!(detect_media_type(Path::new("test.mkv")), MediaType::Video);
-        assert_eq!(detect_media_type(Path::new("test.webm")), MediaType::Video);
-        assert_eq!(detect_media_type(Path::new("test.mov")), MediaType::Video);
-        assert_eq!(detect_media_type(Path::new("test.gif")), MediaType::Video);
+        assert_eq!(
+            detect_media_type(Path::new("test.mp4"), true),
+            MediaType::Video
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.mkv"), true),
+            MediaType::Video
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.webm"), true),
+            MediaType::Video
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.mov"), true),
+            MediaType::Video
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.gif"), true),
+            MediaType::Video
+        );
     }
 
     #[test]
     fn test_detect_media_type_audio() {
-        assert_eq!(detect_media_type(Path::new("test.mp3")), MediaType::Audio);
-        assert_eq!(detect_media_type(Path::new("test.flac")), MediaType::Audio);
-        assert_eq!(detect_media_type(Path::new("test.wav")), MediaType::Audio);
-        assert_eq!(detect_media_type(Path::new("test.ogg")), MediaType::Audio);
+        assert_eq!(
+            detect_media_type(Path::new("test.mp3"), true),
+            MediaType::Audio
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.flac"), true),
+            MediaType::Audio
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.wav"), true),
+            MediaType::Audio
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.ogg"), true),
+            MediaType::Audio
+        );
     }
 
     #[test]
     fn test_detect_media_type_unknown_fallback() {
-        assert_eq!(detect_media_type(Path::new("test.xyz")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test.doc")), MediaType::Image);
+        assert_eq!(
+            detect_media_type(Path::new("test.xyz"), true),
+            MediaType::Image
+        );
+        assert_eq!(detect_media_type(Path::new("test"), true), MediaType::Image);
+        assert_eq!(
+            detect_media_type(Path::new("test.doc"), true),
+            MediaType::Image
+        );
     }
 
     #[test]
     fn test_detect_media_type_case_insensitive() {
-        assert_eq!(detect_media_type(Path::new("test.JPG")), MediaType::Image);
-        assert_eq!(detect_media_type(Path::new("test.MP3")), MediaType::Audio);
-        assert_eq!(detect_media_type(Path::new("test.Mp4")), MediaType::Video);
+        assert_eq!(
+            detect_media_type(Path::new("test.JPG"), true),
+            MediaType::Image
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.MP3"), true),
+            MediaType::Audio
+        );
+        assert_eq!(
+            detect_media_type(Path::new("test.Mp4"), true),
+            MediaType::Video
+        );
     }
 
     #[test]
@@ -736,7 +793,7 @@ mod tests {
         let img = image::RgbaImage::from_pixel(1, 1, image::Rgba([0, 0, 0, 255]));
         img.save(&path).unwrap();
 
-        assert_eq!(detect_media_type(&path), MediaType::Image);
+        assert_eq!(detect_media_type(&path, true), MediaType::Image);
 
         std::fs::remove_dir_all(&dir).ok();
     }

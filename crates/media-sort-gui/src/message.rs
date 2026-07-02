@@ -37,7 +37,6 @@ pub enum SettingsMessage {
     #[cfg(target_os = "windows")]
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
-    ToggleAnimateThumbnails,
     ChangeLanguage(String),
     Save,
     RestoreDefaultKeyBindings,

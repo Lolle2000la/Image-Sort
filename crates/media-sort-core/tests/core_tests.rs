@@ -1087,7 +1087,6 @@ fn test_wpf_settings_migration() {
     assert!(!store.general.check_for_updates_on_startup);
     assert!(store.general.install_prerelease_builds);
     assert!(!store.general.animate_gifs);
-    assert!(!store.general.animate_gif_thumbnails);
 
     // Assert PinnedFolders
     assert_eq!(store.pinned_folders.paths.len(), 2);

@@ -3,7 +3,6 @@ dark_mode = false
 check_for_updates_on_startup = true
 install_prerelease_builds = false
 animate_gifs = true
-animate_gif_thumbnails = true
 integration_with_windows = false
 reopen_last_opened_folder = true
 last_opened_folder = "/home/luca/画像"

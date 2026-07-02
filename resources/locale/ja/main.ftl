@@ -18,7 +18,6 @@ settings-dark-mode = ダークモード
 settings-reopen-folder = 起動時に最後に開いたフォルダを再度開く
 settings-animated-gifs = アニメーションGIF
 settings-play-gifs = アニメーションGIFを再生
-settings-preview-gifs = サムネイルでアニメーションGIFをプレビュー
 settings-updates = アップデート
 settings-check-updates = 起動時にアップデートを確認
 settings-install-prerelease = プレリリースビルドをインストール

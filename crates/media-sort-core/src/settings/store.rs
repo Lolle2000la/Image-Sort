@@ -223,12 +223,6 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
         if let Some(val) = general.get("AnimateGifs").and_then(|v| v.as_bool()) {
             store.general.animate_gifs = val;
         }
-        if let Some(val) = general
-            .get("AnimateGifThumbnails")
-            .and_then(|v| v.as_bool())
-        {
-            store.general.animate_gif_thumbnails = val;
-        }
     }
 
     // 2. PinnedFolders settings

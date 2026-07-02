@@ -854,12 +854,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let _ = state.settings.save();
             Task::none()
         }
-        Message::Settings(SettingsMessage::ToggleAnimateThumbnails) => {
-            state.settings.general.animate_gif_thumbnails =
-                !state.settings.general.animate_gif_thumbnails;
-            let _ = state.settings.save();
-            Task::none()
-        }
         Message::Settings(SettingsMessage::Save) => {
             let _ = state.settings.save();
             Task::none()
