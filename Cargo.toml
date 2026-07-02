@@ -40,6 +40,7 @@ notify = { version = "8", default-features = false, features = [
 ] }
 notify-debouncer-mini = "0.7"
 trash = "5"
+winreg = "0.56"
 walkdir = "2"
 kamadak-exif = "0.6"
 symphonia = { version = "0.6", features = [

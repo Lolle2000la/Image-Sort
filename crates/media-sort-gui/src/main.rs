@@ -90,7 +90,16 @@ pub fn run_background_update(
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
-    velopack::VelopackApp::build().run();
+    {
+        let mut app = velopack::VelopackApp::build();
+        #[cfg(target_os = "windows")]
+        {
+            app = app.on_before_uninstall_fast_callback(|_version| {
+                let _ = media_sort_backend::platform::windows_shell::unregister();
+            });
+        }
+        app.run();
+    }
 
     tracing_subscriber::fmt()
         .with_env_filter(
@@ -123,7 +132,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let state = crate::state::AppState::new(settings.clone());
             let mut startup_path = None;
 
-            if state.settings.general.reopen_last_opened_folder
+            if let Some(arg_path) = std::env::args()
+                .nth(1)
+                .map(std::path::PathBuf::from)
+                .filter(|p| p.is_dir())
+            {
+                startup_path = Some(arg_path);
+            }
+
+            if startup_path.is_none()
+                && state.settings.general.reopen_last_opened_folder
                 && let Some(ref last_path_str) = state.settings.general.last_opened_folder
             {
                 let last_path = std::path::PathBuf::from(last_path_str);

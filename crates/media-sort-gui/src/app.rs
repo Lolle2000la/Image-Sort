@@ -125,6 +125,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::SettingsLoaded(result) => match *result {
             Ok(settings) => {
                 state.settings = settings;
+                #[cfg(target_os = "windows")]
+                {
+                    if state.settings.general.integration_with_windows {
+                        if let Ok(exe) = std::env::current_exe()
+                            && let Some(exe_str) = exe.to_str()
+                        {
+                            let _ = media_sort_backend::platform::windows_shell::register(exe_str);
+                        }
+                    }
+                }
                 Task::none()
             }
             Err(err) => {
@@ -790,7 +800,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Settings(SettingsMessage::ToggleIntegrationWithWindows) => {
             state.settings.general.integration_with_windows =
                 !state.settings.general.integration_with_windows;
+            let enabled = state.settings.general.integration_with_windows;
             let _ = state.settings.save();
+
+            if enabled {
+                if let Ok(exe) = std::env::current_exe()
+                    && let Some(exe_str) = exe.to_str()
+                {
+                    let _ = media_sort_backend::platform::windows_shell::register(exe_str);
+                }
+            } else {
+                let _ = media_sort_backend::platform::windows_shell::unregister();
+            }
             Task::none()
         }
         Message::Settings(SettingsMessage::ToggleAnimateGifs) => {
