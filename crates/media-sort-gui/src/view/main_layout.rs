@@ -33,6 +33,23 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         }
     };
 
+    let copy_btn = {
+        let btn_content = row![
+            text(state.l10n.tr("ui-copy")),
+            text(char::from(lucide_icons::Icon::Copy))
+                .font(iced::Font::with_name("lucide"))
+                .size(14),
+        ]
+        .spacing(2)
+        .align_y(iced::Alignment::Center);
+        let btn = iced::widget::button(btn_content).width(Length::Fill);
+        if state.selected_index.is_some() && state.selected_folder.is_some() {
+            btn.on_press(Message::Media(MediaMessage::CopyActive))
+        } else {
+            btn
+        }
+    };
+
     // Rename (R) button next to search bar:
     let rename_btn = {
         let btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(13));
@@ -81,7 +98,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     // Center area (the preview area and bottom action area):
     let media_column = column![
-        move_btn,
+        row![move_btn, copy_btn].spacing(4),
         container(preview).height(Length::Fill).width(Length::Fill),
         search_rename_row,
         grid,

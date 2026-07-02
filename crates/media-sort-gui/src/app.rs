@@ -279,6 +279,31 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
+        Message::Media(MediaMessage::CopyToFolder(target_folder)) => {
+            let Some(index) = state.selected_index else {
+                return Task::none();
+            };
+            let filtered = state.filtered_media_entries();
+            let Some(entry) = filtered.get(index) else {
+                return Task::none();
+            };
+            match media_sort_core::actions::copy_action::CopyAction::new(
+                &entry.path,
+                &target_folder,
+            ) {
+                Ok(mut action) => {
+                    if let Err(e) = action.execute() {
+                        tracing::error!("Copy failed: {e}");
+                    } else {
+                        state.history.push_executed(Box::new(action));
+                    }
+                }
+                Err(e) => {
+                    tracing::error!("Cannot create copy action: {e}");
+                }
+            }
+            Task::none()
+        }
         Message::Media(MediaMessage::RenameEntry(path, new_name)) => {
             match RenameAction::new(&path, &new_name) {
                 Ok(mut action) => {
@@ -598,6 +623,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                     && let Some(ref dest) = state.selected_folder
                                 {
                                     return Task::done(Message::Media(MediaMessage::MoveToFolder(
+                                        dest.clone(),
+                                    )));
+                                }
+                            }
+                        }
+                        "copy_to_folder" => {
+                            if let Some(index) = state.selected_index {
+                                let filtered = state.filtered_media_entries();
+                                if let Some(_entry) = filtered.get(index)
+                                    && let Some(ref dest) = state.selected_folder
+                                {
+                                    return Task::done(Message::Media(MediaMessage::CopyToFolder(
                                         dest.clone(),
                                     )));
                                 }
@@ -982,6 +1019,31 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                         Err(e) => {
                             tracing::error!("Cannot create move action: {e}");
+                        }
+                    }
+                }
+            }
+            Task::none()
+        }
+        Message::Media(MediaMessage::CopyActive) => {
+            if let Some(index) = state.selected_index
+                && let Some(ref target_folder) = state.selected_folder
+            {
+                let filtered = state.filtered_media_entries();
+                if let Some(entry) = filtered.get(index) {
+                    match media_sort_core::actions::copy_action::CopyAction::new(
+                        &entry.path,
+                        target_folder,
+                    ) {
+                        Ok(mut action) => {
+                            if let Err(e) = action.execute() {
+                                tracing::error!("Copy failed: {e}");
+                            } else {
+                                state.history.push_executed(Box::new(action));
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!("Cannot create copy action: {e}");
                         }
                     }
                 }

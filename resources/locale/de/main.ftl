@@ -78,6 +78,7 @@ ui-pin-selected = Auswahl anheften
 ui-unpin = Lösen
 ui-create-folder = Ordner erstellen
 ui-move = Verschieben
+ui-copy = Kopieren
 ui-delete = Löschen
 ui-rename = Umbenennen
 ui-cancel = Abbrechen

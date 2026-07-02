@@ -84,6 +84,7 @@ pub fn keybinding_list(
     let kb = &state.settings.keybindings;
     vec![
         ("move_to_folder".into(), kb.move_to_folder.clone()),
+        ("copy_to_folder".into(), kb.copy_to_folder.clone()),
         ("delete".into(), kb.delete.clone()),
         ("rename".into(), kb.rename.clone()),
         ("go_left".into(), kb.go_left.clone()),
@@ -130,6 +131,7 @@ pub fn update_keybinding(
     };
     match name {
         "move_to_folder" => kb.move_to_folder = binding,
+        "copy_to_folder" => kb.copy_to_folder = binding,
         "delete" => kb.delete = binding,
         "rename" => kb.rename = binding,
         "go_left" => kb.go_left = binding,
@@ -287,7 +289,7 @@ mod tests {
 
         let state = AppState::new(SettingsStore::default());
         let list = keybinding_list(&state);
-        assert_eq!(list.len(), 21);
+        assert_eq!(list.len(), 22);
     }
 
     #[test]

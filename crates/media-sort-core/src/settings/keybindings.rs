@@ -39,6 +39,7 @@ impl KeyBinding {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct KeyBindings {
     pub move_to_folder: KeyBinding,
+    pub copy_to_folder: KeyBinding,
     pub delete: KeyBinding,
     pub rename: KeyBinding,
     pub go_left: KeyBinding,
@@ -65,6 +66,7 @@ impl Default for KeyBindings {
     fn default() -> Self {
         Self {
             move_to_folder: KeyBinding::new("Up"),
+            copy_to_folder: KeyBinding::new("Up").with_shift(),
             delete: KeyBinding::new("Down"),
             rename: KeyBinding::new("R"),
             go_left: KeyBinding::new("Left"),

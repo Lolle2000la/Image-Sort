@@ -78,6 +78,7 @@ ui-pin-selected = 選択をピン留め
 ui-unpin = ピン留め解除
 ui-create-folder = フォルダを作成
 ui-move = 移動
+ui-copy = コピー
 ui-delete = 削除
 ui-rename = 名前変更
 ui-cancel = キャンセル
