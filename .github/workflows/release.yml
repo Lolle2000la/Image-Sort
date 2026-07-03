@@ -43,13 +43,10 @@ jobs:
 
           # macOS Releases
           - os: macos-latest
-            platform: osx-x64
-            target: x86_64-apple-darwin
-            exe_name: media-sort-gui
-          - os: macos-latest
             platform: osx-arm64
             target: aarch64-apple-darwin
             exe_name: media-sort-gui
+            brew_prefix: /opt/homebrew
 
     steps:
       - name: Checkout Source Code
@@ -68,7 +65,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools
 
       - name: Install System Dependencies (macOS Only)
-        if: matrix.os == 'macos-latest'
+        if: startsWith(matrix.os, 'macos')
         run: brew install mpv dylibbundler
 
       - name: Setup libmpv Link Libraries (Windows)
@@ -83,7 +80,7 @@ jobs:
 
       - name: Build Standalone Binary
         env:
-          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
           LIB: ${{ startsWith(matrix.os, 'windows') && 'libs' || '' }}
           RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
         run: |
@@ -116,7 +113,7 @@ jobs:
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
             cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
 
-            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s /opt/homebrew/lib
+            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s ${{ matrix.brew_prefix }}/lib
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
