@@ -703,15 +703,19 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         }
                         "folder_up" => {
                             state.select_folder_above();
+                            return scroll_to_selected_folder(state);
                         }
                         "folder_down" => {
                             state.select_folder_below();
+                            return scroll_to_selected_folder(state);
                         }
                         "folder_left" => {
                             state.collapse_selected_folder();
+                            return scroll_to_selected_folder(state);
                         }
                         "folder_right" => {
                             state.expand_selected_folder();
+                            return scroll_to_selected_folder(state);
                         }
                         "search_images" => {
                             return Task::done(Message::Media(MediaMessage::SearchFocused));
@@ -1338,6 +1342,26 @@ fn relative_position_for(index: usize, total: usize) -> Option<f32> {
     }
     let clamped_index = index.min(total - 1);
     Some(clamped_index as f32 / (total - 1) as f32)
+}
+
+fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
+    use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
+
+    let visible = state.collect_visible_folders();
+    let Some(idx) = state.selected_folder_idx.filter(|i| *i < visible.len()) else {
+        return Task::none();
+    };
+    let Some(relative_y) = relative_position_for(idx, visible.len()) else {
+        return Task::none();
+    };
+
+    iced::widget::operation::snap_to(
+        FOLDER_TREE_SCROLLABLE_ID.clone(),
+        iced::widget::scrollable::RelativeOffset {
+            x: None,
+            y: Some(relative_y),
+        },
+    )
 }
 
 fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {

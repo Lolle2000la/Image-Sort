@@ -5,6 +5,9 @@ use crate::message::{FolderMessage, Message};
 use crate::state::AppState;
 use crate::view::folder_tree;
 
+pub static FOLDER_TREE_SCROLLABLE_ID: iced::widget::Id =
+    iced::widget::Id::new("folder_tree_scrollable");
+
 pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
     let pin_btn = button(text(state.l10n.tr("ui-pin")).size(12))
         .on_press(Message::Folder(FolderMessage::PickPin));
@@ -50,6 +53,7 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
     let tree_content =
         folder_tree::folder_tree_view(&state.folder_tree, state.selected_folder.as_deref());
     let scrollable_tree = scrollable(tree_content)
+        .id(FOLDER_TREE_SCROLLABLE_ID.clone())
         .direction(iced::widget::scrollable::Direction::Both {
             vertical: iced::widget::scrollable::Scrollbar::default(),
             horizontal: iced::widget::scrollable::Scrollbar::default(),

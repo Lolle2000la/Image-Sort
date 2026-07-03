@@ -45,7 +45,7 @@ pub struct AppState {
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub selected_folder: Option<PathBuf>,
-    selected_folder_idx: Option<usize>,
+    pub(crate) selected_folder_idx: Option<usize>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
     pub renaming_path: Option<PathBuf>,
     pub rename_input_value: String,
@@ -480,7 +480,7 @@ impl AppState {
         }
     }
 
-    fn collect_visible_folders(&self) -> Vec<PathBuf> {
+    pub(crate) fn collect_visible_folders(&self) -> Vec<PathBuf> {
         let mut list = Vec::new();
         collect_visible_folders_recursive(&self.folder_tree, &mut list);
         list
