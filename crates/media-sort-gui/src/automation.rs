@@ -5,8 +5,10 @@ use std::time::{Duration, Instant};
 use iced::advanced::mouse;
 use iced::advanced::widget::Id;
 use iced::advanced::widget::operation::{Operation, Outcome, Scrollable, TextInput};
-use iced::widget::{canvas, container, stack, text};
-use iced::{Alignment, Color, Element, Length, Point, Rectangle, Renderer, Task, Theme, Vector};
+use iced::widget::{canvas, column, container, stack, text};
+use iced::{
+    Alignment, Color, Element, Length, Point, Rectangle, Renderer, Shadow, Task, Theme, Vector,
+};
 
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 
@@ -324,6 +326,9 @@ pub fn handle_bounds_resolved(
     if automation.script_index < automation.steps.len() {
         let step = &automation.steps[automation.script_index];
         let msg = step.underlying_message.clone();
+        if let Some(ref label) = step.keycap_label {
+            automation.active_keycap = Some((label.clone(), Instant::now()));
+        }
         automation.is_clicking = true;
         automation.script_index += 1;
         automation.step_timer = Instant::now();
@@ -437,25 +442,48 @@ pub fn wrap_view<'a>(
     }
 
     if let Some((ref label, _)) = automation.active_keycap {
-        let key_box = container(text(label).size(15).color(Color::from_rgb(0.88, 0.88, 1.0)))
-            .padding([8, 14])
-            .style(|_theme| container::Style {
-                background: Some(iced::Background::Color(Color::from_rgba(
-                    0.05, 0.05, 0.07, 0.88,
-                ))),
-                border: iced::Border {
-                    color: Color::from_rgb(0.35, 0.35, 0.38),
-                    width: 2.0,
-                    radius: 6.0.into(),
-                },
-                ..container::Style::default()
-            });
-        let positioned = container(key_box)
+        let hud = container(
+            column![
+                text("Automation Active")
+                    .size(11)
+                    .color(Color::from_rgb(0.5, 0.5, 0.6)),
+                text(label).size(16).color(Color::from_rgb(0.9, 0.9, 0.95)),
+            ]
+            .spacing(6),
+        )
+        .padding([12, 18])
+        .style(|_theme| container::Style {
+            background: Some(iced::Background::Color(Color::from_rgba(
+                0.08, 0.08, 0.1, 0.95,
+            ))),
+            border: iced::Border {
+                color: Color::from_rgb(0.25, 0.45, 0.85),
+                width: 1.5,
+                radius: 8.0.into(),
+            },
+            shadow: Shadow {
+                color: Color::from_rgba(0.0, 0.0, 0.0, 0.4),
+                offset: Vector::new(0.0, 4.0),
+                blur_radius: 12.0,
+            },
+            ..container::Style::default()
+        });
+
+        let cursor_in_br = automation.virtual_cursor.x > automation.window_width * 0.66
+            && automation.virtual_cursor.y > automation.window_height * 0.66;
+        let (align_x, align_y) = if cursor_in_br {
+            (Alignment::Start, Alignment::End)
+        } else {
+            (Alignment::End, Alignment::End)
+        };
+
+        let positioned = container(hud)
             .width(Length::Fill)
             .height(Length::Fill)
-            .align_x(Alignment::End)
-            .align_y(Alignment::End)
-            .padding([90, 30]);
+            .align_x(align_x)
+            .align_y(align_y)
+            .padding(24);
+
         layers.push(positioned.into());
     }
 
