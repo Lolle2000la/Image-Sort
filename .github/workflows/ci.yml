@@ -1,0 +1,83 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  fmt:
+    name: Code Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
+  test:
+    name: Test & Lint (${{ matrix.os }})
+    needs: fmt
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.os }}-cargo-
+
+      - name: Install System Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmpv-dev libasound2-dev
+
+      - name: Install System Dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install mpv
+
+      - name: Setup libmpv Link Libraries (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          mkdir -p libs
+          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          7z e mpv-dev.7z libmpv-2.dll -olibs -y
+          7z e mpv-dev.7z libmpv.dll.a -olibs -y
+          mv libs/libmpv.dll.a libs/mpv.lib
+
+      - name: Run Clippy Lints
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run Workspace Tests
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
+        run: cargo test --workspace --all-targets
