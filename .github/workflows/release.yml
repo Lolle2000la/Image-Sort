@@ -25,18 +25,18 @@ jobs:
             target: i686-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: i686
-          - os: windows-latest
+          - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: aarch64
 
           # Linux Releases
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             platform: linux-x64
             target: x86_64-unknown-linux-gnu
             exe_name: media-sort-gui
-          - os: ubuntu-latest
+          - os: ubuntu-22.04-arm
             platform: linux-arm64
             target: aarch64-unknown-linux-gnu
             exe_name: media-sort-gui
@@ -64,21 +64,15 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Install System Dependencies (Linux Only)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y libmpv-dev squashfs-tools
-
-      - name: Install Linux Cross-Compilation Toolchains (ARM64)
-        if: matrix.target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo apt-get update && sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools
 
       - name: Install System Dependencies (macOS Only)
         if: matrix.os == 'macos-latest'
         run: brew install mpv dylibbundler
 
       - name: Setup libmpv Link Libraries (Windows)
-        if: matrix.os == 'windows-latest'
+        if: startsWith(matrix.os, 'windows')
         shell: bash
         run: |
           mkdir -p libs
@@ -90,10 +84,8 @@ jobs:
       - name: Build Standalone Binary
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
-          RUSTFLAGS: >-
-            ${{ matrix.os == 'windows-latest' && '-L native=libs' ||
-                matrix.target == 'aarch64-unknown-linux-gnu' && '-C linker=aarch64-linux-gnu-gcc' || '' }}
+          LIB: ${{ startsWith(matrix.os, 'windows') && 'libs' || '' }}
+          RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
         run: |
           rustup target add ${{ matrix.target }}
           cargo build --release --target ${{ matrix.target }} --features velopack
@@ -127,7 +119,7 @@ jobs:
             dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s /opt/homebrew/lib
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
-          elif [ "${{ matrix.os }}" = "windows-latest" ]; then
+          elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
             cp "$TARGET_DIR/media-sort-gui.exe" dist/
             cp libs/libmpv-2.dll dist/
             cp packaging/windows/icon.ico dist/
