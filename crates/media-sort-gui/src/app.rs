@@ -18,6 +18,17 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let _ = state.settings.save();
                 return window::latest().and_then(window::close);
             }
+
+            #[cfg(feature = "demo")]
+            let mut automation_task = Task::none();
+            #[cfg(feature = "demo")]
+            if let Some(ref mut automation) = state.automation
+                && let Some(forwarded_msg) =
+                    crate::automation::handle_automation_tick(automation, _instant)
+            {
+                automation_task = update(state, forwarded_msg);
+            }
+
             if let Some(ref player) = state.audio_player
                 && state.audio_playing
             {
@@ -29,7 +40,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.audio_duration = player.duration();
                 }
             }
-            Task::none()
+            #[cfg(feature = "demo")]
+            {
+                automation_task
+            }
+            #[cfg(not(feature = "demo"))]
+            {
+                Task::none()
+            }
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
             state.video_sender = Some(sender);
@@ -791,6 +809,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             iced::Event::Window(iced::window::Event::Resized(size)) => {
                 state.settings.window_position.width = size.width.round() as u32;
                 state.settings.window_position.height = size.height.round() as u32;
+                #[cfg(feature = "demo")]
+                if let Some(ref mut automation) = state.automation {
+                    automation.update_window_size(size.width, size.height);
+                }
                 Task::none()
             }
             iced::Event::Window(iced::window::Event::Moved(point)) => {
@@ -1458,7 +1480,12 @@ fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
 }
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
-    view::main_layout::main_layout_view(state)
+    let base_view = view::main_layout::main_layout_view(state);
+    #[cfg(feature = "demo")]
+    if let Some(ref automation) = state.automation {
+        return crate::automation::wrap_view(base_view, automation);
+    }
+    base_view
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {

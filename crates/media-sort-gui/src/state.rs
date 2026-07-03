@@ -84,6 +84,11 @@ pub struct AppState {
     /// to auto-scroll the currently selected entry into view when the
     /// selection changes (e.g. via keyboard shortcuts).
     pub media_grid_scroll: MediaGridScrollState,
+
+    #[cfg(feature = "demo")]
+    pub automation: Option<crate::automation::AutomationState>,
+    #[cfg(feature = "demo")]
+    pub demo_root_path: Option<PathBuf>,
 }
 
 /// Snapshot of the media grid's scrollable viewport. Updated whenever the
@@ -196,6 +201,10 @@ impl AppState {
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
             media_grid_scroll: MediaGridScrollState::default(),
+            #[cfg(feature = "demo")]
+            automation: None,
+            #[cfg(feature = "demo")]
+            demo_root_path: None,
         }
     }
 

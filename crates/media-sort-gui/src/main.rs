@@ -1,4 +1,6 @@
 mod app;
+#[cfg(feature = "demo")]
+mod automation;
 mod message;
 mod state;
 mod subscriptions;
@@ -125,6 +127,45 @@ fn initialize_panic_hook() {
     }));
 }
 
+#[cfg(feature = "demo")]
+fn init_demo_automation(
+    state: &mut crate::state::AppState,
+    startup_path: &mut Option<std::path::PathBuf>,
+) {
+    if std::env::var("MEDIA_SORT_DEMO").is_err() {
+        return;
+    }
+
+    let demo_kind = match std::env::var("MEDIA_SORT_DEMO_FLOW")
+        .unwrap_or_default()
+        .as_str()
+    {
+        "sorting_workflow" => crate::automation::DemoKind::SortingWorkflow,
+        "settings_tour" => crate::automation::DemoKind::SettingsTour,
+        "search_and_filter" => crate::automation::DemoKind::SearchAndFilter,
+        _ => crate::automation::DemoKind::BasicNavigation,
+    };
+
+    let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&demo_root);
+
+    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
+        tracing::info!("Demo media generated at {:?}", demo_root);
+    }
+
+    let steps = crate::automation::generate_demo_script(&demo_kind, &demo_root);
+    let flow_name = demo_kind.to_string();
+    let (ww, wh) = (
+        state.settings.window_position.width as f32,
+        state.settings.window_position.height as f32,
+    );
+    state.automation = Some(crate::automation::AutomationState::new(
+        steps, &flow_name, ww, wh,
+    ));
+    state.demo_root_path = Some(demo_root.clone());
+    *startup_path = Some(demo_root.clone());
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
@@ -175,6 +216,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let settings = SettingsStore::load().unwrap_or_default();
             let state = crate::state::AppState::new(settings.clone());
             let mut startup_path = None;
+
+            #[cfg(feature = "demo")]
+            let mut state = state;
+            #[cfg(feature = "demo")]
+            init_demo_automation(&mut state, &mut startup_path);
 
             if let Some(arg_path) = std::env::args()
                 .nth(1)
