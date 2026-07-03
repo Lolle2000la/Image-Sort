@@ -7,6 +7,11 @@ cargo build --workspace
 cargo test --workspace
 cargo fmt --all --
 cargo clippy --workspace --all-targets -- -D warnings
+
+# Documentation Website (Astro / Node.js 24 LTS)
+cd website
+npm ci
+npm run build
 ```
 
 Clang is required (libmpv-sys needs `libclang`).
@@ -23,6 +28,8 @@ Three crates in `crates/` with strict dependency order:
 media-sort-gui       (iced 0.14, winit, wgpu — the app binary)
   └─ media-sort-backend  (filesystem, media decoding, libmpv)
        └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
+
+website/             (Astro, Starlight docs template, React components)
 ```
 
 `media-sort-core` must never depend on `media-sort-backend` or `media-sort-gui`.
@@ -72,6 +79,8 @@ The dev profile sets `opt-level = 3` for all dependencies (`[profile.dev.package
 Conventional commits (`feat:`, `fix:`, `chore:`). The `docs/` directory is the GitHub Pages site served at `imagesort.org` via Jekyll. It is intentionally kept even though the help pages are outdated for v3.0.
 
 `.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored and must never be committed.
+
+**CI Routing:** GitHub Actions path filtering decouples builds. Commits touching `website/` trigger the Astro production build and push to the `gh-pages` branch. Changes to application crates skip web deployment and route to the multi-platform Rust test matrices.
 
 ## Architecture pattern (iced / The Elm Architecture)
 
@@ -134,6 +143,14 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `view/` | 10 view files: `main_layout`, `folder_tree`, `folder_panel`, `media_grid`, `media_preview`, `metadata_panel`, `control_panel`, `search_bar`, `settings_dialog`, `credits_dialog` |
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |
 | `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation) |
+
+### website (Astro + Starlight)
+
+| Directory / File | Purpose |
+| --- | --- |
+| `astro.config.mjs` | Multi-language routing configuration, Starlight options, and React integration layer |
+| `src/content/docs/` | Localized technical documentation manuals (`.md` and `.mdx` extensions) |
+| `src/components/` | Custom interactive UI layers (e.g., React keyboard maps) embedded into manuals |
 
 ## Settings
 
@@ -256,6 +273,9 @@ When you add a new module, dependency, build step, architectural decision, or te
 The `docs/` directory is the GitHub Pages site at `imagesort.org`. As of v3.0 the help pages are outdated and intentionally kept for historical reference. If you update the user-facing UI or workflow, update the corresponding help page:
 - `docs/help.md` (English)
 - `docs/help/help.de.md` (German)
+
+### Documentation website (`website/`)
+The `website/` directory is the new Astro/Starlight documentation site deployed to `gh-pages`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
 
 ### Locale files
 When you add user-facing strings, add entries to all three locale files (`resources/locale/{en,de,ja}/main.ftl`). The build script detects changes automatically.**
