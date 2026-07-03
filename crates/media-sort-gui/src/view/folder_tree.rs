@@ -127,46 +127,53 @@ fn render_node<'a>(
     } else {
         FolderMessage::Selected(node_path.clone())
     };
-    let select_button = button(row_content)
-        .on_press(Message::Folder(folder_action))
-        .style(move |theme: &iced::Theme, _status| {
-            let palette = theme.palette();
-            let base = iced::widget::button::Style::default();
-            let is_selected = selected_folder.is_some_and(|p| p == node.path);
-            if node.is_current {
-                let border = if is_selected {
-                    iced::Border {
-                        color: Color::WHITE,
-                        width: 2.0,
-                        radius: 4.0.into(),
+    let folder_id_str = format!("folder_{}", node.path.display());
+    let select_button = container(
+        button(row_content)
+            .on_press(Message::Folder(folder_action))
+            .style(move |theme: &iced::Theme, _status| {
+                let palette = theme.palette();
+                let base = iced::widget::button::Style::default();
+                let is_selected = selected_folder.is_some_and(|p| p == node.path);
+                if node.is_current {
+                    let border = if is_selected {
+                        iced::Border {
+                            color: Color::WHITE,
+                            width: 2.0,
+                            radius: 4.0.into(),
+                        }
+                    } else {
+                        iced::Border::default()
+                    };
+                    iced::widget::button::Style {
+                        background: Some(iced::Background::Color(palette.primary)),
+                        text_color: Color::WHITE,
+                        border,
+                        ..base
+                    }
+                } else if is_selected {
+                    let selected_bg = Color {
+                        a: 0.4,
+                        ..palette.primary
+                    };
+                    iced::widget::button::Style {
+                        background: Some(iced::Background::Color(selected_bg)),
+                        text_color: palette.text,
+                        ..base
                     }
                 } else {
-                    iced::Border::default()
-                };
-                iced::widget::button::Style {
-                    background: Some(iced::Background::Color(palette.primary)),
-                    text_color: Color::WHITE,
-                    border,
-                    ..base
+                    iced::widget::button::Style {
+                        text_color: palette.text,
+                        ..base
+                    }
                 }
-            } else if is_selected {
-                let selected_bg = Color {
-                    a: 0.4,
-                    ..palette.primary
-                };
-                iced::widget::button::Style {
-                    background: Some(iced::Background::Color(selected_bg)),
-                    text_color: palette.text,
-                    ..base
-                }
-            } else {
-                iced::widget::button::Style {
-                    text_color: palette.text,
-                    ..base
-                }
-            }
-        })
-        .width(Length::Shrink);
+            })
+            .width(Length::Shrink),
+    )
+    .id(iced::widget::Id::new(Box::leak(
+        folder_id_str.into_boxed_str(),
+    )))
+    .width(Length::Shrink);
 
     // Combined item layout: Chevron on the left, folder button on the right
     let item_layout = row![arrow_content, select_button]

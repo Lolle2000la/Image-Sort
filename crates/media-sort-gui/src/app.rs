@@ -23,10 +23,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             let mut automation_task = Task::none();
             #[cfg(feature = "demo")]
             if let Some(ref mut automation) = state.automation
-                && let Some(forwarded_msg) =
+                && let Some(result) =
                     crate::automation::handle_automation_tick(automation, _instant)
             {
-                automation_task = update(state, forwarded_msg);
+                use crate::automation::AutomationTickResult;
+                match result {
+                    AutomationTickResult::Message(msg) => {
+                        automation_task = update(state, msg);
+                    }
+                    AutomationTickResult::Task(task) => {
+                        automation_task = task;
+                    }
+                }
             }
 
             if let Some(ref player) = state.audio_player
@@ -160,6 +168,15 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
+        #[cfg(feature = "demo")]
+        Message::AutomationBounds(rect_opt) => {
+            if let Some(ref mut automation) = state.automation
+                && let Some(msg) = crate::automation::handle_bounds_resolved(automation, rect_opt)
+            {
+                return update(state, msg);
+            }
+            Task::none()
+        }
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;

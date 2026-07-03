@@ -36,20 +36,26 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     }
 
     // Left navigation button
-    let prev_btn = button(
-        text(char::from(lucide_icons::Icon::ChevronLeft))
-            .font(iced::Font::with_name("lucide"))
-            .size(16),
+    let prev_btn = container(
+        button(
+            text(char::from(lucide_icons::Icon::ChevronLeft))
+                .font(iced::Font::with_name("lucide"))
+                .size(16),
+        )
+        .on_press(Message::Media(MediaMessage::GoLeft)),
     )
-    .on_press(Message::Media(MediaMessage::GoLeft));
+    .id(iced::widget::Id::new("prev_btn"));
 
     // Right navigation button
-    let next_btn = button(
-        text(char::from(lucide_icons::Icon::ChevronRight))
-            .font(iced::Font::with_name("lucide"))
-            .size(16),
+    let next_btn = container(
+        button(
+            text(char::from(lucide_icons::Icon::ChevronRight))
+                .font(iced::Font::with_name("lucide"))
+                .size(16),
+        )
+        .on_press(Message::Media(MediaMessage::GoRight)),
     )
-    .on_press(Message::Media(MediaMessage::GoRight));
+    .id(iced::widget::Id::new("next_btn"));
 
     let mut entries_row = row![].spacing(MEDIA_GRID_CARD_SPACING);
 
@@ -116,9 +122,15 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH));
 
         let idx = i;
-        let entry_button = button(card)
-            .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
-            .style(iced::widget::button::text);
+        let card_id_str = format!("media_card_{}", idx);
+        let entry_button = container(
+            button(card)
+                .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
+                .style(iced::widget::button::text),
+        )
+        .id(iced::widget::Id::new(Box::leak(
+            card_id_str.into_boxed_str(),
+        )));
 
         entries_row = entries_row.push(entry_button);
     }

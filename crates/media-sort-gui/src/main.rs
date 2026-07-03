@@ -153,14 +153,20 @@ fn init_demo_automation(
         tracing::info!("Demo media generated at {:?}", demo_root);
     }
 
-    let steps = crate::automation::generate_demo_script(&demo_kind, &demo_root);
-    let flow_name = demo_kind.to_string();
     let (ww, wh) = (
         state.settings.window_position.width as f32,
         state.settings.window_position.height as f32,
     );
+    let steps = crate::automation::generate_demo_script(&demo_kind, &demo_root);
+    let flow_name = demo_kind.to_string();
     state.automation = Some(crate::automation::AutomationState::new(
-        steps, &flow_name, ww, wh,
+        steps,
+        &flow_name,
+        ww,
+        wh,
+        state.settings.general.folder_tree_width,
+        state.settings.metadata_panel.panel_width,
+        state.settings.metadata_panel.is_expanded,
     ));
     state.demo_root_path = Some(demo_root.clone());
     *startup_path = Some(demo_root.clone());

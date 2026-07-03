@@ -135,10 +135,13 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let tab_content: Element<'_, Message> = if !state.show_keybindings {
         // General settings tab
-        let dark_mode_cb = checkbox(state.settings.general.dark_mode)
-            .label(state.l10n.tr("settings-dark-mode"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleDarkMode))
-            .size(16);
+        let dark_mode_cb = container(
+            checkbox(state.settings.general.dark_mode)
+                .label(state.l10n.tr("settings-dark-mode"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleDarkMode))
+                .size(16),
+        )
+        .id(iced::widget::Id::new("dark_mode_toggle"));
 
         let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
             .label(state.l10n.tr("settings-play-gifs"))
@@ -348,9 +351,12 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         scrollable(bindings_column).height(Length::Fill).into()
     };
 
-    let close_btn = button(text(state.l10n.tr("settings-close")))
-        .on_press(Message::Settings(SettingsMessage::Close))
-        .style(iced::widget::button::primary);
+    let close_btn = container(
+        button(text(state.l10n.tr("settings-close")))
+            .on_press(Message::Settings(SettingsMessage::Close))
+            .style(iced::widget::button::primary),
+    )
+    .id(iced::widget::Id::new("close_settings_btn"));
 
     container(
         column![title, tab_bar, tab_content, close_btn,]

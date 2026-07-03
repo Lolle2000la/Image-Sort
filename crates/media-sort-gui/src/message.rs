@@ -22,6 +22,8 @@ pub enum Message {
 
     #[cfg(feature = "velopack")]
     Update(UpdateMessage),
+    #[cfg(feature = "demo")]
+    AutomationBounds(Option<iced::Rectangle>),
 }
 
 #[derive(Debug, Clone)]
