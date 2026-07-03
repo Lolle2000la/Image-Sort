@@ -26,4 +26,4 @@ once_cell.workspace = true
 serde = { workspace = true }
 
 velopack = { version = "1.2", optional = true }
-reqwest = { version = "0.12", features = ["json"], optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
