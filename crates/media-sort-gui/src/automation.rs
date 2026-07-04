@@ -169,10 +169,14 @@ pub struct AutomationState {
     pub virtual_cursor: Point,
     pub current_pixel_target: Point,
     pub is_clicking: bool,
-    pub active_keycap: Option<(String, Instant)>,
+    pub active_keycap: Option<(String, Duration)>,
     pub script_index: usize,
     pub steps: Vec<AutomationStep>,
     pub step_timer: Instant,
+    /// Total virtual elapsed time (headless mode).
+    pub virtual_elapsed: Duration,
+    /// Time elapsed since the current step started (headless mode).
+    pub step_elapsed: Duration,
     pub window_width: f32,
     pub window_height: f32,
     pub folder_tree_width: f32,
@@ -213,6 +217,8 @@ impl AutomationState {
             flow_name: flow_name.to_string(),
             completed: false,
             pending_bounds_id: None,
+            virtual_elapsed: Duration::ZERO,
+            step_elapsed: Duration::ZERO,
         }
     }
 
@@ -248,12 +254,32 @@ pub enum AutomationTickResult {
     Task(Task<Message>),
 }
 
-// ── Tick handler ───────────────────────────────────────────────────────
+// ── Tick handlers (real-time and virtual) ──────────────────────────────
 
+/// Real-time tick: computes elapsed wall-clock time and delegates to the
+/// virtual tick engine.
 pub fn handle_automation_tick(
     automation: &mut AutomationState,
     now: Instant,
 ) -> Option<AutomationTickResult> {
+    // Cap delta at 500 ms to avoid huge jumps if the app was suspended.
+    let delta = now
+        .duration_since(automation.step_timer)
+        .min(Duration::from_millis(500));
+    automation.step_timer = now;
+    handle_automation_virtual_tick(automation, delta)
+}
+
+/// Virtual-time tick: advances the automation by `delta`, animates the
+/// cursor, and fires script steps when their virtual delays elapse.
+pub fn handle_automation_virtual_tick(
+    automation: &mut AutomationState,
+    delta: Duration,
+) -> Option<AutomationTickResult> {
+    automation.virtual_elapsed += delta;
+    automation.step_elapsed += delta;
+
+    // Smooth cursor lerp.
     let dx = automation.current_pixel_target.x - automation.virtual_cursor.x;
     let dy = automation.current_pixel_target.y - automation.virtual_cursor.y;
 
@@ -264,24 +290,26 @@ pub fn handle_automation_tick(
         automation.is_clicking = false;
     }
 
-    if let Some((_, clear_timestamp)) = &automation.active_keycap
-        && now.duration_since(*clear_timestamp) > Duration::from_millis(1800)
+    // Clear keycap label after virtual timeout.
+    if let Some((_, set_at)) = &automation.active_keycap
+        && automation.virtual_elapsed.saturating_sub(*set_at) > Duration::from_millis(1800)
     {
         automation.active_keycap = None;
     }
 
-    // Don't advance while waiting for bounds.
+    // Don't advance while waiting for bounds resolution.
     if automation.pending_bounds_id.is_some() {
         return None;
     }
 
+    // Advance script.
     if automation.script_index < automation.steps.len() {
         let step = &automation.steps[automation.script_index];
-        if automation.step_timer.elapsed() >= step.execution_delay {
+        if automation.step_elapsed >= step.execution_delay {
             match &step.target {
                 AutomationTarget::Widget(id) => {
                     automation.pending_bounds_id = Some(id.clone());
-                    automation.step_timer = Instant::now();
+                    automation.step_elapsed = Duration::ZERO;
                     let task = find_bounds_task(id.clone()).map(Message::AutomationBounds);
                     return Some(AutomationTickResult::Task(task));
                 }
@@ -293,12 +321,12 @@ pub fn handle_automation_tick(
             automation.is_clicking = true;
 
             if let Some(ref label) = step.keycap_label {
-                automation.active_keycap = Some((label.clone(), now));
+                automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
             }
 
             let msg = step.underlying_message.clone();
             automation.script_index += 1;
-            automation.step_timer = Instant::now();
+            automation.step_elapsed = Duration::ZERO;
 
             if let Some(m) = msg {
                 return Some(AutomationTickResult::Message(m));
@@ -327,10 +355,11 @@ pub fn handle_bounds_resolved(
         let step = &automation.steps[automation.script_index];
         let msg = step.underlying_message.clone();
         if let Some(ref label) = step.keycap_label {
-            automation.active_keycap = Some((label.clone(), Instant::now()));
+            automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
         }
         automation.is_clicking = true;
         automation.script_index += 1;
+        automation.step_elapsed = Duration::ZERO;
         automation.step_timer = Instant::now();
         return msg;
     }

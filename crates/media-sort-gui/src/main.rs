@@ -1,6 +1,8 @@
 mod app;
 #[cfg(feature = "demo")]
 mod automation;
+#[cfg(feature = "demo")]
+mod headless;
 mod message;
 mod state;
 mod subscriptions;
@@ -199,6 +201,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     media_sort_core::media_type::MediaRegistry::init(discovered);
 
     let settings = SettingsStore::load().unwrap_or_default();
+
+    #[cfg(feature = "demo")]
+    if let Ok(export_path) = std::env::var("MEDIA_SORT_DEMO_EXPORT") {
+        let mut state = crate::state::AppState::new(settings);
+        let mut startup_path: Option<std::path::PathBuf> = None;
+        init_demo_automation(&mut state, &mut startup_path);
+
+        let automation = state.automation.take().expect("automation not initialized");
+        crate::headless::export_demo_video(state, automation, &export_path)?;
+        return Ok(());
+    }
 
     let icon =
         window::icon::from_file_data(include_bytes!("../../../packaging/windows/icon.ico"), None)

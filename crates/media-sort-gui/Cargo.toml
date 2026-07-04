@@ -6,7 +6,7 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest"]
-demo = ["iced/canvas"]
+demo = ["iced/canvas", "dep:pollster", "dep:iced_runtime"]
 
 [dependencies]
 media-sort-core = { path = "../media-sort-core" }
@@ -28,3 +28,5 @@ serde = { workspace = true }
 
 velopack = { version = "1.2", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+pollster = { version = "0.4", optional = true }
+iced_runtime = { version = "0.14", optional = true }
