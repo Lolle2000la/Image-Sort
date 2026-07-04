@@ -105,6 +105,15 @@ pub fn export_demo_video(
     automation.update_window_size(size.width, size.height);
     let delta = Duration::from_nanos(1_000_000_000 / FPS as u64);
 
+    // Register the Lucide icon font so navigation arrows and other
+    // icons render correctly in the headless text subsystem.
+    {
+        use std::borrow::Cow;
+        if let Ok(mut font_system) = iced_wgpu::graphics::text::font_system().write() {
+            font_system.load_font(Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES));
+        }
+    }
+
     // ── Headless wgpu ──────────────────────────────────────────────
     let instance = iced_wgpu::wgpu::Instance::default();
     let adapter = pollster::block_on(instance.request_adapter(
@@ -270,6 +279,25 @@ pub fn export_demo_video(
                     load_selected_image(&mut state);
                 }
                 _ => {}
+            }
+        }
+
+        // Synchronously generate thumbnails for visible entries (the
+        // normal async Tasks can't run without the iced runtime).
+        {
+            let paths: Vec<_> = state
+                .filtered_media_entries()
+                .iter()
+                .filter(|e| !state.thumbnail_cache.contains(&e.path))
+                .map(|e| e.path.clone())
+                .collect();
+            for path in paths {
+                if let Ok(bytes) = crate::subscriptions::prefetch::generate_thumbnail(&path)
+                    && !bytes.is_empty()
+                {
+                    let handle = iced::widget::image::Handle::from_bytes(bytes);
+                    state.thumbnail_cache.push(path, handle);
+                }
             }
         }
 
