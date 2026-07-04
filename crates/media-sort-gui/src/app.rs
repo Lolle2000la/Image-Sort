@@ -169,6 +169,24 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         },
         #[cfg(feature = "demo")]
+        Message::AutomationVirtualTick(delta) => {
+            if let Some(ref mut automation) = state.automation
+                && let Some(result) =
+                    crate::automation::handle_automation_virtual_tick(automation, delta)
+            {
+                use crate::automation::AutomationTickResult;
+                match result {
+                    AutomationTickResult::Message(msg) => {
+                        return Task::done(msg);
+                    }
+                    AutomationTickResult::Task(task) => {
+                        return task;
+                    }
+                }
+            }
+            Task::none()
+        }
+        #[cfg(feature = "demo")]
         Message::AutomationBounds(rect_opt) => {
             if let Some(ref mut automation) = state.automation
                 && let Some(msg) = crate::automation::handle_bounds_resolved(automation, rect_opt)

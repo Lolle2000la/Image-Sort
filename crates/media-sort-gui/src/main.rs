@@ -174,6 +174,29 @@ fn init_demo_automation(
     *startup_path = Some(demo_root.clone());
 }
 
+#[cfg(feature = "demo")]
+fn demo_kind_from_env() -> crate::automation::DemoKind {
+    match std::env::var("MEDIA_SORT_DEMO_FLOW")
+        .unwrap_or_default()
+        .as_str()
+    {
+        "sorting_workflow" => crate::automation::DemoKind::SortingWorkflow,
+        "settings_tour" => crate::automation::DemoKind::SettingsTour,
+        "search_and_filter" => crate::automation::DemoKind::SearchAndFilter,
+        _ => crate::automation::DemoKind::BasicNavigation,
+    }
+}
+
+#[cfg(feature = "demo")]
+fn init_demo_media() -> std::path::PathBuf {
+    let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
+    let _ = std::fs::create_dir_all(&demo_root);
+    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
+        tracing::info!("Demo media generated at {:?}", demo_root);
+    }
+    demo_root
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
@@ -204,12 +227,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(feature = "demo")]
     if let Ok(export_path) = std::env::var("MEDIA_SORT_DEMO_EXPORT") {
-        let mut state = crate::state::AppState::new(settings);
-        let mut startup_path: Option<std::path::PathBuf> = None;
-        init_demo_automation(&mut state, &mut startup_path);
-
-        let automation = state.automation.take().expect("automation not initialized");
-        crate::headless::export_demo_video(state, automation, &export_path)?;
+        let demo_root = init_demo_media();
+        let demo_kind = demo_kind_from_env();
+        crate::headless::export_demo_video(demo_root, demo_kind, &export_path)?;
         return Ok(());
     }
 

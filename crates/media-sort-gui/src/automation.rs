@@ -529,6 +529,7 @@ pub fn wrap_view<'a>(
 
 // ── Demo kinds & script generation ─────────────────────────────────────
 
+#[derive(Debug, Clone)]
 pub enum DemoKind {
     BasicNavigation,
     SortingWorkflow,
