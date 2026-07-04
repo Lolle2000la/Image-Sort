@@ -1,6 +1,7 @@
-use std::fmt;
 use std::path::Path;
 use std::time::{Duration, Instant};
+
+use serde::Deserialize;
 
 use iced::advanced::mouse;
 use iced::advanced::widget::Id;
@@ -11,52 +12,6 @@ use iced::{
 };
 
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
-
-// ── Widget ID constants shared with view code ───────────────────────────
-
-pub mod widget_ids {
-    use iced::widget;
-
-    pub const SEARCH_INPUT: &str = "search_bar";
-
-    pub fn search_input() -> widget::Id {
-        widget::Id::new(SEARCH_INPUT)
-    }
-
-    pub fn folder_button(path: &std::path::Path) -> widget::Id {
-        let s = path.display().to_string();
-        widget::Id::new(Box::leak(s.into_boxed_str()))
-    }
-
-    pub fn media_card(index: usize) -> widget::Id {
-        let s = format!("media_card_{}", index);
-        widget::Id::new(Box::leak(s.into_boxed_str()))
-    }
-
-    pub fn settings_button() -> widget::Id {
-        widget::Id::new("settings_btn")
-    }
-
-    pub fn move_button() -> widget::Id {
-        widget::Id::new("move_btn")
-    }
-
-    pub fn close_settings_button() -> widget::Id {
-        widget::Id::new("close_settings_btn")
-    }
-
-    pub fn prev_button() -> widget::Id {
-        widget::Id::new("prev_btn")
-    }
-
-    pub fn next_button() -> widget::Id {
-        widget::Id::new("next_btn")
-    }
-
-    pub fn dark_mode_toggle() -> widget::Id {
-        widget::Id::new("dark_mode_toggle")
-    }
-}
 
 // ── FindBounds custom operation ────────────────────────────────────────
 
@@ -123,18 +78,6 @@ pub enum AutomationTarget {
     Pixel(Point),
 }
 
-impl AutomationTarget {
-    #[allow(dead_code)]
-    pub fn widget(id: Id) -> Self {
-        AutomationTarget::Widget(id)
-    }
-
-    #[allow(dead_code)]
-    pub fn pixel(x: f32, y: f32) -> Self {
-        AutomationTarget::Pixel(Point::new(x, y))
-    }
-}
-
 // ── Automation step ────────────────────────────────────────────────────
 
 #[derive(Debug, Clone)]
@@ -143,24 +86,6 @@ pub struct AutomationStep {
     pub target: AutomationTarget,
     pub underlying_message: Option<Message>,
     pub keycap_label: Option<String>,
-}
-
-impl AutomationStep {
-    pub fn new(
-        execution_delay: Duration,
-        target: AutomationTarget,
-        underlying_message: Option<Message>,
-    ) -> Self {
-        let keycap_label = underlying_message
-            .as_ref()
-            .map(format_message_for_keycaster);
-        Self {
-            execution_delay,
-            target,
-            underlying_message,
-            keycap_label,
-        }
-    }
 }
 
 // ── Automation state ───────────────────────────────────────────────────
@@ -179,9 +104,6 @@ pub struct AutomationState {
     pub step_elapsed: Duration,
     pub window_width: f32,
     pub window_height: f32,
-    pub folder_tree_width: f32,
-    pub metadata_panel_width: f32,
-    pub metadata_expanded: bool,
     #[allow(dead_code)]
     pub flow_name: String,
     pub completed: bool,
@@ -197,9 +119,6 @@ impl AutomationState {
         flow_name: &str,
         window_width: f32,
         window_height: f32,
-        folder_tree_width: u16,
-        metadata_panel_width: u16,
-        metadata_expanded: bool,
     ) -> Self {
         Self {
             virtual_cursor: Point::ORIGIN,
@@ -211,9 +130,6 @@ impl AutomationState {
             step_timer: Instant::now(),
             window_width,
             window_height,
-            folder_tree_width: folder_tree_width as f32,
-            metadata_panel_width: metadata_panel_width as f32,
-            metadata_expanded,
             flow_name: flow_name.to_string(),
             completed: false,
             pending_bounds_id: None,
@@ -225,23 +141,6 @@ impl AutomationState {
     pub fn update_window_size(&mut self, width: f32, height: f32) {
         self.window_width = width;
         self.window_height = height;
-    }
-
-    #[allow(dead_code)]
-    pub fn update_layout(
-        &mut self,
-        folder_tree_width: u16,
-        metadata_panel_width: u16,
-        metadata_expanded: bool,
-    ) {
-        self.folder_tree_width = folder_tree_width as f32;
-        self.metadata_panel_width = metadata_panel_width as f32;
-        self.metadata_expanded = metadata_expanded;
-    }
-
-    #[allow(dead_code)]
-    pub fn is_active(&self) -> bool {
-        self.script_index < self.steps.len() || !self.completed
     }
 }
 
@@ -374,6 +273,8 @@ fn format_message_for_keycaster(msg: &Message) -> String {
         Message::Media(MediaMessage::GoRight) => "Right Arrow\nNext Image".into(),
         Message::Media(MediaMessage::GoLeft) => "Left Arrow\nPrevious Image".into(),
         Message::Media(MediaMessage::MoveActive) => "M\nMove to Folder".into(),
+        Message::Media(MediaMessage::CopyActive) => "Ctrl+C\nCopy to Folder".into(),
+        Message::Media(MediaMessage::TriggerRename) => "F2\nRename".into(),
         Message::Media(MediaMessage::SearchQueryChanged(_)) => "Type Query\nFilter Results".into(),
         Message::Media(MediaMessage::SearchFocused) => "Ctrl+F\nFocus Search".into(),
         Message::Media(MediaMessage::SelectEntry(_)) => "Click\nSelect Entry".into(),
@@ -529,196 +430,142 @@ pub fn wrap_view<'a>(
 
 // ── Demo kinds & script generation ─────────────────────────────────────
 
-#[derive(Debug, Clone)]
-pub enum DemoKind {
-    BasicNavigation,
-    SortingWorkflow,
-    SettingsTour,
-    SearchAndFilter,
+// ── JSON automation flow (serde deserialization) ───────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct JsonAutomationFlow {
+    pub flow_name: String,
+    pub steps: Vec<JsonAutomationStep>,
 }
 
-impl fmt::Display for DemoKind {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            DemoKind::BasicNavigation => write!(f, "Basic Navigation"),
-            DemoKind::SortingWorkflow => write!(f, "Sorting Workflow"),
-            DemoKind::SettingsTour => write!(f, "Settings Tour"),
-            DemoKind::SearchAndFilter => write!(f, "Search & Filter"),
+#[derive(Debug, Deserialize)]
+pub struct JsonAutomationStep {
+    pub delay_ms: u64,
+    pub target: JsonTarget,
+    pub keycap_label: Option<String>,
+    pub message: JsonMessage,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", content = "value")]
+pub enum JsonTarget {
+    Coordinate { x: f32, y: f32 },
+    Widget { id: String },
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "action")]
+pub enum JsonMessage {
+    #[serde(rename = "go_right")]
+    GoRight,
+    #[serde(rename = "go_left")]
+    GoLeft,
+    #[serde(rename = "move_active")]
+    MoveActive,
+    #[serde(rename = "copy_active")]
+    CopyActive,
+    #[serde(rename = "trigger_rename")]
+    TriggerRename,
+    #[serde(rename = "open_folder")]
+    OpenFolder { relative_path: String },
+    #[serde(rename = "select_entry")]
+    SelectEntry { index: usize },
+    #[serde(rename = "open_settings")]
+    OpenSettings,
+    #[serde(rename = "toggle_dark_mode")]
+    ToggleDarkMode,
+    #[serde(rename = "close_settings")]
+    CloseSettings,
+    #[serde(rename = "search_query")]
+    SearchQuery { query: String },
+    #[serde(rename = "focus_search")]
+    FocusSearch,
+    #[serde(rename = "folder_selected")]
+    FolderSelected { relative_path: String },
+    #[serde(rename = "quit")]
+    Quit,
+}
+
+impl JsonAutomationFlow {
+    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn std::error::Error>> {
+        let file = std::fs::File::open(path)?;
+        let flow = serde_json::from_reader(file)?;
+        Ok(flow)
+    }
+
+    pub fn to_automation_steps(&self, test_root: &Path) -> Vec<AutomationStep> {
+        self.steps
+            .iter()
+            .map(|step| {
+                let cursor_target = match &step.target {
+                    JsonTarget::Coordinate { x, y } => AutomationTarget::Pixel(Point::new(*x, *y)),
+                    JsonTarget::Widget { id } => {
+                        AutomationTarget::Widget(Id::new(Box::leak(id.clone().into_boxed_str())))
+                    }
+                };
+
+                let underlying_message = match &step.message {
+                    JsonMessage::GoRight => Some(Message::Media(MediaMessage::GoRight)),
+                    JsonMessage::GoLeft => Some(Message::Media(MediaMessage::GoLeft)),
+                    JsonMessage::MoveActive => Some(Message::Media(MediaMessage::MoveActive)),
+                    JsonMessage::CopyActive => Some(Message::Media(MediaMessage::CopyActive)),
+                    JsonMessage::TriggerRename => Some(Message::Media(MediaMessage::TriggerRename)),
+                    JsonMessage::OpenFolder { relative_path } => {
+                        let path = test_root.join(relative_path);
+                        Some(Message::Folder(FolderMessage::Open(path)))
+                    }
+                    JsonMessage::SelectEntry { index } => {
+                        Some(Message::Media(MediaMessage::SelectEntry(*index)))
+                    }
+                    JsonMessage::OpenSettings => Some(Message::Settings(SettingsMessage::Open)),
+                    JsonMessage::ToggleDarkMode => {
+                        Some(Message::Settings(SettingsMessage::ToggleDarkMode))
+                    }
+                    JsonMessage::CloseSettings => Some(Message::Settings(SettingsMessage::Close)),
+                    JsonMessage::SearchQuery { query } => Some(Message::Media(
+                        MediaMessage::SearchQueryChanged(query.clone()),
+                    )),
+                    JsonMessage::FocusSearch => Some(Message::Media(MediaMessage::SearchFocused)),
+                    JsonMessage::FolderSelected { relative_path } => {
+                        let path = test_root.join(relative_path);
+                        Some(Message::Folder(FolderMessage::Selected(path)))
+                    }
+                    JsonMessage::Quit => Some(Message::Quit),
+                };
+
+                let keycap_label = step.keycap_label.clone().or_else(|| {
+                    underlying_message
+                        .as_ref()
+                        .map(format_message_for_keycaster)
+                });
+
+                AutomationStep {
+                    execution_delay: Duration::from_millis(step.delay_ms),
+                    target: cursor_target,
+                    underlying_message,
+                    keycap_label,
+                }
+            })
+            .collect()
+    }
+}
+
+// ── try_tick hook (decoupled from app.rs) ──────────────────────────────
+
+pub fn try_tick(state: &mut crate::state::AppState, instant: Instant) -> Task<Message> {
+    if let Some(ref mut automation) = state.automation
+        && let Some(result) = handle_automation_tick(automation, instant)
+    {
+        match result {
+            AutomationTickResult::Message(msg) => {
+                return crate::app::update(state, msg);
+            }
+            AutomationTickResult::Task(task) => {
+                return task;
+            }
         }
     }
-}
-
-pub fn generate_demo_script(kind: &DemoKind, demo_root: &Path) -> Vec<AutomationStep> {
-    match kind {
-        DemoKind::BasicNavigation => basic_navigation_script(demo_root),
-        DemoKind::SortingWorkflow => sorting_workflow_script(demo_root),
-        DemoKind::SettingsTour => settings_tour_script(demo_root),
-        DemoKind::SearchAndFilter => search_and_filter_script(demo_root),
-    }
-}
-
-fn step_widget(delay_ms: u64, id: Id, message: Option<Message>) -> AutomationStep {
-    AutomationStep::new(
-        Duration::from_millis(delay_ms),
-        AutomationTarget::Widget(id),
-        message,
-    )
-}
-
-// ── Individual demo scripts ────────────────────────────────────────────
-
-fn basic_navigation_script(root: &Path) -> Vec<AutomationStep> {
-    let images_dir = root.join("Images");
-    vec![
-        step_widget(
-            1500,
-            widget_ids::folder_button(&images_dir),
-            Some(Message::Folder(FolderMessage::Open(images_dir.clone()))),
-        ),
-        step_widget(
-            2500,
-            widget_ids::media_card(0),
-            Some(Message::Media(MediaMessage::SelectEntry(0))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::next_button(),
-            Some(Message::Media(MediaMessage::GoRight)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::next_button(),
-            Some(Message::Media(MediaMessage::GoRight)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::prev_button(),
-            Some(Message::Media(MediaMessage::GoLeft)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::close_settings_button(),
-            Some(Message::Quit),
-        ),
-    ]
-}
-
-fn sorting_workflow_script(root: &Path) -> Vec<AutomationStep> {
-    let unsorted_dir = root.join("Unsorted");
-    let images_dir = root.join("Images");
-    vec![
-        step_widget(
-            1500,
-            widget_ids::folder_button(&unsorted_dir),
-            Some(Message::Folder(FolderMessage::Open(unsorted_dir))),
-        ),
-        step_widget(
-            2500,
-            widget_ids::media_card(0),
-            Some(Message::Media(MediaMessage::SelectEntry(0))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::folder_button(&images_dir),
-            Some(Message::Folder(FolderMessage::Selected(images_dir))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::move_button(),
-            Some(Message::Media(MediaMessage::MoveActive)),
-        ),
-        step_widget(
-            2000,
-            widget_ids::media_card(0),
-            Some(Message::Media(MediaMessage::SelectEntry(0))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::move_button(),
-            Some(Message::Media(MediaMessage::MoveActive)),
-        ),
-        step_widget(
-            2000,
-            widget_ids::close_settings_button(),
-            Some(Message::Quit),
-        ),
-    ]
-}
-
-fn settings_tour_script(root: &Path) -> Vec<AutomationStep> {
-    let images_dir = root.join("Images");
-    vec![
-        step_widget(
-            1500,
-            widget_ids::folder_button(&images_dir),
-            Some(Message::Folder(FolderMessage::Open(images_dir))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::settings_button(),
-            Some(Message::Settings(SettingsMessage::Open)),
-        ),
-        step_widget(
-            2000,
-            widget_ids::dark_mode_toggle(),
-            Some(Message::Settings(SettingsMessage::ToggleDarkMode)),
-        ),
-        step_widget(
-            2000,
-            widget_ids::dark_mode_toggle(),
-            Some(Message::Settings(SettingsMessage::ToggleDarkMode)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::close_settings_button(),
-            Some(Message::Settings(SettingsMessage::Close)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::close_settings_button(),
-            Some(Message::Quit),
-        ),
-    ]
-}
-
-fn search_and_filter_script(root: &Path) -> Vec<AutomationStep> {
-    let images_dir = root.join("Images");
-    vec![
-        step_widget(
-            1500,
-            widget_ids::folder_button(&images_dir),
-            Some(Message::Folder(FolderMessage::Open(images_dir))),
-        ),
-        step_widget(
-            2000,
-            widget_ids::search_input(),
-            Some(Message::Media(MediaMessage::SearchFocused)),
-        ),
-        step_widget(
-            1500,
-            widget_ids::search_input(),
-            Some(Message::Media(MediaMessage::SearchQueryChanged(
-                "landscape".into(),
-            ))),
-        ),
-        step_widget(
-            2000,
-            widget_ids::media_card(0),
-            Some(Message::Media(MediaMessage::SelectEntry(0))),
-        ),
-        step_widget(
-            2000,
-            widget_ids::search_input(),
-            Some(Message::Media(MediaMessage::SearchQueryChanged(
-                String::new(),
-            ))),
-        ),
-        step_widget(
-            1500,
-            widget_ids::close_settings_button(),
-            Some(Message::Quit),
-        ),
-    ]
+    Task::none()
 }
 
 // ── Placeholder media generation ───────────────────────────────────────

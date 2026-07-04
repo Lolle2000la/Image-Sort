@@ -2,6 +2,8 @@ mod app;
 #[cfg(feature = "demo")]
 mod automation;
 #[cfg(feature = "demo")]
+mod demo;
+#[cfg(feature = "demo")]
 mod headless;
 mod message;
 mod state;
@@ -129,74 +131,6 @@ fn initialize_panic_hook() {
     }));
 }
 
-#[cfg(feature = "demo")]
-fn init_demo_automation(
-    state: &mut crate::state::AppState,
-    startup_path: &mut Option<std::path::PathBuf>,
-) {
-    if std::env::var("MEDIA_SORT_DEMO").is_err() {
-        return;
-    }
-
-    let demo_kind = match std::env::var("MEDIA_SORT_DEMO_FLOW")
-        .unwrap_or_default()
-        .as_str()
-    {
-        "sorting_workflow" => crate::automation::DemoKind::SortingWorkflow,
-        "settings_tour" => crate::automation::DemoKind::SettingsTour,
-        "search_and_filter" => crate::automation::DemoKind::SearchAndFilter,
-        _ => crate::automation::DemoKind::BasicNavigation,
-    };
-
-    let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
-    let _ = std::fs::create_dir_all(&demo_root);
-
-    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
-        tracing::info!("Demo media generated at {:?}", demo_root);
-    }
-
-    let (ww, wh) = (
-        state.settings.window_position.width as f32,
-        state.settings.window_position.height as f32,
-    );
-    let steps = crate::automation::generate_demo_script(&demo_kind, &demo_root);
-    let flow_name = demo_kind.to_string();
-    state.automation = Some(crate::automation::AutomationState::new(
-        steps,
-        &flow_name,
-        ww,
-        wh,
-        state.settings.general.folder_tree_width,
-        state.settings.metadata_panel.panel_width,
-        state.settings.metadata_panel.is_expanded,
-    ));
-    state.demo_root_path = Some(demo_root.clone());
-    *startup_path = Some(demo_root.clone());
-}
-
-#[cfg(feature = "demo")]
-fn demo_kind_from_env() -> crate::automation::DemoKind {
-    match std::env::var("MEDIA_SORT_DEMO_FLOW")
-        .unwrap_or_default()
-        .as_str()
-    {
-        "sorting_workflow" => crate::automation::DemoKind::SortingWorkflow,
-        "settings_tour" => crate::automation::DemoKind::SettingsTour,
-        "search_and_filter" => crate::automation::DemoKind::SearchAndFilter,
-        _ => crate::automation::DemoKind::BasicNavigation,
-    }
-}
-
-#[cfg(feature = "demo")]
-fn init_demo_media() -> std::path::PathBuf {
-    let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
-    let _ = std::fs::create_dir_all(&demo_root);
-    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
-        tracing::info!("Demo media generated at {:?}", demo_root);
-    }
-    demo_root
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
@@ -226,11 +160,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = SettingsStore::load().unwrap_or_default();
 
     #[cfg(feature = "demo")]
-    if let Ok(export_path) = std::env::var("MEDIA_SORT_DEMO_EXPORT") {
-        let demo_root = init_demo_media();
-        let demo_kind = demo_kind_from_env();
-        crate::headless::export_demo_video(demo_root, demo_kind, &export_path)?;
-        return Ok(());
+    if let Some(result) = crate::demo::try_headless_export() {
+        return result;
     }
 
     let icon =
@@ -254,12 +185,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         move || {
             let settings = SettingsStore::load().unwrap_or_default();
             let state = crate::state::AppState::new(settings.clone());
+            #[cfg(feature = "demo")]
+            let mut state = state;
             let mut startup_path = None;
 
             #[cfg(feature = "demo")]
-            let mut state = state;
-            #[cfg(feature = "demo")]
-            init_demo_automation(&mut state, &mut startup_path);
+            if let Some(root) = crate::demo::init(&mut state) {
+                startup_path = Some(root);
+            }
 
             if let Some(arg_path) = std::env::args()
                 .nth(1)

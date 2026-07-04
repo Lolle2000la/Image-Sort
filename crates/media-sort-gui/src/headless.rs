@@ -18,7 +18,7 @@ use iced_test::runtime::user_interface;
 use iced_test::runtime::{Task, UserInterface};
 
 use crate::app;
-use crate::automation::{self, AutomationState, DemoKind};
+use crate::automation::{self, AutomationState, JsonAutomationFlow};
 use crate::message::{FolderMessage, Message};
 use crate::state::AppState;
 
@@ -28,9 +28,10 @@ const FPS: u32 = 60;
 
 struct AppProgram {
     demo_root: std::path::PathBuf,
-    demo_kind: DemoKind,
     settings: media_sort_core::settings::store::SettingsStore,
     completed: Arc<AtomicBool>,
+    steps: Vec<automation::AutomationStep>,
+    flow_name: String,
 }
 
 impl Program for AppProgram {
@@ -63,16 +64,11 @@ impl Program for AppProgram {
     fn boot(&self) -> (Self::State, Task<Self::Message>) {
         let mut state = AppState::new(self.settings.clone());
 
-        let steps = automation::generate_demo_script(&self.demo_kind, &self.demo_root);
-        let flow_name = self.demo_kind.to_string();
         state.automation = Some(AutomationState::new(
-            steps,
-            &flow_name,
+            self.steps.clone(),
+            &self.flow_name,
             DEFAULT_WIDTH as f32,
             DEFAULT_HEIGHT as f32,
-            250,
-            320,
-            false,
         ));
         state.demo_root_path = Some(self.demo_root.clone());
 
@@ -113,18 +109,23 @@ impl Program for AppProgram {
 
 pub fn export_demo_video(
     demo_root: std::path::PathBuf,
-    demo_kind: DemoKind,
+    json_spec_path: &str,
     output_path: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let settings = media_sort_core::settings::store::SettingsStore::default();
 
     let completed = Arc::new(AtomicBool::new(false));
 
+    let flow = JsonAutomationFlow::load_from_file(json_spec_path)?;
+    let flow_name = flow.flow_name.clone();
+    let steps = flow.to_automation_steps(&demo_root);
+
     let program = AppProgram {
         demo_root,
-        demo_kind: demo_kind.clone(),
         settings: settings.clone(),
         completed: completed.clone(),
+        steps,
+        flow_name,
     };
 
     let delta = Duration::from_nanos(1_000_000_000 / FPS as u64);

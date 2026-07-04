@@ -20,22 +20,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
 
             #[cfg(feature = "demo")]
-            let mut automation_task = Task::none();
-            #[cfg(feature = "demo")]
-            if let Some(ref mut automation) = state.automation
-                && let Some(result) =
-                    crate::automation::handle_automation_tick(automation, _instant)
-            {
-                use crate::automation::AutomationTickResult;
-                match result {
-                    AutomationTickResult::Message(msg) => {
-                        automation_task = update(state, msg);
-                    }
-                    AutomationTickResult::Task(task) => {
-                        automation_task = task;
-                    }
-                }
-            }
+            let automation_task = crate::automation::try_tick(state, _instant);
+            #[cfg(not(feature = "demo"))]
+            let automation_task = Task::none();
 
             if let Some(ref player) = state.audio_player
                 && state.audio_playing
@@ -48,14 +35,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.audio_duration = player.duration();
                 }
             }
-            #[cfg(feature = "demo")]
-            {
-                automation_task
-            }
-            #[cfg(not(feature = "demo"))]
-            {
-                Task::none()
-            }
+            automation_task
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
             state.video_sender = Some(sender);
