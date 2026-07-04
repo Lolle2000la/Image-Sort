@@ -111,6 +111,11 @@ pub struct AutomationState {
     /// When `Some`, a FindBounds task is in-flight.  The tick handler
     /// won't advance until `handle_bounds_resolved` is called.
     pub pending_bounds_id: Option<Id>,
+
+    /// Set to true once the current step's delay has elapsed and the
+    /// cursor target is resolved.  The action fires when the cursor
+    /// has also finished lerping to the target.
+    pub step_ready: bool,
 }
 
 impl AutomationState {
@@ -133,6 +138,7 @@ impl AutomationState {
             flow_name: flow_name.to_string(),
             completed: false,
             pending_bounds_id: None,
+            step_ready: false,
             virtual_elapsed: Duration::ZERO,
             step_elapsed: Duration::ZERO,
         }
@@ -170,7 +176,8 @@ pub fn handle_automation_tick(
 }
 
 /// Virtual-time tick: advances the automation by `delta`, animates the
-/// cursor, and fires script steps when their virtual delays elapse.
+/// cursor toward the current target, then fires the step's action once
+/// the cursor arrives.
 pub fn handle_automation_virtual_tick(
     automation: &mut AutomationState,
     delta: Duration,
@@ -178,15 +185,17 @@ pub fn handle_automation_virtual_tick(
     automation.virtual_elapsed += delta;
     automation.step_elapsed += delta;
 
-    // Smooth cursor lerp.
+    // Smooth cursor lerp toward the resolved pixel target.
     let dx = automation.current_pixel_target.x - automation.virtual_cursor.x;
     let dy = automation.current_pixel_target.y - automation.virtual_cursor.y;
+    let cursor_arrived = dx.abs() <= 0.5 && dy.abs() <= 0.5;
 
-    if dx.abs() > 0.5 || dy.abs() > 0.5 {
+    if !cursor_arrived {
         automation.virtual_cursor.x += dx * 0.18;
         automation.virtual_cursor.y += dy * 0.18;
-    } else if automation.is_clicking {
-        automation.is_clicking = false;
+        if automation.is_clicking {
+            automation.is_clicking = false;
+        }
     }
 
     // Clear keycap label after virtual timeout.
@@ -201,14 +210,39 @@ pub fn handle_automation_virtual_tick(
         return None;
     }
 
-    // Advance script.
+    // If the step is ready but the cursor hasn't arrived yet, keep
+    // animating and wait.
+    if automation.step_ready && !cursor_arrived {
+        return None;
+    }
+
+    // --- step_ready && cursor_arrived → fire the action ----------------
+
+    if automation.step_ready && cursor_arrived {
+        let step = &automation.steps[automation.script_index];
+        automation.is_clicking = true;
+        if let Some(ref label) = step.keycap_label {
+            automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
+        }
+        let msg = step.underlying_message.clone();
+        automation.script_index += 1;
+        automation.step_elapsed = Duration::ZERO;
+        automation.step_ready = false;
+        automation.step_timer = Instant::now();
+        if let Some(m) = msg {
+            return Some(AutomationTickResult::Message(m));
+        }
+        return None;
+    }
+
+    // --- resolve the current step's target (delay has elapsed) --------
+
     if automation.script_index < automation.steps.len() {
         let step = &automation.steps[automation.script_index];
         if automation.step_elapsed >= step.execution_delay {
             match &step.target {
                 AutomationTarget::Widget(id) => {
                     automation.pending_bounds_id = Some(id.clone());
-                    automation.step_elapsed = Duration::ZERO;
                     let task = find_bounds_task(id.clone()).map(Message::AutomationBounds);
                     return Some(AutomationTickResult::Task(task));
                 }
@@ -216,20 +250,9 @@ pub fn handle_automation_virtual_tick(
                     automation.current_pixel_target = *point;
                 }
             }
-
-            automation.is_clicking = true;
-
-            if let Some(ref label) = step.keycap_label {
-                automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
-            }
-
-            let msg = step.underlying_message.clone();
-            automation.script_index += 1;
             automation.step_elapsed = Duration::ZERO;
-
-            if let Some(m) = msg {
-                return Some(AutomationTickResult::Message(m));
-            }
+            automation.step_ready = true;
+            // Don't fire yet — let the cursor animate to the target first.
         }
     } else {
         automation.completed = true;
@@ -238,7 +261,9 @@ pub fn handle_automation_virtual_tick(
     None
 }
 
-/// Called when a FindBounds query resolves.
+/// Called when a FindBounds query resolves.  Sets the cursor target
+/// position and marks the step ready so the next tick fires the action
+/// once the cursor arrives.
 pub fn handle_bounds_resolved(
     automation: &mut AutomationState,
     rect_opt: Option<Rectangle>,
@@ -249,20 +274,7 @@ pub fn handle_bounds_resolved(
         automation.current_pixel_target = Point::new(rect.center_x(), rect.center_y());
     }
 
-    // Fire the current step's message and advance.
-    if automation.script_index < automation.steps.len() {
-        let step = &automation.steps[automation.script_index];
-        let msg = step.underlying_message.clone();
-        if let Some(ref label) = step.keycap_label {
-            automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
-        }
-        automation.is_clicking = true;
-        automation.script_index += 1;
-        automation.step_elapsed = Duration::ZERO;
-        automation.step_timer = Instant::now();
-        return msg;
-    }
-
+    automation.step_ready = true;
     None
 }
 
