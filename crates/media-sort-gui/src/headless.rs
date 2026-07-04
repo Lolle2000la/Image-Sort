@@ -2,15 +2,99 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use iced::{Color, Size, Theme};
+use iced::advanced::widget::Id;
+use iced::advanced::widget::operation::{Operation, Scrollable, TextInput};
+use iced::{Color, Point, Rectangle, Size, Theme, Vector};
 
 use crate::app;
 use crate::automation::{self, AutomationState};
+use crate::message::{FolderMessage, MediaMessage, Message};
 use crate::state::AppState;
 
 const DEFAULT_WIDTH: u32 = 1920;
 const DEFAULT_HEIGHT: u32 = 1080;
 const FPS: u32 = 60;
+
+// ── Synchronous bounds lookup ──────────────────────────────────────────
+
+struct HeadlessFindBounds {
+    target: Id,
+    found: Option<Rectangle>,
+}
+
+impl Operation for HeadlessFindBounds {
+    fn traverse(&mut self, operate: &mut dyn FnMut(&mut dyn Operation)) {
+        operate(self);
+    }
+
+    fn container(&mut self, id: Option<&Id>, bounds: Rectangle) {
+        if id == Some(&self.target) {
+            self.found = Some(bounds);
+        }
+    }
+
+    fn scrollable(
+        &mut self,
+        id: Option<&Id>,
+        bounds: Rectangle,
+        _content_bounds: Rectangle,
+        _translation: Vector,
+        _state: &mut dyn Scrollable,
+    ) {
+        if id == Some(&self.target) {
+            self.found = Some(bounds);
+        }
+    }
+
+    fn text_input(&mut self, id: Option<&Id>, bounds: Rectangle, _state: &mut dyn TextInput) {
+        if id == Some(&self.target) {
+            self.found = Some(bounds);
+        }
+    }
+
+    fn text(&mut self, id: Option<&Id>, bounds: Rectangle, _text: &str) {
+        if id == Some(&self.target) {
+            self.found = Some(bounds);
+        }
+    }
+}
+
+// ── Synchronous image loading (avoids async Task dependency) ───────────
+
+fn load_selected_image(state: &mut AppState) {
+    let Some(idx) = state.selected_index else {
+        return;
+    };
+    let filtered = state.filtered_media_entries();
+    let Some(entry) = filtered.get(idx) else {
+        return;
+    };
+    let path = entry.path.clone();
+    if let Ok(img) = media_sort_backend::media::image_decoder::load_image(&path) {
+        use image::GenericImageView;
+        let (w, h) = img.dimensions();
+        let rgba = img.to_rgba8().into_raw();
+        let handle = iced::widget::image::Handle::from_rgba(w, h, rgba);
+        state.selected_image = Some((path.clone(), handle.clone()));
+        state.image_cache.push(path, handle);
+    }
+}
+
+fn sync_load_first_entry(state: &mut AppState) {
+    if state.media_entries.is_empty() {
+        return;
+    }
+    let path = state.media_entries[0].path.clone();
+    if let Ok(img) = media_sort_backend::media::image_decoder::load_image(&path) {
+        use image::GenericImageView;
+        let (w, h) = img.dimensions();
+        let rgba = img.to_rgba8().into_raw();
+        let handle = iced::widget::image::Handle::from_rgba(w, h, rgba);
+        state.image_cache.push(path, handle);
+    }
+}
+
+// ── Video export ───────────────────────────────────────────────────────
 
 pub fn export_demo_video(
     mut state: AppState,
@@ -100,31 +184,96 @@ pub fn export_demo_video(
 
     // ── Render loop ────────────────────────────────────────────────
     while !automation.completed {
+        // 1. Step automation in virtual time.
+        let mut msg_to_process = None;
+        let mut needs_bounds_resolution = false;
+
         if let Some(result) = automation::handle_automation_virtual_tick(&mut automation, delta) {
             use automation::AutomationTickResult;
             match result {
                 AutomationTickResult::Message(msg) => {
-                    let _ = app::update(&mut state, msg);
+                    msg_to_process = Some(msg);
                 }
                 AutomationTickResult::Task(_) => {
-                    // Widget bounds queries can't resolve without the
-                    // live iced runtime.  Fire the step's message now
-                    // and advance so the script doesn't stall.
-                    if automation.script_index < automation.steps.len() {
-                        let msg = automation.steps[automation.script_index]
-                            .underlying_message
-                            .clone();
-                        automation.script_index += 1;
-                        automation.step_elapsed = std::time::Duration::ZERO;
-                        automation.pending_bounds_id = None;
-                        if let Some(m) = msg {
-                            let _ = app::update(&mut state, m);
-                        }
-                    }
+                    needs_bounds_resolution = true;
                 }
             }
         }
 
+        // 2. Resolve bounds and extract the target rect.
+        let found_rect: Option<Rectangle> = if needs_bounds_resolution {
+            let view = app::view(&state);
+            let view = automation::wrap_view(view, &automation);
+            let inner = wgpu_renderer.take().expect("renderer consumed");
+            let mut composite = iced::Renderer::Primary(inner);
+
+            let mut ui = iced_runtime::UserInterface::build(view, size, cache, &mut composite);
+
+            let rect = if let Some(ref target_id) = automation.pending_bounds_id {
+                let mut op = HeadlessFindBounds {
+                    target: target_id.clone(),
+                    found: None,
+                };
+                ui.operate(&composite, &mut op);
+                op.found
+            } else {
+                None
+            };
+
+            cache = ui.into_cache();
+            let iced::Renderer::Primary(inner) = composite else {
+                unreachable!()
+            };
+            wgpu_renderer = Some(inner);
+            rect
+        } else {
+            None
+        };
+        // ── view/UI dropped — safe to mutate automation now ──
+
+        if let Some(rect) = found_rect {
+            automation.current_pixel_target = Point::new(rect.center_x(), rect.center_y());
+        }
+
+        if needs_bounds_resolution {
+            automation.pending_bounds_id = None;
+
+            if automation.script_index < automation.steps.len() {
+                let step = &automation.steps[automation.script_index];
+                if let Some(ref label) = step.keycap_label {
+                    automation.active_keycap = Some((label.clone(), automation.virtual_elapsed));
+                }
+                automation.is_clicking = true;
+                automation.script_index += 1;
+                automation.step_elapsed = Duration::ZERO;
+                msg_to_process = step.underlying_message.clone();
+            }
+        }
+
+        // 3. Process message side effects (async tasks simulated).
+        if let Some(msg) = msg_to_process {
+            let _ = app::update(&mut state, msg.clone());
+
+            match &msg {
+                Message::Folder(FolderMessage::Open(_)) => {
+                    sync_load_first_entry(&mut state);
+                    state.selected_index = Some(0);
+                    load_selected_image(&mut state);
+                }
+                Message::Media(
+                    MediaMessage::GoRight | MediaMessage::GoLeft | MediaMessage::SelectEntry(_),
+                ) => {
+                    load_selected_image(&mut state);
+                }
+                Message::Media(MediaMessage::MoveActive) => {
+                    state.selected_index = Some(0);
+                    load_selected_image(&mut state);
+                }
+                _ => {}
+            }
+        }
+
+        // 4. Build view and render frame.
         let view = app::view(&state);
         let view = automation::wrap_view(view, &automation);
 
