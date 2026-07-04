@@ -130,6 +130,15 @@ pub fn export_demo_video(
     let delta = Duration::from_nanos(1_000_000_000 / FPS as u64);
     let size = Size::new(DEFAULT_WIDTH as f32, DEFAULT_HEIGHT as f32);
 
+    // Register the Lucide icon font in the global text subsystem so
+    // navigation arrows and other icons render correctly.
+    {
+        use std::borrow::Cow;
+        if let Ok(mut font_system) = iced_wgpu::graphics::text::font_system().write() {
+            font_system.load_font(Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES));
+        }
+    }
+
     let (sender, mut receiver) = mpsc::channel(100);
 
     let mut emulator: Emulator<AppProgram> = Emulator::new(sender, &program, Mode::Immediate, size);
