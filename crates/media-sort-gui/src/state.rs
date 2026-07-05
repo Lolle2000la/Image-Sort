@@ -344,6 +344,7 @@ impl AppState {
         self.sync_selected_folder_idx();
     }
 
+    #[allow(dead_code)]
     pub fn pin_current_folder(&mut self) {
         if let Some(ref folder) = self.current_folder {
             let name = folder

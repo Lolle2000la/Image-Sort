@@ -57,7 +57,6 @@ pub enum FolderMessage {
     PickPinResult(Option<PathBuf>),
     Selected(PathBuf, usize),
     ToggleExpand(PathBuf),
-    PinCurrent,
     PinSelected,
     UnpinCurrent(PathBuf),
     MovePinnedUp(PathBuf),

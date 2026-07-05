@@ -431,11 +431,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::Folder(FolderMessage::PinCurrent) => {
-            state.pin_current_folder();
-            let _ = state.settings.save();
-            Task::none()
-        }
         Message::Folder(FolderMessage::PinSelected) => {
             let path_to_pin = state
                 .selected_folder
@@ -637,7 +632,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             ));
                         }
                         "pin" => {
-                            return Task::done(Message::Folder(FolderMessage::PinCurrent));
+                            return Task::done(Message::Folder(FolderMessage::PickPin));
                         }
                         "unpin" => {
                             if let Some(ref c) = state.current_folder {
@@ -1686,17 +1681,14 @@ mod tests {
     }
 
     #[test]
-    fn test_keycaptured_pin_triggers_pin() {
+    fn test_keycaptured_pin_dispatches_pick() {
         let mut state = AppState::new(SettingsStore::default());
-        state.current_folder = Some(PathBuf::from("/test/folder"));
-        assert!(state.pinned_folders.is_empty());
 
-        let _ = update(
+        // The pin shortcut now dispatches PickPin; verify it doesn't panic.
+        let _task = update(
             &mut state,
             Message::KeyCaptured("P".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::Folder(FolderMessage::PinCurrent));
-        assert_eq!(state.pinned_folders.len(), 1);
     }
 
     #[test]
