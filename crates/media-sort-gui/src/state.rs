@@ -509,7 +509,7 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                         name: String::new(),
                         children: Vec::new(),
                         is_current: false,
-            is_expanded: false,
+                        is_expanded: true,
                         is_parent_nav: false,
                     });
                 }
@@ -566,7 +566,7 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
             name,
             children,
             is_current: false,
-            is_expanded: true,
+            is_expanded: false,
             is_parent_nav: true,
         };
         prev = Some(node);
