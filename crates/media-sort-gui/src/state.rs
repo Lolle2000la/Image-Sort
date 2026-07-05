@@ -279,9 +279,6 @@ impl AppState {
 
         self.folder_tree.clear();
 
-        // 1. Build current folder root node
-        let mut children = build_children(&root, self.current_folder.as_deref());
-
         fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
             for node in nodes {
                 if set.contains(&node.path) {
@@ -290,12 +287,16 @@ impl AppState {
                 restore_expansion(&mut node.children, set);
             }
         }
-        restore_expansion(&mut children, &expanded_paths);
 
-        // Prepend parent chain as collapsed children of the current folder
+        // 1. Build current folder root node
+        let mut children = build_children(&root, self.current_folder.as_deref());
+
+        // Prepend parent chain before restore_expansion so parent nav
+        // nodes also receive their saved expansion flags.
         for node in build_parent_chain(&root) {
             children.insert(0, node);
         }
+        restore_expansion(&mut children, &expanded_paths);
 
         let root_node = FolderNode {
             path: root.clone(),
@@ -318,12 +319,11 @@ impl AppState {
             }
 
             let mut pinned_children = build_children(&pinned.path, self.current_folder.as_deref());
-            restore_expansion(&mut pinned_children, &expanded_paths);
 
-            // Prepend parent chain as collapsed children of pinned folder
             for node in build_parent_chain(&pinned.path) {
                 pinned_children.insert(0, node);
             }
+            restore_expansion(&mut pinned_children, &expanded_paths);
 
             let pinned_node = FolderNode {
                 path: pinned.path.clone(),
@@ -335,6 +335,8 @@ impl AppState {
             };
             self.folder_tree.push(pinned_node);
         }
+
+        self.sync_selected_folder_idx();
     }
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
@@ -1503,5 +1505,78 @@ mod tests {
         assert_eq!(state.folder_tree.len(), 3);
         assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
         assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
+    }
+
+    #[test]
+    fn test_build_folder_tree_preserves_parent_nav_expansion() {
+        let mut state = AppState::new(SettingsStore::default());
+        let root = PathBuf::from("/a/b/c");
+        state.current_folder = Some(root);
+
+        let parent_nav_path = PathBuf::from("/a/b");
+        state.folder_tree = vec![FolderNode {
+            path: PathBuf::from("/a/b/c"),
+            name: "c".into(),
+            children: vec![FolderNode {
+                path: parent_nav_path.clone(),
+                name: "b".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: true,
+                is_parent_nav: true,
+            }],
+            is_current: true,
+            is_expanded: true,
+            is_parent_nav: false,
+        }];
+
+        state.build_folder_tree();
+
+        let children = &state.folder_tree[0].children;
+        let b_node = children
+            .iter()
+            .find(|c| c.path == parent_nav_path)
+            .unwrap();
+        assert!(
+            b_node.is_expanded,
+            "Rebuilding the folder tree collapsed an expanded parent navigation node!"
+        );
+    }
+
+    #[test]
+    fn test_pin_selected_folder_updates_index_alignment() {
+        let mut state = AppState::new(SettingsStore::default());
+        let root = PathBuf::from("/workspace");
+        state.current_folder = Some(root.clone());
+
+        let target_pin = PathBuf::from("/target_pin");
+        state.folder_tree = vec![
+            FolderNode {
+                path: root,
+                name: "workspace".into(),
+                children: vec![],
+                is_current: true,
+                is_expanded: true,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: target_pin.clone(),
+                name: "target_pin".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+
+        state.set_selected_folder(target_pin.clone(), 1);
+        state.pin_folder(&target_pin);
+
+        assert_eq!(state.pinned_folders.len(), 1);
+        assert_eq!(state.selected_folder, Some(target_pin));
+        assert!(
+            state.selected_folder_idx.is_some(),
+            "Pin selection action decoupled layout tracking index references!"
+        );
     }
 }

@@ -718,10 +718,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             }
                         }
                         "pin_selected" => {
-                            if let Some(selected_path) = state.selected_folder.clone() {
-                                state.pin_folder(&selected_path);
-                                let _ = state.settings.save();
-                            }
+                            return Task::done(Message::Folder(FolderMessage::PinSelected));
                         }
                         "move_pinned_up" => {
                             if let Some(selected_path) = state.selected_folder.clone() {
