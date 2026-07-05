@@ -339,6 +339,7 @@ impl AppState {
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
         toggle_expand_recursive(&mut self.folder_tree, path, self.current_folder.as_deref());
+        self.sync_selected_folder_idx();
     }
 
     pub fn pin_current_folder(&mut self) {
@@ -400,12 +401,16 @@ impl AppState {
             && pos > 0
         {
             self.pinned_folders.swap(pos, pos - 1);
+            // Index 0 is the current-folder root; pinned folders start at 1.
+            if pos + 1 < self.folder_tree.len() {
+                self.folder_tree.swap(pos + 1, pos);
+            }
             self.settings.pinned_folders.paths = self
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            self.build_folder_tree();
+            let _ = self.settings.save();
         }
     }
 
@@ -414,19 +419,44 @@ impl AppState {
             && pos < self.pinned_folders.len() - 1
         {
             self.pinned_folders.swap(pos, pos + 1);
+            // Index 0 is the current-folder root; pinned folders start at 1.
+            if pos + 2 < self.folder_tree.len() {
+                self.folder_tree.swap(pos + 1, pos + 2);
+            }
             self.settings.pinned_folders.paths = self
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            self.build_folder_tree();
+            let _ = self.settings.save();
         }
     }
 
-    pub fn set_selected_folder(&mut self, path: PathBuf) {
-        self.selected_folder = Some(path.clone());
-        let visible = self.collect_visible_folders();
-        self.selected_folder_idx = visible.iter().rposition(|p| *p == path);
+    pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
+        self.selected_folder = Some(path);
+        self.selected_folder_idx = Some(idx);
+    }
+
+    pub(crate) fn sync_selected_folder_idx(&mut self) {
+        if let Some(ref path) = self.selected_folder.clone() {
+            let visible = self.collect_visible_folders();
+            if let Some(old_idx) = self.selected_folder_idx {
+                let mut best_idx = None;
+                let mut min_diff = usize::MAX;
+                for (i, p) in visible.iter().enumerate() {
+                    if p == path {
+                        let diff = i.abs_diff(old_idx);
+                        if diff < min_diff {
+                            min_diff = diff;
+                            best_idx = Some(i);
+                        }
+                    }
+                }
+                self.selected_folder_idx = best_idx;
+            } else {
+                self.selected_folder_idx = visible.iter().position(|p| p == path);
+            }
+        }
     }
 
     pub fn select_folder_below(&mut self) {
@@ -434,10 +464,12 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        let next = self
-            .selected_folder_idx
-            .map(|i| (i + 1).min(visible.len()))
-            .unwrap_or(0);
+        let current_idx = self.selected_folder_idx.or_else(|| {
+            self.selected_folder
+                .as_ref()
+                .and_then(|f| visible.iter().position(|p| p == f))
+        });
+        let next = current_idx.map(|i| i + 1).unwrap_or(0);
         if next < visible.len() {
             self.selected_folder = Some(visible[next].clone());
             self.selected_folder_idx = Some(next);
@@ -449,7 +481,12 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        if let Some(idx) = self.selected_folder_idx
+        let current_idx = self.selected_folder_idx.or_else(|| {
+            self.selected_folder
+                .as_ref()
+                .and_then(|f| visible.iter().position(|p| p == f))
+        });
+        if let Some(idx) = current_idx
             && idx > 0
         {
             self.selected_folder = Some(visible[idx - 1].clone());
@@ -466,6 +503,7 @@ impl AppState {
                 self.current_folder.as_deref(),
             );
         }
+        self.sync_selected_folder_idx();
     }
 
     pub fn collapse_selected_folder(&mut self) {
@@ -480,11 +518,23 @@ impl AppState {
                     false,
                     self.current_folder.as_deref(),
                 );
+                self.sync_selected_folder_idx();
             } else {
                 if let Some(parent) = selected.parent()
                     && find_node_expanded(&self.folder_tree, parent).is_some()
                 {
+                    let visible = self.collect_visible_folders();
+                    if let Some(old_idx) = self.selected_folder_idx {
+                        for i in (0..old_idx).rev() {
+                            if visible[i] == parent {
+                                self.selected_folder = Some(parent.to_path_buf());
+                                self.selected_folder_idx = Some(i);
+                                return;
+                            }
+                        }
+                    }
                     self.selected_folder = Some(parent.to_path_buf());
+                    self.selected_folder_idx = visible.iter().position(|p| *p == parent);
                 }
             }
         }
@@ -1350,5 +1400,108 @@ mod tests {
         state.collapse_selected_folder();
         assert!(!state.folder_tree[0].is_expanded);
         assert_eq!(state.selected_folder, Some(p_root1.clone()));
+    }
+
+    #[test]
+    fn test_select_folder_navigation_after_expansion() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub = PathBuf::from("/root/sub");
+
+        let node = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![FolderNode {
+                path: p_sub.clone(),
+                name: "sub".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            }],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node];
+
+        state.set_selected_folder(p_root.clone(), 0);
+        assert_eq!(state.selected_folder, Some(p_root.clone()));
+
+        state.folder_tree[0].is_expanded = true;
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_sub));
+    }
+
+    #[test]
+    fn test_keyboard_navigation_with_duplicate_paths() {
+        let mut state = AppState::new(SettingsStore::default());
+        let path_a = PathBuf::from("/duplicate_path");
+        let path_b = PathBuf::from("/other_path");
+
+        state.folder_tree = vec![
+            FolderNode {
+                path: path_a.clone(),
+                name: "Instance 1".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: path_b.clone(),
+                name: "Other".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: path_a.clone(),
+                name: "Instance 2".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+
+        state.selected_folder = Some(path_a.clone());
+        state.selected_folder_idx = Some(2);
+
+        state.select_folder_above();
+
+        assert_eq!(state.selected_folder_idx, Some(1));
+        assert_eq!(state.selected_folder, Some(path_b));
+    }
+
+    #[test]
+    fn test_pinned_folder_reordering_tree_integrity() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = Some(PathBuf::from("/current"));
+
+        state.pinned_folders = vec![
+            PinnedFolder {
+                path: PathBuf::from("/pinned1"),
+                name: "p1".into(),
+                numeric_shortcut: None,
+            },
+            PinnedFolder {
+                path: PathBuf::from("/pinned2"),
+                name: "p2".into(),
+                numeric_shortcut: None,
+            },
+        ];
+
+        state.build_folder_tree();
+        assert_eq!(state.folder_tree.len(), 3);
+
+        state.pinned_folders.swap(0, 1);
+        state.build_folder_tree();
+
+        assert_eq!(state.folder_tree.len(), 3);
+        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
     }
 }

@@ -226,8 +226,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Folder(FolderMessage::PickPinResult(None)) => Task::none(),
-        Message::Folder(FolderMessage::Selected(path)) => {
-            state.set_selected_folder(path);
+        Message::Folder(FolderMessage::Selected(path, idx)) => {
+            state.set_selected_folder(path, idx);
             Task::none()
         }
         Message::Folder(FolderMessage::ToggleExpand(path)) => {
