@@ -204,7 +204,7 @@ impl AppState {
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         let _ = self.settings.save();
         self.history.clear();
-        self.scan_media();
+        self.media_entries.clear();
         self.build_folder_tree();
         self.selected_index = None;
         self.current_metadata = None;
@@ -500,34 +500,23 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                 let is_current =
                     current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
 
-                // Check if this subfolder has any subfolders of its own!
-                let has_subdirs = std::fs::read_dir(&path)
-                    .map(|mut read| {
-                        read.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false))
-                    })
-                    .unwrap_or(false);
+                let node_children = vec![FolderNode {
+                    path: PathBuf::new(),
+                    name: String::new(),
+                    children: Vec::new(),
+                    is_current: false,
+                    is_expanded: true,
+                    is_parent_nav: false,
+                }];
 
-                let mut node_children = Vec::new();
-                if has_subdirs {
-                    node_children.push(FolderNode {
-                        path: PathBuf::new(),
-                        name: String::new(),
-                        children: Vec::new(),
-                        is_current: false,
-                        is_expanded: true,
-                        is_parent_nav: false,
-                    });
-                }
-
-                let node = FolderNode {
+                children.push(FolderNode {
                     path,
                     name,
                     children: node_children,
                     is_current,
                     is_expanded: false,
                     is_parent_nav: false,
-                };
-                children.push(node);
+                });
             }
         }
     }
@@ -562,9 +551,9 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_else(|| ancestor.display().to_string());
 
-        let mut children = build_children(&ancestor, None);
+        let mut children = Vec::new();
         if let Some(p) = prev.take() {
-            children.insert(0, p);
+            children.push(p);
         }
 
         let node = FolderNode {
@@ -572,7 +561,7 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
             name,
             children,
             is_current: false,
-            is_expanded: false,
+            is_expanded: true,
             is_parent_nav: true,
         };
         prev = Some(node);

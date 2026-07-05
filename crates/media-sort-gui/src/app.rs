@@ -142,6 +142,21 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
+        Message::MediaScanCompleted(Ok(entries)) => {
+            state.media_entries = entries;
+            let mut tasks: Vec<_> = state
+                .media_entries
+                .iter()
+                .take(200)
+                .map(|entry| load_thumbnail(entry.path.clone()))
+                .collect();
+            tasks.push(select_and_load_entry(state, 0));
+            Task::batch(tasks)
+        }
+        Message::MediaScanCompleted(Err(err)) => {
+            tracing::error!("Asynchronous media retrieval failed: {}", err);
+            Task::none()
+        }
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;
@@ -153,14 +168,35 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::Folder(FolderMessage::Open(path)) => {
             state.open_folder(&path);
-            let mut tasks: Vec<_> = state
-                .media_entries
-                .iter()
-                .take(200)
-                .map(|entry| load_thumbnail(entry.path.clone()))
-                .collect();
-            tasks.push(select_and_load_entry(state, 0));
-            Task::batch(tasks)
+
+            let folder = path.clone();
+            let animate_gifs = state.settings.general.animate_gifs;
+
+            Task::perform(
+                async move {
+                    tokio::task::spawn_blocking(move || {
+                        let paths =
+                            media_sort_backend::filesystem::scanner::scan_media_files(&folder);
+                        let mut entries = Vec::new();
+                        for p in paths {
+                            let media_type = crate::state::detect_media_type(&p, animate_gifs);
+                            let file_name = p
+                                .file_name()
+                                .map(|n| n.to_string_lossy().to_string())
+                                .unwrap_or_else(|| p.display().to_string());
+                            entries.push(media_sort_core::models::MediaEntry {
+                                path: p,
+                                media_type,
+                                file_name,
+                            });
+                        }
+                        entries
+                    })
+                    .await
+                    .map_err(|e| e.to_string())
+                },
+                Message::MediaScanCompleted,
+            )
         }
         Message::Folder(FolderMessage::Pick) => Task::perform(
             async {
@@ -1744,6 +1780,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         assert!(file.exists());
@@ -1871,6 +1908,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _ = update(
@@ -1922,6 +1960,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _ = update(
@@ -2026,6 +2065,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _task = update(

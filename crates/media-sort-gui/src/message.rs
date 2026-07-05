@@ -8,6 +8,7 @@ use media_sort_core::settings::store::SettingsStore;
 pub enum Message {
     Tick(Instant),
     SettingsLoaded(Box<Result<SettingsStore, String>>),
+    MediaScanCompleted(Result<Vec<media_sort_core::models::MediaEntry>, String>),
     Quit,
     EventOccurred(iced::Event),
     OpenCredits,
