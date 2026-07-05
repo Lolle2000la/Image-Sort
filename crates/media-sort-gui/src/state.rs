@@ -500,14 +500,19 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                 let is_current =
                     current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
 
-                let node_children = vec![FolderNode {
-                    path: PathBuf::new(),
-                    name: String::new(),
-                    children: Vec::new(),
-                    is_current: false,
-                    is_expanded: true,
-                    is_parent_nav: false,
-                }];
+                let mut node_children = Vec::new();
+                if let Ok(mut sub_entries) = std::fs::read_dir(&path)
+                    && sub_entries.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false))
+                {
+                    node_children.push(FolderNode {
+                        path: PathBuf::new(),
+                        name: String::new(),
+                        children: Vec::new(),
+                        is_current: false,
+            is_expanded: false,
+                        is_parent_nav: false,
+                    });
+                }
 
                 children.push(FolderNode {
                     path,
