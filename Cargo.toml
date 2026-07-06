@@ -27,6 +27,7 @@ strum = { version = "0.28", features = ["derive"] }
 dirs = "6"
 toml = "1.1"
 libvips = "2.3"
+glib = "0.22"
 png = "0.18"
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",

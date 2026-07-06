@@ -25,9 +25,7 @@ pub fn get_supported_suffixes() -> Vec<String> {
                 }
                 cur = cur.add(1);
             }
-            // NOTE: g_strfreev(array_ptr) would be correct here but we avoid
-            // the glib-sys dependency. This is a one-time call at startup so
-            // the leak is negligible (~1 KB).
+            glib::ffi::g_strfreev(array_ptr);
         }
     }
 
