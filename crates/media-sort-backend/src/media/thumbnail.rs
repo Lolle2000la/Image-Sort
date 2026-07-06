@@ -18,19 +18,76 @@ fn load_image_vips_inner(path: &Path, try_audio_cover: bool) -> Result<libvips::
 }
 
 pub fn vips_image_to_rgba(img: &libvips::VipsImage) -> Result<(u32, u32, Vec<u8>), String> {
-    let bands = img.get_bands();
-    let rgba = if bands < 4 {
-        let flat = libvips::ops::addalpha(img).map_err(|e| format!("vips addalpha: {e}"))?;
-        let srgb = libvips::ops::colourspace(&flat, libvips::ops::Interpretation::Srgb)
-            .map_err(|e| format!("vips colourspace: {e}"))?;
-        libvips::ops::rawsave_buffer(&srgb).map_err(|e| format!("vips rawsave_buffer: {e}"))?
-    } else {
-        libvips::ops::rawsave_buffer(img).map_err(|e| format!("vips rawsave_buffer: {e}"))?
+    let target = libvips::ops::colourspace(img, libvips::ops::Interpretation::Srgb)
+        .map_err(|e| format!("vips colourspace: {e}"))?;
+
+    let png_bytes =
+        libvips::ops::pngsave_buffer(&target).map_err(|e| format!("vips pngsave: {e}"))?;
+
+    decode_png_rgba(&png_bytes).ok_or_else(|| "png decode failed".to_string())
+}
+
+fn decode_png_rgba(bytes: &[u8]) -> Option<(u32, u32, Vec<u8>)> {
+    let mut decoder = png::Decoder::new(std::io::Cursor::new(bytes));
+    decoder.set_transformations(png::Transformations::EXPAND);
+    let mut reader = decoder.read_info().ok()?;
+    let mut buf = vec![0u8; reader.output_buffer_size()?];
+    let info = reader.next_frame(&mut buf).ok()?;
+    let data = &buf[..info.buffer_size()];
+
+    let w = reader.info().width;
+    let h = reader.info().height;
+    let color = reader.output_color_type();
+
+    let rgba = match color {
+        (png::ColorType::Rgba, png::BitDepth::Eight) => data.to_vec(),
+        (png::ColorType::Rgba, png::BitDepth::Sixteen) => {
+            let mut out = Vec::with_capacity((w * h * 4) as usize);
+            for chunk in data.chunks(8) {
+                out.push(chunk[0]);
+                out.push(chunk[2]);
+                out.push(chunk[4]);
+                out.push(chunk[6]);
+            }
+            out
+        }
+        (png::ColorType::Rgb, png::BitDepth::Eight) => {
+            let mut out = vec![0u8; (w * h * 4) as usize];
+            for (i, chunk) in data.chunks(3).enumerate() {
+                let d = &mut out[i * 4..];
+                d[0] = chunk[0];
+                d[1] = chunk[1];
+                d[2] = chunk[2];
+                d[3] = 255;
+            }
+            out
+        }
+        (png::ColorType::Grayscale, png::BitDepth::Eight) => {
+            let mut out = vec![0u8; (w * h * 4) as usize];
+            for (i, &g) in data.iter().enumerate() {
+                let d = &mut out[i * 4..];
+                d[0] = g;
+                d[1] = g;
+                d[2] = g;
+                d[3] = 255;
+            }
+            out
+        }
+        (png::ColorType::GrayscaleAlpha, png::BitDepth::Eight) => {
+            let mut out = vec![0u8; (w * h * 4) as usize];
+            for (i, chunk) in data.chunks(2).enumerate() {
+                let d = &mut out[i * 4..];
+                d[0] = chunk[0];
+                d[1] = chunk[0];
+                d[2] = chunk[0];
+                d[3] = chunk[1];
+            }
+            out
+        }
+        _ => return None,
     };
 
-    let w = img.get_width() as u32;
-    let h = img.get_height() as u32;
-    Ok((w, h, rgba))
+    Some((w, h, rgba))
 }
 
 pub fn generate_thumbnail(
