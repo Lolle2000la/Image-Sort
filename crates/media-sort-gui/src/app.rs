@@ -976,9 +976,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::Media(MediaMessage::ThumbnailReady(path, data)) => {
-            if !data.is_empty() {
-                let handle = iced::widget::image::Handle::from_bytes(data);
+        Message::Media(MediaMessage::ThumbnailReady(path, w, h, data)) => {
+            if !data.is_empty() && w > 0 && h > 0 {
+                let handle = iced::widget::image::Handle::from_rgba(w, h, data);
                 state.thumbnail_cache.push(path, handle);
             }
             Task::none()
@@ -1462,7 +1462,7 @@ fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
         },
         |(path, result)| {
             Message::Media(match result {
-                Ok(bytes) => MediaMessage::ThumbnailReady(path, bytes),
+                Ok((w, h, rgba)) => MediaMessage::ThumbnailReady(path, w, h, rgba),
                 Err(()) => MediaMessage::ThumbnailFailed(path),
             })
         },
@@ -2208,6 +2208,8 @@ mod tests {
             &mut state,
             Message::Media(MediaMessage::ThumbnailReady(
                 std::path::PathBuf::from("/test/empty.jpg"),
+                0,
+                0,
                 Vec::new(),
             )),
         );
@@ -2223,7 +2225,9 @@ mod tests {
             &mut state,
             Message::Media(MediaMessage::ThumbnailReady(
                 path.clone(),
-                vec![0x89, 0x50, 0x4E, 0x47],
+                1,
+                1,
+                vec![255, 0, 0, 255],
             )),
         );
         assert_eq!(state.thumbnail_cache.len(), 1);

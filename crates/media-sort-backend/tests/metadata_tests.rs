@@ -81,16 +81,16 @@ fn test_thumbnail_dimensions() {
 #[test]
 fn test_thumbnail_generation() {
     let path = fixtures_dir().join("test_image.jpg");
-    let png_bytes = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
-    assert_eq!(&png_bytes[..8], &[137, 80, 78, 71, 13, 10, 26, 10]);
+    let (w, h, rgba) = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
+    assert!(w > 0 && h > 0);
+    assert!(!rgba.is_empty());
+    assert_eq!(rgba.len(), (w * h * 4) as usize);
 }
 
 #[test]
 fn test_thumbnail_respects_max() {
     let path = fixtures_dir().join("test_image.jpg");
-    let png_bytes = thumbnail::generate_thumbnail(&path, 16, 16).unwrap();
-    let img = image::load_from_memory(&png_bytes).unwrap();
-    let (w, h) = img.dimensions();
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&path, 16, 16).unwrap();
     assert!(w <= 16, "width {w} exceeds max 16");
     assert!(h <= 16, "height {h} exceeds max 16");
 }
@@ -102,9 +102,7 @@ fn test_thumbnail_aspect_ratio() {
     img.save_with_format(&tmp_path, image::ImageFormat::Jpeg)
         .unwrap();
 
-    let png_bytes = thumbnail::generate_thumbnail(&tmp_path, 20, 20).unwrap();
-    let thumb = image::load_from_memory(&png_bytes).unwrap();
-    let (w, h) = thumb.dimensions();
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 20, 20).unwrap();
     assert!(w <= 20 && h <= 20);
     assert!(
         w == 20 || h == 20,

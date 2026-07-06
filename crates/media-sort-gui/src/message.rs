@@ -90,7 +90,7 @@ pub enum MediaMessage {
     MoveActive,
     CopyActive,
     GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
-    ThumbnailReady(PathBuf, Vec<u8>),
+    ThumbnailReady(PathBuf, u32, u32, Vec<u8>),
     ThumbnailFailed(PathBuf),
     ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
