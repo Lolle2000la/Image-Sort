@@ -4,8 +4,11 @@ use super::vips_init;
 
 pub fn load_image_vips(path: &Path) -> Result<libvips::VipsImage, String> {
     vips_init::ensure_init();
+    load_image_vips_inner(path, false)
+}
 
-    if let Some(bytes) = extract_audio_cover(path) {
+fn load_image_vips_inner(path: &Path, try_audio_cover: bool) -> Result<libvips::VipsImage, String> {
+    if try_audio_cover && let Some(bytes) = extract_audio_cover(path) {
         return libvips::VipsImage::new_from_buffer(&bytes, "")
             .map_err(|e| format!("vips new_from_buffer: {e}"));
     }
@@ -35,7 +38,7 @@ pub fn generate_thumbnail(
     max_width: u32,
     max_height: u32,
 ) -> Result<(u32, u32, Vec<u8>), String> {
-    let img = load_image_vips(path)?;
+    let img = load_image_vips_inner(path, true)?;
 
     let opts = libvips::ops::ThumbnailImageOptions {
         height: max_height as i32,

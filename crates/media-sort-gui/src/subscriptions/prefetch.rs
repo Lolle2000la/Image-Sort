@@ -82,7 +82,19 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         return response_rx.recv().map_err(|_| ())?;
     }
 
-    thumbnail::generate_thumbnail(path, 128, 128).map_err(|_| ())
+    generate_image_thumbnail(path)
+}
+
+fn generate_image_thumbnail(path: &std::path::Path) -> ThumbnailResult {
+    media_sort_backend::media::vips_init::ensure_init();
+    let img = libvips::VipsImage::new_from_file(path.to_str().ok_or(())?).map_err(|_| ())?;
+    let opts = libvips::ops::ThumbnailImageOptions {
+        height: 128,
+        size: libvips::ops::Size::Down,
+        ..Default::default()
+    };
+    let thumb = libvips::ops::thumbnail_image_with_opts(&img, 128, &opts).map_err(|_| ())?;
+    thumbnail::vips_image_to_rgba(&thumb).map_err(|_| ())
 }
 
 #[cfg(test)]
