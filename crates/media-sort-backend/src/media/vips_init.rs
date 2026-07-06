@@ -1,5 +1,5 @@
 use std::collections::HashSet;
-use std::ffi::CStr;
+use std::ffi::{CStr, c_char};
 use std::sync::LazyLock;
 
 static VIPS_APP: LazyLock<libvips::VipsApp> = LazyLock::new(|| {
@@ -8,6 +8,10 @@ static VIPS_APP: LazyLock<libvips::VipsApp> = LazyLock::new(|| {
 
 pub fn ensure_init() {
     LazyLock::force(&VIPS_APP);
+}
+
+unsafe extern "C" {
+    fn g_strfreev(str_array: *mut *mut c_char);
 }
 
 /// Query the running libvips for all file suffixes it can decode natively.
@@ -25,7 +29,7 @@ pub fn get_supported_suffixes() -> Vec<String> {
                 }
                 cur = cur.add(1);
             }
-            glib::ffi::g_strfreev(array_ptr);
+            g_strfreev(array_ptr);
         }
     }
 
