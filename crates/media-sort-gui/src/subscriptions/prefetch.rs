@@ -79,11 +79,14 @@ pub fn generate_thumbnail(path: &PathBuf) -> Result<Vec<u8>, ()> {
         return Err(());
     }
 
-    let reader = match image::ImageReader::open(path) {
-        Ok(r) => r,
+    let file = match std::fs::File::open(path) {
+        Ok(f) => f,
         Err(_) => return Err(()),
     };
-    let img = match reader.with_guessed_format() {
+    let buf_reader = std::io::BufReader::new(file);
+    let reader = image::ImageReader::new(buf_reader).with_guessed_format();
+
+    let img = match reader {
         Ok(r) => match r.decode() {
             Ok(img) => img,
             Err(_) => return Err(()),

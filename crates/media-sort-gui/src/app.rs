@@ -53,14 +53,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     .media_entries
                     .sort_by(|a, b| a.file_name.cmp(&b.file_name));
                 let select_idx = state.pending_select_index.take().unwrap_or(0);
-                let mut tasks: Vec<_> = state
-                    .media_entries
-                    .iter()
-                    .take(200)
-                    .map(|entry| load_thumbnail(entry.path.clone()))
-                    .collect();
-                tasks.push(select_and_load_entry(state, select_idx));
-                return Task::batch(tasks);
+                let thumbnails = load_visible_thumbnails(state);
+                let select = select_and_load_entry(state, select_idx);
+                return Task::batch(vec![select, thumbnails]);
             }
 
             if let Some(ref player) = state.audio_player
@@ -189,15 +184,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         },
         Message::MediaScanCompleted(Ok(entries)) => {
             state.media_entries = entries;
-            let mut tasks: Vec<_> = state
-                .media_entries
-                .iter()
-                .take(200)
-                .map(|entry| load_thumbnail(entry.path.clone()))
-                .collect();
             let select_idx = state.pending_select_index.take().unwrap_or(0);
-            tasks.push(select_and_load_entry(state, select_idx));
-            Task::batch(tasks)
+            Task::batch(vec![
+                select_and_load_entry(state, select_idx),
+                load_visible_thumbnails(state),
+            ])
         }
         Message::MediaScanCompleted(Err(err)) => {
             tracing::error!("Asynchronous media retrieval failed: {}", err);
@@ -1134,7 +1125,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.media_grid_scroll.offset_x = offset.x;
             state.media_grid_scroll.viewport_width = viewport_width;
             state.media_grid_scroll.content_width = content_width;
-            Task::none()
+            load_visible_thumbnails(state)
         }
     }
 }
@@ -1409,6 +1400,52 @@ fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
             x: None,
             y: Some(relative_y),
         },
+    )
+}
+
+fn load_visible_thumbnails(state: &AppState) -> Task<Message> {
+    const ESTIMATED_CARD_WIDTH: f32 = crate::view::media_grid::MEDIA_GRID_CARD_WIDTH
+        + crate::view::media_grid::MEDIA_GRID_CARD_SPACING;
+
+    let filtered = state.filtered_media_entries();
+    let total_items = filtered.len();
+    if total_items == 0 {
+        return Task::none();
+    }
+
+    let scroll = state.media_grid_scroll;
+    if scroll.viewport_width == 0.0 {
+        return Task::batch(
+            filtered
+                .iter()
+                .take(35)
+                .filter(|e| {
+                    !state.thumbnail_cache.contains(&e.path)
+                        && !state.unsupported_files.contains(&e.path)
+                })
+                .map(|e| load_thumbnail(e.path.clone())),
+        );
+    }
+
+    let start_idx = (scroll.offset_x / ESTIMATED_CARD_WIDTH).floor() as usize;
+    let end_idx =
+        ((scroll.offset_x + scroll.viewport_width) / ESTIMATED_CARD_WIDTH).ceil() as usize;
+
+    let buffered_start = start_idx.saturating_sub(5);
+    let buffered_end = (end_idx + 5).min(total_items);
+
+    if buffered_start >= total_items || buffered_start >= buffered_end {
+        return Task::none();
+    }
+
+    Task::batch(
+        filtered[buffered_start..buffered_end]
+            .iter()
+            .filter(|e| {
+                !state.thumbnail_cache.contains(&e.path)
+                    && !state.unsupported_files.contains(&e.path)
+            })
+            .map(|e| load_thumbnail(e.path.clone())),
     )
 }
 
