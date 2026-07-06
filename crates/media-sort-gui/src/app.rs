@@ -42,7 +42,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                         file_name,
                     });
                 }
-                rx.try_recv().is_err()
+                matches!(
+                    rx.try_recv(),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected)
+                )
             } else {
                 false
             };
