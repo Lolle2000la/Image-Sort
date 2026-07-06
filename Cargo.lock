@@ -2723,7 +2723,7 @@ dependencies = [
 
 [[package]]
 name = "media-sort-backend"
-version = "3.0.0-alpha.3"
+version = "3.0.0-alpha.5"
 dependencies = [
  "chrono",
  "glib",
@@ -2753,7 +2753,7 @@ dependencies = [
 
 [[package]]
 name = "media-sort-core"
-version = "3.0.0-alpha.3"
+version = "3.0.0-alpha.5"
 dependencies = [
  "dirs",
  "fluent",
@@ -2769,7 +2769,7 @@ dependencies = [
 
 [[package]]
 name = "media-sort-gui"
-version = "3.0.0-alpha.3"
+version = "3.0.0-alpha.5"
 dependencies = [
  "bytemuck",
  "dirs",

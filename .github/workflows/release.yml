@@ -81,20 +81,32 @@ jobs:
           mkdir -p libs
           mkdir -p dist
           
+          # Install zero-dependency pkg-config binary for Windows environment
+          choco install pkgconfiglite -y
+
           # Setup mpv
           curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-${{ matrix.mpv_arch }}-20260610-git-304426c.7z
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
 
-          # Setup libvips
+          # Download and unpack target architecture dev bundle from libvips
           curl -L -o libvips.zip https://github.com/libvips/build-win64-mxe/releases/download/v8.18.4/vips-dev-${{ matrix.vips_arch }}-all-8.18.4.zip
           7z x libvips.zip -ovips-extracted -y
-          cp -r vips-extracted/vips-dev-*/lib/*.lib libs/ 2>/dev/null || cp -r vips-extracted/vips-*/lib/*.lib libs/
-          cp -r vips-extracted/vips-dev-*/bin/*.dll dist/ 2>/dev/null || cp -r vips-extracted/vips-*/bin/*.dll dist/
+          
+          # Extract root folder path via expansion to bypass minor naming variances
+          VIPS_ROOT=$(echo $(pwd)/vips-extracted/vips-dev-*)
+          
+          # Inject the bundle metadata path into GITHUB_ENV for use by cargo downstream
+          echo "PKG_CONFIG_PATH=$VIPS_ROOT/lib/pkgconfig" >> $GITHUB_ENV
+          
+          # Copy headers/libs to linking target and staging DLLs for the Velopack bundle payload
+          cp $VIPS_ROOT/lib/*.lib libs/
+          cp $VIPS_ROOT/bin/*.dll dist/
 
       - name: Build Standalone Binary
         env:
+          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH || '' }}
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
           LIB: ${{ startsWith(matrix.os, 'windows') && 'libs' || '' }}
           RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
