@@ -488,22 +488,22 @@ impl AppState {
                     self.current_folder.as_deref(),
                 );
                 self.sync_selected_folder_idx();
-            } else {
-                if let Some(parent) = selected.parent()
-                    && find_node_expanded(&self.folder_tree, parent).is_some()
-                {
-                    let visible = self.collect_visible_folders();
-                    if let Some(old_idx) = self.selected_folder_idx {
-                        for i in (0..old_idx).rev() {
-                            if visible[i] == parent {
-                                self.selected_folder = Some(parent.to_path_buf());
-                                self.selected_folder_idx = Some(i);
-                                return;
-                            }
+            } else if let Some(parent) = selected.parent()
+                && find_node_expanded(&self.folder_tree, parent).is_some()
+            {
+                let visible = self.collect_visible_folders();
+                if let Some(old_idx) = self.selected_folder_idx {
+                    for i in (0..old_idx.min(visible.len())).rev() {
+                        if visible[i] == parent {
+                            self.selected_folder = Some(parent.to_path_buf());
+                            self.selected_folder_idx = Some(i);
+                            return;
                         }
                     }
+                }
+                if let Some(pos) = visible.iter().position(|p| *p == parent) {
                     self.selected_folder = Some(parent.to_path_buf());
-                    self.selected_folder_idx = visible.iter().position(|p| *p == parent);
+                    self.selected_folder_idx = Some(pos);
                 }
             }
         }
@@ -1477,6 +1477,82 @@ mod tests {
 
         state.select_folder_below();
         assert_eq!(state.selected_folder, Some(p_sub));
+    }
+
+    #[test]
+    fn test_collapse_already_collapsed_navigates_to_visible_parent() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub = PathBuf::from("/root/sub");
+
+        let node_sub = FolderNode {
+            path: p_sub.clone(),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_sub],
+            is_current: false,
+            is_expanded: true,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_sub.clone(), 1);
+        state.collapse_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_root.clone()),
+            "collapsing an already-collapsed child should navigate to its visible parent"
+        );
+        assert_eq!(state.selected_folder_idx, Some(0));
+    }
+
+    #[test]
+    fn test_collapse_already_collapsed_does_not_select_invisible_parent() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_mid = PathBuf::from("/root/mid");
+        let p_sub = PathBuf::from("/root/mid/sub");
+
+        let node_sub = FolderNode {
+            path: p_sub.clone(),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_mid = FolderNode {
+            path: p_mid.clone(),
+            name: "mid".into(),
+            children: vec![node_sub],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_mid],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_sub.clone(), 2);
+        state.collapse_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_sub.clone()),
+            "collapsing an already-collapsed child whose parent is hidden should not change selection"
+        );
     }
 
     #[test]
