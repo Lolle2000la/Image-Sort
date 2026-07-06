@@ -464,13 +464,34 @@ impl AppState {
     }
 
     pub fn expand_selected_folder(&mut self) {
-        if let Some(ref selected) = self.selected_folder {
-            set_expand_recursive(
-                &mut self.folder_tree,
-                selected,
-                true,
-                self.current_folder.as_deref(),
-            );
+        let Some(selected) = self.selected_folder.clone() else {
+            return;
+        };
+        if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
+            if expanded {
+                if let Some(first_child_path) = first_visible_child(&self.folder_tree, &selected) {
+                    let visible = self.collect_visible_folders();
+                    let idx = self.selected_folder_idx.unwrap_or(0);
+                    if let Some(child_idx) = visible
+                        .iter()
+                        .enumerate()
+                        .skip(idx + 1)
+                        .find(|(_, p)| *p == &first_child_path)
+                        .map(|(i, _)| i)
+                    {
+                        self.selected_folder = Some(first_child_path);
+                        self.selected_folder_idx = Some(child_idx);
+                        return;
+                    }
+                }
+            } else {
+                set_expand_recursive(
+                    &mut self.folder_tree,
+                    &selected,
+                    true,
+                    self.current_folder.as_deref(),
+                );
+            }
         }
         self.sync_selected_folder_idx();
     }
@@ -583,6 +604,25 @@ fn build_tree_nodes_data(
     }
 
     tree
+}
+
+fn first_visible_child(nodes: &[FolderNode], path: &Path) -> Option<PathBuf> {
+    for node in nodes {
+        if node.path.as_os_str().is_empty() {
+            continue;
+        }
+        if node.path == path {
+            return node
+                .children
+                .iter()
+                .find(|c| !c.path.as_os_str().is_empty())
+                .map(|c| c.path.clone());
+        }
+        if let Some(res) = first_visible_child(&node.children, path) {
+            return Some(res);
+        }
+    }
+    None
 }
 
 pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
@@ -1553,6 +1593,49 @@ mod tests {
             Some(p_sub.clone()),
             "collapsing an already-collapsed child whose parent is hidden should not change selection"
         );
+    }
+
+    #[test]
+    fn test_expand_already_expanded_navigates_to_first_child() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub1 = PathBuf::from("/root/sub1");
+        let p_sub2 = PathBuf::from("/root/sub2");
+
+        let node_sub2 = FolderNode {
+            path: p_sub2.clone(),
+            name: "sub2".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_sub1 = FolderNode {
+            path: p_sub1.clone(),
+            name: "sub1".into(),
+            children: vec![node_sub2],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_sub1],
+            is_current: false,
+            is_expanded: true,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_root.clone(), 0);
+        state.expand_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_sub1.clone()),
+            "expanding an already-expanded folder should navigate to its first child"
+        );
+        assert_eq!(state.selected_folder_idx, Some(1));
     }
 
     #[test]
