@@ -5,6 +5,7 @@ use strum::EnumIter;
 
 pub static NATIVE_IMAGE_EXTS: &[&str] = &[
     "png", "jpg", "jpeg", "bmp", "tiff", "tif", "ico", "webp", "jxl", "heic", "heif", "avif",
+    "dds", "exr", "ff", "hdr", "pbm", "pgm", "ppm", "qoi", "tga",
 ];
 pub static NATIVE_AUDIO_EXTS: &[&str] = &[
     "mp3", "flac", "ogg", "wav", "aac", "m4a", "wma", "opus", "aiff",
