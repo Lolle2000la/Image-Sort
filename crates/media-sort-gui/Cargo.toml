@@ -17,13 +17,13 @@ lru.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 strum.workspace = true
+image.workspace = true
 rfd = { workspace = true }
 lucide-icons = "1.21"
 bytemuck = "1"
 dirs = { workspace = true }
 once_cell.workspace = true
 serde = { workspace = true }
-libvips.workspace = true
 ico.workspace = true
 
 velopack = { version = "1.2", optional = true }

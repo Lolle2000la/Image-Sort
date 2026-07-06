@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use id3::TagLike;
+use image::GenericImageView;
 use media_sort_backend::filesystem::scanner;
 use media_sort_backend::media::image_decoder;
 use media_sort_backend::media::thumbnail;
@@ -36,15 +37,15 @@ fn test_file_not_found() {
 #[test]
 fn test_load_jpeg() {
     let path = fixtures_dir().join("test_image.jpg");
-    let (w, h, _rgba) = image_decoder::load_image(&path).unwrap();
-    assert_eq!((w, h), (64, 64));
+    let img = image_decoder::load_image(&path).unwrap();
+    assert_eq!(img.dimensions(), (64, 64));
 }
 
 #[test]
 fn test_load_png() {
     let path = fixtures_dir().join("test_image.png");
-    let (w, h, _rgba) = image_decoder::load_image(&path).unwrap();
-    assert_eq!((w, h), (32, 32));
+    let img = image_decoder::load_image(&path).unwrap();
+    assert_eq!(img.dimensions(), (32, 32));
 }
 
 #[test]
@@ -57,7 +58,8 @@ fn test_decode_dimensions() {
 #[test]
 fn test_generate_thumbnail() {
     let path = fixtures_dir().join("test_image.jpg");
-    let (w, h, _rgba) = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
+    let thumb = image_decoder::generate_thumbnail(&path, 32, 32).unwrap();
+    let (w, h) = thumb.dimensions();
     assert!(w <= 32, "width {w} exceeds max 32");
     assert!(h <= 32, "height {h} exceeds max 32");
 }
@@ -95,10 +97,10 @@ fn test_thumbnail_respects_max() {
 
 #[test]
 fn test_thumbnail_aspect_ratio() {
+    let img = image::RgbImage::from_pixel(100, 50, image::Rgb([255, 0, 0]));
     let tmp_path = std::env::temp_dir().join("test_thumbnail_aspect_ratio.jpg");
-    media_sort_backend::media::vips_init::ensure_init();
-    let img = libvips::ops::black(100, 50).unwrap();
-    libvips::ops::jpegsave(&img, tmp_path.to_str().unwrap()).unwrap();
+    img.save_with_format(&tmp_path, image::ImageFormat::Jpeg)
+        .unwrap();
 
     let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 20, 20).unwrap();
     assert!(w <= 20 && h <= 20);
@@ -182,7 +184,7 @@ fn test_decode_dimensions_nonexistent() {
 
 #[test]
 fn test_image_generate_thumbnail_nonexistent() {
-    let result = thumbnail::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
+    let result = image_decoder::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
     assert!(result.is_err());
 }
 

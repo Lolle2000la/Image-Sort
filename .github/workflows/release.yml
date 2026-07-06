@@ -20,21 +20,18 @@ jobs:
             target: x86_64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: x86_64
-            vips_arch: x64
             vcredist: vcredist143-x64
           - os: windows-latest
             platform: win-x86
             target: i686-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: i686
-            vips_arch: x86
             vcredist: vcredist143-x86
           - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: aarch64
-            vips_arch: arm64
             vcredist: vcredist143-arm64
 
           # Linux Releases
@@ -68,30 +65,21 @@ jobs:
 
       - name: Install System Dependencies (Linux Only)
         if: startsWith(matrix.os, 'ubuntu')
-        run: sudo apt-get update && sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools libvips-dev
+        run: sudo apt-get update && sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools
 
       - name: Install System Dependencies (macOS Only)
         if: startsWith(matrix.os, 'macos')
-        run: brew install mpv dylibbundler vips
+        run: brew install mpv dylibbundler
 
-      - name: Setup libmpv and libvips Link Libraries (Windows)
+      - name: Setup libmpv Link Libraries (Windows)
         if: startsWith(matrix.os, 'windows')
         shell: bash
         run: |
           mkdir -p libs
-          mkdir -p dist
-          
-          # Setup mpv
           curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-${{ matrix.mpv_arch }}-20260610-git-304426c.7z
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
-
-          # Setup libvips
-          curl -L -o libvips.zip https://github.com/libvips/build-win64-mxe/releases/download/v8.18.4/vips-dev-${{ matrix.vips_arch }}-all-8.18.4.zip
-          7z x libvips.zip -ovips-extracted -y
-          cp -r vips-extracted/vips-dev-*/lib/*.lib libs/ 2>/dev/null || cp -r vips-extracted/vips-*/lib/*.lib libs/
-          cp -r vips-extracted/vips-dev-*/bin/*.dll dist/ 2>/dev/null || cp -r vips-extracted/vips-*/bin/*.dll dist/
 
       - name: Build Standalone Binary
         env:
@@ -119,7 +107,7 @@ jobs:
           vpk download github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --token ${{ secrets.GITHUB_TOKEN }} $DOWNLOAD_FLAGS
 
           TARGET_DIR="target/${{ matrix.target }}/release"
-          mkdir -p dist
+          mkdir dist
 
           if [ "${{ matrix.os }}" = "macos-latest" ]; then
             mkdir -p "dist/Media Sort.app/Contents/MacOS"
@@ -140,9 +128,6 @@ jobs:
           else
             cp "$TARGET_DIR/media-sort-gui" dist/
             cp "Image Sort.svg" dist/
-            
-            # Bundle libvips shared objects into dist
-            cp /usr/lib/$(uname -m)-linux-gnu/libvips.so* dist/ 2>/dev/null || cp /usr/lib/libvips.so* dist/
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           fi

@@ -1,6 +1,7 @@
 use std::path::Path;
 
-use super::{thumbnail, vips_init};
+use image::AnimationDecoder;
+use image::GenericImageView;
 
 pub fn is_animated_gif(path: &Path) -> Option<bool> {
     if path
@@ -12,19 +13,64 @@ pub fn is_animated_gif(path: &Path) -> Option<bool> {
         return None;
     }
 
-    vips_init::ensure_init();
+    let file = match std::fs::File::open(path) {
+        Ok(f) => f,
+        Err(_) => return None,
+    };
 
-    let path_str = path.to_str()?;
-    let img = libvips::VipsImage::new_from_file(path_str).ok()?;
-    let pages = img.get_n_pages();
-    Some(pages > 1)
+    let reader = std::io::BufReader::new(file);
+    let decoder = match image::codecs::gif::GifDecoder::new(reader) {
+        Ok(d) => d,
+        Err(_) => return None,
+    };
+
+    let mut frames = decoder.into_frames();
+    let animated = frames.next().is_some() && frames.next().is_some();
+    Some(animated)
 }
 
-pub fn load_image(path: &Path) -> Result<(u32, u32, Vec<u8>), String> {
-    let img = thumbnail::load_image_vips(path)?;
-    thumbnail::vips_image_to_rgba(&img)
+pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
+    let img = image::ImageReader::open(path)?
+        .with_guessed_format()?
+        .decode()?;
+    Ok(apply_orientation(img, path))
 }
 
-pub fn decode_image_dimensions(path: &Path) -> Result<(u32, u32), String> {
-    thumbnail::thumbnail_dimensions(path)
+pub fn decode_image_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
+    let img = load_image(path)?;
+    Ok(img.dimensions())
+}
+
+pub fn generate_thumbnail(
+    path: &Path,
+    max_width: u32,
+    max_height: u32,
+) -> Result<image::DynamicImage, image::ImageError> {
+    let img = image::ImageReader::open(path)?
+        .with_guessed_format()?
+        .decode()?;
+    let img = apply_orientation(img, path);
+    Ok(img.thumbnail(max_width, max_height))
+}
+
+fn apply_orientation(mut img: image::DynamicImage, path: &Path) -> image::DynamicImage {
+    if let Ok(file) = std::fs::File::open(path) {
+        let mut buf_reader = std::io::BufReader::new(&file);
+        if let Ok(exif) = exif::Reader::new().read_from_container(&mut buf_reader)
+            && let Some(field) = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY)
+            && let Some(val) = field.value.get_uint(0)
+        {
+            match val {
+                2 => img = img.fliph(),
+                3 => img = img.rotate180(),
+                4 => img = img.flipv(),
+                5 => img = img.fliph().rotate270(),
+                6 => img = img.rotate90(),
+                7 => img = img.fliph().rotate90(),
+                8 => img = img.rotate270(),
+                _ => {}
+            }
+        }
+    }
+    img
 }

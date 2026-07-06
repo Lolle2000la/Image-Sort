@@ -2508,16 +2508,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "libvips"
-version = "2.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29c2daabf7114fd6e626fef46e3ba187d204554cf94d31312424300bd8160d9b"
-dependencies = [
- "num-derive",
- "num-traits",
-]
-
-[[package]]
 name = "lilt"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2650,9 +2640,9 @@ version = "3.0.0-alpha.5"
 dependencies = [
  "chrono",
  "id3",
+ "image",
  "kamadak-exif",
  "libmpv-sys",
- "libvips",
  "media-sort-core",
  "metaflac",
  "mp4ameta",
@@ -2660,7 +2650,6 @@ dependencies = [
  "notify-debouncer-mini",
  "objc2 0.6.4",
  "objc2-foundation 0.3.2",
- "png 0.18.1",
  "rodio",
  "serde",
  "strum",
@@ -2698,7 +2687,7 @@ dependencies = [
  "iced",
  "iced_wgpu",
  "ico",
- "libvips",
+ "image",
  "lru 0.18.0",
  "lucide-icons",
  "media-sort-backend",

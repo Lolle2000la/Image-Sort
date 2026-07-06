@@ -1,4 +1,3 @@
-use media_sort_backend::media::thumbnail;
 use media_sort_core::media_type::MediaType;
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -66,19 +65,18 @@ fn generate_video_thumbnail_frame(
 /// Generate a thumbnail for the given file. GIFs are always decoded as
 /// images here regardless of animation settings — the image path is much
 /// lighter on resources for grid thumbnails.
-pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
+pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
     let media_type = crate::state::detect_media_type(path, false);
 
     if media_type == MediaType::Audio {
-        return thumbnail::generate_thumbnail(path, 128, 128).map_err(|_| ());
+        return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
+            .map_err(|_| ());
     }
 
     if media_type == MediaType::Video {
         let (response_tx, response_rx) = std::sync::mpsc::channel();
         let sender = VIDEO_THUMBNAIL_WORKER.lock().unwrap().clone();
-        sender
-            .send((path.to_path_buf(), response_tx))
-            .map_err(|_| ())?;
+        sender.send((path.clone(), response_tx)).map_err(|_| ())?;
         return response_rx.recv().map_err(|_| ())?;
     }
 
@@ -86,7 +84,16 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         return generate_ico_thumbnail(path);
     }
 
-    generate_image_thumbnail(path)
+    let file = std::fs::File::open(path).map_err(|_| ())?;
+    let buf_reader = std::io::BufReader::new(file);
+    let reader = image::ImageReader::new(buf_reader)
+        .with_guessed_format()
+        .map_err(|_| ())?;
+    let img = reader.decode().map_err(|_| ())?;
+
+    let thumbnail = img.thumbnail(128, 128).to_rgba8();
+    let (w, h) = thumbnail.dimensions();
+    Ok((w, h, thumbnail.into_raw()))
 }
 
 fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
@@ -109,18 +116,6 @@ fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
     Ok((width, height, rgba))
 }
 
-fn generate_image_thumbnail(path: &std::path::Path) -> ThumbnailResult {
-    media_sort_backend::media::vips_init::ensure_init();
-    let img = libvips::VipsImage::new_from_file(path.to_str().ok_or(())?).map_err(|_| ())?;
-    let opts = libvips::ops::ThumbnailImageOptions {
-        height: 128,
-        size: libvips::ops::Size::Down,
-        ..Default::default()
-    };
-    let thumb = libvips::ops::thumbnail_image_with_opts(&img, 128, &opts).map_err(|_| ())?;
-    thumbnail::vips_image_to_rgba(&thumb).map_err(|_| ())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,9 +126,8 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("test.png");
 
-        media_sort_backend::media::vips_init::ensure_init();
-        let img = libvips::ops::black(32, 32).unwrap();
-        libvips::ops::pngsave(&img, path.to_str().unwrap()).unwrap();
+        let img = image::RgbaImage::from_pixel(32, 32, image::Rgba([255, 0, 0, 255]));
+        img.save(&path).unwrap();
 
         let result = generate_thumbnail(&path);
         assert!(result.is_ok());

@@ -26,8 +26,16 @@ once_cell = "1"
 strum = { version = "0.28", features = ["derive"] }
 dirs = "6"
 toml = "1.1"
-libvips = "2.3"
-png = "0.18"
+
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "gif",
+    "bmp",
+    "tiff",
+    "ico",
+    "webp",
+] }
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
 ] }

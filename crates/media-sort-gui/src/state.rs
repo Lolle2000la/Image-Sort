@@ -979,9 +979,8 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("static.gif");
 
-        media_sort_backend::media::vips_init::ensure_init();
-        let img = libvips::ops::black(1, 1).unwrap();
-        libvips::ops::gifsave(&img, path.to_str().unwrap()).unwrap();
+        let img = image::RgbaImage::from_pixel(1, 1, image::Rgba([0, 0, 0, 255]));
+        img.save(&path).unwrap();
 
         assert_eq!(detect_media_type(&path, true), MediaType::Image);
 
