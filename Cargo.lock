@@ -2687,6 +2687,7 @@ dependencies = [
  "serde",
  "strum",
  "tokio",
+ "toml",
  "tracing",
  "tracing-subscriber",
  "velopack",

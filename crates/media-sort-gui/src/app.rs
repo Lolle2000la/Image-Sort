@@ -2298,26 +2298,22 @@ mod tests {
 
     #[test]
     fn test_tick_should_exit_saves_settings() {
-        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-        let _guard = LOCK.lock().unwrap();
-
-        unsafe {
-            std::env::set_var("UI_TEST", "1");
-        }
-        let mut state = AppState::new(SettingsStore::default());
+        let tmp =
+            std::env::temp_dir().join(format!("mediasort_test_tick_save_{}", std::process::id()));
+        let settings = SettingsStore {
+            custom_path: Some(tmp.clone()),
+            ..SettingsStore::default()
+        };
+        let mut state = AppState::new(settings);
         state.settings.general.dark_mode = true;
         state.should_exit = true;
 
         let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
-        let reloaded = SettingsStore::load().unwrap_or_default();
+
+        let data = std::fs::read_to_string(&tmp).unwrap();
+        let reloaded: SettingsStore = toml::from_str(&data).unwrap();
         assert!(reloaded.general.dark_mode);
 
-        let test_path = SettingsStore::config_path();
-        if test_path.exists() {
-            let _ = std::fs::remove_file(test_path);
-        }
-        unsafe {
-            std::env::remove_var("UI_TEST");
-        }
+        let _ = std::fs::remove_file(&tmp);
     }
 }
