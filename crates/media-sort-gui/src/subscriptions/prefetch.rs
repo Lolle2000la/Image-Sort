@@ -95,8 +95,9 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("test.png");
 
-        let img = image::RgbaImage::from_pixel(32, 32, image::Rgba([255, 0, 0, 255]));
-        img.save(&path).unwrap();
+        media_sort_backend::media::vips_init::ensure_init();
+        let img = libvips::ops::black(32, 32).unwrap();
+        libvips::ops::pngsave(&img, path.to_str().unwrap()).unwrap();
 
         let result = generate_thumbnail(&path);
         assert!(result.is_ok());

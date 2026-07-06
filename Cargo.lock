@@ -2640,7 +2640,6 @@ version = "3.0.0-alpha.3"
 dependencies = [
  "chrono",
  "id3",
- "image",
  "kamadak-exif",
  "libmpv-sys",
  "libvips",
@@ -2687,7 +2686,6 @@ dependencies = [
  "dirs",
  "iced",
  "iced_wgpu",
- "image",
  "libvips",
  "lru 0.18.0",
  "lucide-icons",

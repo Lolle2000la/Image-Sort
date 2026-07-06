@@ -95,10 +95,10 @@ fn test_thumbnail_respects_max() {
 
 #[test]
 fn test_thumbnail_aspect_ratio() {
-    let img = image::RgbImage::from_pixel(100, 50, image::Rgb([255, 0, 0]));
     let tmp_path = std::env::temp_dir().join("test_thumbnail_aspect_ratio.jpg");
-    img.save_with_format(&tmp_path, image::ImageFormat::Jpeg)
-        .unwrap();
+    media_sort_backend::media::vips_init::ensure_init();
+    let img = libvips::ops::black(100, 50).unwrap();
+    libvips::ops::jpegsave(&img, tmp_path.to_str().unwrap()).unwrap();
 
     let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 20, 20).unwrap();
     assert!(w <= 20 && h <= 20);
