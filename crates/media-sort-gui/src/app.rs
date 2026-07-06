@@ -5,6 +5,7 @@ use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
+use media_sort_core::models::MediaEntry;
 
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::AppState;
@@ -18,6 +19,42 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 let _ = state.settings.save();
                 return window::latest().and_then(window::close);
             }
+
+            let scan_finished = if let Some(ref rx) = state.scan_receiver {
+                for path in rx.try_iter() {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    state.media_entries.push(MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                    });
+                }
+                rx.try_recv().is_err()
+            } else {
+                false
+            };
+
+            if scan_finished {
+                state.scan_receiver = None;
+                state
+                    .media_entries
+                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+                let select_idx = state.pending_select_index.take().unwrap_or(0);
+                let mut tasks: Vec<_> = state
+                    .media_entries
+                    .iter()
+                    .take(200)
+                    .map(|entry| load_thumbnail(entry.path.clone()))
+                    .collect();
+                tasks.push(select_and_load_entry(state, select_idx));
+                return Task::batch(tasks);
+            }
+
             if let Some(ref player) = state.audio_player
                 && state.audio_playing
             {
@@ -150,7 +187,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 .take(200)
                 .map(|entry| load_thumbnail(entry.path.clone()))
                 .collect();
-            tasks.push(select_and_load_entry(state, 0));
+            let select_idx = state.pending_select_index.take().unwrap_or(0);
+            tasks.push(select_and_load_entry(state, select_idx));
             Task::batch(tasks)
         }
         Message::MediaScanCompleted(Err(err)) => {
@@ -168,35 +206,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::Folder(FolderMessage::Open(path)) => {
             state.open_folder(&path);
-
-            let folder = path.clone();
-            let animate_gifs = state.settings.general.animate_gifs;
-
-            Task::perform(
-                async move {
-                    tokio::task::spawn_blocking(move || {
-                        let paths =
-                            media_sort_backend::filesystem::scanner::scan_media_files(&folder);
-                        let mut entries = Vec::new();
-                        for p in paths {
-                            let media_type = crate::state::detect_media_type(&p, animate_gifs);
-                            let file_name = p
-                                .file_name()
-                                .map(|n| n.to_string_lossy().to_string())
-                                .unwrap_or_else(|| p.display().to_string());
-                            entries.push(media_sort_core::models::MediaEntry {
-                                path: p,
-                                media_type,
-                                file_name,
-                            });
-                        }
-                        entries
-                    })
-                    .await
-                    .map_err(|e| e.to_string())
-                },
-                Message::MediaScanCompleted,
-            )
+            Task::none()
         }
         Message::Folder(FolderMessage::Pick) => Task::perform(
             async {
@@ -265,13 +275,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             if let Some(index) = state.selected_index {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
-                    match MoveAction::new(&entry.path, &target_folder) {
+                    let entry_path = entry.path.clone();
+                    match MoveAction::new(&entry_path, &target_folder) {
                         Ok(mut action) => {
                             if let Err(e) = action.execute() {
                                 tracing::error!("Move failed: {e}");
                             } else {
                                 state.history.push_executed(Box::new(action));
-                                state.scan_media();
+                                state.media_entries.retain(|e| e.path != entry_path);
                                 return select_and_load_entry(state, index);
                             }
                         }
@@ -290,7 +301,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let action =
                         media_sort_core::actions::delete_action::DeleteAction::new(&path, handle);
                     state.history.push_executed(Box::new(action));
-                    state.scan_media();
+                    state.media_entries.retain(|e| e.path != path);
                     return select_and_load_entry(state, index_to_select);
                 }
                 Err(e) => {
@@ -348,10 +359,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     } else {
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
-                        state.scan_media();
-                        if let Some(pos) =
-                            state.media_entries.iter().position(|e| e.path == new_path)
-                        {
+                        if let Some(pos) = state.media_entries.iter().position(|e| e.path == path) {
+                            state.media_entries[pos].path = new_path.clone();
+                            state.media_entries[pos].file_name = new_path
+                                .file_name()
+                                .map(|n| n.to_string_lossy().to_string())
+                                .unwrap_or_else(|| new_path.display().to_string());
                             return select_and_load_entry(state, pos);
                         }
                     }
@@ -393,11 +406,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let new_dir = parent.join(&folder_name);
                     if let Err(e) = std::fs::create_dir_all(&new_dir) {
                         tracing::error!("Failed to create folder: {e}");
-                    } else {
-                        if state.current_folder.is_some() {
-                            state.build_folder_tree();
-                        }
-                        state.scan_media();
+                    } else if state.current_folder.is_some() {
+                        state.build_folder_tree();
                     }
                 }
                 state.create_folder_input.clear();
@@ -1033,13 +1043,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
-                    match MoveAction::new(&entry.path, target_folder) {
+                    let entry_path = entry.path.clone();
+                    match MoveAction::new(&entry_path, target_folder) {
                         Ok(mut action) => {
                             if let Err(e) = action.execute() {
                                 tracing::error!("Move failed: {e}");
                             } else {
                                 state.history.push_executed(Box::new(action));
-                                state.scan_media();
+                                state.media_entries.retain(|e| e.path != entry_path);
                                 return select_and_load_entry(state, index);
                             }
                         }
@@ -1083,13 +1094,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if let Some(index) = state.selected_index {
                     let filtered = state.filtered_media_entries();
                     if let Some(entry) = filtered.get(index) {
-                        match MoveAction::new(&entry.path, &target_folder) {
+                        let entry_path = entry.path.clone();
+                        match MoveAction::new(&entry_path, &target_folder) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
                                     tracing::error!("Move failed: {e}");
                                 } else {
                                     state.history.push_executed(Box::new(action));
-                                    state.scan_media();
+                                    state.media_entries.retain(|e| e.path != entry_path);
                                     return select_and_load_entry(state, index);
                                 }
                             }

@@ -18,9 +18,11 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     let can_move_or_copy = state.selected_index.is_some()
         && state.selected_folder.is_some()
-        && state.selected_folder.as_ref().zip(state.current_folder.as_ref()).is_none_or(
-            |(sf, cf)| !media_sort_core::path_utils::paths_equal(sf, cf),
-        );
+        && state
+            .selected_folder
+            .as_ref()
+            .zip(state.current_folder.as_ref())
+            .is_none_or(|(sf, cf)| !media_sort_core::path_utils::paths_equal(sf, cf));
 
     let move_btn = {
         let btn_content = row![

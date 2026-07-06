@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc;
 
 use lru::LruCache;
 use std::num::NonZeroUsize;
@@ -84,6 +85,12 @@ pub struct AppState {
     /// to auto-scroll the currently selected entry into view when the
     /// selection changes (e.g. via keyboard shortcuts).
     pub media_grid_scroll: MediaGridScrollState,
+
+    /// Active background scan receiver. When `Some`, the tick handler
+    /// streams incoming paths into `media_entries`.
+    pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
+    /// Index to select after the background scan completes.
+    pub pending_select_index: Option<usize>,
 }
 
 /// Snapshot of the media grid's scrollable viewport. Updated whenever the
@@ -196,6 +203,8 @@ impl AppState {
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
             media_grid_scroll: MediaGridScrollState::default(),
+            scan_receiver: None,
+            pending_select_index: None,
         }
     }
 
@@ -225,13 +234,18 @@ impl AppState {
         }
         self.audio_playing = false;
         self.audio_position = 0.0;
+
+        self.scan_receiver = Some(media_sort_backend::filesystem::scanner::scan_media_files(
+            path,
+        ));
+        self.pending_select_index = Some(0);
     }
 
     pub fn scan_media(&mut self) {
+        self.scan_receiver = None;
         self.media_entries.clear();
         if let Some(ref folder) = self.current_folder {
-            let paths = media_sort_backend::filesystem::scanner::scan_media_files(folder);
-            for p in paths {
+            for p in media_sort_backend::filesystem::scanner::scan_media_files(folder) {
                 let media_type = detect_media_type(&p, self.settings.general.animate_gifs);
                 let file_name = p
                     .file_name()
@@ -1059,8 +1073,7 @@ mod tests {
             is_parent_nav: false,
         };
         let mut children = vec![child];
-        let found =
-            toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"), None);
+        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"), None);
         assert!(found);
         assert!(!children[0].is_expanded);
         assert!(children[0].children[0].is_expanded);
@@ -1106,8 +1119,7 @@ mod tests {
 
     #[test]
     fn test_toggle_expand_parent_nav_preserves_chain() {
-        let dir =
-            std::env::temp_dir().join(format!("mediasort_test_chain_{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("mediasort_test_chain_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let sub1 = dir.join("sub1");
         std::fs::create_dir(&sub1).unwrap();
@@ -1534,10 +1546,7 @@ mod tests {
         state.build_folder_tree();
 
         let children = &state.folder_tree[0].children;
-        let b_node = children
-            .iter()
-            .find(|c| c.path == parent_nav_path)
-            .unwrap();
+        let b_node = children.iter().find(|c| c.path == parent_nav_path).unwrap();
         assert!(
             b_node.is_expanded,
             "Rebuilding the folder tree collapsed an expanded parent navigation node!"

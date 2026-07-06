@@ -168,7 +168,9 @@ fn test_extract_video_metadata_nonexistent() {
 
 #[test]
 fn test_scan_nonexistent_directory() {
-    let results = scanner::scan_media_files(Path::new("/nonexistent/dir_12345_xyz"));
+    let results: Vec<_> = scanner::scan_media_files(Path::new("/nonexistent/dir_12345_xyz"))
+        .into_iter()
+        .collect();
     assert!(results.is_empty());
 }
 
