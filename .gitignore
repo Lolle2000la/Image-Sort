@@ -19,3 +19,4 @@ Thumbs.db
 # Local reference copy of the legacy WPF source, kept around for diffing
 # during the rewrite. Not part of the project.
 .Image-Sort-master/
+ui_test_config.toml

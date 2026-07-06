@@ -426,6 +426,13 @@ impl AppState {
                 self.selected_folder_idx = visible.iter().position(|p| p == path);
             }
         }
+        if self.selected_folder.is_none() || self.selected_folder_idx.is_none() {
+            let visible = self.collect_visible_folders();
+            if let Some(first) = visible.into_iter().next() {
+                self.selected_folder = Some(first);
+                self.selected_folder_idx = Some(0);
+            }
+        }
     }
 
     pub fn select_folder_below(&mut self) {
@@ -508,7 +515,6 @@ impl AppState {
                     false,
                     self.current_folder.as_deref(),
                 );
-                self.sync_selected_folder_idx();
             } else if let Some(parent) = selected.parent()
                 && find_node_expanded(&self.folder_tree, parent).is_some()
             {
@@ -528,6 +534,7 @@ impl AppState {
                 }
             }
         }
+        self.sync_selected_folder_idx();
     }
 
     pub(crate) fn collect_visible_folders(&self) -> Vec<PathBuf> {
@@ -1590,9 +1597,11 @@ mod tests {
         state.collapse_selected_folder();
         assert_eq!(
             state.selected_folder,
-            Some(p_sub.clone()),
-            "collapsing an already-collapsed child whose parent is hidden should not change selection"
+            Some(p_root.clone()),
+            "collapsing an already-collapsed child whose parent is hidden \
+             should fall back to the first visible item (the root)"
         );
+        assert_eq!(state.selected_folder_idx, Some(0));
     }
 
     #[test]
