@@ -568,38 +568,47 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
     let mut children = Vec::new();
     if let Ok(entries) = std::fs::read_dir(parent) {
         for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                let name = path
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_default();
-                let is_current =
-                    current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
-
-                let mut node_children = Vec::new();
-                if let Ok(mut sub_entries) = std::fs::read_dir(&path)
-                    && sub_entries.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false))
-                {
-                    node_children.push(FolderNode {
-                        path: PathBuf::new(),
-                        name: String::new(),
-                        children: Vec::new(),
-                        is_current: false,
-                        is_expanded: true,
-                        is_parent_nav: false,
-                    });
-                }
-
-                children.push(FolderNode {
-                    path,
-                    name,
-                    children: node_children,
-                    is_current,
-                    is_expanded: false,
-                    is_parent_nav: false,
-                });
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if !ft.is_dir() {
+                continue;
             }
+            let path = entry.path();
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let is_current =
+                current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
+
+            let mut node_children = Vec::new();
+            if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                for sub_entry in sub_entries.flatten() {
+                    if let Ok(sub_ft) = sub_entry.file_type()
+                        && sub_ft.is_dir()
+                    {
+                        node_children.push(FolderNode {
+                            path: PathBuf::new(),
+                            name: String::new(),
+                            children: Vec::new(),
+                            is_current: false,
+                            is_expanded: true,
+                            is_parent_nav: false,
+                        });
+                        break;
+                    }
+                }
+            }
+
+            children.push(FolderNode {
+                path,
+                name,
+                children: node_children,
+                is_current,
+                is_expanded: false,
+                is_parent_nav: false,
+            });
         }
     }
     children.sort_by_key(|a| a.name.to_lowercase());
