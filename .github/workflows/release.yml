@@ -20,16 +20,19 @@ jobs:
             target: x86_64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: x86_64
+            vcredist: vcredist143-x64
           - os: windows-latest
             platform: win-x86
             target: i686-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: i686
+            vcredist: vcredist143-x86
           - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: aarch64
+            vcredist: vcredist143-arm64
 
           # Linux Releases
           - os: ubuntu-22.04
@@ -121,7 +124,7 @@ jobs:
             cp libs/libmpv-2.dll dist/
             cp packaging/windows/icon.ico dist/
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}
           else
             cp "$TARGET_DIR/media-sort-gui" dist/
             cp "Image Sort.svg" dist/
