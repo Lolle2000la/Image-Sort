@@ -3,11 +3,11 @@ use std::path::Path;
 use super::vips_init;
 
 pub fn load_image_vips(path: &Path) -> Result<libvips::VipsImage, String> {
-    vips_init::ensure_init();
     load_image_vips_inner(path, false)
 }
 
 fn load_image_vips_inner(path: &Path, try_audio_cover: bool) -> Result<libvips::VipsImage, String> {
+    vips_init::ensure_init();
     if try_audio_cover && let Some(bytes) = extract_audio_cover(path) {
         return libvips::VipsImage::new_from_buffer(&bytes, "")
             .map_err(|e| format!("vips new_from_buffer: {e}"));
