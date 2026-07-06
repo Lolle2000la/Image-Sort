@@ -82,7 +82,31 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         return response_rx.recv().map_err(|_| ())?;
     }
 
+    if path.extension().and_then(|e| e.to_str()) == Some("ico") {
+        return generate_ico_thumbnail(path);
+    }
+
     generate_image_thumbnail(path)
+}
+
+fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
+    let file = std::fs::File::open(path).map_err(|_| ())?;
+    let icon_dir = ico::IconDir::read(file).map_err(|_| ())?;
+
+    let entry = icon_dir
+        .entries()
+        .iter()
+        .filter(|e| e.width() <= 128 && e.height() <= 128)
+        .max_by_key(|e| e.width())
+        .or_else(|| icon_dir.entries().iter().max_by_key(|e| e.width()))
+        .ok_or(())?;
+
+    let decoded = entry.decode().map_err(|_| ())?;
+    let width = decoded.width();
+    let height = decoded.height();
+    let rgba = decoded.rgba_data().to_vec();
+
+    Ok((width, height, rgba))
 }
 
 fn generate_image_thumbnail(path: &std::path::Path) -> ThumbnailResult {
@@ -117,6 +141,34 @@ mod tests {
         assert!(w > 0 && h > 0);
         assert!(!rgba.is_empty());
         assert_eq!(rgba.len(), (w * h * 4) as usize);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_generate_thumbnail_ico() {
+        let dir = std::env::temp_dir().join("mediasort_test_ico");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.ico");
+
+        let mut icon_dir = ico::IconDir::new(ico::ResourceType::Icon);
+        icon_dir.add_entry(
+            ico::IconDirEntry::encode_as_png(&ico::IconImage::from_rgba_data(
+                32,
+                32,
+                vec![0u8; 32 * 32 * 4],
+            ))
+            .unwrap(),
+        );
+        let mut file = std::fs::File::create(&path).unwrap();
+        icon_dir.write(&mut file).unwrap();
+
+        let result = generate_thumbnail(&path);
+        assert!(result.is_ok());
+        let (w, h, rgba) = result.unwrap();
+        assert_eq!((w, h), (32, 32));
+        assert!(!rgba.is_empty());
+        assert_eq!(rgba.len(), (32 * 32 * 4) as usize);
 
         std::fs::remove_dir_all(&dir).ok();
     }
