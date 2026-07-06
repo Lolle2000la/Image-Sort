@@ -10,7 +10,40 @@ pub static NATIVE_AUDIO_EXTS: &[&str] = &[
     "mp3", "flac", "ogg", "wav", "aac", "m4a", "wma", "opus", "aiff",
 ];
 
+static DYNAMIC_IMAGE_EXTS: OnceLock<HashSet<String>> = OnceLock::new();
+static DYNAMIC_AUDIO_EXTS: OnceLock<HashSet<String>> = OnceLock::new();
+
 pub static SYSTEM_REGISTRY: OnceLock<MediaRegistry> = OnceLock::new();
+
+/// Override the static native image extension list with a runtime-discovered set
+/// (typically from libvips' `vips_foreign_get_suffixes`). Once set, all lookups
+/// use this instead of [`NATIVE_IMAGE_EXTS`].
+pub fn set_native_image_extensions(exts: impl IntoIterator<Item = String>) {
+    let _ = DYNAMIC_IMAGE_EXTS.set(exts.into_iter().collect());
+}
+
+/// Override the static native audio extension list.
+pub fn set_native_audio_extensions(exts: impl IntoIterator<Item = String>) {
+    let _ = DYNAMIC_AUDIO_EXTS.set(exts.into_iter().collect());
+}
+
+/// Returns the effective native image extensions (dynamic override wins, otherwise
+/// falls back to the static list).
+pub fn native_image_extensions() -> impl Iterator<Item = String> + 'static {
+    DYNAMIC_IMAGE_EXTS
+        .get()
+        .map(|set| set.iter().cloned().collect::<Vec<_>>())
+        .unwrap_or_else(|| NATIVE_IMAGE_EXTS.iter().map(|s| s.to_string()).collect())
+        .into_iter()
+}
+
+fn native_audio_extensions() -> impl Iterator<Item = String> + 'static {
+    DYNAMIC_AUDIO_EXTS
+        .get()
+        .map(|set| set.iter().cloned().collect::<Vec<_>>())
+        .unwrap_or_else(|| NATIVE_AUDIO_EXTS.iter().map(|s| s.to_string()).collect())
+        .into_iter()
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, EnumIter)]
 pub enum MediaType {
@@ -52,8 +85,8 @@ impl MediaRegistry {
     pub fn init(mpv_discovered: HashSet<String>) {
         let mut allowed = HashSet::new();
 
-        for ext in NATIVE_IMAGE_EXTS.iter().chain(NATIVE_AUDIO_EXTS.iter()) {
-            allowed.insert((*ext).to_string());
+        for ext in native_image_extensions().chain(native_audio_extensions()) {
+            allowed.insert(ext);
         }
 
         for ext in &mpv_discovered {
@@ -71,8 +104,8 @@ impl MediaRegistry {
     /// scanner and tests so behavior remains sensible if `init` was never called.
     pub fn fallback_allowed_extensions() -> HashSet<String> {
         let mut set = HashSet::new();
-        for ext in NATIVE_IMAGE_EXTS.iter().chain(NATIVE_AUDIO_EXTS.iter()) {
-            set.insert((*ext).to_string());
+        for ext in native_image_extensions().chain(native_audio_extensions()) {
+            set.insert(ext);
         }
         for ext in MediaType::Video.extensions() {
             set.insert((*ext).to_string());
@@ -89,10 +122,10 @@ impl MediaRegistry {
     pub fn determine_type(ext: &str) -> Option<MediaType> {
         let ext_lower = ext.to_lowercase();
 
-        if NATIVE_IMAGE_EXTS.contains(&ext_lower.as_str()) {
+        if native_image_extensions().any(|e| e == ext_lower) {
             return Some(MediaType::Image);
         }
-        if NATIVE_AUDIO_EXTS.contains(&ext_lower.as_str()) {
+        if native_audio_extensions().any(|e| e == ext_lower) {
             return Some(MediaType::Audio);
         }
 

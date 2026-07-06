@@ -149,6 +149,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let discovered =
         media_sort_backend::media::mpv_context::MpvContext::query_supported_extensions();
+    let vips_formats = media_sort_backend::media::vips_init::get_supported_format_names();
+    media_sort_core::media_type::set_native_image_extensions(vips_formats);
     media_sort_core::media_type::MediaRegistry::init(discovered);
 
     let settings = SettingsStore::load().unwrap_or_default();
