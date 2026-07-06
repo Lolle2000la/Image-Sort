@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 media-sort-core = { path = "../media-sort-core" }
-image.workspace = true
+libvips.workspace = true
 notify.workspace = true
 notify-debouncer-mini.workspace = true
 trash.workspace = true
@@ -23,6 +23,9 @@ strum.workspace = true
 tokio.workspace = true
 libmpv-sys = "3.1.0"
 chrono = "0.4"
+
+[dev-dependencies]
+image.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg.workspace = true

@@ -2498,6 +2498,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "libvips"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "29c2daabf7114fd6e626fef46e3ba187d204554cf94d31312424300bd8160d9b"
+dependencies = [
+ "num-derive",
+ "num-traits",
+]
+
+[[package]]
 name = "lilt"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2633,6 +2643,7 @@ dependencies = [
  "image",
  "kamadak-exif",
  "libmpv-sys",
+ "libvips",
  "media-sort-core",
  "metaflac",
  "mp4ameta",
@@ -2677,6 +2688,7 @@ dependencies = [
  "iced",
  "iced_wgpu",
  "image",
+ "libvips",
  "lru 0.18.0",
  "lucide-icons",
  "media-sort-backend",
@@ -3840,7 +3852,7 @@ dependencies = [
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.52.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]

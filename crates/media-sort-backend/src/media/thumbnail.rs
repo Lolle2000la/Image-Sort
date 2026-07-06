@@ -1,33 +1,57 @@
-use image::GenericImageView;
 use std::path::Path;
+
+use super::vips_init;
+
+pub fn load_image_vips(path: &Path) -> Result<libvips::VipsImage, String> {
+    vips_init::ensure_init();
+
+    if let Some(bytes) = extract_audio_cover(path) {
+        return libvips::VipsImage::new_from_buffer(&bytes, "")
+            .map_err(|e| format!("vips new_from_buffer: {e}"));
+    }
+
+    let path_str = path.to_str().ok_or("Invalid path")?;
+    libvips::VipsImage::new_from_file(path_str).map_err(|e| format!("vips new_from_file: {e}"))
+}
+
+pub fn vips_image_to_rgba(img: &libvips::VipsImage) -> Result<(u32, u32, Vec<u8>), String> {
+    let bands = img.get_bands();
+    let rgba = if bands < 4 {
+        let flat = libvips::ops::addalpha(img).map_err(|e| format!("vips addalpha: {e}"))?;
+        let srgb = libvips::ops::colourspace(&flat, libvips::ops::Interpretation::Srgb)
+            .map_err(|e| format!("vips colourspace: {e}"))?;
+        libvips::ops::rawsave_buffer(&srgb).map_err(|e| format!("vips rawsave_buffer: {e}"))?
+    } else {
+        libvips::ops::rawsave_buffer(img).map_err(|e| format!("vips rawsave_buffer: {e}"))?
+    };
+
+    let w = img.get_width() as u32;
+    let h = img.get_height() as u32;
+    Ok((w, h, rgba))
+}
 
 pub fn generate_thumbnail(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
-    let img = match extract_audio_cover(path) {
-        Some(bytes) => image::load_from_memory(&bytes)?,
-        None => {
-            let reader = image::ImageReader::open(path)?;
-            reader.with_guessed_format()?.decode()?
-        }
+) -> Result<(u32, u32, Vec<u8>), String> {
+    let img = load_image_vips(path)?;
+
+    let opts = libvips::ops::ThumbnailImageOptions {
+        height: max_height as i32,
+        size: libvips::ops::Size::Down,
+        ..Default::default()
     };
 
-    let thumb = img.thumbnail(max_width, max_height).to_rgba8();
-    let (w, h) = thumb.dimensions();
-    Ok((w, h, thumb.into_raw()))
+    let thumb = libvips::ops::thumbnail_image_with_opts(&img, max_width as i32, &opts)
+        .map_err(|e| format!("vips thumbnail_image: {e}"))?;
+
+    vips_image_to_rgba(&thumb)
 }
 
-pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
-    let img = match extract_audio_cover(path) {
-        Some(bytes) => image::load_from_memory(&bytes)?,
-        None => {
-            let reader = image::ImageReader::open(path)?;
-            reader.with_guessed_format()?.decode()?
-        }
-    };
-    Ok(img.dimensions())
+pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), String> {
+    let img = load_image_vips(path)?;
+    Ok((img.get_width() as u32, img.get_height() as u32))
 }
 
 pub fn extract_audio_cover(path: &Path) -> Option<Vec<u8>> {

@@ -1,3 +1,4 @@
+use media_sort_backend::media::thumbnail;
 use media_sort_core::media_type::MediaType;
 use std::path::PathBuf;
 use std::sync::LazyLock;
@@ -65,31 +66,23 @@ fn generate_video_thumbnail_frame(
 /// Generate a thumbnail for the given file. GIFs are always decoded as
 /// images here regardless of animation settings — the image path is much
 /// lighter on resources for grid thumbnails.
-pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
+pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
     let media_type = crate::state::detect_media_type(path, false);
 
     if media_type == MediaType::Audio {
-        return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
-            .map_err(|_| ());
+        return thumbnail::generate_thumbnail(path, 128, 128).map_err(|_| ());
     }
 
     if media_type == MediaType::Video {
         let (response_tx, response_rx) = std::sync::mpsc::channel();
         let sender = VIDEO_THUMBNAIL_WORKER.lock().unwrap().clone();
-        sender.send((path.clone(), response_tx)).map_err(|_| ())?;
+        sender
+            .send((path.to_path_buf(), response_tx))
+            .map_err(|_| ())?;
         return response_rx.recv().map_err(|_| ())?;
     }
 
-    let file = std::fs::File::open(path).map_err(|_| ())?;
-    let buf_reader = std::io::BufReader::new(file);
-    let reader = image::ImageReader::new(buf_reader)
-        .with_guessed_format()
-        .map_err(|_| ())?;
-    let img = reader.decode().map_err(|_| ())?;
-
-    let thumbnail = img.thumbnail(128, 128).to_rgba8();
-    let (w, h) = thumbnail.dimensions();
-    Ok((w, h, thumbnail.into_raw()))
+    thumbnail::generate_thumbnail(path, 128, 128).map_err(|_| ())
 }
 
 #[cfg(test)]

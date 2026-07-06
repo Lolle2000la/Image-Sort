@@ -1243,15 +1243,15 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         state.selected_audio_cover = None;
         if media_type == media_sort_core::media_type::MediaType::Audio
             && let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path)
-            && let Ok(img) = image::load_from_memory(&bytes)
         {
-            let rgba = img.to_rgba8();
-            let (w, h) = rgba.dimensions();
-            state.selected_audio_cover = Some(iced::widget::image::Handle::from_rgba(
-                w,
-                h,
-                rgba.into_raw(),
-            ));
+            media_sort_backend::media::vips_init::ensure_init();
+            if let Ok(img) = libvips::VipsImage::new_from_buffer(&bytes, "")
+                && let Ok((_w, _h, rgba)) =
+                    media_sort_backend::media::thumbnail::vips_image_to_rgba(&img)
+            {
+                state.selected_audio_cover =
+                    Some(iced::widget::image::Handle::from_rgba(_w, _h, rgba));
+            }
         }
 
         if let Some(handle) = state.image_cache.get(&path) {
@@ -1494,13 +1494,6 @@ fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<Mess
             let path_clone = path.clone();
             let res = tokio::task::spawn_blocking(move || {
                 media_sort_backend::media::image_decoder::load_image(&path_clone)
-                    .map(|img| {
-                        use image::GenericImageView;
-                        let (w, h) = img.dimensions();
-                        let rgba = img.to_rgba8().into_raw();
-                        (w, h, rgba)
-                    })
-                    .map_err(|e| e.to_string())
             })
             .await
             .unwrap_or_else(|e| Err(format!("Join error: {e}")));

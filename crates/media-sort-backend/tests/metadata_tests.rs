@@ -1,7 +1,6 @@
 use std::path::{Path, PathBuf};
 
 use id3::TagLike;
-use image::GenericImageView;
 use media_sort_backend::filesystem::scanner;
 use media_sort_backend::media::image_decoder;
 use media_sort_backend::media::thumbnail;
@@ -37,15 +36,15 @@ fn test_file_not_found() {
 #[test]
 fn test_load_jpeg() {
     let path = fixtures_dir().join("test_image.jpg");
-    let img = image_decoder::load_image(&path).unwrap();
-    assert_eq!(img.dimensions(), (64, 64));
+    let (w, h, _rgba) = image_decoder::load_image(&path).unwrap();
+    assert_eq!((w, h), (64, 64));
 }
 
 #[test]
 fn test_load_png() {
     let path = fixtures_dir().join("test_image.png");
-    let img = image_decoder::load_image(&path).unwrap();
-    assert_eq!(img.dimensions(), (32, 32));
+    let (w, h, _rgba) = image_decoder::load_image(&path).unwrap();
+    assert_eq!((w, h), (32, 32));
 }
 
 #[test]
@@ -58,8 +57,7 @@ fn test_decode_dimensions() {
 #[test]
 fn test_generate_thumbnail() {
     let path = fixtures_dir().join("test_image.jpg");
-    let thumb = image_decoder::generate_thumbnail(&path, 32, 32).unwrap();
-    let (w, h) = thumb.dimensions();
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
     assert!(w <= 32, "width {w} exceeds max 32");
     assert!(h <= 32, "height {h} exceeds max 32");
 }
@@ -184,7 +182,7 @@ fn test_decode_dimensions_nonexistent() {
 
 #[test]
 fn test_image_generate_thumbnail_nonexistent() {
-    let result = image_decoder::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
+    let result = thumbnail::generate_thumbnail(Path::new("/nonexistent/img.jpg"), 32, 32);
     assert!(result.is_err());
 }
 
