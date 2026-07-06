@@ -91,6 +91,9 @@ pub struct AppState {
     pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
     /// Index to select after the background scan completes.
     pub pending_select_index: Option<usize>,
+
+    /// Active background folder-tree build receiver.
+    pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
 }
 
 /// Snapshot of the media grid's scrollable viewport. Updated whenever the
@@ -205,6 +208,7 @@ impl AppState {
             media_grid_scroll: MediaGridScrollState::default(),
             scan_receiver: None,
             pending_select_index: None,
+            folder_tree_receiver: None,
         }
     }
 
@@ -234,6 +238,8 @@ impl AppState {
         }
         self.audio_playing = false;
         self.audio_position = 0.0;
+
+        self.start_async_folder_tree();
 
         self.scan_receiver = Some(media_sort_backend::filesystem::scanner::scan_media_files(
             path,
@@ -273,84 +279,30 @@ impl AppState {
     }
 
     pub fn build_folder_tree(&mut self) {
-        let root = if let Some(ref current) = self.current_folder {
-            current.clone()
-        } else {
+        if self.current_folder.is_none() {
+            return;
+        }
+        self.folder_tree_receiver = None;
+        let expanded_paths = collect_expanded_paths(&self.folder_tree);
+        let root = self.current_folder.clone().unwrap();
+        self.folder_tree = build_tree_nodes_data(&root, &self.pinned_folders, &expanded_paths);
+        self.sync_selected_folder_idx();
+    }
+
+    pub fn start_async_folder_tree(&mut self) {
+        let Some(ref current) = self.current_folder else {
             return;
         };
+        let root = current.clone();
+        let pinned = self.pinned_folders.clone();
+        let expanded_paths = collect_expanded_paths(&self.folder_tree);
 
-        // Capture expanded paths:
-        let mut expanded_paths = std::collections::HashSet::new();
-        fn collect_expanded(nodes: &[FolderNode], set: &mut std::collections::HashSet<PathBuf>) {
-            for node in nodes {
-                if node.is_expanded {
-                    set.insert(node.path.clone());
-                }
-                collect_expanded(&node.children, set);
-            }
-        }
-        collect_expanded(&self.folder_tree, &mut expanded_paths);
-
-        self.folder_tree.clear();
-
-        fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
-            for node in nodes {
-                if set.contains(&node.path) {
-                    node.is_expanded = true;
-                }
-                restore_expansion(&mut node.children, set);
-            }
-        }
-
-        // 1. Build current folder root node
-        let mut children = build_children(&root, self.current_folder.as_deref());
-
-        // Prepend parent chain before restore_expansion so parent nav
-        // nodes also receive their saved expansion flags.
-        for node in build_parent_chain(&root) {
-            children.insert(0, node);
-        }
-        restore_expansion(&mut children, &expanded_paths);
-
-        let root_node = FolderNode {
-            path: root.clone(),
-            name: root
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| root.display().to_string()),
-            children,
-            is_current: true,
-            is_expanded: expanded_paths.is_empty() || expanded_paths.contains(&root),
-            is_parent_nav: false,
-        };
-        self.folder_tree.push(root_node);
-
-        // 2. Build pinned folder root nodes
-        for pinned in &self.pinned_folders {
-            let is_duplicate = media_sort_core::path_utils::paths_equal(&root, &pinned.path);
-            if is_duplicate {
-                continue;
-            }
-
-            let mut pinned_children = build_children(&pinned.path, self.current_folder.as_deref());
-
-            for node in build_parent_chain(&pinned.path) {
-                pinned_children.insert(0, node);
-            }
-            restore_expansion(&mut pinned_children, &expanded_paths);
-
-            let pinned_node = FolderNode {
-                path: pinned.path.clone(),
-                name: pinned.name.clone(),
-                children: pinned_children,
-                is_current: false,
-                is_expanded: expanded_paths.contains(&pinned.path),
-                is_parent_nav: false,
-            };
-            self.folder_tree.push(pinned_node);
-        }
-
-        self.sync_selected_folder_idx();
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let tree = build_tree_nodes_data(&root, &pinned, &expanded_paths);
+            let _ = tx.send(tree);
+        });
+        self.folder_tree_receiver = Some(rx);
     }
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
@@ -562,6 +514,75 @@ impl AppState {
         collect_visible_folders_recursive(&self.folder_tree, &mut list);
         list
     }
+}
+
+fn collect_expanded_paths(tree: &[FolderNode]) -> std::collections::HashSet<PathBuf> {
+    let mut set = std::collections::HashSet::new();
+    fn collect(nodes: &[FolderNode], set: &mut std::collections::HashSet<PathBuf>) {
+        for node in nodes {
+            if node.is_expanded {
+                set.insert(node.path.clone());
+            }
+            collect(&node.children, set);
+        }
+    }
+    collect(tree, &mut set);
+    set
+}
+
+fn build_tree_nodes_data(
+    root: &Path,
+    pinned_folders: &[PinnedFolder],
+    expanded_paths: &std::collections::HashSet<PathBuf>,
+) -> Vec<FolderNode> {
+    fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
+        for node in nodes {
+            if set.contains(&node.path) {
+                node.is_expanded = true;
+            }
+            restore_expansion(&mut node.children, set);
+        }
+    }
+
+    let mut tree = Vec::new();
+
+    let mut children = build_children(root, Some(root));
+    for node in build_parent_chain(root) {
+        children.insert(0, node);
+    }
+    restore_expansion(&mut children, expanded_paths);
+    tree.push(FolderNode {
+        path: root.to_path_buf(),
+        name: root
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| root.display().to_string()),
+        children,
+        is_current: true,
+        is_expanded: expanded_paths.is_empty() || expanded_paths.contains(root),
+        is_parent_nav: false,
+    });
+
+    for pinned in pinned_folders {
+        if media_sort_core::path_utils::paths_equal(root, &pinned.path) {
+            continue;
+        }
+        let mut pinned_children = build_children(&pinned.path, Some(root));
+        for node in build_parent_chain(&pinned.path) {
+            pinned_children.insert(0, node);
+        }
+        restore_expansion(&mut pinned_children, expanded_paths);
+        tree.push(FolderNode {
+            path: pinned.path.clone(),
+            name: pinned.name.clone(),
+            children: pinned_children,
+            is_current: false,
+            is_expanded: expanded_paths.contains(&pinned.path),
+            is_parent_nav: false,
+        });
+    }
+
+    tree
 }
 
 pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {

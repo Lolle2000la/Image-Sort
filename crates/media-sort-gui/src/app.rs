@@ -20,6 +20,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 return window::latest().and_then(window::close);
             }
 
+            if let Some(ref rx) = state.folder_tree_receiver
+                && let Ok(tree) = rx.try_recv()
+            {
+                state.folder_tree_receiver = None;
+                state.folder_tree = tree;
+                state.sync_selected_folder_idx();
+            }
+
             let scan_finished = if let Some(ref rx) = state.scan_receiver {
                 for path in rx.try_iter() {
                     let media_type =
