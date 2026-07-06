@@ -28,12 +28,20 @@ dirs = "6"
 toml = "1.1"
 
 image = { version = "0.25", default-features = false, features = [
+    "avif",
+    "bmp",
+    "dds",
+    "exr",
+    "ff",
+    "gif",
+    "hdr",
+    "ico",
     "jpeg",
     "png",
-    "gif",
-    "bmp",
+    "pnm",
+    "qoi",
+    "tga",
     "tiff",
-    "ico",
     "webp",
 ] }
 notify = { version = "8", default-features = false, features = [
