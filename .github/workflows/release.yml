@@ -142,7 +142,8 @@ jobs:
             TARGET_DESKTOP="squashfs-root/MediaSort.desktop"
             sed -i 's/^Name=.*/Name=Media Sort/' "$TARGET_DESKTOP"
             sed -i 's/^Exec=.*/& %U/' "$TARGET_DESKTOP"
-            printf '\n%s\n%s\n' "MimeType=inode/directory;" "StartupWMClass=MediaSort" >> "$TARGET_DESKTOP"
+            sed -i 's/^StartupWMClass=.*/StartupWMClass=MediaSort/' "$TARGET_DESKTOP"
+            printf '\n%s\n' "MimeType=inode/directory;" >> "$TARGET_DESKTOP"
 
             # Mirror adjusted launcher to standard layout paths
             mkdir -p squashfs-root/usr/share/applications
