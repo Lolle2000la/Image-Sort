@@ -153,6 +153,7 @@ jobs:
               > squashfs-root/MediaSort.desktop
 
             # Mirror launcher to standard layout paths inside the AppDir container
+            mkdir -p squashfs-root/usr/share/applications
             cp squashfs-root/MediaSort.desktop squashfs-root/usr/share/applications/MediaSort.desktop
 
             # Stage into a valid .AppDir context and execute final compilation
