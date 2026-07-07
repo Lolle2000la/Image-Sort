@@ -27,23 +27,7 @@ strum = { version = "0.28", features = ["derive"] }
 dirs = "6"
 toml = "1.1"
 
-image = { version = "0.25", default-features = false, features = [
-    "avif",
-    "bmp",
-    "dds",
-    "exr",
-    "ff",
-    "gif",
-    "hdr",
-    "ico",
-    "jpeg",
-    "png",
-    "pnm",
-    "qoi",
-    "tga",
-    "tiff",
-    "webp",
-] }
+image = "0.25"
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
 ] }
@@ -84,6 +68,7 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", 
 lru = "0.18"
 rfd = "0.17"
 ico = "0.5"
+fast_image_resize = { version = "6.0", features = ["image", "rayon"] }
 
 [profile.dev.package."*"]
 opt-level = 3

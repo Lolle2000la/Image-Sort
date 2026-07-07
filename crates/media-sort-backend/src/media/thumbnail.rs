@@ -1,5 +1,23 @@
+use fast_image_resize::images::Image;
+use fast_image_resize::{FilterType, ResizeAlg, ResizeOptions, Resizer};
 use image::GenericImageView;
 use std::path::Path;
+
+pub(crate) fn calculate_thumbnail_dimensions(
+    src_w: u32,
+    src_h: u32,
+    max_w: u32,
+    max_h: u32,
+) -> (u32, u32) {
+    let ratio = src_w as f64 / src_h as f64;
+    let max_ratio = max_w as f64 / max_h as f64;
+
+    if ratio > max_ratio {
+        (max_w, (max_w as f64 / ratio).round() as u32)
+    } else {
+        ((max_h as f64 * ratio).round() as u32, max_h)
+    }
+}
 
 pub fn generate_thumbnail(
     path: &Path,
@@ -14,9 +32,30 @@ pub fn generate_thumbnail(
         }
     };
 
-    let thumb = img.thumbnail(max_width, max_height).to_rgba8();
-    let (w, h) = thumb.dimensions();
-    Ok((w, h, thumb.into_raw()))
+    let img_rgba = img.to_rgba8();
+    let (src_w, src_h) = img_rgba.dimensions();
+    let (dst_w, dst_h) = calculate_thumbnail_dimensions(src_w, src_h, max_width, max_height);
+
+    if dst_w == 0 || dst_h == 0 {
+        return Ok((src_w, src_h, img_rgba.into_raw()));
+    }
+
+    let mut dst_image = Image::new(dst_w, dst_h, fast_image_resize::PixelType::U8x4);
+    let mut resizer = Resizer::new();
+    resizer
+        .resize(
+            &img_rgba,
+            &mut dst_image,
+            &ResizeOptions::new().resize_alg(ResizeAlg::Convolution(FilterType::Bilinear)),
+        )
+        .map_err(|e| {
+            image::ImageError::Decoding(image::error::DecodingError::new(
+                image::error::ImageFormatHint::Unknown,
+                e.to_string(),
+            ))
+        })?;
+
+    Ok((dst_w, dst_h, dst_image.into_vec()))
 }
 
 pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
