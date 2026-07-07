@@ -169,9 +169,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             settings.window_position.height as f32,
         ),
         icon,
-        platform_specific: window::settings::PlatformSpecific {
-            application_id: String::from("MediaSort"),
-            ..Default::default()
+        #[allow(unused_mut)]
+        platform_specific: {
+            let mut ps = window::settings::PlatformSpecific::default();
+            #[cfg(target_os = "linux")]
+            {
+                ps.application_id = String::from("MediaSort");
+            }
+            ps
         },
         ..window::Settings::default()
     };
