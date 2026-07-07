@@ -29,5 +29,8 @@ ico.workspace = true
 velopack = { version = "1.2", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
 
+[target.'cfg(target_os = "windows")'.build-dependencies]
+embed-resource = "3.0.11"
+
 [dev-dependencies]
 toml.workspace = true
