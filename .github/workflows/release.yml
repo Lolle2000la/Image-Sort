@@ -126,10 +126,40 @@ jobs:
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}
           else
-            cp "$TARGET_DIR/media-sort-gui" dist/
-            cp "Image Sort.svg" dist/
+            # Generate initial layout with default update manifests
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "$TARGET_DIR" -e media-sort-gui --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+            # Unpack the intermediate AppImage artifact
+            APPIMAGE_PATH=$(ls Releases/*.AppImage | head -n 1)
+            chmod +x "$APPIMAGE_PATH"
+            "$APPIMAGE_PATH" --appimage-extract
+            
+            # Purge baseline outputs to prevent circular duplication
+            rm -f Releases/*.AppImage
+            rm -f Releases/*.nupkg
+
+            # Inject tailored desktop entry specifications
+            cat << 'EOF' > squashfs-root/MediaSort.desktop
+            [Desktop Entry]
+            Type=Application
+            Name=Media Sort
+            Comment=An application to sort images and videos
+            Exec=media-sort-gui %U
+            Icon=MediaSort
+            Terminal=false
+            Categories=Graphics;Utility;
+            MimeType=inode/directory;
+            StartupWMClass=MediaSort
+            EOF
+
+            # Mirror launcher to standard layout paths inside the AppDir container
+            cp squashfs-root/MediaSort.desktop squashfs-root/usr/share/applications/MediaSort.desktop
+
+            # Stage into a valid .AppDir context and execute final compilation
+            mkdir -p dist
+            mv squashfs-root dist/MediaSort.AppDir
+
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/MediaSort.AppDir" -e media-sort-gui --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           fi
 
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}

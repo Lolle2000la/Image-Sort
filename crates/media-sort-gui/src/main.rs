@@ -167,6 +167,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             settings.window_position.height as f32,
         ),
         icon,
+        platform_specific: window::settings::PlatformSpecific {
+            application_id: String::from("MediaSort"),
+            ..Default::default()
+        },
         ..window::Settings::default()
     };
 
