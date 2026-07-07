@@ -186,16 +186,27 @@ struct WpfHotkey {
 
 fn map_wpf_key_to_rust(key_val: i32) -> String {
     match key_val {
+        2 => "Backspace".to_string(),
+        3 => "Tab".to_string(),
         6 => "Enter".to_string(),
+        18 => "Space".to_string(),
+        19 => "PageUp".to_string(),
+        20 => "PageDown".to_string(),
+        21 => "End".to_string(),
+        22 => "Home".to_string(),
         23 => "Left".to_string(),
         24 => "Up".to_string(),
         25 => "Right".to_string(),
         26 => "Down".to_string(),
-        val @ 44..=69 => {
-            let c = (val - 44 + b'A' as i32) as u8 as char;
-            c.to_string()
+        27 => "Esc".to_string(),
+        32 => "Delete".to_string(),
+        val @ 34..=43 => ((val - 34 + i32::from(b'0')) as u8 as char).to_string(),
+        val @ 44..=69 => ((val - 44 + i32::from(b'A')) as u8 as char).to_string(),
+        val @ 74..=83 => ((val - 74 + i32::from(b'0')) as u8 as char).to_string(),
+        val @ 90..=101 => {
+            format!("F{}", val - 89)
         }
-        _ => "".to_string(),
+        _ => String::new(),
     }
 }
 

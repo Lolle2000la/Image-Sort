@@ -1052,8 +1052,7 @@ fn test_wpf_settings_migration() {
             "DarkMode": true,
             "CheckForUpdatesOnStartup": false,
             "InstallPrereleaseBuilds": true,
-            "AnimateGifs": false,
-            "AnimateGifThumbnails": false
+            "AnimateGifs": false
         },
         "PinnedFolders": {
             "PinnedFolders": [
