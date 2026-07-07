@@ -35,23 +35,25 @@ fn generate_video_thumbnail_frame(
     player: &mut media_sort_backend::media::mpv_context::MpvContext,
     path: &std::path::Path,
 ) -> ThumbnailResult {
+    player.stop();
+
     if player.load_file(path).is_err() {
         return Err(());
     }
     player.set_paused(true);
+    player.drain_render_context();
 
     let start = std::time::Instant::now();
     while start.elapsed() < std::time::Duration::from_millis(1000) {
-        if player.has_frame_ready() {
+        if player.has_frame_ready() && player.is_video_ready() {
             let (w, h) = player.get_video_size();
             if w > 0 && h > 0 {
-                let render_w = 128;
-                let render_h = 128;
-                let mut buffer = vec![0u8; render_w * render_h * 4];
-                if player
-                    .render_frame(render_w as i32, render_h as i32, &mut buffer)
-                    .is_ok()
-                {
+                let max_dim = 128.0;
+                let scale = (max_dim / w as f64).min(max_dim / h as f64).min(1.0);
+                let render_w = (w as f64 * scale).round() as i32;
+                let render_h = (h as f64 * scale).round() as i32;
+                let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                     return Ok((render_w as u32, render_h as u32, buffer));
                 }
             }

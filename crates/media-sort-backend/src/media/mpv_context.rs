@@ -140,19 +140,62 @@ impl MpvContext {
         }
     }
 
+    /// Send a `stop` command to release the current file and flush internal caches.
+    /// Must be called before loading a new file to prevent mpv from entering an
+    /// inconsistent state when files are switched rapidly.
+    pub fn stop(&mut self) {
+        unsafe {
+            let mut cmd: [*const c_char; 2] = [c"stop".as_ptr(), ptr::null()];
+            mpv_command(self.handle, cmd.as_mut_ptr());
+            self.drain_render_context();
+        }
+    }
+
+    pub fn drain_render_context(&self) {
+        unsafe {
+            for _ in 0..128 {
+                if mpv_render_context_update(self.render_ctx) == 0 {
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Returns true when the video output chain is fully initialized and ready to
+    /// produce frames. Must be checked before calling `render_frame` to avoid
+    /// `mp_image_crop` assertions during the transient initialization window
+    /// between `load_file` and the first fully-formed frame.
+    pub fn is_video_ready(&self) -> bool {
+        unsafe {
+            let mut ptr: *mut c_char = ptr::null_mut();
+            let err = mpv_get_property(
+                self.handle,
+                c"video-out-params".as_ptr(),
+                mpv_format_MPV_FORMAT_STRING,
+                &mut ptr as *mut _ as *mut c_void,
+            );
+            if err >= 0 && !ptr.is_null() {
+                mpv_free(ptr as *mut c_void);
+                true
+            } else {
+                false
+            }
+        }
+    }
+
     pub fn get_video_size(&self) -> (i64, i64) {
         unsafe {
             let mut width: i64 = 0;
             let mut height: i64 = 0;
             mpv_get_property(
                 self.handle,
-                c"width".as_ptr(),
+                c"video-out-params/w".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut width as *mut _ as *mut c_void,
             );
             mpv_get_property(
                 self.handle,
-                c"height".as_ptr(),
+                c"video-out-params/h".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut height as *mut _ as *mut c_void,
             );
@@ -161,6 +204,16 @@ impl MpvContext {
     }
 
     pub fn render_frame(&self, width: i32, height: i32, buffer: &mut [u8]) -> Result<(), String> {
+        let required = (width as usize) * (height as usize) * 4;
+        if buffer.len() < required {
+            return Err(format!(
+                "Buffer too small: {} bytes, need {} for {}x{} RGBA",
+                buffer.len(),
+                required,
+                width,
+                height
+            ));
+        }
         unsafe {
             let format = CString::new("rgba").unwrap();
             let mut size: [c_int; 2] = [width, height];
@@ -444,8 +497,10 @@ pub async fn run_video_worker(
                 let Some(cmd) = cmd_opt else { break; };
                 match cmd {
                     VideoCommand::Load(path) => {
+                        player.stop();
                         if let Ok(()) = player.load_file(&path) {
                             player.set_paused(false);
+                            player.drain_render_context();
                             is_active = true;
                             current_video_path = path;
                         }
@@ -510,7 +565,7 @@ pub async fn run_video_worker(
                                 let paths_match = current_p == current_video_path
                                     || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
 
-                                if paths_match {
+                                if paths_match && player.is_video_ready() {
                                     let (w, h) = player.get_video_size();
                                     if w > 0 && h > 0 {
                                         let max_w = 960.0;
