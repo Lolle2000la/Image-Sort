@@ -91,44 +91,8 @@ impl SettingsStore {
             return Ok(store);
         }
 
-        // Search for existing JSON config files to migrate
-        let mut migrated_settings: Option<SettingsStore> = None;
-
-        if let Ok(val) = std::env::var("UI_TEST")
-            && !val.is_empty()
-        {
-            let old_json_path = PathBuf::from("ui_test_config.json");
-            if old_json_path.exists()
-                && let Ok(data) = std::fs::read_to_string(&old_json_path)
-                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
-            {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
-            }
-        }
-
-        if migrated_settings.is_none() {
-            // Check new media-sort JSON path next
-            let base = dirs::config_dir()
-                .unwrap_or_else(|| PathBuf::from("."))
-                .join("media-sort");
-            let rust_json_path = if cfg!(debug_assertions) {
-                base.join("debug_config.json")
-            } else {
-                base.join("config.json")
-            };
-
-            if rust_json_path.exists()
-                && let Ok(data) = std::fs::read_to_string(&rust_json_path)
-                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
-            {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
-            }
-        }
-
-        if migrated_settings.is_none() {
-            // Check legacy WPF C# JSON path next
+        // Search for legacy WPF C# JSON config to migrate
+        if let Some(mut store) = {
             let wpf_base = dirs::config_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
                 .join("Image Sort");
@@ -140,24 +104,23 @@ impl SettingsStore {
 
             if wpf_json_path.exists()
                 && let Ok(data) = std::fs::read_to_string(&wpf_json_path)
-                && let Some(mut store) = parse_wpf_settings(&data)
+                && let Some(store) = parse_wpf_settings(&data)
             {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
+                Some(store)
+            } else {
+                None
             }
+        } {
+            store.custom_path = Some(toml_path.clone());
+            store.save()?;
+            return Ok(store);
         }
 
-        if let Some(store) = migrated_settings {
-            // Persist the migrated settings immediately to the new TOML path
-            store.save()?;
-            Ok(store)
-        } else {
-            let store = Self {
-                custom_path: Some(toml_path),
-                ..Self::default()
-            };
-            Ok(store)
-        }
+        let store = Self {
+            custom_path: Some(toml_path),
+            ..Self::default()
+        };
+        Ok(store)
     }
 
     pub fn save(&self) -> Result<(), SettingsError> {
