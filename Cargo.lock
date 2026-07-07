@@ -2698,6 +2698,7 @@ version = "3.0.0-alpha.5"
 dependencies = [
  "dirs",
  "fluent",
+ "image",
  "once_cell",
  "serde",
  "serde_json",

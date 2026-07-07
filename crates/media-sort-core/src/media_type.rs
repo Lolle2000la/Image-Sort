@@ -3,10 +3,16 @@ use std::sync::OnceLock;
 
 use strum::EnumIter;
 
-pub static NATIVE_IMAGE_EXTS: &[&str] = &[
-    "png", "jpg", "jpeg", "bmp", "tiff", "tif", "ico", "webp", "jxl", "heic", "heif", "avif",
-    "dds", "exr", "ff", "hdr", "pbm", "pgm", "ppm", "qoi", "tga",
-];
+fn native_image_extensions() -> &'static [&'static str] {
+    static EXTS: OnceLock<Vec<&'static str>> = OnceLock::new();
+    EXTS.get_or_init(|| {
+        image::ImageFormat::all()
+            .filter(|f| f.can_read() && !matches!(f, image::ImageFormat::Gif))
+            .flat_map(|f| f.extensions_str().iter().copied())
+            .collect()
+    })
+}
+
 pub static NATIVE_AUDIO_EXTS: &[&str] = &[
     "mp3", "flac", "ogg", "wav", "aac", "m4a", "wma", "opus", "aiff",
 ];
@@ -23,7 +29,7 @@ pub enum MediaType {
 impl MediaType {
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
-            MediaType::Image => NATIVE_IMAGE_EXTS,
+            MediaType::Image => native_image_extensions(),
             MediaType::Video => &[
                 "mp4", "mkv", "webm", "avi", "mov", "wmv", "flv", "m4v", "gif",
             ],
@@ -53,7 +59,10 @@ impl MediaRegistry {
     pub fn init(mpv_discovered: HashSet<String>) {
         let mut allowed = HashSet::new();
 
-        for ext in NATIVE_IMAGE_EXTS.iter().chain(NATIVE_AUDIO_EXTS.iter()) {
+        for ext in native_image_extensions()
+            .iter()
+            .chain(NATIVE_AUDIO_EXTS.iter())
+        {
             allowed.insert((*ext).to_string());
         }
 
@@ -72,7 +81,10 @@ impl MediaRegistry {
     /// scanner and tests so behavior remains sensible if `init` was never called.
     pub fn fallback_allowed_extensions() -> HashSet<String> {
         let mut set = HashSet::new();
-        for ext in NATIVE_IMAGE_EXTS.iter().chain(NATIVE_AUDIO_EXTS.iter()) {
+        for ext in native_image_extensions()
+            .iter()
+            .chain(NATIVE_AUDIO_EXTS.iter())
+        {
             set.insert((*ext).to_string());
         }
         for ext in MediaType::Video.extensions() {
@@ -90,7 +102,7 @@ impl MediaRegistry {
     pub fn determine_type(ext: &str) -> Option<MediaType> {
         let ext_lower = ext.to_lowercase();
 
-        if NATIVE_IMAGE_EXTS.contains(&ext_lower.as_str()) {
+        if native_image_extensions().contains(&ext_lower.as_str()) {
             return Some(MediaType::Image);
         }
         if NATIVE_AUDIO_EXTS.contains(&ext_lower.as_str()) {
@@ -133,7 +145,7 @@ mod tests {
     #[test]
     fn test_fallback_allowed_extensions_includes_native() {
         let fallback = MediaRegistry::fallback_allowed_extensions();
-        for ext in NATIVE_IMAGE_EXTS {
+        for ext in native_image_extensions() {
             assert!(fallback.contains(*ext), "missing native image ext {ext}");
         }
         for ext in NATIVE_AUDIO_EXTS {
