@@ -571,8 +571,8 @@ pub async fn run_video_worker(
                                         let max_w = 960.0;
                                         let max_h = 540.0;
                                         let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                                        let render_w = (w as f64 * scale) as i32;
-                                        let render_h = (h as f64 * scale) as i32;
+                                        let render_w = ((w as f64 * scale) as i32) & !1;
+                                        let render_h = ((h as f64 * scale) as i32) & !1;
 
                                         let size = (render_w * render_h * 4) as usize;
 

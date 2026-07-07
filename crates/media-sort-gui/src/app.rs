@@ -28,6 +28,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 state.sync_selected_folder_idx();
             }
 
+            let refresh_thumbnails = state.thumbnail_tracker.tick();
+
             let scan_finished = if let Some(ref rx) = state.scan_receiver {
                 for path in rx.try_iter() {
                     let media_type =
@@ -56,6 +58,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     .media_entries
                     .sort_by(|a, b| a.file_name.cmp(&b.file_name));
                 let select_idx = state.pending_select_index.take().unwrap_or(0);
+                state.thumbnail_tracker.cancel_debounce();
                 let thumbnails = load_visible_thumbnails(state);
                 let select = select_and_load_entry(state, select_idx);
                 return Task::batch(vec![select, thumbnails]);
@@ -72,7 +75,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.audio_duration = player.duration();
                 }
             }
-            Task::none()
+            if refresh_thumbnails {
+                load_visible_thumbnails(state)
+            } else {
+                Task::none()
+            }
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
             state.video_sender = Some(sender);
@@ -831,6 +838,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             iced::Event::Window(iced::window::Event::Resized(size)) => {
                 state.settings.window_position.width = size.width.round() as u32;
                 state.settings.window_position.height = size.height.round() as u32;
+
+                state.thumbnail_tracker.handle_scroll();
                 Task::none()
             }
             iced::Event::Window(iced::window::Event::Moved(point)) => {
@@ -990,6 +999,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.unsupported_files.insert(path);
             Task::none()
         }
+        Message::Media(MediaMessage::ThumbnailCancelled(_path)) => Task::none(),
         Message::Media(MediaMessage::OpenExternal(path)) => {
             open_externally(&path);
             Task::none()
@@ -1128,7 +1138,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.media_grid_scroll.offset_x = offset.x;
             state.media_grid_scroll.viewport_width = viewport_width;
             state.media_grid_scroll.content_width = content_width;
-            load_visible_thumbnails(state)
+
+            state.thumbnail_tracker.handle_scroll();
+            Task::none()
         }
     }
 }
@@ -1175,6 +1187,10 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         }
 
         drop(filtered);
+
+        state
+            .thumbnail_tracker
+            .retain_paths(thumbnail_paths.clone());
 
         state.selected_index = Some(index);
         state.current_metadata = None;
@@ -1270,7 +1286,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         for p in thumbnail_paths {
             if !state.thumbnail_cache.contains(&p) {
-                tasks.push(load_thumbnail(p));
+                tasks.push(load_thumbnail(p, state.thumbnail_tracker.clone_checker()));
             }
         }
         Task::batch(tasks)
@@ -1406,66 +1422,57 @@ fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
     )
 }
 
-fn load_visible_thumbnails(state: &AppState) -> Task<Message> {
-    const ESTIMATED_CARD_WIDTH: f32 = crate::view::media_grid::MEDIA_GRID_CARD_WIDTH
-        + crate::view::media_grid::MEDIA_GRID_CARD_SPACING;
-
-    let filtered = state.filtered_media_entries();
-    let total_items = filtered.len();
-    if total_items == 0 {
-        return Task::none();
-    }
-
-    let scroll = state.media_grid_scroll;
-    if scroll.viewport_width == 0.0 {
-        return Task::batch(
-            filtered
-                .iter()
-                .take(35)
-                .filter(|e| {
-                    !state.thumbnail_cache.contains(&e.path)
-                        && !state.unsupported_files.contains(&e.path)
-                })
-                .map(|e| load_thumbnail(e.path.clone())),
-        );
-    }
-
-    let start_idx = (scroll.offset_x / ESTIMATED_CARD_WIDTH).floor() as usize;
-    let end_idx =
-        ((scroll.offset_x + scroll.viewport_width) / ESTIMATED_CARD_WIDTH).ceil() as usize;
-
-    let buffered_start = start_idx.saturating_sub(5);
-    let buffered_end = (end_idx + 5).min(total_items);
-
-    if buffered_start >= total_items || buffered_start >= buffered_end {
-        return Task::none();
-    }
+fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
+    let entry_paths: Vec<std::path::PathBuf> = state
+        .filtered_media_entries()
+        .iter()
+        .map(|e| e.path.clone())
+        .collect();
+    let load_queue = state.thumbnail_tracker.update_viewport(
+        &state.media_grid_scroll,
+        &entry_paths,
+        state.settings.window_position.width,
+    );
 
     Task::batch(
-        filtered[buffered_start..buffered_end]
-            .iter()
-            .filter(|e| {
-                !state.thumbnail_cache.contains(&e.path)
-                    && !state.unsupported_files.contains(&e.path)
+        load_queue
+            .into_iter()
+            .filter(|path| {
+                !state.thumbnail_cache.contains(path) && !state.unsupported_files.contains(path)
             })
-            .map(|e| load_thumbnail(e.path.clone())),
+            .map(|path| load_thumbnail(path, state.thumbnail_tracker.clone_checker())),
     )
 }
 
-fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
+fn load_thumbnail(
+    path: std::path::PathBuf,
+    visible_tracker: std::sync::Arc<
+        std::sync::RwLock<std::collections::HashSet<std::path::PathBuf>>,
+    >,
+) -> Task<Message> {
     Task::perform(
         async move {
             let path_clone = path.clone();
+            let tracker = visible_tracker.clone();
             let result = tokio::task::spawn_blocking(move || {
-                crate::subscriptions::prefetch::generate_thumbnail(&path_clone)
+                if let Ok(guard) = tracker.read()
+                    && !guard.contains(&path_clone)
+                {
+                    return Ok(None);
+                }
+                match crate::subscriptions::prefetch::generate_thumbnail(&path_clone) {
+                    Ok((w, h, rgba)) => Ok(Some((w, h, rgba))),
+                    Err(()) => Err(()),
+                }
             })
             .await
-            .unwrap_or(Err(()));
+            .unwrap_or(Ok(None));
             (path, result)
         },
         |(path, result)| {
             Message::Media(match result {
-                Ok((w, h, rgba)) => MediaMessage::ThumbnailReady(path, w, h, rgba),
+                Ok(Some((w, h, rgba))) => MediaMessage::ThumbnailReady(path, w, h, rgba),
+                Ok(None) => MediaMessage::ThumbnailCancelled(path),
                 Err(()) => MediaMessage::ThumbnailFailed(path),
             })
         },

@@ -41,27 +41,43 @@ fn generate_video_thumbnail_frame(
         return Err(());
     }
     player.set_paused(true);
-    player.drain_render_context();
 
+    let mut result = Err(());
     let start = std::time::Instant::now();
+
     while start.elapsed() < std::time::Duration::from_millis(1000) {
-        if player.has_frame_ready() && player.is_video_ready() {
-            let (w, h) = player.get_video_size();
-            if w > 0 && h > 0 {
-                let max_dim = 128.0;
-                let scale = (max_dim / w as f64).min(max_dim / h as f64).min(1.0);
-                let render_w = (w as f64 * scale).round() as i32;
-                let render_h = (h as f64 * scale).round() as i32;
-                let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
-                if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                    return Ok((render_w as u32, render_h as u32, buffer));
+        if player.has_frame_ready()
+            && let Some(current_p_str) = player.get_current_path()
+        {
+            let current_p = std::path::PathBuf::from(current_p_str);
+            let paths_match =
+                current_p == path || current_p.canonicalize().ok() == path.canonicalize().ok();
+
+            if paths_match {
+                let (w, h) = player.get_video_size();
+                if w > 0 && h > 0 {
+                    let max_w = 128.0;
+                    let max_h = 128.0;
+                    let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
+
+                    let render_w = ((w as f64 * scale) as i32) & !1;
+                    let render_h = ((h as f64 * scale) as i32) & !1;
+
+                    if render_w > 0 && render_h > 0 {
+                        let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                        if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                            result = Ok((render_w as u32, render_h as u32, buffer));
+                            break;
+                        }
+                    }
                 }
             }
-            break;
         }
         std::thread::sleep(std::time::Duration::from_millis(10));
     }
-    Err(())
+
+    player.stop();
+    result
 }
 
 /// Generate a thumbnail for the given file. GIFs are always decoded as

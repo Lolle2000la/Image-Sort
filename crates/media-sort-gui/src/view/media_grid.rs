@@ -118,6 +118,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         let idx = i;
         let entry_button = button(card)
             .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
+            .padding(0)
             .style(iced::widget::button::text);
 
         entries_row = entries_row.push(entry_button);

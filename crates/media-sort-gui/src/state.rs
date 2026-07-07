@@ -6,6 +6,7 @@ use std::sync::mpsc;
 use lru::LruCache;
 use std::num::NonZeroUsize;
 
+use crate::subscriptions::thumbnail_tracker::ThumbnailVisibilityTracker;
 use media_sort_backend::media::audio_decoder::AudioPlayer;
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
@@ -45,6 +46,9 @@ pub struct AppState {
 
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
+
+    pub thumbnail_tracker: ThumbnailVisibilityTracker,
+
     pub selected_folder: Option<PathBuf>,
     pub(crate) selected_folder_idx: Option<usize>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
@@ -172,6 +176,9 @@ impl AppState {
             selected_audio_cover: None,
             thumbnail_cache: LruCache::new(cache_size),
             image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
+            thumbnail_tracker: ThumbnailVisibilityTracker::new(std::time::Duration::from_millis(
+                150,
+            )),
             selected_folder: None,
             selected_folder_idx: None,
             selected_image: None,

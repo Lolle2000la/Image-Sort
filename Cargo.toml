@@ -27,7 +27,7 @@ strum = { version = "0.28", features = ["derive"] }
 dirs = "6"
 toml = "1.1"
 
-image = "0.25"
+image = { version = "0.25", default-features = false, features = ["default-formats"] }
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
 ] }
