@@ -38,6 +38,8 @@ impl MpvContext {
             mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
 
+            mpv_set_option_string(handle, c"video-rotate".as_ptr(), no.as_ptr());
+
             mpv_set_option_string(handle, c"vsync".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"framedrop".as_ptr(), no.as_ptr());
             let video_sync = CString::new("display-resample").unwrap();
@@ -189,13 +191,13 @@ impl MpvContext {
             let mut height: i64 = 0;
             mpv_get_property(
                 self.handle,
-                c"video-out-params/w".as_ptr(),
+                c"video-params/w".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut width as *mut _ as *mut c_void,
             );
             mpv_get_property(
                 self.handle,
-                c"video-out-params/h".as_ptr(),
+                c"video-params/h".as_ptr(),
                 mpv_format_MPV_FORMAT_INT64,
                 &mut height as *mut _ as *mut c_void,
             );
