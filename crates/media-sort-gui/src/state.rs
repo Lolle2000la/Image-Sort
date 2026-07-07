@@ -132,7 +132,7 @@ impl AppState {
             .collect();
 
         let metadata_panel_expanded = settings.metadata_panel.is_expanded;
-        let _dark_mode = settings.general.dark_mode;
+        let _theme = &settings.general.theme;
 
         let cache_size = NonZeroUsize::new(200).unwrap();
 

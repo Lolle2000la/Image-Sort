@@ -804,8 +804,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             open_externally(&path);
             Task::none()
         }
-        Message::Settings(SettingsMessage::ToggleDarkMode) => {
-            state.settings.general.dark_mode = !state.settings.general.dark_mode;
+        Message::Settings(SettingsMessage::SetTheme(theme)) => {
+            state.settings.general.theme = theme;
             let _ = state.settings.save();
             Task::none()
         }
@@ -1550,10 +1550,29 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {
-    if state.settings.general.dark_mode {
-        iced::Theme::Dark
-    } else {
-        iced::Theme::Light
+    match state.settings.general.theme.as_str() {
+        "Dark" => iced::Theme::Dark,
+        "Dracula" => iced::Theme::Dracula,
+        "Nord" => iced::Theme::Nord,
+        "SolarizedLight" => iced::Theme::SolarizedLight,
+        "SolarizedDark" => iced::Theme::SolarizedDark,
+        "GruvboxLight" => iced::Theme::GruvboxLight,
+        "GruvboxDark" => iced::Theme::GruvboxDark,
+        "CatppuccinLatte" => iced::Theme::CatppuccinLatte,
+        "CatppuccinFrappe" => iced::Theme::CatppuccinFrappe,
+        "CatppuccinMacchiato" => iced::Theme::CatppuccinMacchiato,
+        "CatppuccinMocha" => iced::Theme::CatppuccinMocha,
+        "TokyoNight" => iced::Theme::TokyoNight,
+        "TokyoNightStorm" => iced::Theme::TokyoNightStorm,
+        "TokyoNightLight" => iced::Theme::TokyoNightLight,
+        "KanagawaWave" => iced::Theme::KanagawaWave,
+        "KanagawaDragon" => iced::Theme::KanagawaDragon,
+        "KanagawaLotus" => iced::Theme::KanagawaLotus,
+        "Moonfly" => iced::Theme::Moonfly,
+        "Nightfly" => iced::Theme::Nightfly,
+        "Oxocarbon" => iced::Theme::Oxocarbon,
+        "Ferra" => iced::Theme::Ferra,
+        _ => iced::Theme::Light,
     }
 }
 
@@ -2312,14 +2331,14 @@ mod tests {
             ..SettingsStore::default()
         };
         let mut state = AppState::new(settings);
-        state.settings.general.dark_mode = true;
+        state.settings.general.theme = "Dark".to_string();
         state.should_exit = true;
 
         let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
 
         let data = std::fs::read_to_string(&tmp).unwrap();
         let reloaded: SettingsStore = toml::from_str(&data).unwrap();
-        assert!(reloaded.general.dark_mode);
+        assert_eq!(reloaded.general.theme, "Dark");
 
         let _ = std::fs::remove_file(&tmp);
     }

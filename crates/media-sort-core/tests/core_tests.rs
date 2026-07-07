@@ -562,7 +562,7 @@ fn test_normalize_path_non_existent() {
 #[test]
 fn test_settings_default() {
     let settings = SettingsStore::default();
-    assert!(!settings.general.dark_mode);
+    assert_eq!(settings.general.theme, "Light");
     assert!(settings.general.check_for_updates_on_startup);
     assert!(settings.general.animate_gifs);
 }
@@ -570,14 +570,14 @@ fn test_settings_default() {
 #[test]
 fn test_settings_save_load_roundtrip() {
     let mut settings = SettingsStore::default();
-    settings.general.dark_mode = true;
+    settings.general.theme = "Dark".to_string();
     settings.general.check_for_updates_on_startup = false;
     settings.general.animate_gifs = false;
 
     let json = serde_json::to_string(&settings).unwrap();
     let loaded: SettingsStore = serde_json::from_str(&json).unwrap();
 
-    assert!(loaded.general.dark_mode);
+    assert_eq!(loaded.general.theme, "Dark");
     assert!(!loaded.general.check_for_updates_on_startup);
     assert!(!loaded.general.animate_gifs);
 }
@@ -620,7 +620,7 @@ fn test_settings_keybindings_defaults() {
 fn test_settings_empty_json_uses_defaults() {
     let json = "{}";
     let settings: SettingsStore = serde_json::from_str(json).unwrap();
-    assert!(!settings.general.dark_mode);
+    assert_eq!(settings.general.theme, "Light");
     assert!(settings.general.check_for_updates_on_startup);
     assert!(!settings.keybindings.move_to_folder.key.is_empty());
 }
@@ -979,7 +979,7 @@ fn test_settings_load_truncated_json() {
     std::fs::create_dir_all(&dir).unwrap();
     let config_path = dir.join("test_config.json");
 
-    std::fs::write(&config_path, r#"{"general": {"dark_mode": true"#).unwrap();
+    std::fs::write(&config_path, r#"{"general": {"theme": "Dark"#).unwrap();
 
     let result = std::fs::read_to_string(&config_path)
         .map_err(SettingsError::from)
@@ -997,7 +997,7 @@ fn test_settings_load_extra_unknown_fields() {
 
     std::fs::write(
         &config_path,
-        r#"{"general": {"dark_mode": true}, "unknown_field": "should be ignored"}"#,
+        r#"{"general": {"theme": "Dark"}, "unknown_field": "should be ignored"}"#,
     )
     .unwrap();
 
@@ -1006,7 +1006,7 @@ fn test_settings_load_extra_unknown_fields() {
         .and_then(|data| serde_json::from_str::<SettingsStore>(&data).map_err(SettingsError::from));
     assert!(result.is_ok());
     let settings = result.unwrap();
-    assert!(settings.general.dark_mode);
+    assert_eq!(settings.general.theme, "Dark");
 
     std::fs::remove_dir_all(&dir).ok();
 }
@@ -1083,7 +1083,7 @@ fn test_wpf_settings_migration() {
     let store = SettingsStore::parse_wpf_settings(raw_json).expect("Failed to parse wpf settings");
 
     // Assert General
-    assert!(store.general.dark_mode);
+    assert_eq!(store.general.theme, "Dark");
     assert!(!store.general.check_for_updates_on_startup);
     assert!(store.general.install_prerelease_builds);
     assert!(!store.general.animate_gifs);

@@ -30,7 +30,7 @@ pub enum Message {
 pub enum SettingsMessage {
     Open,
     Close,
-    ToggleDarkMode,
+    SetTheme(String),
     ToggleReopenFolder,
     #[cfg(feature = "velopack")]
     ToggleCheckForUpdates,

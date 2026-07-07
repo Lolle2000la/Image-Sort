@@ -206,7 +206,11 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
     // 1. General settings
     if let Some(general) = json.get("General") {
         if let Some(val) = general.get("DarkMode").and_then(|v| v.as_bool()) {
-            store.general.dark_mode = val;
+            store.general.theme = if val {
+                "Dark".to_string()
+            } else {
+                "Light".to_string()
+            };
         }
         if let Some(val) = general
             .get("CheckForUpdatesOnStartup")
