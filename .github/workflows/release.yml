@@ -138,23 +138,15 @@ jobs:
             rm -f Releases/*.AppImage
             rm -f Releases/*.nupkg
 
-            # Inject tailored desktop entry specifications
-            printf '%s\n' \
-              '[Desktop Entry]' \
-              'Type=Application' \
-              'Name=Media Sort' \
-              'Comment=An application to sort images and videos' \
-              'Exec=media-sort-gui %U' \
-              'Icon=MediaSort' \
-              'Terminal=false' \
-              'Categories=Graphics;Utility;' \
-              'MimeType=inode/directory;' \
-              'StartupWMClass=MediaSort' \
-              > squashfs-root/MediaSort.desktop
+            # Surgically modify vpk-generated desktop file (preserves vendor metadata)
+            TARGET_DESKTOP="squashfs-root/MediaSort.desktop"
+            sed -i 's/^Name=.*/Name=Media Sort/' "$TARGET_DESKTOP"
+            sed -i 's/^Exec=.*/& %U/' "$TARGET_DESKTOP"
+            printf '\n%s\n%s\n' "MimeType=inode/directory;" "StartupWMClass=MediaSort" >> "$TARGET_DESKTOP"
 
-            # Mirror launcher to standard layout paths inside the AppDir container
+            # Mirror adjusted launcher to standard layout paths
             mkdir -p squashfs-root/usr/share/applications
-            cp squashfs-root/MediaSort.desktop squashfs-root/usr/share/applications/MediaSort.desktop
+            cp "$TARGET_DESKTOP" squashfs-root/usr/share/applications/MediaSort.desktop
 
             # Stage into a valid .AppDir context and execute final compilation
             mkdir -p dist
