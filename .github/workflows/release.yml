@@ -139,18 +139,18 @@ jobs:
             rm -f Releases/*.nupkg
 
             # Inject tailored desktop entry specifications
-            cat << 'EOF' > squashfs-root/MediaSort.desktop
-            [Desktop Entry]
-            Type=Application
-            Name=Media Sort
-            Comment=An application to sort images and videos
-            Exec=media-sort-gui %U
-            Icon=MediaSort
-            Terminal=false
-            Categories=Graphics;Utility;
-            MimeType=inode/directory;
-            StartupWMClass=MediaSort
-            EOF
+            printf '%s\n' \
+              '[Desktop Entry]' \
+              'Type=Application' \
+              'Name=Media Sort' \
+              'Comment=An application to sort images and videos' \
+              'Exec=media-sort-gui %U' \
+              'Icon=MediaSort' \
+              'Terminal=false' \
+              'Categories=Graphics;Utility;' \
+              'MimeType=inode/directory;' \
+              'StartupWMClass=MediaSort' \
+              > squashfs-root/MediaSort.desktop
 
             # Mirror launcher to standard layout paths inside the AppDir container
             cp squashfs-root/MediaSort.desktop squashfs-root/usr/share/applications/MediaSort.desktop
