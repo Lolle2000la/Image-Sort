@@ -297,3 +297,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn test_cli_positional_directory() {
+        let args = vec!["media-sort", "/home/luca/Pictures"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        assert_eq!(
+            cli.directory,
+            Some(std::path::PathBuf::from("/home/luca/Pictures"))
+        );
+        assert!(!cli.export);
+        assert!(!cli.demo);
+    }
+
+    #[test]
+    fn test_cli_no_args() {
+        let args = vec!["media-sort"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        assert_eq!(cli.directory, None);
+        assert!(!cli.export);
+        assert!(!cli.demo);
+    }
+
+    #[test]
+    fn test_cli_export() {
+        let args = vec!["media-sort", "--export"];
+        let cli = Cli::try_parse_from(args).unwrap();
+        assert_eq!(cli.directory, None);
+        assert!(cli.export);
+        assert!(!cli.demo);
+    }
+}
