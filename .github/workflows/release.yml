@@ -53,13 +53,13 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Rust Environment
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup .NET SDK (For vpk CLI)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
