@@ -24,6 +24,11 @@ pub enum Message {
 
     #[cfg(feature = "velopack")]
     Update(UpdateMessage),
+    #[cfg(feature = "demo")]
+    AutomationBounds(Option<iced::Rectangle>),
+    #[cfg(feature = "demo")]
+    #[allow(dead_code)]
+    AutomationVirtualTick(std::time::Duration),
 }
 
 #[derive(Debug, Clone)]

@@ -78,9 +78,13 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
 
     // 3. Settings section
     let settings_header = text(state.l10n.tr("ui-settings")).size(15);
-    let open_settings_btn = button(text(state.l10n.tr("ui-open")).size(12))
-        .on_press(Message::Settings(SettingsMessage::Open))
-        .width(Length::Fill);
+    let open_settings_btn = container(
+        button(text(state.l10n.tr("ui-open")).size(12))
+            .on_press(Message::Settings(SettingsMessage::Open))
+            .width(Length::Fill),
+    )
+    .id(iced::widget::Id::new("settings_btn"))
+    .width(Length::Fill);
 
     let keybindings_btn = button(text(state.l10n.tr("ui-key-bindings")).size(12))
         .on_press(Message::Settings(SettingsMessage::OpenKeybindings))

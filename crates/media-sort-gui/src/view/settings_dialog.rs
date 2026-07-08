@@ -460,9 +460,12 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         scrollable(bindings_column).height(Length::Fill).into()
     };
 
-    let close_btn = button(text(state.l10n.tr("settings-close")))
-        .on_press(Message::Settings(SettingsMessage::Close))
-        .style(iced::widget::button::primary);
+    let close_btn = container(
+        button(text(state.l10n.tr("settings-close")))
+            .on_press(Message::Settings(SettingsMessage::Close))
+            .style(iced::widget::button::primary),
+    )
+    .id(iced::widget::Id::new("close_settings_btn"));
 
     container(
         column![title, tab_bar, tab_content, close_btn,]

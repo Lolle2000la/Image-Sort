@@ -90,6 +90,10 @@ pub struct AppState {
     /// selection changes (e.g. via keyboard shortcuts).
     pub media_grid_scroll: MediaGridScrollState,
 
+    #[cfg(feature = "demo")]
+    pub automation: Option<crate::automation::AutomationState>,
+    #[cfg(feature = "demo")]
+    pub demo_root_path: Option<PathBuf>,
     /// Active background scan receiver. When `Some`, the tick handler
     /// streams incoming paths into `media_entries`.
     pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
@@ -213,6 +217,10 @@ impl AppState {
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
             media_grid_scroll: MediaGridScrollState::default(),
+            #[cfg(feature = "demo")]
+            automation: None,
+            #[cfg(feature = "demo")]
+            demo_root_path: None,
             scan_receiver: None,
             pending_select_index: None,
             folder_tree_receiver: None,

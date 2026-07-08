@@ -33,12 +33,15 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ]
         .spacing(2)
         .align_y(iced::Alignment::Center);
-        let btn = iced::widget::button(btn_content).width(Length::Fill);
-        if can_move_or_copy {
-            btn.on_press(Message::Media(MediaMessage::MoveActive))
+        let inner = iced::widget::button(btn_content).width(Length::Fill);
+        let inner = if can_move_or_copy {
+            inner.on_press(Message::Media(MediaMessage::MoveActive))
         } else {
-            btn
-        }
+            inner
+        };
+        container(inner)
+            .id(iced::widget::Id::new("move_btn"))
+            .width(Length::Fill)
     };
 
     let copy_btn = {

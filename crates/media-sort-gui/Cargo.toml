@@ -6,6 +6,7 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest"]
+demo = ["iced/canvas", "dep:pollster", "dep:iced_runtime", "dep:iced_test", "dep:serde_json"]
 
 [dependencies]
 media-sort-core = { path = "../media-sort-core" }
@@ -28,6 +29,10 @@ ico.workspace = true
 
 velopack = { version = "1.2", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
+pollster = { version = "0.4", optional = true }
+serde_json = { workspace = true, optional = true }
+iced_runtime = { version = "0.14", optional = true }
+iced_test = { version = "0.14", optional = true }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 embed-resource = "3.0.11"

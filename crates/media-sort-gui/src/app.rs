@@ -20,6 +20,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 return window::latest().and_then(window::close);
             }
 
+            #[cfg(feature = "demo")]
+            let automation_task = crate::automation::try_tick(state, _instant);
+            #[cfg(not(feature = "demo"))]
+            let automation_task = Task::none();
+
             if let Some(ref rx) = state.folder_tree_receiver
                 && let Ok(tree) = rx.try_recv()
             {
@@ -61,7 +66,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 state.thumbnail_tracker.cancel_debounce();
                 let thumbnails = load_visible_thumbnails(state);
                 let select = select_and_load_entry(state, select_idx);
-                return Task::batch(vec![select, thumbnails]);
+                return Task::batch(vec![select, thumbnails, automation_task]);
             }
 
             if let Some(ref player) = state.audio_player
@@ -76,9 +81,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 }
             }
             if refresh_thumbnails {
-                load_visible_thumbnails(state)
+                Task::batch(vec![load_visible_thumbnails(state), automation_task])
             } else {
-                Task::none()
+                automation_task
             }
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
@@ -192,6 +197,33 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
+        #[cfg(feature = "demo")]
+        Message::AutomationVirtualTick(delta) => {
+            if let Some(ref mut automation) = state.automation
+                && let Some(result) =
+                    crate::automation::handle_automation_virtual_tick(automation, delta)
+            {
+                use crate::automation::AutomationTickResult;
+                match result {
+                    AutomationTickResult::Message(msg) => {
+                        return Task::done(msg);
+                    }
+                    AutomationTickResult::Task(task) => {
+                        return task;
+                    }
+                }
+            }
+            Task::none()
+        }
+        #[cfg(feature = "demo")]
+        Message::AutomationBounds(rect_opt) => {
+            if let Some(ref mut automation) = state.automation
+                && let Some(msg) = crate::automation::handle_bounds_resolved(automation, rect_opt)
+            {
+                return update(state, msg);
+            }
+            Task::none()
+        }
         Message::MediaScanCompleted(Ok(entries)) => {
             state.media_entries = entries;
             let select_idx = state.pending_select_index.take().unwrap_or(0);
@@ -838,6 +870,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             iced::Event::Window(iced::window::Event::Resized(size)) => {
                 state.settings.window_position.width = size.width.round() as u32;
                 state.settings.window_position.height = size.height.round() as u32;
+                #[cfg(feature = "demo")]
+                if let Some(ref mut automation) = state.automation {
+                    automation.update_window_size(size.width, size.height);
+                }
 
                 state.thumbnail_tracker.handle_scroll();
                 Task::none()
@@ -1553,7 +1589,12 @@ fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
 }
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
-    view::main_layout::main_layout_view(state)
+    let base_view = view::main_layout::main_layout_view(state);
+    #[cfg(feature = "demo")]
+    if let Some(ref automation) = state.automation {
+        return crate::automation::wrap_view(base_view, automation);
+    }
+    base_view
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {

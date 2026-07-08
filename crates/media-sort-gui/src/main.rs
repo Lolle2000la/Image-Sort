@@ -1,6 +1,12 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
+#[cfg(feature = "demo")]
+mod automation;
+#[cfg(feature = "demo")]
+mod demo;
+#[cfg(feature = "demo")]
+mod headless;
 mod message;
 mod state;
 mod subscriptions;
@@ -155,6 +161,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let settings = SettingsStore::load().unwrap_or_default();
 
+    #[cfg(feature = "demo")]
+    if let Some(result) = crate::demo::try_headless_export() {
+        return result;
+    }
+
     let icon =
         window::icon::from_file_data(include_bytes!("../../../packaging/windows/icon.ico"), None)
             .ok();
@@ -185,7 +196,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         move || {
             let settings = SettingsStore::load().unwrap_or_default();
             let state = crate::state::AppState::new(settings.clone());
+            #[cfg(feature = "demo")]
+            let mut state = state;
             let mut startup_path = None;
+
+            #[cfg(feature = "demo")]
+            if let Some(root) = crate::demo::init(&mut state) {
+                startup_path = Some(root);
+            }
 
             if let Some(arg_path) = std::env::args()
                 .nth(1)
