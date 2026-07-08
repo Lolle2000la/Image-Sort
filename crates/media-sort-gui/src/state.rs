@@ -417,8 +417,13 @@ impl AppState {
     }
 
     pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
-        self.selected_folder = Some(path);
-        self.selected_folder_idx = Some(idx);
+        self.selected_folder = Some(path.clone());
+        let visible = self.collect_visible_folders();
+        if let Some(pos) = visible.iter().position(|p| p == &path) {
+            self.selected_folder_idx = Some(pos);
+        } else {
+            self.selected_folder_idx = Some(idx);
+        }
     }
 
     pub(crate) fn sync_selected_folder_idx(&mut self) {

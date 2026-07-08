@@ -10,13 +10,13 @@
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "Subfolder 1" } },
-      "keycap_label": "Arrow Keys",
+      "keycap_label": "WASD to select folder",
       "message": { "action": "folder_selected", "relative_path": "Subfolder 1" }
     },
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "move_btn" } },
-      "keycap_label": "M",
+      "keycap_label": "Arrow Up to move",
       "message": { "action": "move_active" }
     },
     {
