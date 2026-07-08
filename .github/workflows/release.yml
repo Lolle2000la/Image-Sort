@@ -126,8 +126,12 @@ jobs:
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}
           else
+            # Stage only the compiled binary to prevent bundling Cargo build cache
+            mkdir -p dist/linux-staging
+            cp "$TARGET_DIR/media-sort-gui" dist/linux-staging/
+
             # Generate initial layout with default update manifests
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "$TARGET_DIR" -e media-sort-gui --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/linux-staging" -e media-sort-gui --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
 
             # Unpack the intermediate AppImage artifact
             APPIMAGE_PATH=$(ls Releases/*.AppImage | head -n 1)
@@ -149,7 +153,8 @@ jobs:
             mkdir -p squashfs-root/usr/share/applications
             cp "$TARGET_DESKTOP" squashfs-root/usr/share/applications/MediaSort.desktop
 
-            # Stage into a valid .AppDir context and execute final compilation
+            # Re-stage into a clean AppDir context and execute final compilation
+            rm -rf dist
             mkdir -p dist
             mv squashfs-root dist/MediaSort.AppDir
 
