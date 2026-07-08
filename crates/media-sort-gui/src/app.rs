@@ -5,6 +5,7 @@ use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
+use media_sort_core::models::MediaEntry;
 
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::AppState;
@@ -24,6 +25,50 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             #[cfg(not(feature = "demo"))]
             let automation_task = Task::none();
 
+            if let Some(ref rx) = state.folder_tree_receiver
+                && let Ok(tree) = rx.try_recv()
+            {
+                state.folder_tree_receiver = None;
+                state.folder_tree = tree;
+                state.sync_selected_folder_idx();
+            }
+
+            let refresh_thumbnails = state.thumbnail_tracker.tick();
+
+            let scan_finished = if let Some(ref rx) = state.scan_receiver {
+                for path in rx.try_iter() {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    state.media_entries.push(MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                    });
+                }
+                matches!(
+                    rx.try_recv(),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected)
+                )
+            } else {
+                false
+            };
+
+            if scan_finished {
+                state.scan_receiver = None;
+                state
+                    .media_entries
+                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+                let select_idx = state.pending_select_index.take().unwrap_or(0);
+                state.thumbnail_tracker.cancel_debounce();
+                let thumbnails = load_visible_thumbnails(state);
+                let select = select_and_load_entry(state, select_idx);
+                return Task::batch(vec![select, thumbnails, automation_task]);
+            }
+
             if let Some(ref player) = state.audio_player
                 && state.audio_playing
             {
@@ -35,7 +80,11 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     state.audio_duration = player.duration();
                 }
             }
-            automation_task
+            if refresh_thumbnails {
+                Task::batch(vec![load_visible_thumbnails(state), automation_task])
+            } else {
+                automation_task
+            }
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
             state.video_sender = Some(sender);
@@ -175,6 +224,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
             Task::none()
         }
+        Message::MediaScanCompleted(Ok(entries)) => {
+            state.media_entries = entries;
+            let select_idx = state.pending_select_index.take().unwrap_or(0);
+            Task::batch(vec![
+                select_and_load_entry(state, select_idx),
+                load_visible_thumbnails(state),
+            ])
+        }
+        Message::MediaScanCompleted(Err(err)) => {
+            tracing::error!("Asynchronous media retrieval failed: {}", err);
+            Task::none()
+        }
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;
@@ -186,14 +247,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
         Message::Folder(FolderMessage::Open(path)) => {
             state.open_folder(&path);
-            let mut tasks: Vec<_> = state
-                .media_entries
-                .iter()
-                .take(200)
-                .map(|entry| load_thumbnail(entry.path.clone()))
-                .collect();
-            tasks.push(select_and_load_entry(state, 0));
-            Task::batch(tasks)
+            Task::none()
         }
         Message::Folder(FolderMessage::Pick) => Task::perform(
             async {
@@ -223,8 +277,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Folder(FolderMessage::PickPinResult(None)) => Task::none(),
-        Message::Folder(FolderMessage::Selected(path)) => {
-            state.set_selected_folder(path);
+        Message::Folder(FolderMessage::Selected(path, idx)) => {
+            state.set_selected_folder(path, idx);
             Task::none()
         }
         Message::Folder(FolderMessage::ToggleExpand(path)) => {
@@ -262,13 +316,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             if let Some(index) = state.selected_index {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
-                    match MoveAction::new(&entry.path, &target_folder) {
+                    let entry_path = entry.path.clone();
+                    match MoveAction::new(&entry_path, &target_folder) {
                         Ok(mut action) => {
                             if let Err(e) = action.execute() {
                                 tracing::error!("Move failed: {e}");
                             } else {
                                 state.history.push_executed(Box::new(action));
-                                state.scan_media();
+                                state.media_entries.retain(|e| e.path != entry_path);
                                 return select_and_load_entry(state, index);
                             }
                         }
@@ -287,7 +342,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let action =
                         media_sort_core::actions::delete_action::DeleteAction::new(&path, handle);
                     state.history.push_executed(Box::new(action));
-                    state.scan_media();
+                    state.media_entries.retain(|e| e.path != path);
                     return select_and_load_entry(state, index_to_select);
                 }
                 Err(e) => {
@@ -345,10 +400,12 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     } else {
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
-                        state.scan_media();
-                        if let Some(pos) =
-                            state.media_entries.iter().position(|e| e.path == new_path)
-                        {
+                        if let Some(pos) = state.media_entries.iter().position(|e| e.path == path) {
+                            state.media_entries[pos].path = new_path.clone();
+                            state.media_entries[pos].file_name = new_path
+                                .file_name()
+                                .map(|n| n.to_string_lossy().to_string())
+                                .unwrap_or_else(|| new_path.display().to_string());
                             return select_and_load_entry(state, pos);
                         }
                     }
@@ -390,11 +447,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                     let new_dir = parent.join(&folder_name);
                     if let Err(e) = std::fs::create_dir_all(&new_dir) {
                         tracing::error!("Failed to create folder: {e}");
-                    } else {
-                        if state.current_folder.is_some() {
-                            state.build_folder_tree();
-                        }
-                        state.scan_media();
+                    } else if state.current_folder.is_some() {
+                        state.build_folder_tree();
                     }
                 }
                 state.create_folder_input.clear();
@@ -428,11 +482,6 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::Folder(FolderMessage::PinCurrent) => {
-            state.pin_current_folder();
-            let _ = state.settings.save();
-            Task::none()
-        }
         Message::Folder(FolderMessage::PinSelected) => {
             let path_to_pin = state
                 .selected_folder
@@ -634,7 +683,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             ));
                         }
                         "pin" => {
-                            return Task::done(Message::Folder(FolderMessage::PinCurrent));
+                            return Task::done(Message::Folder(FolderMessage::PickPin));
                         }
                         "unpin" => {
                             if let Some(ref c) = state.current_folder {
@@ -715,10 +764,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             }
                         }
                         "pin_selected" => {
-                            if let Some(selected_path) = state.selected_folder.clone() {
-                                state.pin_folder(&selected_path);
-                                let _ = state.settings.save();
-                            }
+                            return Task::done(Message::Folder(FolderMessage::PinSelected));
                         }
                         "move_pinned_up" => {
                             if let Some(selected_path) = state.selected_folder.clone() {
@@ -797,8 +843,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             open_externally(&path);
             Task::none()
         }
-        Message::Settings(SettingsMessage::ToggleDarkMode) => {
-            state.settings.general.dark_mode = !state.settings.general.dark_mode;
+        Message::Settings(SettingsMessage::SetTheme(theme)) => {
+            state.settings.general.theme = theme;
             let _ = state.settings.save();
             Task::none()
         }
@@ -828,6 +874,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if let Some(ref mut automation) = state.automation {
                     automation.update_window_size(size.width, size.height);
                 }
+
+                state.thumbnail_tracker.handle_scroll();
                 Task::none()
             }
             iced::Event::Window(iced::window::Event::Moved(point)) => {
@@ -976,9 +1024,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
 
-        Message::Media(MediaMessage::ThumbnailReady(path, data)) => {
-            if !data.is_empty() {
-                let handle = iced::widget::image::Handle::from_bytes(data);
+        Message::Media(MediaMessage::ThumbnailReady(path, w, h, data)) => {
+            if !data.is_empty() && w > 0 && h > 0 {
+                let handle = iced::widget::image::Handle::from_rgba(w, h, data);
                 state.thumbnail_cache.push(path, handle);
             }
             Task::none()
@@ -987,6 +1035,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.unsupported_files.insert(path);
             Task::none()
         }
+        Message::Media(MediaMessage::ThumbnailCancelled(_path)) => Task::none(),
         Message::Media(MediaMessage::OpenExternal(path)) => {
             open_externally(&path);
             Task::none()
@@ -1042,13 +1091,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             {
                 let filtered = state.filtered_media_entries();
                 if let Some(entry) = filtered.get(index) {
-                    match MoveAction::new(&entry.path, target_folder) {
+                    let entry_path = entry.path.clone();
+                    match MoveAction::new(&entry_path, target_folder) {
                         Ok(mut action) => {
                             if let Err(e) = action.execute() {
                                 tracing::error!("Move failed: {e}");
                             } else {
                                 state.history.push_executed(Box::new(action));
-                                state.scan_media();
+                                state.media_entries.retain(|e| e.path != entry_path);
                                 return select_and_load_entry(state, index);
                             }
                         }
@@ -1092,13 +1142,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 if let Some(index) = state.selected_index {
                     let filtered = state.filtered_media_entries();
                     if let Some(entry) = filtered.get(index) {
-                        match MoveAction::new(&entry.path, &target_folder) {
+                        let entry_path = entry.path.clone();
+                        match MoveAction::new(&entry_path, &target_folder) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
                                     tracing::error!("Move failed: {e}");
                                 } else {
                                     state.history.push_executed(Box::new(action));
-                                    state.scan_media();
+                                    state.media_entries.retain(|e| e.path != entry_path);
                                     return select_and_load_entry(state, index);
                                 }
                             }
@@ -1123,6 +1174,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.media_grid_scroll.offset_x = offset.x;
             state.media_grid_scroll.viewport_width = viewport_width;
             state.media_grid_scroll.content_width = content_width;
+
+            state.thumbnail_tracker.handle_scroll();
             Task::none()
         }
     }
@@ -1170,6 +1223,10 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
         }
 
         drop(filtered);
+
+        state
+            .thumbnail_tracker
+            .retain_paths(thumbnail_paths.clone());
 
         state.selected_index = Some(index);
         state.current_metadata = None;
@@ -1265,7 +1322,7 @@ fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
 
         for p in thumbnail_paths {
             if !state.thumbnail_cache.contains(&p) {
-                tasks.push(load_thumbnail(p));
+                tasks.push(load_thumbnail(p, state.thumbnail_tracker.clone_checker()));
             }
         }
         Task::batch(tasks)
@@ -1401,20 +1458,57 @@ fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
     )
 }
 
-fn load_thumbnail(path: std::path::PathBuf) -> Task<Message> {
+fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
+    let entry_paths: Vec<std::path::PathBuf> = state
+        .filtered_media_entries()
+        .iter()
+        .map(|e| e.path.clone())
+        .collect();
+    let load_queue = state.thumbnail_tracker.update_viewport(
+        &state.media_grid_scroll,
+        &entry_paths,
+        state.settings.window_position.width,
+    );
+
+    Task::batch(
+        load_queue
+            .into_iter()
+            .filter(|path| {
+                !state.thumbnail_cache.contains(path) && !state.unsupported_files.contains(path)
+            })
+            .map(|path| load_thumbnail(path, state.thumbnail_tracker.clone_checker())),
+    )
+}
+
+fn load_thumbnail(
+    path: std::path::PathBuf,
+    visible_tracker: std::sync::Arc<
+        std::sync::RwLock<std::collections::HashSet<std::path::PathBuf>>,
+    >,
+) -> Task<Message> {
     Task::perform(
         async move {
             let path_clone = path.clone();
+            let tracker = visible_tracker.clone();
             let result = tokio::task::spawn_blocking(move || {
-                crate::subscriptions::prefetch::generate_thumbnail(&path_clone)
+                if let Ok(guard) = tracker.read()
+                    && !guard.contains(&path_clone)
+                {
+                    return Ok(None);
+                }
+                match crate::subscriptions::prefetch::generate_thumbnail(&path_clone) {
+                    Ok((w, h, rgba)) => Ok(Some((w, h, rgba))),
+                    Err(()) => Err(()),
+                }
             })
             .await
-            .unwrap_or(Err(()));
+            .unwrap_or(Ok(None));
             (path, result)
         },
         |(path, result)| {
             Message::Media(match result {
-                Ok(bytes) => MediaMessage::ThumbnailReady(path, bytes),
+                Ok(Some((w, h, rgba))) => MediaMessage::ThumbnailReady(path, w, h, rgba),
+                Ok(None) => MediaMessage::ThumbnailCancelled(path),
                 Err(()) => MediaMessage::ThumbnailFailed(path),
             })
         },
@@ -1504,10 +1598,29 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {
-    if state.settings.general.dark_mode {
-        iced::Theme::Dark
-    } else {
-        iced::Theme::Light
+    match state.settings.general.theme.as_str() {
+        "Dark" => iced::Theme::Dark,
+        "Dracula" => iced::Theme::Dracula,
+        "Nord" => iced::Theme::Nord,
+        "SolarizedLight" => iced::Theme::SolarizedLight,
+        "SolarizedDark" => iced::Theme::SolarizedDark,
+        "GruvboxLight" => iced::Theme::GruvboxLight,
+        "GruvboxDark" => iced::Theme::GruvboxDark,
+        "CatppuccinLatte" => iced::Theme::CatppuccinLatte,
+        "CatppuccinFrappe" => iced::Theme::CatppuccinFrappe,
+        "CatppuccinMacchiato" => iced::Theme::CatppuccinMacchiato,
+        "CatppuccinMocha" => iced::Theme::CatppuccinMocha,
+        "TokyoNight" => iced::Theme::TokyoNight,
+        "TokyoNightStorm" => iced::Theme::TokyoNightStorm,
+        "TokyoNightLight" => iced::Theme::TokyoNightLight,
+        "KanagawaWave" => iced::Theme::KanagawaWave,
+        "KanagawaDragon" => iced::Theme::KanagawaDragon,
+        "KanagawaLotus" => iced::Theme::KanagawaLotus,
+        "Moonfly" => iced::Theme::Moonfly,
+        "Nightfly" => iced::Theme::Nightfly,
+        "Oxocarbon" => iced::Theme::Oxocarbon,
+        "Ferra" => iced::Theme::Ferra,
+        _ => iced::Theme::Light,
     }
 }
 
@@ -1695,17 +1808,14 @@ mod tests {
     }
 
     #[test]
-    fn test_keycaptured_pin_triggers_pin() {
+    fn test_keycaptured_pin_dispatches_pick() {
         let mut state = AppState::new(SettingsStore::default());
-        state.current_folder = Some(PathBuf::from("/test/folder"));
-        assert!(state.pinned_folders.is_empty());
 
-        let _ = update(
+        // The pin shortcut now dispatches PickPin; verify it doesn't panic.
+        let _task = update(
             &mut state,
             Message::KeyCaptured("P".into(), false, false, false),
         );
-        let _ = update(&mut state, Message::Folder(FolderMessage::PinCurrent));
-        assert_eq!(state.pinned_folders.len(), 1);
     }
 
     #[test]
@@ -1786,6 +1896,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         assert!(file.exists());
@@ -1913,6 +2024,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _ = update(
@@ -1964,6 +2076,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _ = update(
@@ -2068,6 +2181,7 @@ mod tests {
 
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&root);
+        state.scan_media();
         state.selected_index = Some(0);
 
         let _task = update(
@@ -2164,6 +2278,8 @@ mod tests {
             &mut state,
             Message::Media(MediaMessage::ThumbnailReady(
                 std::path::PathBuf::from("/test/empty.jpg"),
+                0,
+                0,
                 Vec::new(),
             )),
         );
@@ -2179,7 +2295,9 @@ mod tests {
             &mut state,
             Message::Media(MediaMessage::ThumbnailReady(
                 path.clone(),
-                vec![0x89, 0x50, 0x4E, 0x47],
+                1,
+                1,
+                vec![255, 0, 0, 255],
             )),
         );
         assert_eq!(state.thumbnail_cache.len(), 1);
@@ -2254,26 +2372,22 @@ mod tests {
 
     #[test]
     fn test_tick_should_exit_saves_settings() {
-        static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-        let _guard = LOCK.lock().unwrap();
-
-        unsafe {
-            std::env::set_var("UI_TEST", "1");
-        }
-        let mut state = AppState::new(SettingsStore::default());
-        state.settings.general.dark_mode = true;
+        let tmp =
+            std::env::temp_dir().join(format!("mediasort_test_tick_save_{}", std::process::id()));
+        let settings = SettingsStore {
+            custom_path: Some(tmp.clone()),
+            ..SettingsStore::default()
+        };
+        let mut state = AppState::new(settings);
+        state.settings.general.theme = "Dark".to_string();
         state.should_exit = true;
 
         let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
-        let reloaded = SettingsStore::load().unwrap_or_default();
-        assert!(reloaded.general.dark_mode);
 
-        let test_path = SettingsStore::config_path();
-        if test_path.exists() {
-            let _ = std::fs::remove_file(test_path);
-        }
-        unsafe {
-            std::env::remove_var("UI_TEST");
-        }
+        let data = std::fs::read_to_string(&tmp).unwrap();
+        let reloaded: SettingsStore = toml::from_str(&data).unwrap();
+        assert_eq!(reloaded.general.theme, "Dark");
+
+        let _ = std::fs::remove_file(&tmp);
     }
 }

@@ -8,6 +8,8 @@ use media_sort_core::settings::store::SettingsStore;
 pub enum Message {
     Tick(Instant),
     SettingsLoaded(Box<Result<SettingsStore, String>>),
+    #[allow(dead_code)]
+    MediaScanCompleted(Result<Vec<media_sort_core::models::MediaEntry>, String>),
     Quit,
     EventOccurred(iced::Event),
     OpenCredits,
@@ -33,7 +35,7 @@ pub enum Message {
 pub enum SettingsMessage {
     Open,
     Close,
-    ToggleDarkMode,
+    SetTheme(String),
     ToggleReopenFolder,
     #[cfg(feature = "velopack")]
     ToggleCheckForUpdates,
@@ -59,9 +61,8 @@ pub enum FolderMessage {
     PickResult(Option<PathBuf>),
     PickPin,
     PickPinResult(Option<PathBuf>),
-    Selected(PathBuf),
+    Selected(PathBuf, usize),
     ToggleExpand(PathBuf),
-    PinCurrent,
     PinSelected,
     UnpinCurrent(PathBuf),
     MovePinnedUp(PathBuf),
@@ -94,8 +95,9 @@ pub enum MediaMessage {
     MoveActive,
     CopyActive,
     GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
-    ThumbnailReady(PathBuf, Vec<u8>),
+    ThumbnailReady(PathBuf, u32, u32, Vec<u8>),
     ThumbnailFailed(PathBuf),
+    ThumbnailCancelled(PathBuf),
     ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
     OpenExternal(PathBuf),

@@ -37,11 +37,10 @@ At startup the app queries mpv for supported formats via `demuxer-lavf-list` and
 
 Runtime config lives at `$CONFIG_DIR/media-sort/config.toml` (TOML). `$CONFIG_DIR` resolves via the `dirs` crate: `$XDG_CONFIG_HOME` (Linux), `~/Library/Application Support` (macOS), `%APPDATA%` (Windows).
 
-On first launch the app silently migrates settings from legacy JSON paths. In debug builds (`cfg!(debug_assertions)`) the migration reads `debug_config.json` instead of `config.json`:
+On first launch the app silently migrates settings from the legacy WPF JSON config. In debug builds (`cfg!(debug_assertions)`) the migration reads `debug_config.json` instead of `config.json`:
 - `$CONFIG_DIR/Image Sort/config.json` or `debug_config.json` (old WPF app)
-- `$CONFIG_DIR/media-sort/config.json` or `debug_config.json`
 
-When the `UI_TEST` environment variable is set to a non-empty value, local test paths override all of the above (`ui_test_config.toml` / `ui_test_config.json`). This is handled in `media-sort-core/src/settings/store.rs`.
+When the `UI_TEST` environment variable is set to a non-empty value, the config path is overridden to `ui_test_config.toml` in the current directory. This is handled in `media-sort-core/src/settings/store.rs`.
 
 ## Internationalization
 

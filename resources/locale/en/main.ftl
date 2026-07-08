@@ -14,7 +14,7 @@ settings-close = Close
 
 # General settings
 settings-appearance = Appearance
-settings-dark-mode = Dark Mode
+settings-theme = Theme
 settings-reopen-folder = Reopen last opened folder on startup
 settings-animated-gifs = Animated Gifs
 settings-play-gifs = Play animated gifs

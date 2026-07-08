@@ -126,6 +126,7 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
         let entry_button = container(
             button(card)
                 .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
+                .padding(0)
                 .style(iced::widget::button::text),
         )
         .id(iced::widget::Id::new(Box::leak(

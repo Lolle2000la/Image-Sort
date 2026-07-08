@@ -11,6 +11,109 @@ const BOLD_FONT: iced::Font = iced::Font {
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+struct ThemeOption {
+    key: &'static str,
+    name: &'static str,
+}
+
+impl std::fmt::Display for ThemeOption {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name)
+    }
+}
+
+static THEME_OPTIONS: &[ThemeOption] = &[
+    ThemeOption {
+        key: "Light",
+        name: "Light",
+    },
+    ThemeOption {
+        key: "Dark",
+        name: "Dark",
+    },
+    ThemeOption {
+        key: "Dracula",
+        name: "Dracula",
+    },
+    ThemeOption {
+        key: "Nord",
+        name: "Nord",
+    },
+    ThemeOption {
+        key: "SolarizedLight",
+        name: "Solarized Light",
+    },
+    ThemeOption {
+        key: "SolarizedDark",
+        name: "Solarized Dark",
+    },
+    ThemeOption {
+        key: "GruvboxLight",
+        name: "Gruvbox Light",
+    },
+    ThemeOption {
+        key: "GruvboxDark",
+        name: "Gruvbox Dark",
+    },
+    ThemeOption {
+        key: "CatppuccinLatte",
+        name: "Catppuccin Latte",
+    },
+    ThemeOption {
+        key: "CatppuccinFrappe",
+        name: "Catppuccin Frappe",
+    },
+    ThemeOption {
+        key: "CatppuccinMacchiato",
+        name: "Catppuccin Macchiato",
+    },
+    ThemeOption {
+        key: "CatppuccinMocha",
+        name: "Catppuccin Mocha",
+    },
+    ThemeOption {
+        key: "TokyoNight",
+        name: "Tokyo Night",
+    },
+    ThemeOption {
+        key: "TokyoNightStorm",
+        name: "Tokyo Night Storm",
+    },
+    ThemeOption {
+        key: "TokyoNightLight",
+        name: "Tokyo Night Light",
+    },
+    ThemeOption {
+        key: "KanagawaWave",
+        name: "Kanagawa Wave",
+    },
+    ThemeOption {
+        key: "KanagawaDragon",
+        name: "Kanagawa Dragon",
+    },
+    ThemeOption {
+        key: "KanagawaLotus",
+        name: "Kanagawa Lotus",
+    },
+    ThemeOption {
+        key: "Moonfly",
+        name: "Moonfly",
+    },
+    ThemeOption {
+        key: "Nightfly",
+        name: "Nightfly",
+    },
+    ThemeOption {
+        key: "Oxocarbon",
+        name: "Oxocarbon",
+    },
+    ThemeOption {
+        key: "Ferra",
+        name: "Ferra",
+    },
+];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct LocaleOption {
     code: String,
     display: String,
@@ -135,14 +238,6 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let tab_content: Element<'_, Message> = if !state.show_keybindings {
         // General settings tab
-        let dark_mode_cb = container(
-            checkbox(state.settings.general.dark_mode)
-                .label(state.l10n.tr("settings-dark-mode"))
-                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleDarkMode))
-                .size(16),
-        )
-        .id(iced::widget::Id::new("dark_mode_toggle"));
-
         let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
             .label(state.l10n.tr("settings-play-gifs"))
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
@@ -165,13 +260,27 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenFolder))
             .size(16);
 
+        let current_theme = THEME_OPTIONS
+            .iter()
+            .find(|opt| opt.key == state.settings.general.theme)
+            .cloned();
+
+        let theme_picklist = column![
+            text(state.l10n.tr("settings-theme")).size(12),
+            pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
+                Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
+            },)
+            .width(Length::Fixed(200.0)),
+        ]
+        .spacing(4);
+
         #[allow(unused_mut)]
         let mut settings_col = column![
             column![
                 text(state.l10n.tr("settings-appearance"))
                     .font(BOLD_FONT)
                     .size(14),
-                dark_mode_cb,
+                theme_picklist,
                 reopen_folder_cb,
             ]
             .spacing(8),

@@ -61,7 +61,7 @@ fn copy_fixture(fixture_name: &str, dest_dir: &Path) -> PathBuf {
 #[test]
 fn test_scan_empty_dir() {
     let tmp = TempDir::new("scan_empty");
-    let results = scan_media_files(tmp.path());
+    let results: Vec<_> = scan_media_files(tmp.path()).into_iter().collect();
     assert!(
         results.is_empty(),
         "expected empty vec for dir with no media files"
@@ -74,7 +74,7 @@ fn test_scan_images_only() {
     copy_fixture("test_image.jpg", tmp.path());
     copy_fixture("test_image.png", tmp.path());
 
-    let results = scan_media_files(tmp.path());
+    let results: Vec<_> = scan_media_files(tmp.path()).into_iter().collect();
     assert_eq!(results.len(), 2, "expected 2 image files");
     let names: Vec<&str> = results
         .iter()
@@ -90,7 +90,7 @@ fn test_scan_filtered_by_extension() {
     copy_fixture("test_image.jpg", tmp.path());
     fs::write(tmp.join("notes.txt"), b"not media").unwrap();
 
-    let results = scan_media_files(tmp.path());
+    let results: Vec<_> = scan_media_files(tmp.path()).into_iter().collect();
     assert_eq!(results.len(), 1, "expected only the jpg, not the txt");
     let name = results[0].file_name().unwrap().to_str().unwrap();
     assert_eq!(name, "test_image.jpg");
@@ -104,7 +104,7 @@ fn test_scan_no_recursion() {
     fs::create_dir_all(&subdir).unwrap();
     copy_fixture("test_image.png", &subdir);
 
-    let results = scan_media_files(tmp.path());
+    let results: Vec<_> = scan_media_files(tmp.path()).into_iter().collect();
     assert_eq!(
         results.len(),
         1,
@@ -123,7 +123,7 @@ fn test_scan_with_fixtures() {
     copy_fixture("test_audio.mp3", tmp.path());
     copy_fixture("test_audio.flac", tmp.path());
 
-    let results = scan_media_files(tmp.path());
+    let results: Vec<_> = scan_media_files(tmp.path()).into_iter().collect();
     assert_eq!(results.len(), 5, "expected all 5 fixture files to be found");
 }
 

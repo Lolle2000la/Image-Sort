@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::mpsc;
 
 use lru::LruCache;
 use std::num::NonZeroUsize;
 
+use crate::subscriptions::thumbnail_tracker::ThumbnailVisibilityTracker;
 use media_sort_backend::media::audio_decoder::AudioPlayer;
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
@@ -44,6 +46,9 @@ pub struct AppState {
 
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
+
+    pub thumbnail_tracker: ThumbnailVisibilityTracker,
+
     pub selected_folder: Option<PathBuf>,
     pub(crate) selected_folder_idx: Option<usize>,
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
@@ -89,6 +94,14 @@ pub struct AppState {
     pub automation: Option<crate::automation::AutomationState>,
     #[cfg(feature = "demo")]
     pub demo_root_path: Option<PathBuf>,
+    /// Active background scan receiver. When `Some`, the tick handler
+    /// streams incoming paths into `media_entries`.
+    pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
+    /// Index to select after the background scan completes.
+    pub pending_select_index: Option<usize>,
+
+    /// Active background folder-tree build receiver.
+    pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
 }
 
 /// Snapshot of the media grid's scrollable viewport. Updated whenever the
@@ -127,7 +140,7 @@ impl AppState {
             .collect();
 
         let metadata_panel_expanded = settings.metadata_panel.is_expanded;
-        let _dark_mode = settings.general.dark_mode;
+        let _theme = &settings.general.theme;
 
         let cache_size = NonZeroUsize::new(200).unwrap();
 
@@ -167,6 +180,9 @@ impl AppState {
             selected_audio_cover: None,
             thumbnail_cache: LruCache::new(cache_size),
             image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
+            thumbnail_tracker: ThumbnailVisibilityTracker::new(std::time::Duration::from_millis(
+                150,
+            )),
             selected_folder: None,
             selected_folder_idx: None,
             selected_image: None,
@@ -205,6 +221,9 @@ impl AppState {
             automation: None,
             #[cfg(feature = "demo")]
             demo_root_path: None,
+            scan_receiver: None,
+            pending_select_index: None,
+            folder_tree_receiver: None,
         }
     }
 
@@ -213,7 +232,7 @@ impl AppState {
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         let _ = self.settings.save();
         self.history.clear();
-        self.scan_media();
+        self.media_entries.clear();
         self.build_folder_tree();
         self.selected_index = None;
         self.current_metadata = None;
@@ -234,13 +253,20 @@ impl AppState {
         }
         self.audio_playing = false;
         self.audio_position = 0.0;
+
+        self.start_async_folder_tree();
+
+        self.scan_receiver = Some(media_sort_backend::filesystem::scanner::scan_media_files(
+            path,
+        ));
+        self.pending_select_index = Some(0);
     }
 
     pub fn scan_media(&mut self) {
+        self.scan_receiver = None;
         self.media_entries.clear();
         if let Some(ref folder) = self.current_folder {
-            let paths = media_sort_backend::filesystem::scanner::scan_media_files(folder);
-            for p in paths {
+            for p in media_sort_backend::filesystem::scanner::scan_media_files(folder) {
                 let media_type = detect_media_type(&p, self.settings.general.animate_gifs);
                 let file_name = p
                     .file_name()
@@ -268,88 +294,38 @@ impl AppState {
     }
 
     pub fn build_folder_tree(&mut self) {
-        let root = if let Some(ref current) = self.current_folder {
-            current.clone()
-        } else {
+        if self.current_folder.is_none() {
+            return;
+        }
+        self.folder_tree_receiver = None;
+        let expanded_paths = collect_expanded_paths(&self.folder_tree);
+        let root = self.current_folder.clone().unwrap();
+        self.folder_tree = build_tree_nodes_data(&root, &self.pinned_folders, &expanded_paths);
+        self.sync_selected_folder_idx();
+    }
+
+    pub fn start_async_folder_tree(&mut self) {
+        let Some(ref current) = self.current_folder else {
             return;
         };
+        let root = current.clone();
+        let pinned = self.pinned_folders.clone();
+        let expanded_paths = collect_expanded_paths(&self.folder_tree);
 
-        // Capture expanded paths:
-        let mut expanded_paths = std::collections::HashSet::new();
-        fn collect_expanded(nodes: &[FolderNode], set: &mut std::collections::HashSet<PathBuf>) {
-            for node in nodes {
-                if node.is_expanded {
-                    set.insert(node.path.clone());
-                }
-                collect_expanded(&node.children, set);
-            }
-        }
-        collect_expanded(&self.folder_tree, &mut expanded_paths);
-
-        self.folder_tree.clear();
-
-        // 1. Build current folder root node
-        let mut children = build_children(&root, self.current_folder.as_deref());
-
-        fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
-            for node in nodes {
-                if set.contains(&node.path) {
-                    node.is_expanded = true;
-                }
-                restore_expansion(&mut node.children, set);
-            }
-        }
-        restore_expansion(&mut children, &expanded_paths);
-
-        // Prepend parent chain as collapsed children of the current folder
-        for node in build_parent_chain(&root) {
-            children.insert(0, node);
-        }
-
-        let root_node = FolderNode {
-            path: root.clone(),
-            name: root
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| root.display().to_string()),
-            children,
-            is_current: true,
-            is_expanded: expanded_paths.is_empty() || expanded_paths.contains(&root),
-            is_parent_nav: false,
-        };
-        self.folder_tree.push(root_node);
-
-        // 2. Build pinned folder root nodes
-        for pinned in &self.pinned_folders {
-            let is_duplicate = media_sort_core::path_utils::paths_equal(&root, &pinned.path);
-            if is_duplicate {
-                continue;
-            }
-
-            let mut pinned_children = build_children(&pinned.path, self.current_folder.as_deref());
-            restore_expansion(&mut pinned_children, &expanded_paths);
-
-            // Prepend parent chain as collapsed children of pinned folder
-            for node in build_parent_chain(&pinned.path) {
-                pinned_children.insert(0, node);
-            }
-
-            let pinned_node = FolderNode {
-                path: pinned.path.clone(),
-                name: pinned.name.clone(),
-                children: pinned_children,
-                is_current: false,
-                is_expanded: expanded_paths.contains(&pinned.path),
-                is_parent_nav: false,
-            };
-            self.folder_tree.push(pinned_node);
-        }
+        let (tx, rx) = mpsc::channel();
+        std::thread::spawn(move || {
+            let tree = build_tree_nodes_data(&root, &pinned, &expanded_paths);
+            let _ = tx.send(tree);
+        });
+        self.folder_tree_receiver = Some(rx);
     }
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
-        toggle_expand_recursive(&mut self.folder_tree, path);
+        toggle_expand_recursive(&mut self.folder_tree, path, self.current_folder.as_deref());
+        self.sync_selected_folder_idx();
     }
 
+    #[allow(dead_code)]
     pub fn pin_current_folder(&mut self) {
         if let Some(ref folder) = self.current_folder {
             let name = folder
@@ -409,12 +385,16 @@ impl AppState {
             && pos > 0
         {
             self.pinned_folders.swap(pos, pos - 1);
+            // Index 0 is the current-folder root; pinned folders start at 1.
+            if pos + 1 < self.folder_tree.len() {
+                self.folder_tree.swap(pos + 1, pos);
+            }
             self.settings.pinned_folders.paths = self
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            self.build_folder_tree();
+            let _ = self.settings.save();
         }
     }
 
@@ -423,19 +403,51 @@ impl AppState {
             && pos < self.pinned_folders.len() - 1
         {
             self.pinned_folders.swap(pos, pos + 1);
+            // Index 0 is the current-folder root; pinned folders start at 1.
+            if pos + 2 < self.folder_tree.len() {
+                self.folder_tree.swap(pos + 1, pos + 2);
+            }
             self.settings.pinned_folders.paths = self
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            self.build_folder_tree();
+            let _ = self.settings.save();
         }
     }
 
-    pub fn set_selected_folder(&mut self, path: PathBuf) {
-        self.selected_folder = Some(path.clone());
-        let visible = self.collect_visible_folders();
-        self.selected_folder_idx = visible.iter().rposition(|p| *p == path);
+    pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
+        self.selected_folder = Some(path);
+        self.selected_folder_idx = Some(idx);
+    }
+
+    pub(crate) fn sync_selected_folder_idx(&mut self) {
+        if let Some(ref path) = self.selected_folder.clone() {
+            let visible = self.collect_visible_folders();
+            if let Some(old_idx) = self.selected_folder_idx {
+                let mut best_idx = None;
+                let mut min_diff = usize::MAX;
+                for (i, p) in visible.iter().enumerate() {
+                    if p == path {
+                        let diff = i.abs_diff(old_idx);
+                        if diff < min_diff {
+                            min_diff = diff;
+                            best_idx = Some(i);
+                        }
+                    }
+                }
+                self.selected_folder_idx = best_idx;
+            } else {
+                self.selected_folder_idx = visible.iter().position(|p| p == path);
+            }
+        }
+        if self.selected_folder.is_none() || self.selected_folder_idx.is_none() {
+            let visible = self.collect_visible_folders();
+            if let Some(first) = visible.into_iter().next() {
+                self.selected_folder = Some(first);
+                self.selected_folder_idx = Some(0);
+            }
+        }
     }
 
     pub fn select_folder_below(&mut self) {
@@ -443,10 +455,12 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        let next = self
-            .selected_folder_idx
-            .map(|i| (i + 1).min(visible.len()))
-            .unwrap_or(0);
+        let current_idx = self.selected_folder_idx.or_else(|| {
+            self.selected_folder
+                .as_ref()
+                .and_then(|f| visible.iter().position(|p| p == f))
+        });
+        let next = current_idx.map(|i| i + 1).unwrap_or(0);
         if next < visible.len() {
             self.selected_folder = Some(visible[next].clone());
             self.selected_folder_idx = Some(next);
@@ -458,7 +472,12 @@ impl AppState {
         if visible.is_empty() {
             return;
         }
-        if let Some(idx) = self.selected_folder_idx
+        let current_idx = self.selected_folder_idx.or_else(|| {
+            self.selected_folder
+                .as_ref()
+                .and_then(|f| visible.iter().position(|p| p == f))
+        });
+        if let Some(idx) = current_idx
             && idx > 0
         {
             self.selected_folder = Some(visible[idx - 1].clone());
@@ -467,9 +486,36 @@ impl AppState {
     }
 
     pub fn expand_selected_folder(&mut self) {
-        if let Some(ref selected) = self.selected_folder {
-            set_expand_recursive(&mut self.folder_tree, selected, true);
+        let Some(selected) = self.selected_folder.clone() else {
+            return;
+        };
+        if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
+            if expanded {
+                if let Some(first_child_path) = first_visible_child(&self.folder_tree, &selected) {
+                    let visible = self.collect_visible_folders();
+                    let idx = self.selected_folder_idx.unwrap_or(0);
+                    if let Some(child_idx) = visible
+                        .iter()
+                        .enumerate()
+                        .skip(idx + 1)
+                        .find(|(_, p)| *p == &first_child_path)
+                        .map(|(i, _)| i)
+                    {
+                        self.selected_folder = Some(first_child_path);
+                        self.selected_folder_idx = Some(child_idx);
+                        return;
+                    }
+                }
+            } else {
+                set_expand_recursive(
+                    &mut self.folder_tree,
+                    &selected,
+                    true,
+                    self.current_folder.as_deref(),
+                );
+            }
         }
+        self.sync_selected_folder_idx();
     }
 
     pub fn collapse_selected_folder(&mut self) {
@@ -478,15 +524,32 @@ impl AppState {
         };
         if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
             if expanded {
-                set_expand_recursive(&mut self.folder_tree, &selected, false);
-            } else {
-                if let Some(parent) = selected.parent()
-                    && find_node_expanded(&self.folder_tree, parent).is_some()
-                {
+                set_expand_recursive(
+                    &mut self.folder_tree,
+                    &selected,
+                    false,
+                    self.current_folder.as_deref(),
+                );
+            } else if let Some(parent) = selected.parent()
+                && find_node_expanded(&self.folder_tree, parent).is_some()
+            {
+                let visible = self.collect_visible_folders();
+                if let Some(old_idx) = self.selected_folder_idx {
+                    for i in (0..old_idx.min(visible.len())).rev() {
+                        if visible[i] == parent {
+                            self.selected_folder = Some(parent.to_path_buf());
+                            self.selected_folder_idx = Some(i);
+                            return;
+                        }
+                    }
+                }
+                if let Some(pos) = visible.iter().position(|p| *p == parent) {
                     self.selected_folder = Some(parent.to_path_buf());
+                    self.selected_folder_idx = Some(pos);
                 }
             }
         }
+        self.sync_selected_folder_idx();
     }
 
     pub(crate) fn collect_visible_folders(&self) -> Vec<PathBuf> {
@@ -496,48 +559,139 @@ impl AppState {
     }
 }
 
+fn collect_expanded_paths(tree: &[FolderNode]) -> std::collections::HashSet<PathBuf> {
+    let mut set = std::collections::HashSet::new();
+    fn collect(nodes: &[FolderNode], set: &mut std::collections::HashSet<PathBuf>) {
+        for node in nodes {
+            if node.is_expanded {
+                set.insert(node.path.clone());
+            }
+            collect(&node.children, set);
+        }
+    }
+    collect(tree, &mut set);
+    set
+}
+
+fn build_tree_nodes_data(
+    root: &Path,
+    pinned_folders: &[PinnedFolder],
+    expanded_paths: &std::collections::HashSet<PathBuf>,
+) -> Vec<FolderNode> {
+    fn restore_expansion(nodes: &mut [FolderNode], set: &std::collections::HashSet<PathBuf>) {
+        for node in nodes {
+            if set.contains(&node.path) {
+                node.is_expanded = true;
+            }
+            restore_expansion(&mut node.children, set);
+        }
+    }
+
+    let mut tree = Vec::new();
+
+    let mut children = build_children(root, Some(root));
+    for node in build_parent_chain(root) {
+        children.insert(0, node);
+    }
+    restore_expansion(&mut children, expanded_paths);
+    tree.push(FolderNode {
+        path: root.to_path_buf(),
+        name: root
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| root.display().to_string()),
+        children,
+        is_current: true,
+        is_expanded: expanded_paths.is_empty() || expanded_paths.contains(root),
+        is_parent_nav: false,
+    });
+
+    for pinned in pinned_folders {
+        if media_sort_core::path_utils::paths_equal(root, &pinned.path) {
+            continue;
+        }
+        let mut pinned_children = build_children(&pinned.path, Some(root));
+        for node in build_parent_chain(&pinned.path) {
+            pinned_children.insert(0, node);
+        }
+        restore_expansion(&mut pinned_children, expanded_paths);
+        tree.push(FolderNode {
+            path: pinned.path.clone(),
+            name: pinned.name.clone(),
+            children: pinned_children,
+            is_current: false,
+            is_expanded: expanded_paths.contains(&pinned.path),
+            is_parent_nav: false,
+        });
+    }
+
+    tree
+}
+
+fn first_visible_child(nodes: &[FolderNode], path: &Path) -> Option<PathBuf> {
+    for node in nodes {
+        if node.path.as_os_str().is_empty() {
+            continue;
+        }
+        if node.path == path {
+            return node
+                .children
+                .iter()
+                .find(|c| !c.path.as_os_str().is_empty())
+                .map(|c| c.path.clone());
+        }
+        if let Some(res) = first_visible_child(&node.children, path) {
+            return Some(res);
+        }
+    }
+    None
+}
+
 pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
     let mut children = Vec::new();
     if let Ok(entries) = std::fs::read_dir(parent) {
         for entry in entries.flatten() {
-            let path = entry.path();
-            if path.is_dir() {
-                let name = path
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_default();
-                let is_current =
-                    current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
-
-                // Check if this subfolder has any subfolders of its own!
-                let has_subdirs = std::fs::read_dir(&path)
-                    .map(|mut read| {
-                        read.any(|e| e.map(|entry| entry.path().is_dir()).unwrap_or(false))
-                    })
-                    .unwrap_or(false);
-
-                let mut node_children = Vec::new();
-                if has_subdirs {
-                    node_children.push(FolderNode {
-                        path: PathBuf::new(),
-                        name: String::new(),
-                        children: Vec::new(),
-                        is_current: false,
-                        is_expanded: true,
-                        is_parent_nav: false,
-                    });
-                }
-
-                let node = FolderNode {
-                    path,
-                    name,
-                    children: node_children,
-                    is_current,
-                    is_expanded: false,
-                    is_parent_nav: false,
-                };
-                children.push(node);
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if !ft.is_dir() {
+                continue;
             }
+            let path = entry.path();
+            let name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let is_current =
+                current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
+
+            let mut node_children = Vec::new();
+            if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                for sub_entry in sub_entries.flatten() {
+                    if let Ok(sub_ft) = sub_entry.file_type()
+                        && sub_ft.is_dir()
+                    {
+                        node_children.push(FolderNode {
+                            path: PathBuf::new(),
+                            name: String::new(),
+                            children: Vec::new(),
+                            is_current: false,
+                            is_expanded: true,
+                            is_parent_nav: false,
+                        });
+                        break;
+                    }
+                }
+            }
+
+            children.push(FolderNode {
+                path,
+                name,
+                children: node_children,
+                is_current,
+                is_expanded: false,
+                is_parent_nav: false,
+            });
         }
     }
     children.sort_by_key(|a| a.name.to_lowercase());
@@ -571,9 +725,9 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_else(|| ancestor.display().to_string());
 
-        let mut children = build_children(&ancestor, None);
+        let mut children = Vec::new();
         if let Some(p) = prev.take() {
-            children.insert(0, p);
+            children.push(p);
         }
 
         let node = FolderNode {
@@ -594,24 +748,44 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
     }
 }
 
-fn toggle_expand_recursive(nodes: &mut [FolderNode], path: &Path) -> bool {
+fn toggle_expand_recursive(
+    nodes: &mut [FolderNode],
+    path: &Path,
+    current_folder: Option<&Path>,
+) -> bool {
     for node in nodes.iter_mut() {
         if node.path == path {
-            if node.path.exists() && node.children.is_empty() {
+            if node.path.exists() && node.children.is_empty() && !node.is_parent_nav {
                 return true;
             }
             node.is_expanded = !node.is_expanded;
-            if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {
+            if node.is_expanded
+                && (is_dummy_or_empty(&node.children) || node.is_parent_nav)
+                && node.path.is_dir()
+            {
                 let current = if node.is_current {
                     Some(node.path.as_path())
                 } else {
-                    None
+                    current_folder
                 };
-                node.children = build_children(&node.path, current);
+
+                let parent_nav_nodes: Vec<FolderNode> = node
+                    .children
+                    .drain(..)
+                    .filter(|c| c.is_parent_nav)
+                    .collect();
+
+                let mut new_children = build_children(&node.path, current);
+
+                for p_node in parent_nav_nodes.into_iter().rev() {
+                    new_children.insert(0, p_node);
+                }
+
+                node.children = new_children;
             }
             return true;
         }
-        if toggle_expand_recursive(&mut node.children, path) {
+        if toggle_expand_recursive(&mut node.children, path, current_folder) {
             return true;
         }
     }
@@ -630,26 +804,47 @@ fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBu
     }
 }
 
-fn set_expand_recursive(nodes: &mut [FolderNode], path: &Path, expand: bool) -> bool {
+fn set_expand_recursive(
+    nodes: &mut [FolderNode],
+    path: &Path,
+    expand: bool,
+    current_folder: Option<&Path>,
+) -> bool {
     for node in nodes.iter_mut() {
         if node.path == path {
-            if expand && node.path.exists() && node.children.is_empty() {
+            if expand && node.path.exists() && node.children.is_empty() && !node.is_parent_nav {
                 return true;
             }
             if node.is_expanded != expand {
                 node.is_expanded = expand;
-                if node.is_expanded && is_dummy_or_empty(&node.children) && node.path.is_dir() {
+                if node.is_expanded
+                    && (is_dummy_or_empty(&node.children) || node.is_parent_nav)
+                    && node.path.is_dir()
+                {
                     let current = if node.is_current {
                         Some(node.path.as_path())
                     } else {
-                        None
+                        current_folder
                     };
-                    node.children = build_children(&node.path, current);
+
+                    let parent_nav_nodes: Vec<FolderNode> = node
+                        .children
+                        .drain(..)
+                        .filter(|c| c.is_parent_nav)
+                        .collect();
+
+                    let mut new_children = build_children(&node.path, current);
+
+                    for p_node in parent_nav_nodes.into_iter().rev() {
+                        new_children.insert(0, p_node);
+                    }
+
+                    node.children = new_children;
                 }
             }
             return true;
         }
-        if set_expand_recursive(&mut node.children, path, expand) {
+        if set_expand_recursive(&mut node.children, path, expand, current_folder) {
             return true;
         }
     }
@@ -919,7 +1114,7 @@ mod tests {
             is_parent_nav: false,
         };
         let child_path = PathBuf::from("/root/sub");
-        let found = toggle_expand_recursive(&mut root.children, &child_path);
+        let found = toggle_expand_recursive(&mut root.children, &child_path, None);
         assert!(!found);
         let child = FolderNode {
             path: child_path.clone(),
@@ -930,7 +1125,7 @@ mod tests {
             is_parent_nav: false,
         };
         root.children = vec![child];
-        let found = toggle_expand_recursive(&mut root.children, &child_path);
+        let found = toggle_expand_recursive(&mut root.children, &child_path, None);
         assert!(found);
         assert!(root.children[0].is_expanded);
     }
@@ -946,7 +1141,7 @@ mod tests {
             is_parent_nav: false,
         };
         let mut children = vec![child];
-        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"));
+        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"), None);
         assert!(found);
         assert!(!children[0].is_expanded);
     }
@@ -970,10 +1165,121 @@ mod tests {
             is_parent_nav: false,
         };
         let mut children = vec![child];
-        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"));
+        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"), None);
         assert!(found);
         assert!(!children[0].is_expanded);
         assert!(children[0].children[0].is_expanded);
+    }
+
+    #[test]
+    fn test_toggle_expand_parent_nav_node() {
+        let dir = std::env::temp_dir().join(format!("mediasort_test_nav_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sub1 = dir.join("sub1");
+        let sub2 = dir.join("sub2");
+        std::fs::create_dir(&sub1).unwrap();
+        std::fs::create_dir(&sub2).unwrap();
+
+        let child_node = FolderNode {
+            path: sub1.clone(),
+            name: "sub1".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+
+        let nav_node = FolderNode {
+            path: dir.clone(),
+            name: "dir".into(),
+            children: vec![child_node],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+
+        let mut tree = vec![nav_node];
+        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+
+        assert!(found);
+        assert!(tree[0].is_expanded);
+        assert_eq!(tree[0].children.len(), 2);
+        assert!(tree[0].is_parent_nav);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_toggle_expand_parent_nav_preserves_chain() {
+        let dir = std::env::temp_dir().join(format!("mediasort_test_chain_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sub1 = dir.join("sub1");
+        std::fs::create_dir(&sub1).unwrap();
+
+        let grandparent_node = FolderNode {
+            path: PathBuf::from("/grandparent"),
+            name: "grandparent".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+
+        let nav_node = FolderNode {
+            path: dir.clone(),
+            name: "dir".into(),
+            children: vec![grandparent_node],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+
+        let mut tree = vec![nav_node];
+        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+
+        assert!(found);
+        assert!(tree[0].is_expanded);
+        assert_eq!(tree[0].children.len(), 2);
+        assert!(
+            tree[0]
+                .children
+                .iter()
+                .any(|c| c.path == std::path::Path::new("/grandparent") && c.is_parent_nav)
+        );
+        assert!(tree[0].children.iter().any(|c| c.path == sub1));
+        assert!(tree[0].is_parent_nav);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_toggle_expand_parent_nav_retains_special_handling() {
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_test_handling_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sub1 = dir.join("sub1");
+        std::fs::create_dir(&sub1).unwrap();
+
+        let nav_node = FolderNode {
+            path: dir.clone(),
+            name: "dir".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+
+        let mut tree = vec![nav_node];
+        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+
+        assert!(found);
+        assert!(tree[0].is_expanded);
+        assert!(
+            tree[0].is_parent_nav,
+            "Folder lost its special parent navigation status upon expansion!"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
@@ -1046,6 +1352,92 @@ mod tests {
     }
 
     #[test]
+    fn test_build_children_no_subdirectories_no_dummy() {
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_test_nodummy_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let sub = dir.join("sub_with_only_files");
+        std::fs::create_dir(&sub).unwrap();
+
+        for i in 0..5 {
+            std::fs::write(sub.join(format!("file_{}.jpg", i)), b"data").unwrap();
+        }
+
+        let children = build_children(&dir, None);
+
+        assert_eq!(children.len(), 1);
+        assert!(
+            children[0].children.is_empty(),
+            "Dummy node injected into a directory containing zero subfolders!"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_toggle_expand_parent_nav_idempotency() {
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_test_idempotency_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let sub = dir.join("sub1");
+        std::fs::create_dir(&sub).unwrap();
+
+        let grandparent_node = FolderNode {
+            path: PathBuf::from("/grandparent"),
+            name: "grandparent".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        };
+
+        let mut tree = vec![FolderNode {
+            path: dir.clone(),
+            name: "dir".into(),
+            children: vec![grandparent_node],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: true,
+        }];
+
+        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        assert_eq!(tree[0].children.len(), 2);
+
+        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        assert!(!tree[0].is_expanded);
+
+        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        assert!(tree[0].is_expanded);
+        assert_eq!(
+            tree[0].children.len(),
+            2,
+            "Re-expanding a parent navigation node duplicated or corrupted the child array!"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_build_parent_chain_linear_structure() {
+        let deep_path = PathBuf::from("/a/b/c/d");
+        let chain = build_parent_chain(&deep_path);
+
+        assert_eq!(chain.len(), 1);
+        assert!(chain[0].is_parent_nav);
+
+        let mut current = &chain[0];
+        let expected = ["/a/b/c", "/a/b", "/a", "/"];
+        for exp in &expected {
+            assert_eq!(current.path, PathBuf::from(exp), "at path {exp}");
+            if current.children.len() == 1 {
+                current = &current.children[0];
+            }
+        }
+        assert!(current.children.is_empty());
+    }
+
+    #[test]
     fn test_folder_tree_navigation() {
         let mut state = AppState::new(SettingsStore::default());
 
@@ -1115,5 +1507,299 @@ mod tests {
         state.collapse_selected_folder();
         assert!(!state.folder_tree[0].is_expanded);
         assert_eq!(state.selected_folder, Some(p_root1.clone()));
+    }
+
+    #[test]
+    fn test_select_folder_navigation_after_expansion() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub = PathBuf::from("/root/sub");
+
+        let node = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![FolderNode {
+                path: p_sub.clone(),
+                name: "sub".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            }],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node];
+
+        state.set_selected_folder(p_root.clone(), 0);
+        assert_eq!(state.selected_folder, Some(p_root.clone()));
+
+        state.folder_tree[0].is_expanded = true;
+
+        state.select_folder_below();
+        assert_eq!(state.selected_folder, Some(p_sub));
+    }
+
+    #[test]
+    fn test_collapse_already_collapsed_navigates_to_visible_parent() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub = PathBuf::from("/root/sub");
+
+        let node_sub = FolderNode {
+            path: p_sub.clone(),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_sub],
+            is_current: false,
+            is_expanded: true,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_sub.clone(), 1);
+        state.collapse_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_root.clone()),
+            "collapsing an already-collapsed child should navigate to its visible parent"
+        );
+        assert_eq!(state.selected_folder_idx, Some(0));
+    }
+
+    #[test]
+    fn test_collapse_already_collapsed_does_not_select_invisible_parent() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_mid = PathBuf::from("/root/mid");
+        let p_sub = PathBuf::from("/root/mid/sub");
+
+        let node_sub = FolderNode {
+            path: p_sub.clone(),
+            name: "sub".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_mid = FolderNode {
+            path: p_mid.clone(),
+            name: "mid".into(),
+            children: vec![node_sub],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_mid],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_sub.clone(), 2);
+        state.collapse_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_root.clone()),
+            "collapsing an already-collapsed child whose parent is hidden \
+             should fall back to the first visible item (the root)"
+        );
+        assert_eq!(state.selected_folder_idx, Some(0));
+    }
+
+    #[test]
+    fn test_expand_already_expanded_navigates_to_first_child() {
+        let mut state = AppState::new(SettingsStore::default());
+        let p_root = PathBuf::from("/root");
+        let p_sub1 = PathBuf::from("/root/sub1");
+        let p_sub2 = PathBuf::from("/root/sub2");
+
+        let node_sub2 = FolderNode {
+            path: p_sub2.clone(),
+            name: "sub2".into(),
+            children: vec![],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_sub1 = FolderNode {
+            path: p_sub1.clone(),
+            name: "sub1".into(),
+            children: vec![node_sub2],
+            is_current: false,
+            is_expanded: false,
+            is_parent_nav: false,
+        };
+        let node_root = FolderNode {
+            path: p_root.clone(),
+            name: "root".into(),
+            children: vec![node_sub1],
+            is_current: false,
+            is_expanded: true,
+            is_parent_nav: false,
+        };
+        state.folder_tree = vec![node_root];
+
+        state.set_selected_folder(p_root.clone(), 0);
+        state.expand_selected_folder();
+        assert_eq!(
+            state.selected_folder,
+            Some(p_sub1.clone()),
+            "expanding an already-expanded folder should navigate to its first child"
+        );
+        assert_eq!(state.selected_folder_idx, Some(1));
+    }
+
+    #[test]
+    fn test_keyboard_navigation_with_duplicate_paths() {
+        let mut state = AppState::new(SettingsStore::default());
+        let path_a = PathBuf::from("/duplicate_path");
+        let path_b = PathBuf::from("/other_path");
+
+        state.folder_tree = vec![
+            FolderNode {
+                path: path_a.clone(),
+                name: "Instance 1".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: path_b.clone(),
+                name: "Other".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: path_a.clone(),
+                name: "Instance 2".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+
+        state.selected_folder = Some(path_a.clone());
+        state.selected_folder_idx = Some(2);
+
+        state.select_folder_above();
+
+        assert_eq!(state.selected_folder_idx, Some(1));
+        assert_eq!(state.selected_folder, Some(path_b));
+    }
+
+    #[test]
+    fn test_pinned_folder_reordering_tree_integrity() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = Some(PathBuf::from("/current"));
+
+        state.pinned_folders = vec![
+            PinnedFolder {
+                path: PathBuf::from("/pinned1"),
+                name: "p1".into(),
+                numeric_shortcut: None,
+            },
+            PinnedFolder {
+                path: PathBuf::from("/pinned2"),
+                name: "p2".into(),
+                numeric_shortcut: None,
+            },
+        ];
+
+        state.build_folder_tree();
+        assert_eq!(state.folder_tree.len(), 3);
+
+        state.pinned_folders.swap(0, 1);
+        state.build_folder_tree();
+
+        assert_eq!(state.folder_tree.len(), 3);
+        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
+    }
+
+    #[test]
+    fn test_build_folder_tree_preserves_parent_nav_expansion() {
+        let mut state = AppState::new(SettingsStore::default());
+        let root = PathBuf::from("/a/b/c");
+        state.current_folder = Some(root);
+
+        let parent_nav_path = PathBuf::from("/a/b");
+        state.folder_tree = vec![FolderNode {
+            path: PathBuf::from("/a/b/c"),
+            name: "c".into(),
+            children: vec![FolderNode {
+                path: parent_nav_path.clone(),
+                name: "b".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: true,
+                is_parent_nav: true,
+            }],
+            is_current: true,
+            is_expanded: true,
+            is_parent_nav: false,
+        }];
+
+        state.build_folder_tree();
+
+        let children = &state.folder_tree[0].children;
+        let b_node = children.iter().find(|c| c.path == parent_nav_path).unwrap();
+        assert!(
+            b_node.is_expanded,
+            "Rebuilding the folder tree collapsed an expanded parent navigation node!"
+        );
+    }
+
+    #[test]
+    fn test_pin_selected_folder_updates_index_alignment() {
+        let mut state = AppState::new(SettingsStore::default());
+        let root = PathBuf::from("/workspace");
+        state.current_folder = Some(root.clone());
+
+        let target_pin = PathBuf::from("/target_pin");
+        state.folder_tree = vec![
+            FolderNode {
+                path: root,
+                name: "workspace".into(),
+                children: vec![],
+                is_current: true,
+                is_expanded: true,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: target_pin.clone(),
+                name: "target_pin".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+
+        state.set_selected_folder(target_pin.clone(), 1);
+        state.pin_folder(&target_pin);
+
+        assert_eq!(state.pinned_folders.len(), 1);
+        assert_eq!(state.selected_folder, Some(target_pin));
+        assert!(
+            state.selected_folder_idx.is_some(),
+            "Pin selection action decoupled layout tracking index references!"
+        );
     }
 }

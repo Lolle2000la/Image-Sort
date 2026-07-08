@@ -16,6 +16,14 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     let preview = media_preview::media_preview_view(state);
     let metadata = metadata_panel::metadata_panel_view(state);
 
+    let can_move_or_copy = state.selected_index.is_some()
+        && state.selected_folder.is_some()
+        && state
+            .selected_folder
+            .as_ref()
+            .zip(state.current_folder.as_ref())
+            .is_none_or(|(sf, cf)| !media_sort_core::path_utils::paths_equal(sf, cf));
+
     let move_btn = {
         let btn_content = row![
             text(state.l10n.tr("ui-move")),
@@ -26,7 +34,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .spacing(2)
         .align_y(iced::Alignment::Center);
         let inner = iced::widget::button(btn_content).width(Length::Fill);
-        let inner = if state.selected_index.is_some() && state.selected_folder.is_some() {
+        let inner = if can_move_or_copy {
             inner.on_press(Message::Media(MediaMessage::MoveActive))
         } else {
             inner
@@ -46,7 +54,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .spacing(2)
         .align_y(iced::Alignment::Center);
         let btn = iced::widget::button(btn_content).width(Length::Fill);
-        if state.selected_index.is_some() && state.selected_folder.is_some() {
+        if can_move_or_copy {
             btn.on_press(Message::Media(MediaMessage::CopyActive))
         } else {
             btn

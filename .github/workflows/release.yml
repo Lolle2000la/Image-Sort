@@ -20,23 +20,26 @@ jobs:
             target: x86_64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: x86_64
+            vcredist: vcredist143-x64
           - os: windows-latest
             platform: win-x86
             target: i686-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: i686
+            vcredist: vcredist143-x86
           - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: aarch64
+            vcredist: vcredist143-arm64
 
           # Linux Releases
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             platform: linux-x64
             target: x86_64-unknown-linux-gnu
             exe_name: media-sort-gui
-          - os: ubuntu-22.04-arm
+          - os: ubuntu-24.04-arm
             platform: linux-arm64
             target: aarch64-unknown-linux-gnu
             exe_name: media-sort-gui
@@ -50,13 +53,13 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Rust Environment
         uses: dtolnay/rust-toolchain@stable
 
       - name: Setup .NET SDK (For vpk CLI)
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -121,12 +124,41 @@ jobs:
             cp libs/libmpv-2.dll dist/
             cp packaging/windows/icon.ico dist/
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}
           else
-            cp "$TARGET_DIR/media-sort-gui" dist/
-            cp "Image Sort.svg" dist/
+            # Stage only the compiled binary to prevent bundling Cargo build cache
+            mkdir -p dist/linux-staging
+            cp "$TARGET_DIR/media-sort-gui" dist/linux-staging/
 
-            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+            # Generate initial layout with default update manifests
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/linux-staging" -e media-sort-gui --icon "Image Sort.svg" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
+
+            # Unpack the intermediate AppImage artifact
+            APPIMAGE_PATH=$(ls Releases/*.AppImage | head -n 1)
+            chmod +x "$APPIMAGE_PATH"
+            "$APPIMAGE_PATH" --appimage-extract
+            
+            # Purge baseline outputs to prevent circular duplication
+            rm -f Releases/*.AppImage
+            rm -f Releases/*.nupkg
+
+            # Surgically modify vpk-generated desktop file (preserves vendor metadata)
+            TARGET_DESKTOP="squashfs-root/MediaSort.desktop"
+            sed -i 's/^Name=.*/Name=Media Sort/' "$TARGET_DESKTOP"
+            sed -i 's/^Exec=.*/& %U/' "$TARGET_DESKTOP"
+            sed -i 's/^StartupWMClass=.*/StartupWMClass=MediaSort/' "$TARGET_DESKTOP"
+            printf '\n%s\n' "MimeType=inode/directory;" >> "$TARGET_DESKTOP"
+
+            # Mirror adjusted launcher to standard layout paths
+            mkdir -p squashfs-root/usr/share/applications
+            cp "$TARGET_DESKTOP" squashfs-root/usr/share/applications/MediaSort.desktop
+
+            # Re-stage into a clean AppDir context and execute final compilation
+            rm -rf dist
+            mkdir -p dist
+            mv squashfs-root dist/MediaSort.AppDir
+
+            vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/MediaSort.AppDir" -e media-sort-gui --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           fi
 
           vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}

@@ -91,44 +91,8 @@ impl SettingsStore {
             return Ok(store);
         }
 
-        // Search for existing JSON config files to migrate
-        let mut migrated_settings: Option<SettingsStore> = None;
-
-        if let Ok(val) = std::env::var("UI_TEST")
-            && !val.is_empty()
-        {
-            let old_json_path = PathBuf::from("ui_test_config.json");
-            if old_json_path.exists()
-                && let Ok(data) = std::fs::read_to_string(&old_json_path)
-                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
-            {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
-            }
-        }
-
-        if migrated_settings.is_none() {
-            // Check new media-sort JSON path next
-            let base = dirs::config_dir()
-                .unwrap_or_else(|| PathBuf::from("."))
-                .join("media-sort");
-            let rust_json_path = if cfg!(debug_assertions) {
-                base.join("debug_config.json")
-            } else {
-                base.join("config.json")
-            };
-
-            if rust_json_path.exists()
-                && let Ok(data) = std::fs::read_to_string(&rust_json_path)
-                && let Ok(mut store) = serde_json::from_str::<SettingsStore>(&data)
-            {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
-            }
-        }
-
-        if migrated_settings.is_none() {
-            // Check legacy WPF C# JSON path next
+        // Search for legacy WPF C# JSON config to migrate
+        if let Some(mut store) = {
             let wpf_base = dirs::config_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
                 .join("Image Sort");
@@ -140,24 +104,23 @@ impl SettingsStore {
 
             if wpf_json_path.exists()
                 && let Ok(data) = std::fs::read_to_string(&wpf_json_path)
-                && let Some(mut store) = parse_wpf_settings(&data)
+                && let Some(store) = parse_wpf_settings(&data)
             {
-                store.custom_path = Some(toml_path.clone());
-                migrated_settings = Some(store);
+                Some(store)
+            } else {
+                None
             }
+        } {
+            store.custom_path = Some(toml_path.clone());
+            store.save()?;
+            return Ok(store);
         }
 
-        if let Some(store) = migrated_settings {
-            // Persist the migrated settings immediately to the new TOML path
-            store.save()?;
-            Ok(store)
-        } else {
-            let store = Self {
-                custom_path: Some(toml_path),
-                ..Self::default()
-            };
-            Ok(store)
-        }
+        let store = Self {
+            custom_path: Some(toml_path),
+            ..Self::default()
+        };
+        Ok(store)
     }
 
     pub fn save(&self) -> Result<(), SettingsError> {
@@ -186,16 +149,27 @@ struct WpfHotkey {
 
 fn map_wpf_key_to_rust(key_val: i32) -> String {
     match key_val {
+        2 => "Backspace".to_string(),
+        3 => "Tab".to_string(),
         6 => "Enter".to_string(),
+        18 => "Space".to_string(),
+        19 => "PageUp".to_string(),
+        20 => "PageDown".to_string(),
+        21 => "End".to_string(),
+        22 => "Home".to_string(),
         23 => "Left".to_string(),
         24 => "Up".to_string(),
         25 => "Right".to_string(),
         26 => "Down".to_string(),
-        val @ 44..=69 => {
-            let c = (val - 44 + b'A' as i32) as u8 as char;
-            c.to_string()
+        27 => "Esc".to_string(),
+        32 => "Delete".to_string(),
+        val @ 34..=43 => ((val - 34 + i32::from(b'0')) as u8 as char).to_string(),
+        val @ 44..=69 => ((val - 44 + i32::from(b'A')) as u8 as char).to_string(),
+        val @ 74..=83 => ((val - 74 + i32::from(b'0')) as u8 as char).to_string(),
+        val @ 90..=101 => {
+            format!("F{}", val - 89)
         }
-        _ => "".to_string(),
+        _ => String::new(),
     }
 }
 
@@ -206,7 +180,11 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
     // 1. General settings
     if let Some(general) = json.get("General") {
         if let Some(val) = general.get("DarkMode").and_then(|v| v.as_bool()) {
-            store.general.dark_mode = val;
+            store.general.theme = if val {
+                "Dark".to_string()
+            } else {
+                "Light".to_string()
+            };
         }
         if let Some(val) = general
             .get("CheckForUpdatesOnStartup")

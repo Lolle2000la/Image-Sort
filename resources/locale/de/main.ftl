@@ -14,7 +14,7 @@ settings-close = Schließen
 
 # General settings
 settings-appearance = Darstellung
-settings-dark-mode = Dunkelmodus
+settings-theme = Thema
 settings-reopen-folder = Letzten geöffneten Ordner beim Start erneut öffnen
 settings-animated-gifs = Animierte GIFs
 settings-play-gifs = Animierte GIFs abspielen
