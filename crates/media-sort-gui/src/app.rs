@@ -206,7 +206,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 use crate::automation::AutomationTickResult;
                 match result {
                     AutomationTickResult::Message(msg) => {
-                        return Task::done(msg);
+                        return Task::done(*msg);
                     }
                     AutomationTickResult::Task(task) => {
                         return task;
@@ -1355,7 +1355,9 @@ fn handle_update_message(
             Task::perform(
                 async move { crate::check_for_update_async(&settings).await },
                 |result| match result {
-                    Ok(Some(info)) => Message::Update(UpdateMessage::UpdateAvailable(info)),
+                    Ok(Some(info)) => {
+                        Message::Update(UpdateMessage::UpdateAvailable(Box::new(info)))
+                    }
                     Ok(None) => Message::Update(UpdateMessage::NoUpdateFound),
                     Err(e) => Message::Update(UpdateMessage::UpdateFailed(e)),
                 },
@@ -1363,7 +1365,7 @@ fn handle_update_message(
         }
         UpdateMessage::UpdateAvailable(info) => {
             state.show_update_prompt = true;
-            state.pending_update = Some(info);
+            state.pending_update = Some(*info);
             Task::none()
         }
         UpdateMessage::NoUpdateFound => {
@@ -1374,7 +1376,7 @@ fn handle_update_message(
             state.show_update_prompt = false;
             state.pending_update = None;
             Task::perform(
-                crate::download_and_apply_async(info),
+                crate::download_and_apply_async(*info),
                 |result| match result {
                     Ok(()) => Message::Update(UpdateMessage::UpdateFailed(
                         "Update applied, restarting...".into(),

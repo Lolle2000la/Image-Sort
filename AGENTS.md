@@ -11,6 +11,7 @@ cargo clippy --workspace --all-targets -- -D warnings
 # Documentation Website (Astro / Node.js 24 LTS)
 cd website
 npm ci
+npm run render-demos  # Renders all demo flows to website/public/demos/
 npm run build
 ```
 
@@ -276,6 +277,7 @@ The `docs/` directory is the GitHub Pages site at `imagesort.org`. As of v3.0 th
 
 ### Documentation website (`website/`)
 The `website/` directory is the new Astro/Starlight documentation site deployed to `gh-pages`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
+To render all automated demo videos (headless iced simulation) to the public assets directory for deployment, run `npm run render-demos` from the `website/` directory. Output videos are saved in `website/public/demos/`.
 
 ### Locale files
 When you add user-facing strings, add entries to all three locale files (`resources/locale/{en,de,ja}/main.ftl`). The build script detects changes automatically.**

@@ -124,9 +124,9 @@ pub enum VideoMessage {
 #[derive(Debug, Clone)]
 pub enum UpdateMessage {
     CheckForUpdates,
-    UpdateAvailable(velopack::UpdateInfo),
+    UpdateAvailable(Box<velopack::UpdateInfo>),
     NoUpdateFound,
-    UserConfirmedUpdate(velopack::UpdateInfo),
+    UserConfirmedUpdate(Box<velopack::UpdateInfo>),
     UpdateFailed(String),
     DismissUpdatePrompt,
 }

@@ -7,7 +7,8 @@
         "start": "astro dev",
         "build": "astro build",
         "preview": "astro preview",
-        "astro": "astro"
+        "astro": "astro",
+        "render-demos": "cd .. && cargo run -p media-sort-gui --features demo -- --export"
     },
     "dependencies": {
         "@astrojs/react": "^6.0.1",

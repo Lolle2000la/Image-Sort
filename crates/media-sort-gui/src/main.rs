@@ -133,6 +133,30 @@ fn initialize_panic_hook() {
     }));
 }
 
+#[derive(clap::Parser, Debug, Clone)]
+#[command(name = "media-sort", author, version, about = "A media sorter and viewer", long_about = None)]
+pub struct Cli {
+    /// Directory to open on startup.
+    #[arg(value_name = "DIRECTORY")]
+    pub directory: Option<std::path::PathBuf>,
+
+    /// Export the demo flows as videos and exit.
+    #[arg(long)]
+    pub export: bool,
+
+    /// Path to JSON spec file or directory of spec files.
+    #[arg(long, default_value = "resources/demo_flows")]
+    pub demo_spec: String,
+
+    /// Output video path or directory.
+    #[arg(long, default_value = "website/public/demos")]
+    pub demo_export: String,
+
+    /// Run the interactive demo mode with the given spec.
+    #[arg(long)]
+    pub demo: bool,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
@@ -144,6 +168,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             });
         }
         app.run();
+    }
+
+    let cli = <Cli as clap::Parser>::parse();
+
+    #[cfg(not(feature = "demo"))]
+    if cli.export || cli.demo {
+        eprintln!("Error: Demo features (--export, --demo) are not compiled in this build.");
+        std::process::exit(1);
     }
 
     initialize_panic_hook();
@@ -162,7 +194,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = SettingsStore::load().unwrap_or_default();
 
     #[cfg(feature = "demo")]
-    if let Some(result) = crate::demo::try_headless_export() {
+    if let Some(result) = crate::demo::try_headless_export(&cli) {
         return result;
     }
 
@@ -193,62 +225,61 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     iced::application(
-        move || {
-            let settings = SettingsStore::load().unwrap_or_default();
-            let state = crate::state::AppState::new(settings.clone());
-            #[cfg(feature = "demo")]
-            let mut state = state;
-            let mut startup_path = None;
+        {
+            let cli = cli.clone();
+            move || {
+                let settings = SettingsStore::load().unwrap_or_default();
+                let state = crate::state::AppState::new(settings.clone());
+                #[cfg(feature = "demo")]
+                let mut state = state;
+                let mut startup_path = None;
 
-            #[cfg(feature = "demo")]
-            if let Some(root) = crate::demo::init(&mut state) {
-                startup_path = Some(root);
-            }
-
-            if let Some(arg_path) = std::env::args()
-                .nth(1)
-                .map(std::path::PathBuf::from)
-                .filter(|p| p.is_dir())
-            {
-                startup_path = Some(arg_path);
-            }
-
-            if startup_path.is_none()
-                && state.settings.general.reopen_last_opened_folder
-                && let Some(ref last_path_str) = state.settings.general.last_opened_folder
-            {
-                let last_path = std::path::PathBuf::from(last_path_str);
-                if last_path.exists() {
-                    startup_path = Some(last_path);
+                #[cfg(feature = "demo")]
+                if let Some(root) = crate::demo::init(&cli, &mut state) {
+                    startup_path = Some(root);
                 }
-            }
 
-            if startup_path.is_none()
-                && let Some(pic_dir) = dirs::picture_dir()
-                && pic_dir.exists()
-            {
-                startup_path = Some(pic_dir);
-            }
+                if let Some(arg_path) = cli.directory.as_ref().filter(|p| p.is_dir()) {
+                    startup_path = Some(arg_path.clone());
+                }
 
-            let mut tasks = vec![];
-            tasks.push(iced::Task::done(crate::message::Message::SettingsLoaded(
-                Box::new(Ok(settings.clone())),
-            )));
+                if startup_path.is_none()
+                    && state.settings.general.reopen_last_opened_folder
+                    && let Some(ref last_path_str) = state.settings.general.last_opened_folder
+                {
+                    let last_path = std::path::PathBuf::from(last_path_str);
+                    if last_path.exists() {
+                        startup_path = Some(last_path);
+                    }
+                }
 
-            if let Some(path) = startup_path {
-                tasks.push(iced::Task::done(crate::message::Message::Folder(
-                    crate::message::FolderMessage::Open(path),
+                if startup_path.is_none()
+                    && let Some(pic_dir) = dirs::picture_dir()
+                    && pic_dir.exists()
+                {
+                    startup_path = Some(pic_dir);
+                }
+
+                let mut tasks = vec![];
+                tasks.push(iced::Task::done(crate::message::Message::SettingsLoaded(
+                    Box::new(Ok(settings.clone())),
                 )));
-            }
 
-            #[cfg(feature = "velopack")]
-            if state.settings.general.check_for_updates_on_startup {
-                tasks.push(iced::Task::done(crate::message::Message::Update(
-                    crate::message::UpdateMessage::CheckForUpdates,
-                )));
-            }
+                if let Some(path) = startup_path {
+                    tasks.push(iced::Task::done(crate::message::Message::Folder(
+                        crate::message::FolderMessage::Open(path),
+                    )));
+                }
 
-            (state, iced::Task::batch(tasks))
+                #[cfg(feature = "velopack")]
+                if state.settings.general.check_for_updates_on_startup {
+                    tasks.push(iced::Task::done(crate::message::Message::Update(
+                        crate::message::UpdateMessage::CheckForUpdates,
+                    )));
+                }
+
+                (state, iced::Task::batch(tasks))
+            }
         },
         app::update,
         app::view,

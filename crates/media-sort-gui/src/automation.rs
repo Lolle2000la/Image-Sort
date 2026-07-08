@@ -154,7 +154,7 @@ impl AutomationState {
 
 pub enum AutomationTickResult {
     /// Fire the message via `update()`.
-    Message(Message),
+    Message(Box<Message>),
     /// Return this task (e.g. a FindBounds query).
     Task(Task<Message>),
 }
@@ -230,7 +230,7 @@ pub fn handle_automation_virtual_tick(
         automation.step_ready = false;
         automation.step_timer = Instant::now();
         if let Some(m) = msg {
-            return Some(AutomationTickResult::Message(m));
+            return Some(AutomationTickResult::Message(Box::new(m)));
         }
         return None;
     }
@@ -292,9 +292,9 @@ fn format_message_for_keycaster(msg: &Message) -> String {
         Message::Media(MediaMessage::SelectEntry(_)) => "Click\nSelect Entry".into(),
         Message::Folder(FolderMessage::Open(_)) => "Enter\nOpen Folder".into(),
         Message::Folder(FolderMessage::ToggleExpand(_)) => "Space\nExpand Folder".into(),
-        Message::Folder(FolderMessage::Selected(_)) => "Arrow Keys\nSelect Destination".into(),
+        Message::Folder(FolderMessage::Selected(..)) => "Arrow Keys\nSelect Destination".into(),
         Message::Settings(SettingsMessage::Open) => "Ctrl+,\nSettings".into(),
-        Message::Settings(SettingsMessage::ToggleDarkMode) => "Ctrl+D\nDark Mode".into(),
+        Message::Settings(SettingsMessage::SetTheme(_)) => "Ctrl+D\nChange Theme".into(),
         Message::Settings(SettingsMessage::Close) => "Esc\nClose".into(),
         Message::Quit => "Ctrl+Q\nQuit".into(),
         _ => "Action".into(),
@@ -530,9 +530,9 @@ impl JsonAutomationFlow {
                         Some(Message::Media(MediaMessage::SelectEntry(*index)))
                     }
                     JsonMessage::OpenSettings => Some(Message::Settings(SettingsMessage::Open)),
-                    JsonMessage::ToggleDarkMode => {
-                        Some(Message::Settings(SettingsMessage::ToggleDarkMode))
-                    }
+                    JsonMessage::ToggleDarkMode => Some(Message::Settings(
+                        SettingsMessage::SetTheme("Dark".to_string()),
+                    )),
                     JsonMessage::CloseSettings => Some(Message::Settings(SettingsMessage::Close)),
                     JsonMessage::SearchQuery { query } => Some(Message::Media(
                         MediaMessage::SearchQueryChanged(query.clone()),
@@ -540,7 +540,7 @@ impl JsonAutomationFlow {
                     JsonMessage::FocusSearch => Some(Message::Media(MediaMessage::SearchFocused)),
                     JsonMessage::FolderSelected { relative_path } => {
                         let path = test_root.join(relative_path);
-                        Some(Message::Folder(FolderMessage::Selected(path)))
+                        Some(Message::Folder(FolderMessage::Selected(path, 0)))
                     }
                     JsonMessage::Quit => Some(Message::Quit),
                 };
@@ -570,7 +570,7 @@ pub fn try_tick(state: &mut crate::state::AppState, instant: Instant) -> Task<Me
     {
         match result {
             AutomationTickResult::Message(msg) => {
-                return crate::app::update(state, msg);
+                return crate::app::update(state, *msg);
             }
             AutomationTickResult::Task(task) => {
                 return task;
