@@ -86,7 +86,20 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let _ = std::fs::create_dir_all(&demo_root);
 
-    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
+    let mock_state_src = std::path::Path::new("resources/MockState");
+    let copied = if mock_state_src.exists() {
+        if let Err(e) = copy_dir_all(mock_state_src, &demo_root) {
+            tracing::error!("Failed to copy concrete MockState: {:?}", e);
+            false
+        } else {
+            tracing::info!("Concrete MockState copied to {:?}", demo_root);
+            true
+        }
+    } else {
+        false
+    };
+
+    if !copied && crate::automation::generate_placeholder_media(&demo_root).is_ok() {
         tracing::info!("Demo media generated at {:?}", demo_root);
     }
 
@@ -108,10 +121,41 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
     Some(demo_root)
 }
 
+fn copy_dir_all(
+    src: impl AsRef<std::path::Path>,
+    dst: impl AsRef<std::path::Path>,
+) -> std::io::Result<()> {
+    std::fs::create_dir_all(&dst)?;
+    for entry in std::fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        if ty.is_dir() {
+            copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        } else {
+            std::fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
+        }
+    }
+    Ok(())
+}
+
 fn init_demo_media() -> PathBuf {
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let _ = std::fs::create_dir_all(&demo_root);
-    if crate::automation::generate_placeholder_media(&demo_root).is_ok() {
+
+    let mock_state_src = std::path::Path::new("resources/MockState");
+    let copied = if mock_state_src.exists() {
+        if let Err(e) = copy_dir_all(mock_state_src, &demo_root) {
+            tracing::error!("Failed to copy concrete MockState: {:?}", e);
+            false
+        } else {
+            tracing::info!("Concrete MockState copied to {:?}", demo_root);
+            true
+        }
+    } else {
+        false
+    };
+
+    if !copied && crate::automation::generate_placeholder_media(&demo_root).is_ok() {
         tracing::info!("Demo media generated at {:?}", demo_root);
     }
     demo_root

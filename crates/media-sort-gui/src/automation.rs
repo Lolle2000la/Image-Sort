@@ -512,7 +512,13 @@ impl JsonAutomationFlow {
                 let cursor_target = match &step.target {
                     JsonTarget::Coordinate { x, y } => AutomationTarget::Pixel(Point::new(*x, *y)),
                     JsonTarget::Widget { id } => {
-                        AutomationTarget::Widget(Id::new(Box::leak(id.clone().into_boxed_str())))
+                        let final_id = if test_root.join(id).is_dir() {
+                            let folder_path = test_root.join(id);
+                            format!("folder_{}", folder_path.display())
+                        } else {
+                            id.clone()
+                        };
+                        AutomationTarget::Widget(Id::new(Box::leak(final_id.into_boxed_str())))
                     }
                 };
 

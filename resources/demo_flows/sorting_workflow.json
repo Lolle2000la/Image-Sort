@@ -2,22 +2,16 @@
   "flow_name": "Sorting Workflow",
   "steps": [
     {
-      "delay_ms": 1500,
-      "target": { "type": "Widget", "value": { "id": "Unsorted" } },
-      "keycap_label": "Enter",
-      "message": { "action": "open_folder", "relative_path": "Unsorted" }
-    },
-    {
-      "delay_ms": 2500,
+      "delay_ms": 2000,
       "target": { "type": "Widget", "value": { "id": "media_card_0" } },
       "keycap_label": "Click",
       "message": { "action": "select_entry", "index": 0 }
     },
     {
       "delay_ms": 1500,
-      "target": { "type": "Widget", "value": { "id": "Images" } },
+      "target": { "type": "Widget", "value": { "id": "Subfolder 1" } },
       "keycap_label": "Arrow Keys",
-      "message": { "action": "folder_selected", "relative_path": "Images" }
+      "message": { "action": "folder_selected", "relative_path": "Subfolder 1" }
     },
     {
       "delay_ms": 1500,
@@ -30,6 +24,12 @@
       "target": { "type": "Widget", "value": { "id": "media_card_0" } },
       "keycap_label": "Click",
       "message": { "action": "select_entry", "index": 0 }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "Subfolder 2" } },
+      "keycap_label": "Arrow Keys",
+      "message": { "action": "folder_selected", "relative_path": "Subfolder 2" }
     },
     {
       "delay_ms": 1500,
