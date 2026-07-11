@@ -1,4 +1,6 @@
 ---
+import { Zap, ShieldCheck, Lock } from '@lucide/astro';
+
 interface Feature {
   icon: string;
   title: string;
@@ -11,18 +13,29 @@ interface Props {
 }
 
 const { sectionTitle = "Why Media Sort?", features } = Astro.props;
+
+const iconMap: Record<string, any> = {
+  zap: Zap,
+  shield: ShieldCheck,
+  lock: Lock,
+};
 ---
 
 <div class="features-section">
   <h2 class="section-title">{sectionTitle}</h2>
   <div class="features-grid">
-    {features.map((f) => (
-      <div class="feature-card">
-        <div class="feature-icon">{f.icon}</div>
-        <h3 class="feature-title">{f.title}</h3>
-        <p class="feature-desc">{f.description}</p>
-      </div>
-    ))}
+    {features.map((f) => {
+      const IconComponent = iconMap[f.icon.toLowerCase()];
+      return (
+        <div class="feature-card">
+          <div class="feature-icon">
+            {IconComponent ? <IconComponent size={32} class="icon-lucide" /> : f.icon}
+          </div>
+          <h3 class="feature-title">{f.title}</h3>
+          <p class="feature-desc">{f.description}</p>
+        </div>
+      );
+    })}
   </div>
 </div>
 
@@ -67,10 +80,15 @@ const { sectionTitle = "Why Media Sort?", features } = Astro.props;
   }
 
   .feature-icon {
-    font-size: 2rem;
     margin: 0 0 1rem 0 !important;
     padding: 0 !important;
     line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .icon-lucide {
+    color: #818cf8;
   }
 
   .feature-title {
