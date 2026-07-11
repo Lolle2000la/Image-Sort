@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 
 use serde::Deserialize;
@@ -117,6 +118,8 @@ pub struct AutomationState {
     /// has also finished lerping to the target.
     pub step_ready: bool,
 }
+
+pub static VIRTUAL_CURSOR: OnceLock<Mutex<Point>> = OnceLock::new();
 
 impl AutomationState {
     pub fn new(

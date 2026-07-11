@@ -167,8 +167,6 @@ pub fn export_demo_video(
         .now_or_never()
         .flatten()
         .expect("create headless renderer");
-    let mut cache = user_interface::Cache::default();
-
     let mut ffmpeg = Command::new("ffmpeg")
         .args([
             "-y",
@@ -195,11 +193,30 @@ pub fn export_demo_video(
     let mut ffmpeg_stdin = ffmpeg.stdin.take().unwrap();
 
     let mut frame_count = 0u64;
-    let theme = Theme::Dark;
+    if let Some(cell) = crate::automation::VIRTUAL_CURSOR.get() {
+        if let Ok(mut guard) = cell.lock() {
+            *guard = iced::Point::ORIGIN;
+        }
+    }
+    let _ = crate::automation::VIRTUAL_CURSOR.set(std::sync::Mutex::new(iced::Point::ORIGIN));
     let unpadded_row = DEFAULT_WIDTH as usize * 4;
     let style = renderer::Style {
         text_color: iced::Color::WHITE,
     };
+
+    struct DemoClipboard {
+        content: Option<String>,
+    }
+    impl iced::advanced::Clipboard for DemoClipboard {
+        fn read(&self, _kind: iced::advanced::clipboard::Kind) -> Option<String> {
+            self.content.clone()
+        }
+        fn write(&mut self, _kind: iced::advanced::clipboard::Kind, contents: String) {
+            self.content = Some(contents);
+        }
+    }
+    let mut clipboard = DemoClipboard { content: None };
+    let mut messages = Vec::new();
 
     while !completed.load(Ordering::SeqCst) {
         emulator.update(&program, Message::AutomationVirtualTick(delta));
@@ -215,17 +232,34 @@ pub fn export_demo_video(
         }
 
         let view = emulator.view(&program);
+        let theme = emulator.theme(&program).unwrap_or(Theme::Dark);
+        let cursor = crate::automation::VIRTUAL_CURSOR
+            .get()
+            .and_then(|cell| {
+                cell.lock()
+                    .ok()
+                    .map(|guard| mouse::Cursor::Available(*guard))
+            })
+            .unwrap_or(mouse::Cursor::Unavailable);
 
-        let mut ui = UserInterface::build(view, size, cache, &mut renderer);
-        ui.draw(&mut renderer, &theme, &style, mouse::Cursor::Unavailable);
+        let mut ui =
+            UserInterface::build(view, size, user_interface::Cache::default(), &mut renderer);
 
-        let rgba = renderer.screenshot(
-            Size::new(DEFAULT_WIDTH, DEFAULT_HEIGHT),
-            1.0,
-            iced::Color::from_rgb(0.08, 0.08, 0.1),
+        let _ = ui.update(
+            &[iced::Event::Window(iced::window::Event::RedrawRequested(
+                std::time::Instant::now(),
+            ))],
+            cursor,
+            &mut renderer,
+            &mut clipboard,
+            &mut messages,
         );
+        messages.clear();
 
-        cache = ui.into_cache();
+        let bg_color = theme.palette().background;
+        ui.draw(&mut renderer, &theme, &style, cursor);
+
+        let rgba = renderer.screenshot(Size::new(DEFAULT_WIDTH, DEFAULT_HEIGHT), 1.0, bg_color);
 
         let padded_row = rgba.len().div_ceil(DEFAULT_HEIGHT as usize);
         for row_chunk in rgba.chunks(padded_row) {

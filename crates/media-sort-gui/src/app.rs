@@ -199,21 +199,76 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         },
         #[cfg(feature = "demo")]
         Message::AutomationVirtualTick(delta) => {
-            if let Some(ref mut automation) = state.automation
+            if let Some(ref rx) = state.folder_tree_receiver
+                && let Ok(tree) = rx.try_recv()
+            {
+                state.folder_tree_receiver = None;
+                state.folder_tree = tree;
+                state.sync_selected_folder_idx();
+            }
+
+            let scan_finished = if let Some(ref rx) = state.scan_receiver {
+                for path in rx.try_iter() {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    state.media_entries.push(MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                    });
+                }
+                matches!(
+                    rx.try_recv(),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected)
+                )
+            } else {
+                false
+            };
+
+            let mut extra_tasks = Vec::new();
+
+            if scan_finished {
+                state.scan_receiver = None;
+                state
+                    .media_entries
+                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+                let select_idx = state.pending_select_index.take().unwrap_or(0);
+                state.thumbnail_tracker.cancel_debounce();
+                extra_tasks.push(load_visible_thumbnails(state));
+                extra_tasks.push(select_and_load_entry(state, select_idx));
+            }
+
+            let automation_task = if let Some(ref mut automation) = state.automation
                 && let Some(result) =
                     crate::automation::handle_automation_virtual_tick(automation, delta)
             {
                 use crate::automation::AutomationTickResult;
                 match result {
-                    AutomationTickResult::Message(msg) => {
-                        return Task::done(*msg);
-                    }
-                    AutomationTickResult::Task(task) => {
-                        return task;
+                    AutomationTickResult::Message(msg) => Task::done(*msg),
+                    AutomationTickResult::Task(task) => task,
+                }
+            } else {
+                Task::none()
+            };
+
+            if let Some(ref automation) = state.automation {
+                if let Some(cell) = crate::automation::VIRTUAL_CURSOR.get() {
+                    if let Ok(mut guard) = cell.lock() {
+                        *guard = automation.virtual_cursor;
                     }
                 }
             }
-            Task::none()
+
+            if extra_tasks.is_empty() {
+                automation_task
+            } else {
+                extra_tasks.push(automation_task);
+                Task::batch(extra_tasks)
+            }
         }
         #[cfg(feature = "demo")]
         Message::AutomationBounds(rect_opt) => {
