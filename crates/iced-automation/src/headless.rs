@@ -199,9 +199,6 @@ where
     }
     let _ = crate::automation::VIRTUAL_CURSOR.set(std::sync::Mutex::new(iced::Point::ORIGIN));
     let unpadded_row = config.width as usize * 4;
-    let style = iced::advanced::graphics::core::renderer::Style {
-        text_color: iced::Color::WHITE,
-    };
 
     struct DemoClipboard {
         content: Option<String>,
@@ -256,6 +253,9 @@ where
         messages.clear();
 
         let bg_color = theme.palette().background;
+        let style = iced::advanced::graphics::core::renderer::Style {
+            text_color: theme.palette().text,
+        };
         ui.draw(&mut renderer, &theme, &style, cursor);
 
         let rgba = renderer.screenshot(iced::Size::new(config.width, config.height), 1.0, bg_color);
