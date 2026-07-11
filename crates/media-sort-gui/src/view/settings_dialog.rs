@@ -186,10 +186,15 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
 
     row![
         text(label).size(12).width(Length::Fixed(240.0)),
-        button(btn_label)
-            .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
-            .style(iced::widget::button::secondary)
-            .width(Length::Fixed(120.0)),
+        container(
+            button(btn_label)
+                .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
+                .style(iced::widget::button::secondary)
+                .width(Length::Fixed(120.0)),
+        )
+        .id(iced::widget::Id::new(Box::leak(
+            format!("keybinding_edit_{}", idx).into_boxed_str()
+        ),)),
     ]
     .spacing(8)
     .align_y(Alignment::Center)
@@ -219,20 +224,26 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     // Tab bar
     let tab_bar = row![
-        button(text(state.l10n.tr("settings-tab-general")).size(13))
-            .on_press(Message::Settings(SettingsMessage::Open))
-            .style(if !state.show_keybindings {
-                iced::widget::button::primary
-            } else {
-                iced::widget::button::secondary
-            }),
-        button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
-            .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
-            .style(if state.show_keybindings {
-                iced::widget::button::primary
-            } else {
-                iced::widget::button::secondary
-            }),
+        container(
+            button(text(state.l10n.tr("settings-tab-general")).size(13))
+                .on_press(Message::Settings(SettingsMessage::Open))
+                .style(if !state.show_keybindings {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
+        )
+        .id(iced::widget::Id::new("settings_tab_general")),
+        container(
+            button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
+                .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
+                .style(if state.show_keybindings {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
+        )
+        .id(iced::widget::Id::new("settings_tab_keybindings")),
     ]
     .spacing(10);
 

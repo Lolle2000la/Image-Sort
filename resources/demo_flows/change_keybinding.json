@@ -8,17 +8,17 @@
     },
     {
       "delay_ms": 1500,
-      "target": { "type": "Coordinate", "value": { "x": 960.0, "y": 250.0 } },
+      "target": { "type": "Widget", "value": { "id": "settings_tab_keybindings" } },
       "message": { "Settings": "OpenKeybindings" }
     },
     {
       "delay_ms": 1500,
-      "target": { "type": "Coordinate", "value": { "x": 1050.0, "y": 420.0 } },
+      "target": { "type": "Widget", "value": { "id": "keybinding_edit_3" } },
       "message": { "Settings": { "EditKeyBinding": 3 } }
     },
     {
       "delay_ms": 2000,
-      "target": { "type": "Coordinate", "value": { "x": 960.0, "y": 540.0 } },
+      "target": { "type": "Widget", "value": { "id": "keybinding_edit_3" } },
       "message": { "KeyCaptured": ["N", false, false, false] }
     },
     {
