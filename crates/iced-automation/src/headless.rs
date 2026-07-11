@@ -1,13 +1,118 @@
+use std::cell::RefCell;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use iced::advanced::graphics::core::renderer::Headless;
+use iced_test::core::{Settings, window};
 use iced_test::emulator::{Emulator, Event, Mode};
 use iced_test::futures::futures::channel::mpsc;
 use iced_test::futures::futures::{FutureExt, StreamExt};
 use iced_test::program::Program;
 use iced_test::runtime::UserInterface;
+
+/// A generic, closure-based adapter implementing `iced_test::program::Program`
+/// for headless video export. Eliminates the need for consumers to write
+/// a custom struct + `Program` impl.
+pub struct HeadlessApp<State, Message, Update, ThemeFn, Subscription> {
+    #[allow(dead_code)]
+    name: &'static str,
+    settings: Settings,
+    boot_data: RefCell<Option<(State, iced::Task<Message>)>>,
+    update: Update,
+    view: Box<
+        dyn for<'a> Fn(
+            &'a State,
+            window::Id,
+        ) -> iced::Element<'a, Message, iced::Theme, iced::Renderer>,
+    >,
+    theme_fn: ThemeFn,
+    subscription: Subscription,
+}
+
+impl<State, Message, Update, ThemeFn, Subscription>
+    HeadlessApp<State, Message, Update, ThemeFn, Subscription>
+{
+    pub fn new(
+        name: &'static str,
+        settings: Settings,
+        boot_state: State,
+        boot_task: iced::Task<Message>,
+        update: Update,
+        view: impl for<'a> Fn(
+            &'a State,
+            window::Id,
+        ) -> iced::Element<'a, Message, iced::Theme, iced::Renderer>
+        + 'static,
+        theme_fn: ThemeFn,
+        subscription: Subscription,
+    ) -> Self {
+        Self {
+            name,
+            settings,
+            boot_data: RefCell::new(Some((boot_state, boot_task))),
+            update,
+            view: Box::new(view),
+            theme_fn,
+            subscription,
+        }
+    }
+}
+
+impl<State, Message, Update, ThemeFn, Subscription> Program
+    for HeadlessApp<State, Message, Update, ThemeFn, Subscription>
+where
+    State: 'static,
+    Message: Clone + std::fmt::Debug + Send + Sync + 'static,
+    Update: Fn(&mut State, Message) -> iced::Task<Message>,
+    ThemeFn: Fn(&State, window::Id) -> Option<iced::Theme> + 'static,
+    Subscription: Fn(&State) -> iced::Subscription<Message> + 'static,
+{
+    type State = State;
+    type Message = Message;
+    type Theme = iced::Theme;
+    type Renderer = iced::Renderer;
+    type Executor = iced_test::futures::backend::default::Executor;
+
+    fn name() -> &'static str {
+        "HeadlessApp"
+    }
+
+    fn settings(&self) -> Settings {
+        self.settings.clone()
+    }
+
+    fn window(&self) -> Option<window::Settings> {
+        None
+    }
+
+    fn boot(&self) -> (Self::State, iced::Task<Self::Message>) {
+        self.boot_data
+            .borrow_mut()
+            .take()
+            .expect("HeadlessApp boot called twice")
+    }
+
+    fn update(&self, state: &mut Self::State, message: Self::Message) -> iced::Task<Self::Message> {
+        (self.update)(state, message)
+    }
+
+    fn view<'a>(
+        &self,
+        state: &'a Self::State,
+        window: window::Id,
+    ) -> iced::Element<'a, Self::Message, Self::Theme, Self::Renderer> {
+        (self.view)(state, window)
+    }
+
+    fn theme(&self, state: &Self::State, window: window::Id) -> Option<Self::Theme> {
+        (self.theme_fn)(state, window)
+    }
+
+    fn subscription(&self, state: &Self::State) -> iced::Subscription<Self::Message> {
+        (self.subscription)(state)
+    }
+}
 
 #[allow(clippy::too_many_arguments)]
 pub fn export_video<P>(
@@ -37,7 +142,6 @@ where
 
     let mut emulator: Emulator<P> = Emulator::new(sender, program, Mode::Immediate, size);
 
-    // Drain boot events.
     loop {
         let event = iced_test::futures::futures::executor::block_on(receiver.next())
             .expect("emulator stopped");

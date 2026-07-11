@@ -2,14 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use iced::Theme;
-use iced_test::core::Settings;
-use iced_test::core::window;
-use iced_test::futures::Subscription;
-use iced_test::program::Program;
-use iced_test::runtime::Task;
-
-use crate::app;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::AppState;
 
@@ -91,6 +83,21 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
     Some(run())
 }
 
+fn build_automation_flow(
+    spec_path: &str,
+    demo_root: &Path,
+) -> (
+    iced_automation::JsonAutomationFlow<Message>,
+    Vec<iced_automation::AutomationStep<Message>>,
+) {
+    let spec_content = std::fs::read_to_string(spec_path).expect("failed to read spec file");
+    let resolved_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());
+    let flow: iced_automation::JsonAutomationFlow<Message> =
+        serde_json::from_str(&resolved_content).expect("failed to parse spec JSON");
+    let steps = build_steps(&flow, demo_root);
+    (flow, steps)
+}
+
 /// Called inside the iced application factory closure.
 /// Sets up automation state and returns the demo root as the startup path.
 /// Returns `None` when `MEDIA_SORT_DEMO` is not set.
@@ -132,20 +139,15 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
     let ww = state.settings.window_position.width as f32;
     let wh = state.settings.window_position.height as f32;
 
-    let spec_content = std::fs::read_to_string(&final_spec_path).expect("failed to read spec file");
-    let resolved_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());
-    let flow: iced_automation::JsonAutomationFlow<Message> =
-        serde_json::from_str(&resolved_content).expect("failed to parse spec JSON");
-
-    let steps = build_steps(&flow, &demo_root);
+    let (flow, steps) = build_automation_flow(&final_spec_path.to_string_lossy(), &demo_root);
 
     state.automation = Some(iced_automation::AutomationState::new(
         steps,
         &flow.flow_name,
         ww,
         wh,
+        iced_automation::AutomationStyle::default(),
     ));
-    state.demo_root_path = Some(demo_root.clone());
 
     Some(demo_root)
 }
@@ -216,89 +218,30 @@ fn build_steps(
     )
 }
 
-// --- Headless / program emulator logic ---
+fn create_demo_state(
+    settings: &media_sort_core::settings::store::SettingsStore,
+    demo_root: &Path,
+    steps: &[iced_automation::AutomationStep<Message>],
+    flow_name: &str,
+) -> (AppState, iced::Task<Message>) {
+    let mut state = AppState::new(settings.clone());
 
-struct AppProgram {
-    demo_root: std::path::PathBuf,
-    settings: media_sort_core::settings::store::SettingsStore,
-    completed: Arc<AtomicBool>,
-    steps: Vec<iced_automation::AutomationStep<Message>>,
-    flow_name: String,
-}
+    state.automation = Some(iced_automation::AutomationState::new(
+        steps.to_vec(),
+        flow_name,
+        DEFAULT_WIDTH as f32,
+        DEFAULT_HEIGHT as f32,
+        iced_automation::AutomationStyle::default(),
+    ));
 
-impl Program for AppProgram {
-    type State = AppState;
-    type Message = Message;
-    type Theme = Theme;
-    type Renderer = iced::Renderer;
-    type Executor = iced_test::futures::backend::default::Executor;
+    let tasks = vec![
+        iced::Task::done(Message::Folder(crate::message::FolderMessage::Open(
+            demo_root.to_path_buf(),
+        ))),
+        iced::Task::done(Message::SettingsLoaded(Box::new(Ok(settings.clone())))),
+    ];
 
-    fn name() -> &'static str {
-        "MediaSort"
-    }
-
-    fn settings(&self) -> Settings {
-        let font = iced::Font::DEFAULT;
-        iced_test::core::Settings {
-            id: Some("mediasort".into()),
-            fonts: vec![],
-            default_font: font,
-            default_text_size: iced::Pixels(16.0),
-            antialiasing: false,
-            vsync: false,
-        }
-    }
-
-    fn window(&self) -> Option<window::Settings> {
-        None
-    }
-
-    fn boot(&self) -> (Self::State, Task<Self::Message>) {
-        let mut state = AppState::new(self.settings.clone());
-
-        state.automation = Some(iced_automation::AutomationState::new(
-            self.steps.clone(),
-            &self.flow_name,
-            DEFAULT_WIDTH as f32,
-            DEFAULT_HEIGHT as f32,
-        ));
-        state.demo_root_path = Some(self.demo_root.clone());
-
-        let tasks = vec![
-            Task::done(Message::Folder(crate::message::FolderMessage::Open(
-                self.demo_root.clone(),
-            ))),
-            Task::done(Message::SettingsLoaded(Box::new(Ok(self.settings.clone())))),
-        ];
-
-        (state, Task::batch(tasks))
-    }
-
-    fn update(&self, state: &mut Self::State, message: Self::Message) -> Task<Self::Message> {
-        let task = app::update(state, message);
-
-        if state.automation.as_ref().is_some_and(|a| a.completed) {
-            self.completed.store(true, Ordering::SeqCst);
-        }
-
-        task
-    }
-
-    fn view<'a>(
-        &self,
-        state: &'a Self::State,
-        _window: window::Id,
-    ) -> iced::Element<'a, Self::Message, Self::Theme, Self::Renderer> {
-        app::view(state)
-    }
-
-    fn theme(&self, state: &Self::State, _window: window::Id) -> Option<Self::Theme> {
-        Some(app::theme(state))
-    }
-
-    fn subscription(&self, state: &Self::State) -> Subscription<Self::Message> {
-        app::subscription(state)
-    }
+    (state, iced::Task::batch(tasks))
 }
 
 pub fn export_demo_video(
@@ -309,26 +252,40 @@ pub fn export_demo_video(
     let settings = media_sort_core::settings::store::SettingsStore::default();
     let completed = Arc::new(AtomicBool::new(false));
 
-    let spec_content = std::fs::read_to_string(json_spec_path)?;
-    let resolved_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());
-    let flow: iced_automation::JsonAutomationFlow<Message> =
-        serde_json::from_str(&resolved_content)?;
+    let (flow, steps) = build_automation_flow(json_spec_path, &demo_root);
 
     let flow_name = flow.flow_name.clone();
-    let steps = build_steps(&flow, &demo_root);
+    let (boot_state, boot_task) = create_demo_state(&settings, &demo_root, &steps, &flow_name);
 
-    let program = AppProgram {
-        demo_root,
-        settings,
-        completed: completed.clone(),
-        steps,
-        flow_name,
-    };
+    let completed_clone = completed.clone();
+    let headless_app = iced_automation::HeadlessApp::new(
+        "MediaSort",
+        iced_test::core::Settings {
+            id: Some("mediasort".into()),
+            fonts: vec![],
+            default_font: iced::Font::DEFAULT,
+            default_text_size: iced::Pixels(16.0),
+            antialiasing: false,
+            vsync: false,
+        },
+        boot_state,
+        boot_task,
+        move |state: &mut AppState, msg: Message| {
+            let task = crate::app::update(state, msg);
+            if state.automation.as_ref().is_some_and(|a| a.completed) {
+                completed_clone.store(true, Ordering::SeqCst);
+            }
+            task
+        },
+        |state: &AppState, _window| crate::app::view(state),
+        |state: &AppState, _window| Some(crate::app::theme(state)),
+        |state: &AppState| crate::app::subscription(state),
+    );
 
     let extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
 
     iced_automation::export_video(
-        &program,
+        &headless_app,
         completed,
         DEFAULT_WIDTH,
         DEFAULT_HEIGHT,

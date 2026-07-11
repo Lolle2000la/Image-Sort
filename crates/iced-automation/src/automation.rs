@@ -82,6 +82,48 @@ pub struct AutomationStep<Message> {
     pub keycap_label: Option<String>,
 }
 
+// --- Automation style ---
+#[derive(Debug, Clone)]
+pub struct AutomationStyle {
+    pub completed_label: String,
+    pub active_label: String,
+    pub cursor_color: Color,
+    pub click_color: Color,
+    pub outline_color: Color,
+    pub keycap_timeout: Duration,
+    pub easing_factor: f32,
+    pub hud_bg: Color,
+    pub hud_border: Color,
+    pub completed_text_color: Color,
+    pub completed_bg: Color,
+    pub completed_border: Color,
+    pub completed_border_width: f32,
+    pub hud_border_width: f32,
+    pub cursor_outline_width: f32,
+}
+
+impl Default for AutomationStyle {
+    fn default() -> Self {
+        Self {
+            completed_label: "Demo Complete — Close this window".into(),
+            active_label: "Automation Active".into(),
+            cursor_color: Color::from_rgb(0.95, 0.95, 0.95),
+            click_color: Color::from_rgb(0.9, 0.2, 0.2),
+            outline_color: Color::BLACK,
+            keycap_timeout: Duration::from_millis(1800),
+            easing_factor: 0.18,
+            hud_bg: Color::from_rgba(0.08, 0.08, 0.1, 0.95),
+            hud_border: Color::from_rgb(0.25, 0.45, 0.85),
+            completed_text_color: Color::from_rgb(0.85, 0.85, 1.0),
+            completed_bg: Color::from_rgba(0.05, 0.05, 0.08, 0.92),
+            completed_border: Color::from_rgb(0.2, 0.65, 0.2),
+            completed_border_width: 2.0,
+            hud_border_width: 1.5,
+            cursor_outline_width: 1.5,
+        }
+    }
+}
+
 // --- Automation state ---
 pub struct AutomationState<Message> {
     pub virtual_cursor: Point,
@@ -99,6 +141,7 @@ pub struct AutomationState<Message> {
     pub completed: bool,
     pub pending_bounds_id: Option<Id>,
     pub step_ready: bool,
+    pub style: AutomationStyle,
 }
 
 pub static VIRTUAL_CURSOR: OnceLock<Mutex<Point>> = OnceLock::new();
@@ -109,6 +152,7 @@ impl<Message> AutomationState<Message> {
         flow_name: &str,
         window_width: f32,
         window_height: f32,
+        style: AutomationStyle,
     ) -> Self {
         Self {
             virtual_cursor: Point::ORIGIN,
@@ -126,6 +170,7 @@ impl<Message> AutomationState<Message> {
             step_ready: false,
             virtual_elapsed: Duration::ZERO,
             step_elapsed: Duration::ZERO,
+            style,
         }
     }
 
@@ -171,15 +216,16 @@ where
     let cursor_arrived = dx.abs() <= 0.5 && dy.abs() <= 0.5;
 
     if !cursor_arrived {
-        automation.virtual_cursor.x += dx * 0.18;
-        automation.virtual_cursor.y += dy * 0.18;
+        let factor = automation.style.easing_factor;
+        automation.virtual_cursor.x += dx * factor;
+        automation.virtual_cursor.y += dy * factor;
         if automation.is_clicking {
             automation.is_clicking = false;
         }
     }
 
     if let Some((_, set_at)) = &automation.active_keycap
-        && automation.virtual_elapsed.saturating_sub(*set_at) > Duration::from_millis(1800)
+        && automation.virtual_elapsed.saturating_sub(*set_at) > automation.style.keycap_timeout
     {
         automation.active_keycap = None;
     }
@@ -248,6 +294,7 @@ pub fn handle_bounds_resolved<Message>(
 struct CursorOverlay {
     position: Point,
     is_clicking: bool,
+    style: AutomationStyle,
 }
 
 impl<Message> canvas::Program<Message, Theme, Renderer> for CursorOverlay {
@@ -264,9 +311,9 @@ impl<Message> canvas::Program<Message, Theme, Renderer> for CursorOverlay {
         let mut frame = canvas::Frame::new(renderer, bounds.size());
 
         let cursor_color = if self.is_clicking {
-            Color::from_rgb(0.9, 0.2, 0.2)
+            self.style.click_color
         } else {
-            Color::from_rgb(0.95, 0.95, 0.95)
+            self.style.cursor_color
         };
 
         let p = self.position;
@@ -285,8 +332,8 @@ impl<Message> canvas::Program<Message, Theme, Renderer> for CursorOverlay {
         frame.stroke(
             &pointer_path,
             canvas::Stroke::default()
-                .with_color(Color::BLACK)
-                .with_width(1.5),
+                .with_color(self.style.outline_color)
+                .with_width(self.style.cursor_outline_width),
         );
 
         vec![frame.into_geometry()]
@@ -301,20 +348,22 @@ pub fn wrap_view<'a, Message>(
 where
     Message: Clone + 'a,
 {
+    let s = &automation.style;
     let mut layers: Vec<Element<'a, Message, Theme, Renderer>> = vec![base_view];
 
     if automation.completed {
-        let completed_label = text("Demo Complete — Close this window")
+        let completed_label = text(&s.completed_label)
             .size(22)
-            .color(Color::from_rgb(0.85, 0.85, 1.0));
+            .color(s.completed_text_color);
+        let completed_bg = s.completed_bg;
+        let completed_border = s.completed_border;
+        let completed_border_w = s.completed_border_width;
         let completed_box = container(container(completed_label).padding([18, 36]).style(
-            |_theme| container::Style {
-                background: Some(iced::Background::Color(Color::from_rgba(
-                    0.05, 0.05, 0.08, 0.92,
-                ))),
+            move |_theme| container::Style {
+                background: Some(iced::Background::Color(completed_bg)),
                 border: iced::Border {
-                    color: Color::from_rgb(0.2, 0.65, 0.2),
-                    width: 2.0,
+                    color: completed_border,
+                    width: completed_border_w,
                     radius: 8.0.into(),
                 },
                 ..container::Style::default()
@@ -328,9 +377,12 @@ where
     }
 
     if let Some((ref label, _)) = automation.active_keycap {
+        let hud_bg = s.hud_bg;
+        let hud_border = s.hud_border;
+        let hud_border_w = s.hud_border_width;
         let hud = container(
             column![
-                text("Automation Active")
+                text(&s.active_label)
                     .size(11)
                     .color(Color::from_rgb(0.5, 0.5, 0.6)),
                 text(label).size(16).color(Color::from_rgb(0.9, 0.9, 0.95)),
@@ -338,13 +390,11 @@ where
             .spacing(6),
         )
         .padding([12, 18])
-        .style(|_theme| container::Style {
-            background: Some(iced::Background::Color(Color::from_rgba(
-                0.08, 0.08, 0.1, 0.95,
-            ))),
+        .style(move |_theme| container::Style {
+            background: Some(iced::Background::Color(hud_bg)),
             border: iced::Border {
-                color: Color::from_rgb(0.25, 0.45, 0.85),
-                width: 1.5,
+                color: hud_border,
+                width: hud_border_w,
                 radius: 8.0.into(),
             },
             shadow: Shadow {
@@ -376,6 +426,7 @@ where
     let cursor = canvas(CursorOverlay {
         position: automation.virtual_cursor,
         is_clicking: automation.is_clicking,
+        style: automation.style.clone(),
     })
     .width(Length::Fill)
     .height(Length::Fill);

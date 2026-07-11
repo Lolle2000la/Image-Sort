@@ -216,8 +216,6 @@ impl AppState {
             media_grid_scroll: MediaGridScrollState::default(),
             #[cfg(feature = "demo")]
             automation: None,
-            #[cfg(feature = "demo")]
-            demo_root_path: None,
             scan_receiver: None,
             pending_select_index: None,
             folder_tree_receiver: None,

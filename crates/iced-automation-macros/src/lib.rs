@@ -58,12 +58,7 @@ pub fn state(args: TokenStream, input: TokenStream) -> TokenStream {
             pub automation: Option<iced_automation::AutomationState<#msg_type>>
         };
 
-        let field2: syn::Field = syn::parse_quote! {
-            pub demo_root_path: Option<std::path::PathBuf>
-        };
-
         fields.named.push(field1);
-        fields.named.push(field2);
     } else {
         panic!("state macro only supports structs with named fields");
     }

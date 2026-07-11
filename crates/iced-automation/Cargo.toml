@@ -6,10 +6,14 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[features]
+default = []
+headless = ["dep:iced_test", "dep:iced_wgpu"]
+
 [dependencies]
 iced = { workspace = true, features = ["advanced", "canvas"] }
-iced_wgpu = { workspace = true }
-iced_test = { version = "0.14" }
+iced_wgpu = { workspace = true, optional = true }
+iced_test = { version = "0.14", optional = true }
 iced-automation-macros = { path = "../iced-automation-macros" }
 serde = { workspace = true }
 serde_json = { workspace = true }

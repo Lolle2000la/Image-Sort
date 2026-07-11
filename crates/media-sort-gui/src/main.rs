@@ -138,18 +138,22 @@ pub struct Cli {
     pub directory: Option<std::path::PathBuf>,
 
     /// Export the demo flows as videos and exit.
+    #[cfg(feature = "demo")]
     #[arg(long)]
     pub export: bool,
 
     /// Path to JSON spec file or directory of spec files.
+    #[cfg(feature = "demo")]
     #[arg(long, default_value = "resources/demo_flows")]
     pub demo_spec: String,
 
     /// Output video path or directory.
+    #[cfg(feature = "demo")]
     #[arg(long, default_value = "website/public/demos")]
     pub demo_export: String,
 
     /// Run the interactive demo mode with the given spec.
+    #[cfg(feature = "demo")]
     #[arg(long)]
     pub demo: bool,
 }
@@ -170,9 +174,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = <Cli as clap::Parser>::parse();
 
     #[cfg(not(feature = "demo"))]
-    if cli.export || cli.demo {
-        eprintln!("Error: Demo features (--export, --demo) are not compiled in this build.");
-        std::process::exit(1);
+    {
+        let _ = &cli;
     }
 
     initialize_panic_hook();
@@ -308,8 +311,6 @@ mod tests {
             cli.directory,
             Some(std::path::PathBuf::from("/home/luca/Pictures"))
         );
-        assert!(!cli.export);
-        assert!(!cli.demo);
     }
 
     #[test]
@@ -317,10 +318,9 @@ mod tests {
         let args = vec!["media-sort"];
         let cli = Cli::try_parse_from(args).unwrap();
         assert_eq!(cli.directory, None);
-        assert!(!cli.export);
-        assert!(!cli.demo);
     }
 
+    #[cfg(feature = "demo")]
     #[test]
     fn test_cli_export() {
         let args = vec!["media-sort", "--export"];
