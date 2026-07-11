@@ -4,44 +4,37 @@
     {
       "delay_ms": 2000,
       "target": { "type": "Widget", "value": { "id": "media_card_0" } },
-      "keycap_label": "Click",
-      "message": { "action": "select_entry", "index": 0 }
+      "message": { "Media": { "SelectEntry": 0 } }
     },
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "Subfolder 1" } },
-      "keycap_label": "WASD to select folder",
-      "message": { "action": "folder_selected", "relative_path": "Subfolder 1" }
+      "message": { "Folder": { "Selected": ["$DEMO_ROOT/Subfolder 1", 0] } }
     },
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "move_btn" } },
-      "keycap_label": "Arrow Up to move",
-      "message": { "action": "move_active" }
+      "message": { "Media": "MoveActive" }
     },
     {
       "delay_ms": 2000,
       "target": { "type": "Widget", "value": { "id": "media_card_0" } },
-      "keycap_label": "Click",
-      "message": { "action": "select_entry", "index": 0 }
+      "message": { "Media": { "SelectEntry": 0 } }
     },
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "Subfolder 2" } },
-      "keycap_label": "Arrow Keys",
-      "message": { "action": "folder_selected", "relative_path": "Subfolder 2" }
+      "message": { "Folder": { "Selected": ["$DEMO_ROOT/Subfolder 2", 0] } }
     },
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "move_btn" } },
-      "keycap_label": "M",
-      "message": { "action": "move_active" }
+      "message": { "Media": "MoveActive" }
     },
     {
       "delay_ms": 2000,
       "target": { "type": "Widget", "value": { "id": "close_settings_btn" } },
-      "keycap_label": "Ctrl+Q",
-      "message": { "action": "quit" }
+      "message": "Quit"
     }
   ]
 }

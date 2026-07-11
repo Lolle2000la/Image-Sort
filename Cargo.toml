@@ -2,6 +2,7 @@
 members = [
     "crates/media-sort-core",
     "crates/media-sort-backend",
+    "crates/iced-automation",
     "crates/media-sort-gui",
 ]
 resolver = "2"

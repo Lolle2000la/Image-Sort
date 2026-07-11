@@ -4,44 +4,55 @@ use std::time::Instant;
 
 use media_sort_core::settings::store::SettingsStore;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum Message {
+    #[serde(skip_deserializing)]
     Tick(Instant),
+    #[serde(skip_deserializing)]
     SettingsLoaded(Box<Result<SettingsStore, String>>),
+    #[serde(skip_deserializing)]
     #[allow(dead_code)]
     MediaScanCompleted(Result<Vec<media_sort_core::models::MediaEntry>, String>),
     Quit,
+    #[serde(skip_deserializing)]
     EventOccurred(iced::Event),
     OpenCredits,
     CloseCredits,
 
+    #[serde(skip_deserializing)]
     KeyCaptured(String, bool, bool, bool),
 
     Settings(SettingsMessage),
     Folder(FolderMessage),
     Media(MediaMessage),
+    #[serde(skip_deserializing)]
     Video(VideoMessage),
 
     #[cfg(feature = "velopack")]
+    #[serde(skip_deserializing)]
     Update(UpdateMessage),
     #[cfg(feature = "demo")]
+    #[serde(skip_deserializing)]
     AutomationBounds(Option<iced::Rectangle>),
     #[cfg(feature = "demo")]
-    #[allow(dead_code)]
+    #[serde(skip_deserializing)]
     AutomationVirtualTick(std::time::Duration),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum SettingsMessage {
     Open,
     Close,
     SetTheme(String),
     ToggleReopenFolder,
     #[cfg(feature = "velopack")]
+    #[serde(skip_deserializing)]
     ToggleCheckForUpdates,
     #[cfg(feature = "velopack")]
+    #[serde(skip_deserializing)]
     ToggleInstallPrerelease,
     #[cfg(target_os = "windows")]
+    #[serde(skip_deserializing)]
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
     ChangeLanguage(String),
@@ -54,12 +65,14 @@ pub enum SettingsMessage {
     StartDragMetadataDivider,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum FolderMessage {
     Open(PathBuf),
     Pick,
+    #[serde(skip_deserializing)]
     PickResult(Option<PathBuf>),
     PickPin,
+    #[serde(skip_deserializing)]
     PickPinResult(Option<PathBuf>),
     Selected(PathBuf, usize),
     ToggleExpand(PathBuf),
@@ -74,7 +87,7 @@ pub enum FolderMessage {
     CancelCreate,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum MediaMessage {
     SelectEntry(usize),
     SearchQueryChanged(String),
@@ -94,11 +107,17 @@ pub enum MediaMessage {
     GoRight,
     MoveActive,
     CopyActive,
+    #[serde(skip_deserializing)]
     GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
+    #[serde(skip_deserializing)]
     ThumbnailReady(PathBuf, u32, u32, Vec<u8>),
+    #[serde(skip_deserializing)]
     ThumbnailFailed(PathBuf),
+    #[serde(skip_deserializing)]
     ThumbnailCancelled(PathBuf),
+    #[serde(skip_deserializing)]
     ImageLoaded(PathBuf, Result<(u32, u32, Vec<u8>), String>),
+    #[serde(skip_deserializing)]
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
     OpenExternal(PathBuf),
     StopAudio,

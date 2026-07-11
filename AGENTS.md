@@ -23,17 +23,18 @@ Hooks run `cargo fmt --all --` and `cargo clippy --fix --allow-dirty --allow-sta
 
 ## Workspace layout
 
-Three crates in `crates/` with strict dependency order:
+Four crates in `crates/` with strict dependency order:
 
 ```
 media-sort-gui       (iced 0.14, winit, wgpu — the app binary)
+  ├─ iced-automation     (generic iced app automation & video rendering)
   └─ media-sort-backend  (filesystem, media decoding, libmpv)
        └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
 
 website/             (Astro, Starlight docs template, React components)
 ```
 
-`media-sort-core` must never depend on `media-sort-backend` or `media-sort-gui`.
+`media-sort-core` must never depend on `media-sort-backend`, `iced-automation` or `media-sort-gui`.
 
 ## libmpv
 
@@ -133,6 +134,13 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `metadata/video_meta.rs` | Video metadata extraction |
 | `platform/trash.rs` | OS-specific trash implementation |
 
+### iced-automation (generic, no system deps)
+
+| Module | Purpose |
+|--------|---------|
+| `automation.rs` | Generic iced app simulation/automation engine, bounding box queries, custom HUD wrapper views |
+| `headless.rs` | Headless emulator runner, raw video screenshot loops, ffmpeg pipeline encoder |
+
 ### media-sort-gui
 
 | Module | Purpose |
@@ -140,6 +148,7 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `app.rs` | `update()`, `view()`, `theme()`, `subscription()`, helper async tasks |
 | `main.rs` | Entry point: init mpv registry, load settings, launch iced application |
 | `message.rs` | `Message` and sub-enum definitions |
+| `demo.rs` | Consolidates both interactive demo initialization and headless video export |
 | `state.rs` | `AppState` struct, folder tree logic, media scanning, `detect_media_type()` |
 | `view/` | 10 view files: `main_layout`, `folder_tree`, `folder_panel`, `media_grid`, `media_preview`, `metadata_panel`, `control_panel`, `search_bar`, `settings_dialog`, `credits_dialog` |
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |

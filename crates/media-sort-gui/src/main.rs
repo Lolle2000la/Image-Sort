@@ -1,12 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
-#[cfg(feature = "demo")]
-mod automation;
+
 #[cfg(feature = "demo")]
 mod demo;
-#[cfg(feature = "demo")]
-mod headless;
 mod message;
 mod state;
 mod subscriptions;

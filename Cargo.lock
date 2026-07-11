@@ -2057,6 +2057,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "iced-automation"
+version = "3.0.0-alpha.5"
+dependencies = [
+ "iced",
+ "iced_test",
+ "iced_wgpu",
+ "serde",
+ "serde_json",
+ "tracing",
+]
+
+[[package]]
 name = "iced_core"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2954,6 +2966,7 @@ dependencies = [
  "dirs",
  "embed-resource",
  "iced",
+ "iced-automation",
  "iced_runtime",
  "iced_test",
  "iced_wgpu",

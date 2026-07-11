@@ -6,11 +6,12 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest"]
-demo = ["iced/canvas", "dep:pollster", "dep:iced_runtime", "dep:iced_test", "dep:serde_json"]
+demo = ["iced/canvas", "dep:pollster", "dep:iced_runtime", "dep:iced-automation", "dep:iced_test", "dep:serde_json"]
 
 [dependencies]
 media-sort-core = { path = "../media-sort-core" }
 media-sort-backend = { path = "../media-sort-backend" }
+iced-automation = { path = "../iced-automation", optional = true }
 iced.workspace = true
 iced_wgpu.workspace = true
 tokio.workspace = true

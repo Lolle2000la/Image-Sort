@@ -91,7 +91,7 @@ pub struct AppState {
     pub media_grid_scroll: MediaGridScrollState,
 
     #[cfg(feature = "demo")]
-    pub automation: Option<crate::automation::AutomationState>,
+    pub automation: Option<iced_automation::AutomationState<crate::message::Message>>,
     #[cfg(feature = "demo")]
     pub demo_root_path: Option<PathBuf>,
     /// Active background scan receiver. When `Some`, the tick handler

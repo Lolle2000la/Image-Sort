@@ -1,0 +1,15 @@
+[package]
+name = "iced-automation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+iced = { workspace = true, features = ["advanced", "canvas"] }
+iced_wgpu = { workspace = true }
+iced_test = { version = "0.14" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }

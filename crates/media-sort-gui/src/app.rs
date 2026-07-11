@@ -21,7 +21,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
 
             #[cfg(feature = "demo")]
-            let automation_task = crate::automation::try_tick(state, _instant);
+            let automation_task = {
+                let mut automation = state.automation.take();
+                let task = iced_automation::try_tick(
+                    &mut automation,
+                    state,
+                    _instant,
+                    update,
+                    Message::AutomationBounds,
+                );
+                state.automation = automation;
+                task
+            };
             #[cfg(not(feature = "demo"))]
             let automation_task = Task::none();
 
@@ -244,23 +255,23 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 
             let automation_task = if let Some(ref mut automation) = state.automation
                 && let Some(result) =
-                    crate::automation::handle_automation_virtual_tick(automation, delta)
+                    iced_automation::handle_automation_virtual_tick(automation, delta)
             {
-                use crate::automation::AutomationTickResult;
                 match result {
-                    AutomationTickResult::Message(msg) => Task::done(*msg),
-                    AutomationTickResult::Task(task) => task,
+                    iced_automation::AutomationTickResult::Message(msg) => Task::done(msg),
+                    iced_automation::AutomationTickResult::FindBounds(id) => {
+                        iced_automation::find_bounds_task(id).map(Message::AutomationBounds)
+                    }
                 }
             } else {
                 Task::none()
             };
 
-            if let Some(ref automation) = state.automation {
-                if let Some(cell) = crate::automation::VIRTUAL_CURSOR.get() {
-                    if let Ok(mut guard) = cell.lock() {
-                        *guard = automation.virtual_cursor;
-                    }
-                }
+            if let Some(ref automation) = state.automation
+                && let Some(cell) = iced_automation::VIRTUAL_CURSOR.get()
+                && let Ok(mut guard) = cell.lock()
+            {
+                *guard = automation.virtual_cursor;
             }
 
             if extra_tasks.is_empty() {
@@ -272,10 +283,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         }
         #[cfg(feature = "demo")]
         Message::AutomationBounds(rect_opt) => {
-            if let Some(ref mut automation) = state.automation
-                && let Some(msg) = crate::automation::handle_bounds_resolved(automation, rect_opt)
-            {
-                return update(state, msg);
+            if let Some(ref mut automation) = state.automation {
+                iced_automation::handle_bounds_resolved(automation, rect_opt);
             }
             Task::none()
         }
@@ -1649,7 +1658,7 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
     let base_view = view::main_layout::main_layout_view(state);
     #[cfg(feature = "demo")]
     if let Some(ref automation) = state.automation {
-        return crate::automation::wrap_view(base_view, automation);
+        return iced_automation::wrap_view(base_view, automation);
     }
     base_view
 }

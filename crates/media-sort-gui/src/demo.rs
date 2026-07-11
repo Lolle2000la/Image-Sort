@@ -1,4 +1,21 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use iced::Theme;
+use iced_test::core::Settings;
+use iced_test::core::window;
+use iced_test::futures::Subscription;
+use iced_test::program::Program;
+use iced_test::runtime::Task;
+
+use crate::app;
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
+use crate::state::AppState;
+
+const DEFAULT_WIDTH: u32 = 1920;
+const DEFAULT_HEIGHT: u32 = 1080;
+const FPS: u32 = 60;
 
 fn workspace_root() -> PathBuf {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -53,7 +70,7 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                     );
 
                     let demo_root = init_demo_media();
-                    crate::headless::export_demo_video(
+                    export_demo_video(
                         demo_root,
                         &path.to_string_lossy(),
                         &output_video_path.to_string_lossy(),
@@ -63,7 +80,7 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
             Ok(())
         } else {
             let demo_root = init_demo_media();
-            crate::headless::export_demo_video(
+            export_demo_video(
                 demo_root,
                 &spec_path.to_string_lossy(),
                 &export_path.to_string_lossy(),
@@ -109,30 +126,20 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
     let _ = std::fs::create_dir_all(&demo_root);
 
     let mock_state_src = resolve_workspace_path("resources/MockState");
-    let copied = if mock_state_src.exists() {
-        if let Err(e) = copy_dir_all(&mock_state_src, &demo_root) {
-            tracing::error!("Failed to copy concrete MockState: {:?}", e);
-            false
-        } else {
-            tracing::info!("Concrete MockState copied to {:?}", demo_root);
-            true
-        }
-    } else {
-        false
-    };
-
-    if !copied && crate::automation::generate_placeholder_media(&demo_root).is_ok() {
-        tracing::info!("Demo media generated at {:?}", demo_root);
-    }
+    copy_dir_all(&mock_state_src, &demo_root).expect("failed to copy MockState");
+    tracing::info!("Concrete MockState copied to {:?}", demo_root);
 
     let ww = state.settings.window_position.width as f32;
     let wh = state.settings.window_position.height as f32;
 
-    let flow = crate::automation::JsonAutomationFlow::load_from_file(&final_spec_path)
-        .expect("failed to load demo spec JSON");
-    let steps = flow.to_automation_steps(&demo_root);
+    let spec_content = std::fs::read_to_string(&final_spec_path).expect("failed to read spec file");
+    let resolved_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());
+    let flow: iced_automation::JsonAutomationFlow<Message> =
+        serde_json::from_str(&resolved_content).expect("failed to parse spec JSON");
 
-    state.automation = Some(crate::automation::AutomationState::new(
+    let steps = build_steps(&flow, &demo_root);
+
+    state.automation = Some(iced_automation::AutomationState::new(
         steps,
         &flow.flow_name,
         ww,
@@ -165,20 +172,171 @@ fn init_demo_media() -> PathBuf {
     let _ = std::fs::create_dir_all(&demo_root);
 
     let mock_state_src = resolve_workspace_path("resources/MockState");
-    let copied = if mock_state_src.exists() {
-        if let Err(e) = copy_dir_all(&mock_state_src, &demo_root) {
-            tracing::error!("Failed to copy concrete MockState: {:?}", e);
-            false
-        } else {
-            tracing::info!("Concrete MockState copied to {:?}", demo_root);
-            true
+    copy_dir_all(&mock_state_src, &demo_root).expect("failed to copy MockState");
+    tracing::info!("Concrete MockState copied to {:?}", demo_root);
+    demo_root
+}
+
+fn format_message_for_keycaster(msg: &Message) -> String {
+    match msg {
+        Message::Media(MediaMessage::GoRight) => "Right Arrow\nNext Image".into(),
+        Message::Media(MediaMessage::GoLeft) => "Left Arrow\nPrevious Image".into(),
+        Message::Media(MediaMessage::MoveActive) => "M\nMove to Folder".into(),
+        Message::Media(MediaMessage::CopyActive) => "Ctrl+C\nCopy to Folder".into(),
+        Message::Media(MediaMessage::TriggerRename) => "F2\nRename".into(),
+        Message::Media(MediaMessage::SearchQueryChanged(_)) => "Type Query\nFilter Results".into(),
+        Message::Media(MediaMessage::SearchFocused) => "Ctrl+F\nFocus Search".into(),
+        Message::Media(MediaMessage::SelectEntry(_)) => "Click\nSelect Entry".into(),
+        Message::Folder(FolderMessage::Open(_)) => "Enter\nOpen Folder".into(),
+        Message::Folder(FolderMessage::ToggleExpand(_)) => "Space\nExpand Folder".into(),
+        Message::Folder(FolderMessage::Selected(..)) => "Arrow Keys\nSelect Destination".into(),
+        Message::Settings(SettingsMessage::Open) => "Ctrl+,\nSettings".into(),
+        Message::Settings(SettingsMessage::SetTheme(_)) => "Ctrl+D\nChange Theme".into(),
+        Message::Settings(SettingsMessage::Close) => "Esc\nClose".into(),
+        Message::Quit => "Ctrl+Q\nQuit".into(),
+        _ => "Action".into(),
+    }
+}
+
+fn build_steps(
+    flow: &iced_automation::JsonAutomationFlow<Message>,
+    test_root: &Path,
+) -> Vec<iced_automation::AutomationStep<Message>> {
+    iced_automation::build_automation_steps(
+        flow,
+        |id| {
+            if test_root.join(id).is_dir() {
+                let folder_path = test_root.join(id);
+                format!("folder_{}", folder_path.display())
+            } else {
+                id.to_string()
+            }
+        },
+        format_message_for_keycaster,
+    )
+}
+
+// --- Headless / program emulator logic ---
+
+struct AppProgram {
+    demo_root: std::path::PathBuf,
+    settings: media_sort_core::settings::store::SettingsStore,
+    completed: Arc<AtomicBool>,
+    steps: Vec<iced_automation::AutomationStep<Message>>,
+    flow_name: String,
+}
+
+impl Program for AppProgram {
+    type State = AppState;
+    type Message = Message;
+    type Theme = Theme;
+    type Renderer = iced::Renderer;
+    type Executor = iced_test::futures::backend::default::Executor;
+
+    fn name() -> &'static str {
+        "MediaSort"
+    }
+
+    fn settings(&self) -> Settings {
+        let font = iced::Font::DEFAULT;
+        iced_test::core::Settings {
+            id: Some("mediasort".into()),
+            fonts: vec![],
+            default_font: font,
+            default_text_size: iced::Pixels(16.0),
+            antialiasing: false,
+            vsync: false,
         }
-    } else {
-        false
+    }
+
+    fn window(&self) -> Option<window::Settings> {
+        None
+    }
+
+    fn boot(&self) -> (Self::State, Task<Self::Message>) {
+        let mut state = AppState::new(self.settings.clone());
+
+        state.automation = Some(iced_automation::AutomationState::new(
+            self.steps.clone(),
+            &self.flow_name,
+            DEFAULT_WIDTH as f32,
+            DEFAULT_HEIGHT as f32,
+        ));
+        state.demo_root_path = Some(self.demo_root.clone());
+
+        let tasks = vec![
+            Task::done(Message::Folder(crate::message::FolderMessage::Open(
+                self.demo_root.clone(),
+            ))),
+            Task::done(Message::SettingsLoaded(Box::new(Ok(self.settings.clone())))),
+        ];
+
+        (state, Task::batch(tasks))
+    }
+
+    fn update(&self, state: &mut Self::State, message: Self::Message) -> Task<Self::Message> {
+        let task = app::update(state, message);
+
+        if state.automation.as_ref().is_some_and(|a| a.completed) {
+            self.completed.store(true, Ordering::SeqCst);
+        }
+
+        task
+    }
+
+    fn view<'a>(
+        &self,
+        state: &'a Self::State,
+        _window: window::Id,
+    ) -> iced::Element<'a, Self::Message, Self::Theme, Self::Renderer> {
+        app::view(state)
+    }
+
+    fn theme(&self, state: &Self::State, _window: window::Id) -> Option<Self::Theme> {
+        Some(app::theme(state))
+    }
+
+    fn subscription(&self, state: &Self::State) -> Subscription<Self::Message> {
+        app::subscription(state)
+    }
+}
+
+pub fn export_demo_video(
+    demo_root: std::path::PathBuf,
+    json_spec_path: &str,
+    output_path: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let settings = media_sort_core::settings::store::SettingsStore::default();
+    let completed = Arc::new(AtomicBool::new(false));
+
+    let spec_content = std::fs::read_to_string(json_spec_path)?;
+    let resolved_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());
+    let flow: iced_automation::JsonAutomationFlow<Message> =
+        serde_json::from_str(&resolved_content)?;
+
+    let flow_name = flow.flow_name.clone();
+    let steps = build_steps(&flow, &demo_root);
+
+    let program = AppProgram {
+        demo_root,
+        settings,
+        completed: completed.clone(),
+        steps,
+        flow_name,
     };
 
-    if !copied && crate::automation::generate_placeholder_media(&demo_root).is_ok() {
-        tracing::info!("Demo media generated at {:?}", demo_root);
-    }
-    demo_root
+    let extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
+
+    iced_automation::export_video(
+        &program,
+        completed,
+        DEFAULT_WIDTH,
+        DEFAULT_HEIGHT,
+        FPS,
+        output_path,
+        Message::AutomationVirtualTick,
+        extra_fonts,
+    )?;
+
+    Ok(())
 }
