@@ -42,7 +42,6 @@ impl DemoApp for AppState {
 
 const DEFAULT_WIDTH: u32 = 1920;
 const DEFAULT_HEIGHT: u32 = 1080;
-const FPS: u32 = 60;
 
 fn workspace_root() -> PathBuf {
     let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -176,15 +175,7 @@ pub fn export_demo_video(
 
     let completed_clone = completed.clone();
     let headless_app = bootstrap.into_headless_app(
-        "MediaSort",
-        iced_test::core::Settings {
-            id: Some("mediasort".into()),
-            fonts: vec![],
-            default_font: iced::Font::DEFAULT,
-            default_text_size: iced::Pixels(16.0),
-            antialiasing: false,
-            vsync: false,
-        },
+        iced_automation::default_headless_settings("mediasort"),
         move |state: &mut AppState, msg: Message| {
             let task = crate::app::update(state, msg);
             if state.is_automation_completed() {
@@ -197,14 +188,8 @@ pub fn export_demo_video(
         |state: &AppState| crate::app::subscription(state),
     );
 
-    let video_config = iced_automation::ExportVideoConfig {
-        width: DEFAULT_WIDTH,
-        height: DEFAULT_HEIGHT,
-        fps: FPS,
-        output_path: output_path.to_path_buf(),
-        tick_message: Message::AutomationVirtualTick,
-        extra_fonts: vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)],
-    };
+    let mut video_config = iced_automation::ExportVideoConfig::standard(output_path.to_path_buf());
+    video_config.extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
 
     iced_automation::export_video(&headless_app, completed, &video_config)?;
 

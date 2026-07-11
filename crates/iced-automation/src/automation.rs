@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
@@ -538,9 +539,7 @@ where
             JsonTarget::Coordinate { x, y } => AutomationTarget::Pixel(iced::Point::new(*x, *y)),
             JsonTarget::Widget { id } => {
                 let resolved_id = resolve_widget_id(id.as_str());
-                AutomationTarget::Widget(iced::advanced::widget::Id::new(Box::leak(
-                    resolved_id.into_boxed_str(),
-                )))
+                AutomationTarget::Widget(static_widget_id(resolved_id))
             }
         },
         |msg| Some(msg.clone()),
@@ -548,10 +547,31 @@ where
     )
 }
 
+fn static_widget_id(s: String) -> iced::advanced::widget::Id {
+    static CACHE: OnceLock<Mutex<HashMap<String, &'static str>>> = OnceLock::new();
+    let mut cache = CACHE
+        .get_or_init(|| Mutex::new(HashMap::new()))
+        .lock()
+        .unwrap();
+    let id: &'static str = match cache.get(&s) {
+        Some(existing) => existing,
+        None => {
+            let leaked: &'static str = Box::leak(s.clone().into_boxed_str());
+            cache.insert(s, leaked);
+            leaked
+        }
+    };
+    iced::advanced::widget::Id::new(id)
+}
+
 pub trait AutomationMessage {
     fn is_automation(&self) -> bool;
     fn as_bounds(&self) -> Option<iced::Rectangle>;
     fn as_virtual_tick(&self) -> Option<std::time::Duration>;
+}
+
+pub trait VirtualTickMessage: Sized {
+    fn virtual_tick(delta: Duration) -> Self;
 }
 
 pub trait AutomationContext<Message> {

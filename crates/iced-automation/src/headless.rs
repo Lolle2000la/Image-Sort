@@ -11,21 +11,23 @@ use iced_test::futures::futures::{FutureExt, StreamExt};
 use iced_test::program::Program;
 use iced_test::runtime::UserInterface;
 
+type ViewBox<S, M> =
+    Box<dyn for<'a> Fn(&'a S, window::Id) -> iced::Element<'a, M, iced::Theme, iced::Renderer>>;
+
+pub struct HeadlessBootConfig<S, M> {
+    pub settings: Settings,
+    pub boot_state: S,
+    pub boot_task: iced::Task<M>,
+}
+
 /// A generic, closure-based adapter implementing `iced_test::program::Program`
 /// for headless video export. Eliminates the need for consumers to write
 /// a custom struct + `Program` impl.
 pub struct HeadlessApp<State, Message, Update, ThemeFn, Subscription> {
-    #[allow(dead_code)]
-    name: &'static str,
     settings: Settings,
     boot_data: RefCell<Option<(State, iced::Task<Message>)>>,
     update: Update,
-    view: Box<
-        dyn for<'a> Fn(
-            &'a State,
-            window::Id,
-        ) -> iced::Element<'a, Message, iced::Theme, iced::Renderer>,
-    >,
+    view: ViewBox<State, Message>,
     theme_fn: ThemeFn,
     subscription: Subscription,
 }
@@ -34,10 +36,7 @@ impl<State, Message, Update, ThemeFn, Subscription>
     HeadlessApp<State, Message, Update, ThemeFn, Subscription>
 {
     pub fn new(
-        name: &'static str,
-        settings: Settings,
-        boot_state: State,
-        boot_task: iced::Task<Message>,
+        config: HeadlessBootConfig<State, Message>,
         update: Update,
         view: impl for<'a> Fn(
             &'a State,
@@ -48,9 +47,8 @@ impl<State, Message, Update, ThemeFn, Subscription>
         subscription: Subscription,
     ) -> Self {
         Self {
-            name,
-            settings,
-            boot_data: RefCell::new(Some((boot_state, boot_task))),
+            settings: config.settings,
+            boot_data: RefCell::new(Some((config.boot_state, config.boot_task))),
             update,
             view: Box::new(view),
             theme_fn,
@@ -115,6 +113,17 @@ where
 }
 
 use crate::demo_setup::ExportVideoConfig;
+
+pub fn default_headless_settings(id: &str) -> Settings {
+    Settings {
+        id: Some(id.to_string()),
+        fonts: vec![],
+        default_font: iced::Font::DEFAULT,
+        default_text_size: iced::Pixels(16.0),
+        antialiasing: false,
+        vsync: false,
+    }
+}
 
 pub fn export_video<P>(
     program: &P,

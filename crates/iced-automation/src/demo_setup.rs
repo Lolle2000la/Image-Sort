@@ -59,11 +59,27 @@ pub struct ExportVideoConfig<Message> {
 }
 
 #[cfg(feature = "headless")]
+impl<Message> ExportVideoConfig<Message> {
+    pub fn standard(output_path: PathBuf) -> Self
+    where
+        Message: crate::automation::VirtualTickMessage,
+    {
+        Self {
+            width: 1920,
+            height: 1080,
+            fps: 60,
+            output_path,
+            tick_message: Message::virtual_tick,
+            extra_fonts: Vec::new(),
+        }
+    }
+}
+
+#[cfg(feature = "headless")]
 impl<S, M> DemoBootstrap<S, M> {
     /// Convert this bootstrap into a `HeadlessApp` for video export.
     pub fn into_headless_app<Update, ThemeFn, Sub>(
         self,
-        name: &'static str,
         settings: iced_test::core::Settings,
         update: Update,
         view: impl for<'a> Fn(
@@ -75,10 +91,11 @@ impl<S, M> DemoBootstrap<S, M> {
         subscription: Sub,
     ) -> crate::headless::HeadlessApp<S, M, Update, ThemeFn, Sub> {
         crate::headless::HeadlessApp::new(
-            name,
-            settings,
-            self.state,
-            self.task,
+            crate::headless::HeadlessBootConfig {
+                settings,
+                boot_state: self.state,
+                boot_task: self.task,
+            },
             update,
             view,
             theme_fn,

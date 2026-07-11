@@ -48,6 +48,12 @@ pub fn message(_args: TokenStream, input: TokenStream) -> TokenStream {
                 }
             }
         }
+
+        impl iced_automation::VirtualTickMessage for #enum_name {
+            fn virtual_tick(delta: std::time::Duration) -> Self {
+                #enum_name::AutomationVirtualTick(delta)
+            }
+        }
     };
 
     TokenStream::from(expanded)
