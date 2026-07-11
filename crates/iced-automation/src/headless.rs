@@ -114,27 +114,23 @@ where
     }
 }
 
-#[allow(clippy::too_many_arguments)]
+use crate::demo_setup::ExportVideoConfig;
+
 pub fn export_video<P>(
     program: &P,
     completed: Arc<AtomicBool>,
-    width: u32,
-    height: u32,
-    fps: u32,
-    output_path: &str,
-    tick_message: impl Fn(Duration) -> P::Message,
-    extra_fonts: Vec<std::borrow::Cow<'static, [u8]>>,
+    config: &ExportVideoConfig<P::Message>,
 ) -> Result<(), Box<dyn std::error::Error>>
 where
     P: Program<Renderer = iced::Renderer, Theme = iced::Theme> + 'static,
     P::Message: Clone + std::fmt::Debug + Send + Sync,
 {
-    let delta = Duration::from_nanos(1_000_000_000 / fps as u64);
-    let size = iced::Size::new(width as f32, height as f32);
+    let delta = Duration::from_nanos(1_000_000_000 / config.fps as u64);
+    let size = iced::Size::new(config.width as f32, config.height as f32);
 
-    for font_bytes in extra_fonts {
+    for font_bytes in &config.extra_fonts {
         if let Ok(mut font_system) = iced_wgpu::graphics::text::font_system().write() {
-            font_system.load_font(font_bytes);
+            font_system.load_font(font_bytes.clone());
         }
     }
 
@@ -169,9 +165,9 @@ where
             "-pix_fmt",
             "rgba",
             "-s",
-            &format!("{}x{}", width, height),
+            &format!("{}x{}", config.width, config.height),
             "-r",
-            &fps.to_string(),
+            &config.fps.to_string(),
             "-i",
             "-",
             "-c:v",
@@ -180,7 +176,7 @@ where
             "18",
             "-pix_fmt",
             "yuv420p",
-            output_path,
+            &config.output_path.display().to_string(),
         ])
         .stdin(std::process::Stdio::piped())
         .spawn()?;
@@ -193,7 +189,7 @@ where
         *guard = iced::Point::ORIGIN;
     }
     let _ = crate::automation::VIRTUAL_CURSOR.set(std::sync::Mutex::new(iced::Point::ORIGIN));
-    let unpadded_row = width as usize * 4;
+    let unpadded_row = config.width as usize * 4;
     let style = iced::advanced::graphics::core::renderer::Style {
         text_color: iced::Color::WHITE,
     };
@@ -213,7 +209,7 @@ where
     let mut messages = Vec::new();
 
     while !completed.load(Ordering::SeqCst) {
-        emulator.update(program, tick_message(delta));
+        emulator.update(program, (config.tick_message)(delta));
 
         while let Ok(event) = receiver.try_recv() {
             if let Event::Action(action) = event {
@@ -253,9 +249,9 @@ where
         let bg_color = theme.palette().background;
         ui.draw(&mut renderer, &theme, &style, cursor);
 
-        let rgba = renderer.screenshot(iced::Size::new(width, height), 1.0, bg_color);
+        let rgba = renderer.screenshot(iced::Size::new(config.width, config.height), 1.0, bg_color);
 
-        let padded_row = rgba.len().div_ceil(height as usize);
+        let padded_row = rgba.len().div_ceil(config.height as usize);
         for row_chunk in rgba.chunks(padded_row) {
             use std::io::Write;
             ffmpeg_stdin.write_all(&row_chunk[..unpadded_row])?;
@@ -273,6 +269,10 @@ where
     drop(ffmpeg_stdin);
     ffmpeg.wait()?;
 
-    tracing::info!("Exported {} frames to {}", frame_count, output_path);
+    tracing::info!(
+        "Exported {} frames to {}",
+        frame_count,
+        config.output_path.display()
+    );
     Ok(())
 }

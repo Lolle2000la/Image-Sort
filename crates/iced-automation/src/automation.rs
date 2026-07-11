@@ -549,6 +549,7 @@ where
 }
 
 pub trait AutomationMessage {
+    fn is_automation(&self) -> bool;
     fn as_bounds(&self) -> Option<iced::Rectangle>;
     fn as_virtual_tick(&self) -> Option<std::time::Duration>;
 }
@@ -577,12 +578,8 @@ where
     State: AutomationStateTrait<Message> + AutomationContext<Message>,
     Message: AutomationMessage + Clone + Send + 'static,
 {
-    let bounds = message.as_bounds();
-    if bounds.is_some() {
-        if let Some(automation) = state.automation_mut() {
-            handle_bounds_resolved(automation, bounds);
-        }
-        return Some(Task::none());
+    if !message.is_automation() {
+        return None;
     }
 
     if let Some(delta) = message.as_virtual_tick() {
@@ -609,7 +606,10 @@ where
         return Some(Task::batch(vec![bg_task, automation_task]));
     }
 
-    None
+    if let Some(automation) = state.automation_mut() {
+        handle_bounds_resolved(automation, message.as_bounds());
+    }
+    Some(Task::none())
 }
 
 pub fn try_tick_state<State, Message, Update>(

@@ -8,11 +8,20 @@ use crate::automation::{
     build_automation_steps,
 };
 
+/// Describes how demo fixture files are staged.
+pub struct FixtureSpec {
+    /// Source directory containing fixture files to copy.
+    pub source: PathBuf,
+    /// Target directory. If `None`, a unique temp directory is created automatically.
+    pub target: Option<PathBuf>,
+}
+
 /// Configuration for demo initialization.
 pub struct DemoConfig {
     pub spec_path: PathBuf,
-    pub fixture_path: Option<PathBuf>,
-    pub demo_root: Option<PathBuf>,
+    /// If set, fixture files are copied from `source` to `target` (or a temp dir).
+    /// The resulting directory is used as `$DEMO_ROOT` in the flow spec.
+    pub fixture: Option<FixtureSpec>,
     pub variable_substitutions: HashMap<String, String>,
     pub window_width: f32,
     pub window_height: f32,
@@ -23,8 +32,7 @@ impl Default for DemoConfig {
     fn default() -> Self {
         Self {
             spec_path: PathBuf::new(),
-            fixture_path: None,
-            demo_root: None,
+            fixture: None,
             variable_substitutions: HashMap::new(),
             window_width: 1920.0,
             window_height: 1080.0,
@@ -38,6 +46,45 @@ pub struct DemoBootstrap<S, M> {
     pub state: S,
     pub task: iced::Task<M>,
     pub demo_root: PathBuf,
+}
+
+#[cfg(feature = "headless")]
+pub struct ExportVideoConfig<Message> {
+    pub width: u32,
+    pub height: u32,
+    pub fps: u32,
+    pub output_path: PathBuf,
+    pub tick_message: fn(std::time::Duration) -> Message,
+    pub extra_fonts: Vec<std::borrow::Cow<'static, [u8]>>,
+}
+
+#[cfg(feature = "headless")]
+impl<S, M> DemoBootstrap<S, M> {
+    /// Convert this bootstrap into a `HeadlessApp` for video export.
+    pub fn into_headless_app<Update, ThemeFn, Sub>(
+        self,
+        name: &'static str,
+        settings: iced_test::core::Settings,
+        update: Update,
+        view: impl for<'a> Fn(
+            &'a S,
+            iced::window::Id,
+        ) -> iced::Element<'a, M, iced::Theme, iced::Renderer>
+        + 'static,
+        theme_fn: ThemeFn,
+        subscription: Sub,
+    ) -> crate::headless::HeadlessApp<S, M, Update, ThemeFn, Sub> {
+        crate::headless::HeadlessApp::new(
+            name,
+            settings,
+            self.state,
+            self.task,
+            update,
+            view,
+            theme_fn,
+            subscription,
+        )
+    }
 }
 
 /// Trait that consumers implement to use `init_demo()`.
@@ -54,7 +101,11 @@ pub trait DemoApp: AutomationStateTrait<Self::Message> + Sized {
     /// Resolve a widget ID from the JSON spec into the app's widget ID convention.
     /// Called for each `Widget` target in the JSON flow. `fixture_root` is the
     /// directory where demo media files are staged.
-    fn resolve_widget_id(fixture_root: &Path, json_id: &str) -> String;
+    ///
+    /// Default implementation passes through the raw JSON id unchanged.
+    fn resolve_widget_id(_fixture_root: &Path, json_id: &str) -> String {
+        json_id.to_string()
+    }
 
     /// Human-readable keycap label for a message.
     fn format_keycap(message: &Self::Message) -> String;
@@ -71,20 +122,17 @@ pub trait DemoApp: AutomationStateTrait<Self::Message> + Sized {
 pub fn init_demo<A: DemoApp>(
     config: &DemoConfig,
 ) -> Result<DemoBootstrap<A, A::Message>, Box<dyn std::error::Error>> {
-    let demo_root = if let Some(ref dr) = config.demo_root {
-        dr.clone()
-    } else if let Some(ref fixture_path) = config.fixture_path {
-        let root = std::env::temp_dir().join(format!("demo_{}", std::process::id()));
-        std::fs::create_dir_all(&root)?;
-        copy_dir_all(fixture_path, &root)?;
-        root
-    } else {
-        PathBuf::new()
+    let demo_root = match &config.fixture {
+        Some(fixture) => {
+            let target = fixture.target.clone().unwrap_or_else(|| {
+                std::env::temp_dir().join(format!("demo_{}", std::process::id()))
+            });
+            std::fs::create_dir_all(&target)?;
+            copy_dir_all(&fixture.source, &target)?;
+            target
+        }
+        None => PathBuf::new(),
     };
-
-    if let (Some(fixture_path), Some(demo_root)) = (&config.fixture_path, &config.demo_root) {
-        copy_dir_all(fixture_path, demo_root)?;
-    }
 
     let mut spec_content = std::fs::read_to_string(&config.spec_path)?;
     spec_content = spec_content.replace("$DEMO_ROOT", &demo_root.to_string_lossy());

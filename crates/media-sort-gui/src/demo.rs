@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -137,9 +136,11 @@ pub fn init(cli: &crate::Cli, state: &mut AppState) -> Option<PathBuf> {
 
     let config = iced_automation::DemoConfig {
         spec_path: final_spec_path,
-        fixture_path: Some(mock_state_src),
-        demo_root: Some(demo_root.clone()),
-        variable_substitutions: HashMap::new(),
+        fixture: Some(iced_automation::FixtureSpec {
+            source: mock_state_src,
+            target: Some(demo_root.clone()),
+        }),
+        variable_substitutions: std::collections::HashMap::new(),
         window_width: state.settings.window_position.width as f32,
         window_height: state.settings.window_position.height as f32,
         style: iced_automation::AutomationStyle::default(),
@@ -161,9 +162,11 @@ pub fn export_demo_video(
 
     let config = iced_automation::DemoConfig {
         spec_path: json_spec_path.to_path_buf(),
-        fixture_path: Some(mock_state_src),
-        demo_root: None,
-        variable_substitutions: HashMap::new(),
+        fixture: Some(iced_automation::FixtureSpec {
+            source: mock_state_src,
+            target: None,
+        }),
+        variable_substitutions: std::collections::HashMap::new(),
         window_width: DEFAULT_WIDTH as f32,
         window_height: DEFAULT_HEIGHT as f32,
         style: iced_automation::AutomationStyle::default(),
@@ -172,7 +175,7 @@ pub fn export_demo_video(
     let bootstrap = iced_automation::init_demo::<AppState>(&config).expect("failed to init demo");
 
     let completed_clone = completed.clone();
-    let headless_app = iced_automation::HeadlessApp::new(
+    let headless_app = bootstrap.into_headless_app(
         "MediaSort",
         iced_test::core::Settings {
             id: Some("mediasort".into()),
@@ -182,8 +185,6 @@ pub fn export_demo_video(
             antialiasing: false,
             vsync: false,
         },
-        bootstrap.state,
-        bootstrap.task,
         move |state: &mut AppState, msg: Message| {
             let task = crate::app::update(state, msg);
             if state.is_automation_completed() {
@@ -196,18 +197,16 @@ pub fn export_demo_video(
         |state: &AppState| crate::app::subscription(state),
     );
 
-    let extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
+    let video_config = iced_automation::ExportVideoConfig {
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
+        fps: FPS,
+        output_path: output_path.to_path_buf(),
+        tick_message: Message::AutomationVirtualTick,
+        extra_fonts: vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)],
+    };
 
-    iced_automation::export_video(
-        &headless_app,
-        completed,
-        DEFAULT_WIDTH,
-        DEFAULT_HEIGHT,
-        FPS,
-        &output_path.to_string_lossy(),
-        Message::AutomationVirtualTick,
-        extra_fonts,
-    )?;
+    iced_automation::export_video(&headless_app, completed, &video_config)?;
 
     Ok(())
 }

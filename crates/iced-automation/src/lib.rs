@@ -12,7 +12,10 @@ pub use automation::{
     handle_bounds_resolved, try_tick, try_tick_state, wrap_view,
 };
 
-pub use demo_setup::{DemoApp, DemoBootstrap, DemoConfig, init_demo};
+pub use demo_setup::{DemoApp, DemoBootstrap, DemoConfig, FixtureSpec, init_demo};
+
+#[cfg(feature = "headless")]
+pub use demo_setup::ExportVideoConfig;
 
 #[cfg(feature = "headless")]
 pub use headless::{HeadlessApp, export_video};

@@ -27,6 +27,13 @@ pub fn message(_args: TokenStream, input: TokenStream) -> TokenStream {
         #item_enum
 
         impl iced_automation::AutomationMessage for #enum_name {
+            fn is_automation(&self) -> bool {
+                matches!(
+                    self,
+                    #enum_name::AutomationBounds(_) | #enum_name::AutomationVirtualTick(_)
+                )
+            }
+
             fn as_bounds(&self) -> Option<iced::Rectangle> {
                 match self {
                     #enum_name::AutomationBounds(rect_opt) => *rect_opt,
@@ -165,4 +172,71 @@ fn build_pattern(fields: &syn::Fields) -> (proc_macro2::TokenStream, proc_macro2
         Fields::Unnamed(_) => (quote! { (..) }, quote! {}),
         Fields::Named(_) => (quote! { { .. } }, quote! {}),
     }
+}
+
+#[proc_macro_derive(AutomationKeycapDispatch, attributes(automation))]
+pub fn derive_automation_keycap_dispatch(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    let variants = match &input.data {
+        syn::Data::Enum(data) => &data.variants,
+        _ => panic!("AutomationKeycapDispatch can only be derived for enums"),
+    };
+
+    let mut dispatch_arms = Vec::new();
+    let mut has_any = false;
+
+    for variant in variants {
+        let variant_name = &variant.ident;
+        let is_dispatch = variant.attrs.iter().any(|attr| {
+            attr.path().is_ident("automation") && {
+                attr.parse_args_with(|input: syn::parse::ParseStream| {
+                    let ident: syn::Ident = input.parse()?;
+                    Ok(ident == "dispatch")
+                })
+                .unwrap_or(false)
+            }
+        });
+
+        if is_dispatch {
+            has_any = true;
+            let binding_name = quote! { __inner };
+            let pat = match &variant.fields {
+                Fields::Unnamed(_) => quote! { (#binding_name) },
+                _ => panic!(
+                    "AutomationKeycapDispatch requires single unnamed field variants, found {:?}",
+                    variant_name
+                ),
+            };
+            dispatch_arms.push(quote! {
+                #name::#variant_name #pat => #binding_name.automation_keycap()
+            });
+        }
+    }
+
+    let expanded = if has_any {
+        quote! {
+            impl #name {
+                #[allow(dead_code)]
+                pub fn automation_keycap(&self) -> Option<&'static str> {
+                    match self {
+                        #(#dispatch_arms,)*
+                        _ => None,
+                    }
+                }
+            }
+        }
+    } else {
+        quote! {
+            impl #name {
+                #[allow(dead_code)]
+                pub fn automation_keycap(&self) -> Option<&'static str> {
+                    None
+                }
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
 }

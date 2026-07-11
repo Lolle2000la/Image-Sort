@@ -5,7 +5,7 @@ use std::time::Instant;
 use media_sort_core::settings::store::SettingsStore;
 
 #[cfg_attr(feature = "demo", iced_automation::message)]
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycapDispatch)]
 pub enum Message {
     #[serde(skip_deserializing)]
     Tick(Instant),
@@ -23,8 +23,11 @@ pub enum Message {
     #[serde(skip_deserializing)]
     KeyCaptured(String, bool, bool, bool),
 
+    #[automation(dispatch)]
     Settings(SettingsMessage),
+    #[automation(dispatch)]
     Folder(FolderMessage),
+    #[automation(dispatch)]
     Media(MediaMessage),
     #[serde(skip_deserializing)]
     Video(VideoMessage),
@@ -156,16 +159,4 @@ pub enum UpdateMessage {
     UserConfirmedUpdate(Box<velopack::UpdateInfo>),
     UpdateFailed(String),
     DismissUpdatePrompt,
-}
-
-#[cfg(feature = "demo")]
-impl Message {
-    pub fn automation_keycap(&self) -> Option<&'static str> {
-        match self {
-            Message::Media(m) => m.automation_keycap(),
-            Message::Folder(f) => f.automation_keycap(),
-            Message::Settings(s) => s.automation_keycap(),
-            _ => None,
-        }
-    }
 }
