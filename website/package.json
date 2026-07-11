@@ -11,6 +11,7 @@
         "render-demos": "cd .. && cargo run -p media-sort-gui --features demo -- --export"
     },
     "dependencies": {
+        "@astrojs/mdx": "^7.0.2",
         "@astrojs/react": "^6.0.1",
         "@astrojs/starlight": "^0.41.2",
         "@types/react": "^19.2.17",

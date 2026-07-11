@@ -20,7 +20,6 @@ pub enum Message {
     OpenCredits,
     CloseCredits,
 
-    #[serde(skip_deserializing)]
     KeyCaptured(String, bool, bool, bool),
 
     #[automation(dispatch)]

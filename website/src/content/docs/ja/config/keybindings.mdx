@@ -1,0 +1,71 @@
+---
+title: キーバインドのカスタマイズ
+description: Media Sortのキーボードショートカットの設定方法とカスタマイズ手順。
+---
+
+import DemoVideo from '../../../../components/DemoVideo.astro';
+
+Media Sortでは、すべてのキーボードショートカットをカスタマイズできます。アプリケーションのGUIから直接変更することも、設定ファイルをテキストエディタで直接編集することも可能です。
+
+---
+
+## ⚙️ GUIからのキーバインド変更
+
+アプリケーション内でショートカットを変更する手順は以下の通りです：
+
+1. 下部コントロールパネルにある **設定（歯車アイコン）** ボタンをクリックします。
+2. 設定ウィンドウの上部にある **キーバインド（Keybindings）** タブを選択します。
+3. 変更したいアクションの右側にある、現在の割り当てが表示されたボタンをクリックします。ボタンのテキストが *キーを入力... (Press a key...)* に切り替わります。
+4. 割り当てたいキーの組み合わせ（`Ctrl`、`Shift`、`Alt` などの修飾キーを含む）をキーボードで入力します。
+5. **閉じる（Close）** をクリックして設定を保存します。
+
+### 設定画面でのカスタマイズの流れ
+
+以下は、設定ダイアログを開いてショートカットキーを再割り当てする一連の流れを示すインタラクティブデモ動画です：
+
+<DemoVideo 
+  videoUrl="/demos/change_keybinding.mp4"
+  zoomLabel="動画を拡大"
+  caption="設定ダイアログでのキーバインド再割り当て操作"
+  fallbackText="お使いのブラウザはビデオタグに対応していません。"
+/>
+
+---
+
+## 🛠️ 上級者向け：設定ファイルの直接編集
+
+テキストエディタで `config.toml` ファイルを開き、手動でキーバインドを書き換えることもできます。
+
+### 設定ファイルの保存場所
+設定ファイルは、各OSの以下のディレクトリに配置されています：
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (通常は `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (通常は `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
+
+### TOMLファイルでの設定方法
+`[keybindings]` セクションの下にある各アクションのテーブルで、以下の設定値を変更します：
+- `key` (文字列): メインとなるキーの名前 (例: `"W"`, `"ArrowUp"`, `"Space"`, `"Enter"`)。
+- `ctrl` (真偽値): `true` に設定すると、Controlキーの同時押しが必要になります。
+- `shift` (真偽値): `true` に設定すると、Shiftキーの同時押しが必要になります。
+- `alt` (真偽値): `true` に設定すると、Altキーの同時押しが必要になります。
+- `meta` (真偽値): `true` に設定すると、OSのシステムキー（Windows/Commandキー）の同時押しが必要になります。
+
+#### 例：Undo（元に戻す）を Ctrl+Z に割り当てる場合
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+---
+
+## 🔤 指定できるキー名について
+
+`key` フィールドには、Winitライブラリで定義されているキーの文字列表現を指定します。主なキー名は以下の通りです：
+- アルファベット・数字: `"A"` 〜 `"Z"`, `"0"` 〜 `"9"`
+- 矢印・ナビゲーション: `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- 特殊キー: `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- ファンクションキー: `"F1"` 〜 `"F12"`

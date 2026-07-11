@@ -1,0 +1,51 @@
+---
+title: ダウンロードとインストール
+description: Media Sortを実行するためのプリコンパイル済みバイナリのダウンロード、または依存関係のインストール。
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sortは、Windows、Linux、およびmacOS向けのプリコンパイル済みスタンドアロンパッケージとして利用可能です。
+
+Media Sortはメディア再生やUI制御にネイティブのシステムAPIを統合しているため、お使いのプラットフォームのシステム要件を以下からご確認ください。
+
+---
+
+## 📥 Media Sort のダウンロード
+
+お使いのオペレーティングシステムとプロセッサアーキテクチャに適したパッケージを選択してください：
+
+<ReleaseDownloads />
+
+---
+
+## 🛠️ システムの前提条件
+
+Media Sortを実行するには、システムに `mpv` デマキサライブラリ（`libmpv`）がインストールされている必要があります。
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install libmpv-dev
+```
+
+#### Fedora
+```bash
+sudo dnf install mpv-libs-devel
+```
+
+### macOS
+
+Homebrewがインストールされていることを確認し、以下を実行します：
+```bash
+brew install mpv
+```
+
+### Windows
+システムライブラリの手動セットアップは不要です！ プリコンパイル済みのWindows版インストーラーおよびZIPパッケージには、必要な `libmpv-2.dll` ライブラリが同梱されています。

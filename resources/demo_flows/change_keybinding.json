@@ -1,0 +1,35 @@
+{
+  "flow_name": "Change Keybinding Workflow",
+  "steps": [
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "settings_btn" } },
+      "message": { "Settings": "Open" }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Coordinate", "value": { "x": 960.0, "y": 250.0 } },
+      "message": { "Settings": "OpenKeybindings" }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Coordinate", "value": { "x": 1050.0, "y": 420.0 } },
+      "message": { "Settings": { "EditKeyBinding": 3 } }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Coordinate", "value": { "x": 960.0, "y": 540.0 } },
+      "message": { "KeyCaptured": ["N", false, false, false] }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "close_settings_btn" } },
+      "message": { "Settings": "Close" }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "close_settings_btn" } },
+      "message": "Quit"
+    }
+  ]
+}

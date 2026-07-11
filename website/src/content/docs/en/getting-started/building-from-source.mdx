@@ -1,0 +1,52 @@
+---
+title: Building from Source
+description: How to compile and build Media Sort directly from its source code.
+---
+
+If you prefer to compile Media Sort yourself, you will need the Rust toolchain and Clang (needed to build bindings via `libmpv-sys`).
+
+---
+
+## 🛠️ Build Prerequisites
+
+Before compiling, install the required compiler tools and development libraries:
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S clang mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev
+```
+
+### macOS
+
+Install Xcode Command Line Tools and Homebrew dependencies:
+```bash
+xcode-select --install
+brew install mpv
+```
+
+---
+
+## 🏗️ Compiling the Project
+
+1. Clone the project repository:
+   ```bash
+   git clone https://github.com/Lolle2000la/Image-Sort.git
+   cd Image-Sort
+   ```
+
+2. Compile the workspace using Cargo:
+   ```bash
+   cargo build --release
+   ```
+
+3. The compiled binary will be generated under the target directory:
+   ```bash
+   ./target/release/media-sort-gui
+   ```

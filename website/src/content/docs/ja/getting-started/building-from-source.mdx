@@ -1,0 +1,52 @@
+---
+title: ソースからのビルド
+description: Media Sortのソースコードをご自身でコンパイルおよびビルドする方法。
+---
+
+ご自身でMedia Sortをコンパイルする場合は、RustツールチェーンとClang（`libmpv-sys` を介したバインディング生成に必要）が必要です。
+
+---
+
+## 🛠️ ビルドの前提条件
+
+コンパイルを行う前に、必要なコンパイラツールと開発用ライブラリをインストールしてください：
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S clang mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev
+```
+
+### macOS
+
+Xcode Command Line ToolsとHomebrew依存関係をインストールします：
+```bash
+xcode-select --install
+brew install mpv
+```
+
+---
+
+## 🏗️ プロジェクトのコンパイル
+
+1. プロジェクトのリポジトリをクローンします：
+   ```bash
+   git clone https://github.com/Lolle2000la/Image-Sort.git
+   cd Image-Sort
+   ```
+
+2. Cargoを使用してワークスペースをコンパイルします：
+   ```bash
+   cargo build --release
+   ```
+
+3. コンパイルされたバイナリはターゲットディレクトリに生成されます：
+   ```bash
+   ./target/release/media-sort-gui
+   ```

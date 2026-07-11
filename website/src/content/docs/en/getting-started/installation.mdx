@@ -1,0 +1,51 @@
+---
+title: Download & Installation
+description: Download precompiled binaries or install dependencies to run Media Sort.
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sort is available as precompiled standalone packages for Windows, Linux, and macOS.
+
+Since Media Sort integrates native system APIs for media playback and UI controls, please check the system requirements below for your platform.
+
+---
+
+## 📥 Download Media Sort
+
+Select the package appropriate for your operating system and processor architecture:
+
+<ReleaseDownloads />
+
+---
+
+## 🛠️ System Prerequisites
+
+To run Media Sort, you must have the `mpv` demuxer libraries (`libmpv`) installed on your system.
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install libmpv-dev
+```
+
+#### Fedora
+```bash
+sudo dnf install mpv-libs-devel
+```
+
+### macOS
+
+Ensure you have Homebrew installed, then run:
+```bash
+brew install mpv
+```
+
+### Windows
+No manual setup is needed! The precompiled Windows installers and ZIP packages bundle the required `libmpv-2.dll` library natively.

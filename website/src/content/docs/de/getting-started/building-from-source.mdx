@@ -1,0 +1,52 @@
+---
+title: Aus dem Quellcode kompilieren
+description: So kompilieren und erstellen Sie Media Sort direkt aus dem Quellcode.
+---
+
+Wenn Sie Media Sort lieber selbst kompilieren möchten, benötigen Sie die Rust-Toolchain und Clang (erforderlich, um Bindungen über `libmpv-sys` zu generieren).
+
+---
+
+## 🛠️ Build-Voraussetzungen
+
+Installieren Sie vor dem Kompilieren die erforderlichen Compiler-Tools und Entwicklungsbibliotheken:
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S clang mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev
+```
+
+### macOS
+
+Installieren Sie die Xcode-Befehlszeilentools und Homebrew-Abhängigkeiten:
+```bash
+xcode-select --install
+brew install mpv
+```
+
+---
+
+## 🏗️ Projekt kompilieren
+
+1. Klonen Sie das Projekt-Repository:
+   ```bash
+   git clone https://github.com/Lolle2000la/Image-Sort.git
+   cd Image-Sort
+   ```
+
+2. Kompilieren Sie den Workspace mit Cargo:
+   ```bash
+   cargo build --release
+   ```
+
+3. Die kompilierte Binärdatei wird unter dem Zielverzeichnis generiert:
+   ```bash
+   ./target/release/media-sort-gui
+   ```

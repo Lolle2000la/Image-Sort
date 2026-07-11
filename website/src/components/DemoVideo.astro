@@ -1,0 +1,224 @@
+---
+interface Props {
+  videoUrl?: string;
+  zoomLabel?: string;
+  caption?: string;
+  fallbackText?: string;
+}
+
+const {
+  videoUrl = "/demos/sorting_workflow.mp4",
+  zoomLabel = "Click to expand",
+  caption = "Headless sorting session scripted with iced-automation",
+  fallbackText = "Your browser does not support the video tag."
+} = Astro.props;
+
+// Generate a unique ID suffix for this instance to prevent collision
+const uniqueId = Math.random().toString(36).substring(2, 9);
+---
+
+<div class="demo-video-wrapper">
+  <div class="video-container" id={`trigger-${uniqueId}`}>
+    <video autoplay muted loop playsinline class="preview-video">
+      <source src={videoUrl} type="video/mp4" />
+      {fallbackText}
+    </video>
+    <div class="zoom-overlay">
+      <span class="zoom-icon">🔍</span> {zoomLabel}
+    </div>
+  </div>
+  {caption && <div class="video-caption">{caption}</div>}
+</div>
+
+{/* Modal Overlay */}
+<div id={`modal-${uniqueId}`} class="modal-overlay">
+  <div class="modal-content">
+    <span class="close-btn" id={`close-${uniqueId}`}>&times;</span>
+    <video id={`video-play-${uniqueId}`} controls loop playsinline class="modal-video">
+      <source src={videoUrl} type="video/mp4" />
+    </video>
+  </div>
+</div>
+
+<script define:vars={{ uniqueId }}>
+  (function() {
+    function setupVideoModal() {
+      const trigger = document.getElementById(`trigger-${uniqueId}`);
+      const modal = document.getElementById(`modal-${uniqueId}`);
+      const modalVideo = document.getElementById(`video-play-${uniqueId}`);
+      const closeBtn = document.getElementById(`close-${uniqueId}`);
+
+      if (trigger && modal && modalVideo) {
+        // Move the modal to document.body to escape any parent stacking contexts (like Starlight columns)
+        document.body.appendChild(modal);
+
+        trigger.onclick = () => {
+          modal.classList.add('active');
+          modalVideo.play().catch(() => {});
+          modalVideo.currentTime = 0;
+        };
+
+        const closeModal = () => {
+          modal.classList.remove('active');
+          modalVideo.pause();
+        };
+
+        if (closeBtn) closeBtn.onclick = closeModal;
+        modal.onclick = (e) => {
+          if (e.target === modal || e.target === modalVideo) {
+            closeModal();
+          }
+        };
+
+        const keyHandler = (e) => {
+          if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+          }
+        };
+
+        document.addEventListener('keydown', keyHandler);
+
+        // Ensure we clean up listeners and DOM nodes when navigating away via Starlight SPA routing
+        document.addEventListener('astro:before-swap', () => {
+          document.removeEventListener('keydown', keyHandler);
+          modal.remove();
+        }, { once: true });
+      }
+    }
+
+    // Run setup on load
+    setupVideoModal();
+    // Run setup on page load transition events
+    document.addEventListener('astro:page-load', setupVideoModal);
+  })();
+</script>
+
+<style>
+  .demo-video-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Zoom styling */
+  .video-container {
+    position: relative;
+    cursor: zoom-in;
+    width: 100%;
+    border-radius: 1rem;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+  }
+  
+  .video-container:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+  }
+
+  .video-container:hover .zoom-overlay {
+    opacity: 1;
+  }
+
+  .zoom-overlay {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    gap: 0.5rem;
+    z-index: 2;
+  }
+
+  .zoom-icon {
+    font-size: 1.5rem;
+  }
+
+  .preview-video {
+    width: 100%;
+    display: block;
+    background: #000;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Modal styling */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .modal-content {
+    position: relative;
+    width: 90%;
+    max-width: 1280px;
+    transform: scale(0.9);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .modal-overlay.active .modal-content {
+    transform: scale(1);
+  }
+
+  .modal-video {
+    width: 100%;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: #000;
+    cursor: zoom-out;
+  }
+
+  .close-btn {
+    position: absolute;
+    top: -2.5rem;
+    right: 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .close-btn:hover {
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .video-caption {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+    font-style: italic;
+  }
+</style>

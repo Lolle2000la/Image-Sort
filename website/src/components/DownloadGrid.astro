@@ -1,0 +1,85 @@
+---
+interface Props {
+  linuxLabel?: string;
+  windowsLabel?: string;
+  macosLabel?: string;
+  linuxSub?: string;
+  windowsSub?: string;
+  macosSub?: string;
+  releasesUrl?: string;
+}
+
+const {
+  linuxLabel = "Download for Linux",
+  windowsLabel = "Download for Windows",
+  macosLabel = "Download for macOS",
+  linuxSub = ".AppImage",
+  windowsSub = ".msi / portable",
+  macosSub = ".dmg",
+  releasesUrl = "https://github.com/Lolle2000la/Image-Sort/releases"
+} = Astro.props;
+---
+
+<div class="download-grid">
+  <a href={releasesUrl} class="download-btn linux">
+    <span class="btn-icon">🐧</span>
+    <span class="btn-text">{linuxLabel} <small>{linuxSub}</small></span>
+  </a>
+  <a href={releasesUrl} class="download-btn windows">
+    <span class="btn-icon">🪟</span>
+    <span class="btn-text">{windowsLabel} <small>{windowsSub}</small></span>
+  </a>
+  <a href={releasesUrl} class="download-btn macos">
+    <span class="btn-icon">🍎</span>
+    <span class="btn-text">{macosLabel} <small>{macosSub}</small></span>
+  </a>
+</div>
+
+<style>
+  .download-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 2rem;
+  }
+
+  .download-btn {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    text-decoration: none;
+    font-weight: 600;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.2s ease-in-out;
+  }
+
+  .download-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: #6366f1;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.15);
+  }
+
+  .download-btn .btn-icon {
+    font-size: 1.5rem;
+  }
+
+  .download-btn .btn-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    font-size: 0.95rem;
+  }
+
+  .download-btn small {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: 400;
+  }
+</style>

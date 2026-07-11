@@ -1,0 +1,138 @@
+---
+title: Media Sort
+description: The lightning-fast, keyboard-driven media organizer.
+template: splash
+---
+
+import DownloadGrid from '../../../components/DownloadGrid.astro';
+import DemoVideo from '../../../components/DemoVideo.astro';
+import Features from '../../../components/Features.astro';
+
+<div class="landing-hero">
+  <div class="hero-text">
+    <h1 class="gradient-text">Media Sort</h1>
+    <p class="tagline">The lightning-fast, keyboard-driven media organizer.</p>
+    
+    <DownloadGrid 
+      linuxLabel="Download for Linux"
+      linuxSub=".AppImage"
+      windowsLabel="Download for Windows"
+      windowsSub=".msi / portable"
+      macosLabel="Download for macOS"
+      macosSub=".dmg"
+    />
+    
+    <div class="secondary-actions">
+      <a href="/en/getting-started/installation/" class="action-btn primary">Get Started &rarr;</a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <DemoVideo 
+      zoomLabel="Click to expand"
+      caption="Headless sorting session scripted with iced-automation"
+      fallbackText="Your browser does not support the video tag."
+    />
+  </div>
+</div>
+
+<Features 
+  sectionTitle="Why Media Sort?"
+  features={[
+    {
+      icon: "⚡",
+      title: "True Multi-Format Performance",
+      description: "It's not just for images anymore. Decodes and previews video, audio (MP3/FLAC), and graphics seamlessly in one unified grid, powered by media-sort-backend and integrated libmpv."
+    },
+    {
+      icon: "🛡️",
+      title: "Zero-Anxiety Sorting",
+      description: "Hit keys at Mach 5. Every single folder move, copy, rename, and deletion can be instantly undone or redone. Our robust history.rs and reversible.rs architecture keeps your data safe."
+    },
+    {
+      icon: "🔒",
+      title: "Privacy-First & Local",
+      description: "No cloud telemetry, no account creation, no phoning home. A native Rust binary talking directly to your local filesystem checker and watcher. Your media remains entirely yours."
+    }
+  ]}
+/>
+
+<style>{`
+  .landing-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  @media (min-width: 900px) {
+    .landing-hero {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .hero-text {
+      flex: 1;
+      max-width: 50%;
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    .hero-visual {
+      flex: 1;
+      max-width: 45%;
+    }
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .gradient-text {
+    font-size: 3.5rem !important;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa 0%, #6366f1 50%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: 1.5rem;
+    color: var(--sl-color-gray-2);
+    margin-bottom: 2.5rem;
+    line-height: 1.4;
+  }
+
+  .secondary-actions {
+    margin-top: 1rem;
+  }
+
+  .action-btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .action-btn.primary {
+    background: #6366f1;
+    color: white !important;
+  }
+
+  .action-btn.primary:hover {
+    background: #4f46e5;
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+`}</style>

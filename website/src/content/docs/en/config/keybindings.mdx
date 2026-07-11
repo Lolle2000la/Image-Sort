@@ -1,0 +1,71 @@
+---
+title: Custom Keybindings
+description: How to configure and customize keyboard shortcuts in Media Sort.
+---
+
+import DemoVideo from '../../../../components/DemoVideo.astro';
+
+Media Sort allows you to customize all keyboard shortcuts. You can easily remap them directly in the application GUI or modify the raw configuration file for advanced needs.
+
+---
+
+## ⚙️ Remapping Keybindings via GUI
+
+To customize a keyboard shortcut inside the app:
+
+1. Click the **Settings Gear** button in the lower control panel.
+2. Select the **Keybindings** tab at the top of the settings window.
+3. Click the secondary button showing the current keybinding next to the action you want to modify. The button text will change to *Press a key...*.
+4. Press the key combination you wish to bind (including modifiers like `Ctrl`, `Shift`, or `Alt`).
+5. Click **Close** to save your preferences.
+
+### Keybinding GUI in Action
+
+Below is an interactive video demonstrating how to open settings and remap a shortcut:
+
+<DemoVideo 
+  videoUrl="/demos/change_keybinding.mp4"
+  zoomLabel="Click to expand video"
+  caption="Customizing keybindings in the Settings dialog"
+  fallbackText="Your browser does not support the video tag."
+/>
+
+---
+
+## 🛠️ Advanced: Modifying the Configuration File
+
+Alternatively, you can manually customize keybindings by editing the `config.toml` file in a text editor.
+
+### Configuration File Location
+The configuration resides in your system-specific configuration directory:
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (usually `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (usually `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
+
+### Editing Keybindings in TOML
+Look for the `[keybindings]` section. Each action keybinding is defined by a table containing:
+- `key` (string): The name of the primary key (e.g. `"W"`, `"ArrowUp"`, `"Space"`, `"Enter"`).
+- `ctrl` (boolean): Set to `true` to require the Control key.
+- `shift` (boolean): Set to `true` to require the Shift key.
+- `alt` (boolean): Set to `true` to require the Alt key.
+- `meta` (boolean): Set to `true` to require the System/Meta/Windows key.
+
+#### Example: Remapping Undo to Ctrl+Z
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+---
+
+## 🔤 Allowed Key Names
+
+The primary `key` field matches the string representation of Winit's key names. Commonly used key names include:
+- Single characters: `"A"` to `"Z"`, `"0"` to `"9"`
+- Navigation: `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- System: `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- Function keys: `"F1"` to `"F12"`

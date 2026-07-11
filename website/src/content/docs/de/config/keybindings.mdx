@@ -1,0 +1,71 @@
+---
+title: Eigene Tastaturbelegungen
+description: So konfigurieren und passen Sie Tastatur-Shortcuts in Media Sort an.
+---
+
+import DemoVideo from '../../../../components/DemoVideo.astro';
+
+Media Sort ermöglicht es Ihnen, alle Tastaturkürzel anzupassen. Sie können diese entweder direkt über die Benutzeroberfläche (GUI) neu belegen oder die Konfigurationsdatei für erweiterte Anforderungen manuell bearbeiten.
+
+---
+
+## ⚙️ Tastaturkürzel über die GUI ändern
+
+So passen Sie ein Tastenkürzel in der App an:
+
+1. Klicken Sie auf das **Zahnrad-Symbol** (Einstellungen) in der unteren Kontrollleiste.
+2. Wählen Sie oben im Einstellungsfenster den Reiter **Tastaturkürzel** (Keybindings).
+3. Klicken Sie auf die Schaltfläche neben der Aktion, die Sie ändern möchten (dort wird das aktuelle Kürzel angezeigt). Der Text ändert sich zu *Taste drücken...*.
+4. Drücken Sie die gewünschte Tastenkombination (einschließlich Modifikatoren wie `Strg`, `Umschalt` oder `Alt`).
+5. Klicken Sie auf **Schließen**, um Ihre Änderungen zu speichern.
+
+### GUI-Tastenneubelegung in Aktion
+
+Das folgende interaktive Video zeigt, wie Sie die Einstellungen öffnen und ein Kürzel neu zuweisen:
+
+<DemoVideo 
+  videoUrl="/demos/change_keybinding.mp4"
+  zoomLabel="Video vergrößern"
+  caption="Anpassen von Tastaturkürzeln im Einstellungsdialog"
+  fallbackText="Ihr Browser unterstützt das Video-Tag nicht."
+/>
+
+---
+
+## 🛠️ Fortgeschritten: Bearbeiten der Konfigurationsdatei
+
+Alternativ können Sie Shortcuts manuell anpassen, indem Sie die Datei `config.toml` in einem Texteditor bearbeiten.
+
+### Speicherort der Konfigurationsdatei
+Die Konfiguration befindet sich im systemspezifischen Konfigurationsverzeichnis:
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (normalerweise `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (normalerweise `C:\Benutzer\<Benutzername>\AppData\Roaming\media-sort\config.toml`)
+
+### Bearbeiten in TOML
+Suchen Sie nach dem Abschnitt `[keybindings]`. Jede Shortcut-Tabelle enthält:
+- `key` (String): Der Name der Haupttaste (z. B. `"W"`, `"ArrowUp"`, `"Space"`, `"Enter"`).
+- `ctrl` (Boolean): Auf `true` setzen, um die Strg-Taste zu erfordern.
+- `shift` (Boolean): Auf `true` setzen, um die Umschalttaste (Shift) zu erfordern.
+- `alt` (Boolean): Auf `true` setzen, um die Alt-Taste zu erfordern.
+- `meta` (Boolean): Auf `true` setzen, um die System-/Windows-Taste zu erfordern.
+
+#### Beispiel: Strg+Z für Rückgängig
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+---
+
+## 🔤 Gültige Tastennamen
+
+Das Feld `key` entspricht der Winit-Tastennamen-Spezifikation. Häufig verwendete Namen sind:
+- Einzelne Zeichen: `"A"` bis `"Z"`, `"0"` bis `"9"`
+- Navigation: `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- Systemtasten: `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- Funktionstasten: `"F1"` bis `"F12"`
