@@ -1,5 +1,23 @@
 use std::path::PathBuf;
 
+fn workspace_root() -> PathBuf {
+    let manifest_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    manifest_dir
+        .parent()
+        .and_then(|p| p.parent())
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| manifest_dir.clone())
+}
+
+fn resolve_workspace_path(path: &str) -> PathBuf {
+    let p = PathBuf::from(path);
+    if p.is_absolute() {
+        p
+    } else {
+        workspace_root().join(path)
+    }
+}
+
 /// Called at the top of `main()`, before the iced application builder.
 /// Returns `Some(Ok(()))` if headless export completed, or `Some(Err(...))`
 /// on failure.  Returns `None` when no export env var is set.
@@ -8,8 +26,8 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
         return None;
     }
 
-    let export_path = std::path::PathBuf::from(&cli.demo_export);
-    let spec_path = std::path::PathBuf::from(&cli.demo_spec);
+    let export_path = resolve_workspace_path(&cli.demo_export);
+    let spec_path = resolve_workspace_path(&cli.demo_spec);
 
     let run = || -> Result<(), Box<dyn std::error::Error>> {
         if spec_path.is_dir() {
@@ -45,7 +63,11 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
             Ok(())
         } else {
             let demo_root = init_demo_media();
-            crate::headless::export_demo_video(demo_root, &cli.demo_spec, &cli.demo_export)
+            crate::headless::export_demo_video(
+                demo_root,
+                &spec_path.to_string_lossy(),
+                &export_path.to_string_lossy(),
+            )
         }
     };
 
@@ -60,7 +82,7 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
         return None;
     }
 
-    let spec_path = std::path::PathBuf::from(&cli.demo_spec);
+    let spec_path = resolve_workspace_path(&cli.demo_spec);
     let final_spec_path = if spec_path.is_dir() {
         // Look for sorting_workflow.json or any json file in the directory
         let default_flow = spec_path.join("sorting_workflow.json");
@@ -86,9 +108,9 @@ pub fn init(cli: &crate::Cli, state: &mut crate::state::AppState) -> Option<Path
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let _ = std::fs::create_dir_all(&demo_root);
 
-    let mock_state_src = std::path::Path::new("resources/MockState");
+    let mock_state_src = resolve_workspace_path("resources/MockState");
     let copied = if mock_state_src.exists() {
-        if let Err(e) = copy_dir_all(mock_state_src, &demo_root) {
+        if let Err(e) = copy_dir_all(&mock_state_src, &demo_root) {
             tracing::error!("Failed to copy concrete MockState: {:?}", e);
             false
         } else {
@@ -142,9 +164,9 @@ fn init_demo_media() -> PathBuf {
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let _ = std::fs::create_dir_all(&demo_root);
 
-    let mock_state_src = std::path::Path::new("resources/MockState");
+    let mock_state_src = resolve_workspace_path("resources/MockState");
     let copied = if mock_state_src.exists() {
-        if let Err(e) = copy_dir_all(mock_state_src, &demo_root) {
+        if let Err(e) = copy_dir_all(&mock_state_src, &demo_root) {
             tracing::error!("Failed to copy concrete MockState: {:?}", e);
             false
         } else {
