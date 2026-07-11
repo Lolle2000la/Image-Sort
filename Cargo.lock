@@ -2977,6 +2977,7 @@ dependencies = [
  "embed-resource",
  "iced",
  "iced-automation",
+ "iced-automation-macros",
  "iced_runtime",
  "iced_test",
  "iced_wgpu",

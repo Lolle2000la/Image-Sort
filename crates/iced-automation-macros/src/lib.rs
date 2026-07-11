@@ -1,6 +1,8 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Fields, ItemEnum, ItemStruct, Variant, parse_macro_input, parse_str};
+use syn::{
+    DeriveInput, Fields, ItemEnum, ItemStruct, LitStr, Token, Variant, parse_macro_input, parse_str,
+};
 
 #[proc_macro_attribute]
 pub fn message(_args: TokenStream, input: TokenStream) -> TokenStream {
@@ -25,14 +27,16 @@ pub fn message(_args: TokenStream, input: TokenStream) -> TokenStream {
         #item_enum
 
         impl iced_automation::AutomationMessage for #enum_name {
-            fn as_automation_message(&self) -> Option<iced_automation::AutomationMessageView> {
+            fn as_bounds(&self) -> Option<iced::Rectangle> {
                 match self {
-                    #enum_name::AutomationBounds(rect) => {
-                        Some(iced_automation::AutomationMessageView::Bounds(*rect))
-                    }
-                    #enum_name::AutomationVirtualTick(duration) => {
-                        Some(iced_automation::AutomationMessageView::VirtualTick(*duration))
-                    }
+                    #enum_name::AutomationBounds(rect_opt) => *rect_opt,
+                    _ => None,
+                }
+            }
+
+            fn as_virtual_tick(&self) -> Option<std::time::Duration> {
+                match self {
+                    #enum_name::AutomationVirtualTick(delta) => Some(*delta),
                     _ => None,
                 }
             }
@@ -79,4 +83,86 @@ pub fn state(args: TokenStream, input: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(expanded)
+}
+
+#[proc_macro_derive(AutomationKeycap, attributes(automation))]
+pub fn derive_automation_keycap(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let name = &input.ident;
+
+    let variants = match &input.data {
+        syn::Data::Enum(data) => &data.variants,
+        _ => panic!("AutomationKeycap can only be derived for enums"),
+    };
+
+    let match_arms: Vec<_> = variants
+        .iter()
+        .map(|v| {
+            let variant_name = &v.ident;
+            let keycap: Option<String> = v
+                .attrs
+                .iter()
+                .find(|attr| attr.path().is_ident("automation"))
+                .and_then(|attr| {
+                    attr.parse_args_with(|input: syn::parse::ParseStream| {
+                        let ident: syn::Ident = input.parse()?;
+                        if ident != "keycap" {
+                            return Err(input.error("expected `keycap`"));
+                        }
+                        input.parse::<Token![=]>()?;
+                        let label: LitStr = input.parse()?;
+                        Ok(label.value())
+                    })
+                    .ok()
+                });
+
+            match keycap {
+                Some(label) => {
+                    let (pat, _guard) = build_pattern(&v.fields);
+                    quote! {
+                        #name::#variant_name #pat => Some(#label)
+                    }
+                }
+                _ => {
+                    let (_pat, _guard) = build_pattern(&v.fields);
+                    quote! {}
+                }
+            }
+        })
+        .filter(|arm| !arm.is_empty())
+        .collect();
+
+    let expanded = if match_arms.is_empty() {
+        quote! {
+            impl #name {
+                #[allow(dead_code)]
+                pub fn automation_keycap(&self) -> Option<&'static str> {
+                    None
+                }
+            }
+        }
+    } else {
+        let fallback = quote! { _ => None };
+        quote! {
+            impl #name {
+                #[allow(dead_code)]
+                pub fn automation_keycap(&self) -> Option<&'static str> {
+                    match self {
+                        #(#match_arms,)*
+                        #fallback
+                    }
+                }
+            }
+        }
+    };
+
+    TokenStream::from(expanded)
+}
+
+fn build_pattern(fields: &syn::Fields) -> (proc_macro2::TokenStream, proc_macro2::TokenStream) {
+    match fields {
+        Fields::Unit => (quote! {}, quote! {}),
+        Fields::Unnamed(_) => (quote! { (..) }, quote! {}),
+        Fields::Named(_) => (quote! { { .. } }, quote! {}),
+    }
 }

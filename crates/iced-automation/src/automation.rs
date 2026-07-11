@@ -548,64 +548,68 @@ where
     )
 }
 
-#[derive(Debug, Clone)]
-pub enum AutomationMessageView {
-    Bounds(Option<iced::Rectangle>),
-    VirtualTick(std::time::Duration),
+pub trait AutomationMessage {
+    fn as_bounds(&self) -> Option<iced::Rectangle>;
+    fn as_virtual_tick(&self) -> Option<std::time::Duration>;
 }
 
-pub trait AutomationMessage {
-    fn as_automation_message(&self) -> Option<AutomationMessageView>;
+pub trait AutomationContext<Message> {
+    fn poll_background(&mut self) -> Task<Message> {
+        Task::none()
+    }
 }
 
 pub trait AutomationStateTrait<Message> {
     fn automation(&self) -> &Option<AutomationState<Message>>;
     fn automation_mut(&mut self) -> &mut Option<AutomationState<Message>>;
+
+    fn is_automation_completed(&self) -> bool {
+        self.automation().as_ref().is_some_and(|a| a.completed)
+    }
 }
 
-pub fn intercept_update<State, Message, PollBg>(
+pub fn handle_automation_message<State, Message>(
     state: &mut State,
     message: &Message,
     map_bounds: impl Fn(Option<iced::Rectangle>) -> Message + Send + Sync + 'static,
-    mut poll_bg: PollBg,
 ) -> Option<Task<Message>>
 where
-    State: AutomationStateTrait<Message>,
+    State: AutomationStateTrait<Message> + AutomationContext<Message>,
     Message: AutomationMessage + Clone + Send + 'static,
-    PollBg: FnMut(&mut State) -> Task<Message>,
 {
-    let view = message.as_automation_message()?;
-    match view {
-        AutomationMessageView::Bounds(rect_opt) => {
-            if let Some(automation) = state.automation_mut() {
-                handle_bounds_resolved(automation, rect_opt);
-            }
-            Some(Task::none())
+    let bounds = message.as_bounds();
+    if bounds.is_some() {
+        if let Some(automation) = state.automation_mut() {
+            handle_bounds_resolved(automation, bounds);
         }
-        AutomationMessageView::VirtualTick(delta) => {
-            let bg_task = poll_bg(state);
-
-            let automation_task = if let Some(automation) = state.automation_mut()
-                && let Some(result) = handle_automation_virtual_tick(automation, delta)
-            {
-                match result {
-                    AutomationTickResult::Message(msg) => Task::done(msg),
-                    AutomationTickResult::FindBounds(id) => find_bounds_task(id).map(map_bounds),
-                }
-            } else {
-                Task::none()
-            };
-
-            if let Some(automation) = state.automation()
-                && let Some(cell) = VIRTUAL_CURSOR.get()
-                && let Ok(mut guard) = cell.lock()
-            {
-                *guard = automation.virtual_cursor;
-            }
-
-            Some(Task::batch(vec![bg_task, automation_task]))
-        }
+        return Some(Task::none());
     }
+
+    if let Some(delta) = message.as_virtual_tick() {
+        let bg_task = state.poll_background();
+
+        let automation_task = if let Some(automation) = state.automation_mut()
+            && let Some(result) = handle_automation_virtual_tick(automation, delta)
+        {
+            match result {
+                AutomationTickResult::Message(msg) => Task::done(msg),
+                AutomationTickResult::FindBounds(id) => find_bounds_task(id).map(map_bounds),
+            }
+        } else {
+            Task::none()
+        };
+
+        if let Some(automation) = state.automation()
+            && let Some(cell) = VIRTUAL_CURSOR.get()
+            && let Ok(mut guard) = cell.lock()
+        {
+            *guard = automation.virtual_cursor;
+        }
+
+        return Some(Task::batch(vec![bg_task, automation_task]));
+    }
+
+    None
 }
 
 pub fn try_tick_state<State, Message, Update>(

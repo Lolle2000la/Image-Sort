@@ -20,6 +20,7 @@ demo = [
 media-sort-core = { path = "../media-sort-core" }
 media-sort-backend = { path = "../media-sort-backend" }
 iced-automation = { path = "../iced-automation", optional = true }
+iced-automation-macros = { path = "../iced-automation-macros" }
 iced.workspace = true
 iced_wgpu.workspace = true
 tokio.workspace = true

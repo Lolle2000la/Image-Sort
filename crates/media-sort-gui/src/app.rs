@@ -1,6 +1,9 @@
 use iced::window;
 use iced::{Element, Subscription, Task};
 
+#[cfg(feature = "demo")]
+use iced_automation::AutomationStateTrait;
+
 use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
@@ -59,12 +62,17 @@ fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     Task::batch(bg_tasks)
 }
 
+#[cfg(feature = "demo")]
+impl iced_automation::AutomationContext<Message> for AppState {
+    fn poll_background(&mut self) -> Task<Message> {
+        poll_background_channels(self)
+    }
+}
+
 pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
     #[cfg(feature = "demo")]
     if let Some(task) =
-        iced_automation::intercept_update(state, &message, Message::AutomationBounds, |s| {
-            poll_background_channels(s)
-        })
+        iced_automation::handle_automation_message(state, &message, Message::AutomationBounds)
     {
         return task;
     }
@@ -866,7 +874,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 state.settings.window_position.width = size.width.round() as u32;
                 state.settings.window_position.height = size.height.round() as u32;
                 #[cfg(feature = "demo")]
-                if let Some(ref mut automation) = state.automation {
+                if let Some(automation) = state.automation_mut() {
                     automation.update_window_size(size.width, size.height);
                 }
 
@@ -1588,7 +1596,7 @@ fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
 pub fn view(state: &AppState) -> Element<'_, Message> {
     let base_view = view::main_layout::main_layout_view(state);
     #[cfg(feature = "demo")]
-    if let Some(ref automation) = state.automation {
+    if let Some(automation) = state.automation() {
         return iced_automation::wrap_view(base_view, automation);
     }
     base_view

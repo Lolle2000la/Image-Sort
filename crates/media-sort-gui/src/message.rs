@@ -34,10 +34,13 @@ pub enum Message {
     Update(UpdateMessage),
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]
 pub enum SettingsMessage {
+    #[automation(keycap = "Ctrl+,\nSettings")]
     Open,
+    #[automation(keycap = "Esc\nClose")]
     Close,
+    #[automation(keycap = "Ctrl+D\nChange Theme")]
     SetTheme(String),
     ToggleReopenFolder,
     #[cfg(feature = "velopack")]
@@ -60,8 +63,9 @@ pub enum SettingsMessage {
     StartDragMetadataDivider,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]
 pub enum FolderMessage {
+    #[automation(keycap = "Enter\nOpen Folder")]
     Open(PathBuf),
     Pick,
     #[serde(skip_deserializing)]
@@ -69,7 +73,9 @@ pub enum FolderMessage {
     PickPin,
     #[serde(skip_deserializing)]
     PickPinResult(Option<PathBuf>),
+    #[automation(keycap = "Arrow Keys\nSelect Destination")]
     Selected(PathBuf, usize),
+    #[automation(keycap = "Space\nExpand Folder")]
     ToggleExpand(PathBuf),
     PinSelected,
     UnpinCurrent(PathBuf),
@@ -82,12 +88,16 @@ pub enum FolderMessage {
     CancelCreate,
 }
 
-#[derive(Debug, Clone, serde::Deserialize)]
+#[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]
 pub enum MediaMessage {
+    #[automation(keycap = "Click\nSelect Entry")]
     SelectEntry(usize),
+    #[automation(keycap = "Type Query\nFilter Results")]
     SearchQueryChanged(String),
+    #[automation(keycap = "Ctrl+F\nFocus Search")]
     SearchFocused,
     SearchBlurred,
+    #[automation(keycap = "F2\nRename")]
     TriggerRename,
     RenameInputChanged(String),
     SubmitRename,
@@ -99,8 +109,11 @@ pub enum MediaMessage {
     Undo,
     Redo,
     GoLeft,
+    #[automation(keycap = "Right Arrow\nNext Image")]
     GoRight,
+    #[automation(keycap = "M\nMove to Folder")]
     MoveActive,
+    #[automation(keycap = "Ctrl+C\nCopy to Folder")]
     CopyActive,
     #[serde(skip_deserializing)]
     GridScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
@@ -143,4 +156,16 @@ pub enum UpdateMessage {
     UserConfirmedUpdate(Box<velopack::UpdateInfo>),
     UpdateFailed(String),
     DismissUpdatePrompt,
+}
+
+#[cfg(feature = "demo")]
+impl Message {
+    pub fn automation_keycap(&self) -> Option<&'static str> {
+        match self {
+            Message::Media(m) => m.automation_keycap(),
+            Message::Folder(f) => f.automation_keycap(),
+            Message::Settings(s) => s.automation_keycap(),
+            _ => None,
+        }
+    }
 }
