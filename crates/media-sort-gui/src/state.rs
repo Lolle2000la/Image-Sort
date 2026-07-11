@@ -13,6 +13,7 @@ use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
+#[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
 pub struct AppState {
     pub history: History,
     pub settings: SettingsStore,
@@ -90,10 +91,6 @@ pub struct AppState {
     /// selection changes (e.g. via keyboard shortcuts).
     pub media_grid_scroll: MediaGridScrollState,
 
-    #[cfg(feature = "demo")]
-    pub automation: Option<iced_automation::AutomationState<crate::message::Message>>,
-    #[cfg(feature = "demo")]
-    pub demo_root_path: Option<PathBuf>,
     /// Active background scan receiver. When `Some`, the tick handler
     /// streams incoming paths into `media_entries`.
     pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,

@@ -4,6 +4,7 @@ use std::time::Instant;
 
 use media_sort_core::settings::store::SettingsStore;
 
+#[cfg_attr(feature = "demo", iced_automation::message)]
 #[derive(Debug, Clone, serde::Deserialize)]
 pub enum Message {
     #[serde(skip_deserializing)]
@@ -31,12 +32,6 @@ pub enum Message {
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
     Update(UpdateMessage),
-    #[cfg(feature = "demo")]
-    #[serde(skip_deserializing)]
-    AutomationBounds(Option<iced::Rectangle>),
-    #[cfg(feature = "demo")]
-    #[serde(skip_deserializing)]
-    AutomationVirtualTick(std::time::Duration),
 }
 
 #[derive(Debug, Clone, serde::Deserialize)]

@@ -136,10 +136,11 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 
 ### iced-automation (generic, no system deps)
 
-| Module | Purpose |
+| Module / Sub-crate | Purpose |
 |--------|---------|
-| `automation.rs` | Generic iced app simulation/automation engine, bounding box queries, custom HUD wrapper views |
+| `automation.rs` | Generic iced app simulation/automation engine, bounding box queries, custom HUD wrapper views, update interceptor helper |
 | `headless.rs` | Headless emulator runner, raw video screenshot loops, ffmpeg pipeline encoder |
+| `macros/` | Procedural macros (`#[message]` and `#[state(Message)]`) to generate boilerplate and traits for automation |
 
 ### media-sort-gui
 

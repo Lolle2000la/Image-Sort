@@ -13,6 +13,58 @@ use crate::subscriptions::keyboard;
 use crate::view;
 
 pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
+    #[cfg(feature = "demo")]
+    if let Some(task) =
+        iced_automation::intercept_update(state, &message, Message::AutomationBounds, |state| {
+            let mut bg_tasks = Vec::new();
+
+            if let Some(ref rx) = state.folder_tree_receiver
+                && let Ok(tree) = rx.try_recv()
+            {
+                state.folder_tree_receiver = None;
+                state.folder_tree = tree;
+                state.sync_selected_folder_idx();
+            }
+
+            let scan_finished = if let Some(ref rx) = state.scan_receiver {
+                for path in rx.try_iter() {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    state.media_entries.push(MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                    });
+                }
+                matches!(
+                    rx.try_recv(),
+                    Err(std::sync::mpsc::TryRecvError::Disconnected)
+                )
+            } else {
+                false
+            };
+
+            if scan_finished {
+                state.scan_receiver = None;
+                state
+                    .media_entries
+                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+                let select_idx = state.pending_select_index.take().unwrap_or(0);
+                state.thumbnail_tracker.cancel_debounce();
+                bg_tasks.push(load_visible_thumbnails(state));
+                bg_tasks.push(select_and_load_entry(state, select_idx));
+            }
+
+            Task::batch(bg_tasks)
+        })
+    {
+        return task;
+    }
+
     match message {
         Message::Tick(_instant) => {
             if state.should_exit {
@@ -21,18 +73,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
 
             #[cfg(feature = "demo")]
-            let automation_task = {
-                let mut automation = state.automation.take();
-                let task = iced_automation::try_tick(
-                    &mut automation,
-                    state,
-                    _instant,
-                    update,
-                    Message::AutomationBounds,
-                );
-                state.automation = automation;
-                task
-            };
+            let automation_task =
+                iced_automation::try_tick_state(state, _instant, update, Message::AutomationBounds);
             #[cfg(not(feature = "demo"))]
             let automation_task = Task::none();
 
@@ -209,85 +251,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             }
         },
         #[cfg(feature = "demo")]
-        Message::AutomationVirtualTick(delta) => {
-            if let Some(ref rx) = state.folder_tree_receiver
-                && let Ok(tree) = rx.try_recv()
-            {
-                state.folder_tree_receiver = None;
-                state.folder_tree = tree;
-                state.sync_selected_folder_idx();
-            }
-
-            let scan_finished = if let Some(ref rx) = state.scan_receiver {
-                for path in rx.try_iter() {
-                    let media_type =
-                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
-                    let file_name = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().to_string())
-                        .unwrap_or_else(|| path.display().to_string());
-                    state.media_entries.push(MediaEntry {
-                        path,
-                        media_type,
-                        file_name,
-                    });
-                }
-                matches!(
-                    rx.try_recv(),
-                    Err(std::sync::mpsc::TryRecvError::Disconnected)
-                )
-            } else {
-                false
-            };
-
-            let mut extra_tasks = Vec::new();
-
-            if scan_finished {
-                state.scan_receiver = None;
-                state
-                    .media_entries
-                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
-                let select_idx = state.pending_select_index.take().unwrap_or(0);
-                state.thumbnail_tracker.cancel_debounce();
-                extra_tasks.push(load_visible_thumbnails(state));
-                extra_tasks.push(select_and_load_entry(state, select_idx));
-            }
-
-            let automation_task = if let Some(ref mut automation) = state.automation
-                && let Some(result) =
-                    iced_automation::handle_automation_virtual_tick(automation, delta)
-            {
-                match result {
-                    iced_automation::AutomationTickResult::Message(msg) => Task::done(msg),
-                    iced_automation::AutomationTickResult::FindBounds(id) => {
-                        iced_automation::find_bounds_task(id).map(Message::AutomationBounds)
-                    }
-                }
-            } else {
-                Task::none()
-            };
-
-            if let Some(ref automation) = state.automation
-                && let Some(cell) = iced_automation::VIRTUAL_CURSOR.get()
-                && let Ok(mut guard) = cell.lock()
-            {
-                *guard = automation.virtual_cursor;
-            }
-
-            if extra_tasks.is_empty() {
-                automation_task
-            } else {
-                extra_tasks.push(automation_task);
-                Task::batch(extra_tasks)
-            }
-        }
-        #[cfg(feature = "demo")]
-        Message::AutomationBounds(rect_opt) => {
-            if let Some(ref mut automation) = state.automation {
-                iced_automation::handle_bounds_resolved(automation, rect_opt);
-            }
-            Task::none()
-        }
+        Message::AutomationBounds(_) | Message::AutomationVirtualTick(_) => Task::none(),
         Message::MediaScanCompleted(Ok(entries)) => {
             state.media_entries = entries;
             let select_idx = state.pending_select_index.take().unwrap_or(0);

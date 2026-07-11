@@ -10,6 +10,7 @@ rust-version.workspace = true
 iced = { workspace = true, features = ["advanced", "canvas"] }
 iced_wgpu = { workspace = true }
 iced_test = { version = "0.14" }
+iced-automation-macros = { path = "../iced-automation-macros" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tracing = { workspace = true }
