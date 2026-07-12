@@ -4,6 +4,8 @@ import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 
+import { repoUrl } from './src/config.ts';
+
 // https://astro.build/config
 export default defineConfig({
     integrations: [
@@ -16,7 +18,7 @@ export default defineConfig({
                 ja: { label: '日本語', lang: 'ja' },
             },
             social: [
-                { icon: 'github', label: 'GitHub', href: 'https://github.com/Lolle2000la/Image-Sort' }
+                { icon: 'github', label: 'GitHub', href: repoUrl }
             ],
             components: {
                 Header: './src/components/Header.astro',

@@ -1,6 +1,7 @@
 ---
 import { execSync } from 'child_process';
 import { Terminal, Monitor, Laptop } from '@lucide/astro';
+import { repoUrl, repoFull } from '../config.ts';
 
 interface Props {
   linuxLabel?: string;
@@ -20,12 +21,12 @@ const {
   macosSub = ".pkg (Apple Silicon)",
 } = Astro.props;
 
-let linuxUrl = "https://github.com/Lolle2000la/Image-Sort/releases";
-let windowsUrl = "https://github.com/Lolle2000la/Image-Sort/releases";
-let macosUrl = "https://github.com/Lolle2000la/Image-Sort/releases";
+let linuxUrl = `${repoUrl}/releases`;
+let windowsUrl = `${repoUrl}/releases`;
+let macosUrl = `${repoUrl}/releases`;
 
 try {
-  const releasesJson = execSync('gh release list --repo Lolle2000la/Image-Sort --json tagName,isPrerelease,isDraft').toString();
+  const releasesJson = execSync(`gh release list --repo ${repoFull} --json tagName,isPrerelease,isDraft`).toString();
   const releases = JSON.parse(releasesJson);
   const v3Releases = releases.filter((r: any) => r.tagName.startsWith('v3.') && !r.isDraft);
   let targetRelease = v3Releases.find((r: any) => !r.isPrerelease);
@@ -34,7 +35,7 @@ try {
   }
   if (targetRelease) {
     const tagName = targetRelease.tagName;
-    const releaseDetailsJson = execSync(`gh release view ${tagName} --repo Lolle2000la/Image-Sort --json assets`).toString();
+    const releaseDetailsJson = execSync(`gh release view ${tagName} --repo ${repoFull} --json assets`).toString();
     const releaseDetails = JSON.parse(releaseDetailsJson);
     const assets = releaseDetails.assets || [];
 
