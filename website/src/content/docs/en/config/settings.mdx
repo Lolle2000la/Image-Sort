@@ -1,0 +1,77 @@
+---
+title: Application Settings
+description: Overview of user settings, GUI options, appearance themes, and update configurations in Media Sort.
+---
+
+Media Sort provides a built-in Settings dialog that lets you customize the appearance, behavior, language, and shortcut keys of the application. 
+
+To open the settings dialog:
+- Click the **Open** button under **Settings** in the left sidebar navigation panel.
+- Alternatively, press the default shortcut keys: `Ctrl + ,`.
+
+---
+
+## General Settings
+
+The **General settings** tab covers configuration options for directory behavior, updates, theme customisation, and operating system integrations.
+
+### Appearance
+
+#### Theme
+Media Sort includes pre-configured visual themes to customize the interface. Selecting a theme immediately updates the colors of all UI components:
+- Available options include **Dark**, **Light**, **Dracula**, **Nord**, **Solarized (Light/Dark)**, **Gruvbox (Light/Dark)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa**, and more.
+
+#### Reopen last opened folder on startup
+- **Behavior:** When enabled, the application automatically re-opens the directory you were working on when you last closed the application. If disabled, Media Sort starts with a clean slate and prompts you to select a folder.
+
+---
+
+### Animated GIFs
+
+#### Play animated gifs
+- **Behavior:** Toggles whether GIF animations are active in the previewer and image grid panels. Disabling this displays a static first frame, which can optimize rendering performance on folder loads.
+
+---
+
+### Updates
+
+> [!NOTE]
+> Update features are supported on platforms built with Velopack bundle targets (currently Windows and macOS packages).
+
+#### Check for updates on startup
+- **Behavior:** Automatically checks the GitHub repository releases upon launching the application. If a new version is discovered, a dialog prompts you to apply the update.
+
+#### Install prerelease builds
+- **Behavior:** Includes pre-release (beta/alpha) builds in the update checker. Enable this option if you want to test and participate in verifying experimental features.
+
+---
+
+### Integration with Windows (Windows Only)
+
+#### Explorer Context Menu
+- **Behavior:** Integrates a context menu item into Windows Explorer. When right-clicking any folder in Windows, you can choose "Open in Media Sort" to launch the program directly in that workspace.
+
+---
+
+### Language
+
+#### Language Selection
+- **Behavior:** Allows you to change the interface language.
+- Media Sort is fully localized in **English**, **German** (Deutsch), and **Japanese** (日本語). By default, it auto-detects your operating system's active language at launch.
+
+---
+
+## File Deletion & System Trash
+
+A core design principle of Media Sort is **Zero-Anxiety Sorting**, which relies on non-destructive deletions to support instant **Undo / Redo**.
+
+### How Deletions Work
+When you delete a file (by pressing `Down Arrow`), the file is not permanently deleted from disk. Instead, it is moved to your operating system's native trash bin:
+- **Windows:** Moved to the Windows Recycle Bin using the native shell API.
+- **macOS:** Moved to the Apple Trash folder using Cocoa's `NSFileManager` API.
+- **Linux:** Moved to the user's Desktop Trash according to the Freedesktop.org trash specification.
+
+### Undo/Redo (Restoration)
+Because deleted files are sent to the native trash, they can be programmatically restored to their exact original location if you press the `Undo` key (`Q`):
+1. **State Preservation:** Media Sort maintains reference handles (`TrashRestoreHandle`) containing original file paths.
+2. **Flushing on Close:** While the application is running, the handles remain in the undo stack. When you exit the application, the undo stack is cleared, and these handles are dropped. Once closed, the delete actions are finalized, and you can no longer restore them from within the application (though they still remain in your operating system's system trash where you can manually restore them).

@@ -1,0 +1,77 @@
+---
+title: Anwendungseinstellungen
+description: Übersicht über Benutzereinstellungen, GUI-Optionen, Farbschemata und Update-Konfigurationen in Media Sort.
+---
+
+Media Sort bietet einen integrierten Einstellungsdialog, mit dem Sie das Erscheinungsbild, das Verhalten, die Sprache und die Tastaturkürzel der Anwendung anpassen können.
+
+So öffnen Sie den Einstellungsdialog:
+- Klicken Sie in der linken Navigationsleiste unter **Einstellungen** auf die Schaltfläche **Öffnen**.
+- Drücken Sie alternativ die Standard-Tastenkombination: `Strg + ,`.
+
+---
+
+## Allgemeine Einstellungen
+
+Die Registerkarte **Allgemeine Einstellungen** umfasst Optionen für das Ordnerverhalten, Updates, die Themenauswahl und Betriebssystemintegrationen.
+
+### Aussehen
+
+#### Thema (Theme)
+Media Sort enthält vorkonfigurierte visuelle Designs zur Anpassung der Benutzeroberfläche. Die Auswahl eines Themas aktualisiert sofort die Farben aller UI-Komponenten:
+- Zu den verfügbaren Optionen gehören **Dunkel** (Dark), **Hell** (Light), **Dracula**, **Nord**, **Solarized (Hell/Dunkel)**, **Gruvbox (Hell/Dunkel)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa** und weitere.
+
+#### Zuletzt geöffneten Ordner beim Start wiederherstellen
+- **Verhalten:** Wenn diese Option aktiviert ist, öffnet die Anwendung beim Start automatisch das Verzeichnis, in dem Sie zuletzt gearbeitet haben. Wenn sie deaktiviert ist, startet Media Sort mit einer leeren Ansicht und fordert Sie zur Ordnerauswahl auf.
+
+---
+
+### Animierte GIFs
+
+#### Animierte GIFs abspielen
+- **Verhalten:** Steuert, ob GIF-Animationen im Vorschau- und Bildrasterbereich abgespielt werden. Wenn deaktiviert, wird nur das erste Frame des GIFs statisch angezeigt, was die Performance beim Laden großer Ordner optimieren kann.
+
+---
+
+### Updates
+
+> [!NOTE]
+> Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installern bereitgestellt werden (derzeit Pakete für Windows und macOS).
+
+#### Beim Start nach Updates suchen
+- **Verhalten:** Sucht beim Start der Anwendung automatisch nach neuen Releases im GitHub-Repository. Wird eine neue Version gefunden, fordert Sie ein Dialog zur Aktualisierung auf.
+
+#### Vorabversionen installieren (Prerelease)
+- **Verhalten:** Bezieht auch Prerelease-Builds (Beta-/Alpha-Versionen) in die Update-Suche ein. Aktivieren Sie diese Option, wenn Sie experimentelle Features testen möchten.
+
+---
+
+### Integration mit Windows (nur Windows)
+
+#### Explorer-Kontextmenü
+- **Verhalten:** Integriert einen Kontextmenüeintrag in den Windows Explorer. Durch Rechtsklick auf einen Ordner können Sie direkt "In Media Sort öffnen" wählen, um die App im entsprechenden Verzeichnis zu starten.
+
+---
+
+### Sprache
+
+#### Sprachauswahl
+- **Verhalten:** Ermöglicht das Ändern der Benutzeroberflächensprache.
+- Media Sort is vollständig in **Englisch**, **Deutsch** und **Japanisch** (日本語) lokalisiert. Standardmäßig wird beim Start die Sprache Ihres Betriebssystems automatisch erkannt.
+
+---
+
+## Dateilöschung & System-Papierkorb
+
+Ein Kernprinzip des Designs von Media Sort ist **Sorgenfreies Sortieren**, das sich auf zerstörungsfreie Löschungen verlässt, um sofortiges **Rückgängigmachen / Wiederholen** zu unterstützen.
+
+### Funktionsweise von Löschungen
+Wenn Sie eine Datei löschen (durch Drücken der `Pfeiltaste Unten`), wird die Datei nicht dauerhaft von der Festplatte gelöscht. Stattdessen wird sie in den nativen Papierkorb Ihres Betriebssystems verschoben:
+- **Windows:** Wird über die native Shell-API in den Windows-Papierkorb verschoben.
+- **macOS:** Wird über die Cocoa-API `NSFileManager` in den Papierkorb verschoben.
+- **Linux:** Wird gemäß der Freedesktop.org-Papierkorbspezifikation in den Papierkorb des Benutzers verschoben.
+
+### Rückgängigmachen / Wiederholen (Wiederherstellung)
+Da gelöschte Dateien in den nativen Papierkorb verschoben werden, können sie wieder an ihren ursprünglichen Ort zurückgebracht werden, wenn Sie die Taste `Rückgängig` (`Q`) drücken:
+1. **Zustandserhaltung:** Media Sort behält Referenz-Handles (`TrashRestoreHandle`) mit den ursprünglichen Dateipfaden im Speicher.
+2. **Leerung beim Schließen:** Während die Anwendung läuft, verbleiben diese Handles im Undo-Stack. Wenn Sie die Anwendung beenden, wird der Undo-Stack geleert und die Handles verworfen. Nach dem Schließen sind die Löschaktionen finalisiert und können nicht mehr aus der Anwendung heraus rückgängig gemacht werden (sie befinden sich jedoch weiterhin im System-Papierkorb des Betriebssystems, wo Sie sie manuell wiederherstellen können).

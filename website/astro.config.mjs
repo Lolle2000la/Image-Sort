@@ -48,14 +48,28 @@ export default defineConfig({
                     ],
                 },
                 {
-                    label: 'Technical Configuration',
+                    label: 'Settings & Customization',
                     translations: {
-                        de: 'Technische Konfiguration',
-                        ja: '技術設定',
+                        de: 'Einstellungen & Anpassung',
+                        ja: '設定とカスタマイズ',
                     },
                     items: [
-                        { label: 'Custom Keybindings', slug: 'config/keybindings' },
-                        { label: 'Advanced Settings', slug: 'config/advanced' },
+                        {
+                            label: 'Application Settings',
+                            translations: {
+                                de: 'Anwendungseinstellungen',
+                                ja: 'アプリケーション設定',
+                            },
+                            slug: 'config/settings',
+                        },
+                        {
+                            label: 'Custom Keybindings',
+                            translations: {
+                                de: 'Tastaturkürzel',
+                                ja: 'カスタムキーバインド',
+                            },
+                            slug: 'config/keybindings',
+                        },
                     ],
                 },
             ],
