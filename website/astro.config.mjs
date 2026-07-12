@@ -109,7 +109,7 @@ export default defineConfig({
                         {
                             label: 'Building from Source',
                             translations: {
-                                de: 'Aus dem Quellcode kompilieren',
+                                de: 'Aus dem Quellcode bauen',
                                 ja: 'ソースからのビルド',
                             },
                             slug: 'advanced/building-from-source',
