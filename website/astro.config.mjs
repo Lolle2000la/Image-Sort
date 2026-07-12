@@ -40,14 +40,6 @@ export default defineConfig({
                             slug: 'getting-started/installation',
                         },
                         {
-                            label: 'Building from Source',
-                            translations: {
-                                de: 'Aus dem Quellcode kompilieren',
-                                ja: 'ソースからのビルド',
-                            },
-                            slug: 'getting-started/building-from-source',
-                        },
-                        {
                             label: 'First Run Onboarding',
                             translations: {
                                 de: 'Erste Schritte & Einrichtung',
@@ -104,6 +96,23 @@ export default defineConfig({
                                 ja: 'カスタムキーバインド',
                             },
                             slug: 'config/keybindings',
+                        },
+                    ],
+                },
+                {
+                    label: 'Advanced',
+                    translations: {
+                        de: 'Erweitert',
+                        ja: '高度な設定',
+                    },
+                    items: [
+                        {
+                            label: 'Building from Source',
+                            translations: {
+                                de: 'Aus dem Quellcode kompilieren',
+                                ja: 'ソースからのビルド',
+                            },
+                            slug: 'advanced/building-from-source',
                         },
                     ],
                 },
