@@ -8,7 +8,7 @@
         "build": "astro build",
         "preview": "astro preview",
         "astro": "astro",
-        "render-demos": "cd .. && cargo run -p media-sort-gui --features demo -- --export"
+        "render-demos": "./render-all-demos.sh"
     },
     "dependencies": {
         "@astrojs/mdx": "^7.0.2",
