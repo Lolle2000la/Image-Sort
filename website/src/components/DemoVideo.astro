@@ -201,10 +201,11 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
 
   .close-btn {
     position: absolute;
-    top: -2.5rem;
+    bottom: calc(100% + 0.5rem);
     right: 0;
     color: rgba(255, 255, 255, 0.7);
     font-size: 2.5rem;
+    line-height: 1;
     cursor: pointer;
     transition: color 0.2s, transform 0.2s;
   }
