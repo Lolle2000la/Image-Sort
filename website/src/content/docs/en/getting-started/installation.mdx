@@ -21,9 +21,13 @@ Select the package appropriate for your operating system and processor architect
 
 ## System Prerequisites
 
-To run Media Sort, you must have the `mpv` demuxer libraries (`libmpv`) installed on your system.
+Depending on your platform, you may need to install the `mpv` media playback engine libraries:
+
+### Windows & macOS
+**No manual setup is needed!** The precompiled packages for both Windows and macOS automatically bundle all required `libmpv` libraries natively inside the application bundle.
 
 ### Linux
+Linux AppImage packages run dynamically on the host environment and require `libmpv` to be installed on your system:
 
 #### Arch Linux / CachyOS
 ```bash
@@ -39,13 +43,3 @@ sudo apt install libmpv-dev
 ```bash
 sudo dnf install mpv-libs-devel
 ```
-
-### macOS
-
-Ensure you have Homebrew installed, then run:
-```bash
-brew install mpv
-```
-
-### Windows
-No manual setup is needed! The precompiled Windows installers and ZIP packages bundle the required `libmpv-2.dll` library natively.
