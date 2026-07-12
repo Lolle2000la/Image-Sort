@@ -45,3 +45,14 @@ You can search and filter the current file listing using the search bar (focus w
 - **Extension Filtering:** Filter files by their format extension since extensions are part of the filename (e.g., typing `.mp4` or `.flac` to only display files of that type).
 
 *Note: Filtering matches against the filename structure case-insensitively; searching does not query internal file metadata fields (like EXIF tags or audio artists).*
+
+---
+
+## Performance & Caching
+
+To keep navigation and browsing completely seamless, Media Sort implements a smart background prefetching and caching system:
+
+- **Thumbnail Prefetching:** Eagerly spawns background worker tasks to generate thumbnails for upcoming files in your current directory.
+- **LRU Cache:** Stores images and thumbnails in a high-speed Least Recently Used (LRU) cache (supporting up to 200 thumbnail handles and 20 full-resolution preview handles) to ensure instant retrieval.
+- **Asynchronous File System Watcher:** Automatically monitors your active directory for changes (additions, deletions, or modifications) made outside the application and updates the UI grid dynamically.
+

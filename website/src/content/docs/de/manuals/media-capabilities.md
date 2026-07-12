@@ -45,3 +45,14 @@ Sie können die aktuelle Dateiliste über die Suchleiste (Fokus mit Taste `I`) d
 - **Dateiendungsfilter:** Filtern Sie Dateien nach ihrer Dateiendung, da Endungen Teil des Dateinamens sind (z. B. die Eingabe von `.mp4` oder `.flac`, um nur Dateien dieses Typs anzuzeigen).
 
 *Hinweis: Der Suchfilter vergleicht Eingaben unabhängig von Groß- und Kleinschreibung ausschließlich mit dem Dateinamen. Interne Metadatenfelder (wie EXIF-Tags oder Audio-Künstler) werden bei der Suche nicht abgefragt.*
+
+---
+
+## Leistung & Caching
+
+Um die Navigation und das Durchsuchen absolut flüssig zu halten, implementiert Media Sort ein intelligentes Vorabruf- und Caching-System im Hintergrund:
+
+- **Miniaturansicht-Prefetching:** Startet vorausschauend Hintergrund-Worker, um Miniaturansichten für die nächsten Dateien in Ihrem aktuellen Verzeichnis zu generieren.
+- **LRU-Cache:** Speichert Bilder und Miniaturansichten in einem schnellen LRU-Cache (Least Recently Used) mit einer Kapazität von bis zu 200 Miniaturansichten und 20 hochauflösenden Vorschauen für sofortigen Zugriff.
+- **Asynchroner Dateisystem-Watcher:** Überwacht Ihr aktives Verzeichnis automatisch auf Änderungen (Hinzufügungen, Löschungen oder Änderungen), die außerhalb der App vorgenommen werden, und aktualisiert das UI-Raster dynamisch.
+
