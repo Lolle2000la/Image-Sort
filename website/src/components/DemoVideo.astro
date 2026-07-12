@@ -1,4 +1,5 @@
 ---
+import { ZoomIn } from '@lucide/astro';
 interface Props {
   videoUrl?: string;
   zoomLabel?: string;
@@ -24,7 +25,7 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
       {fallbackText}
     </video>
     <div class="zoom-overlay">
-      <span class="zoom-icon">🔍</span> {zoomLabel}
+      <ZoomIn size={22} class="zoom-icon-svg" /> {zoomLabel}
     </div>
   </div>
   {caption && <div class="video-caption">{caption}</div>}
@@ -126,10 +127,8 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
 
   .zoom-overlay {
     position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
+    inset: 0;
+    margin: 0 !important;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(2px);
     display: flex;
@@ -144,8 +143,8 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
     z-index: 2;
   }
 
-  .zoom-icon {
-    font-size: 1.5rem;
+  .zoom-icon-svg {
+    flex-shrink: 0;
   }
 
   .preview-video {
