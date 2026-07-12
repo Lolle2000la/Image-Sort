@@ -1,0 +1,100 @@
+---
+title: 設定ファイル
+description: config.toml を介した Media Sort の詳細な手動構成手順、キーバインド、ウィンドウ状態、一般設定の解説。
+---
+
+自動化されたセットアップや詳細なカスタマイズを行う場合、テキストエディタで `config.toml` ファイルを直接編集して Media Sort の設定を変更できます。
+
+---
+
+## 設定ファイルの保存場所
+
+設定ファイルは、お使いのオペレーティングシステムの標準的な設定フォルダに保存されています：
+
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (通常は `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (通常は `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
+
+---
+
+## 設定項目（キー）の詳細
+
+`config.toml` ファイルは、設定のプロファイルごとに複数のセクションに分かれています。
+
+### `[general]`
+外観、言語、自動アップデート機能、および起動時のフォルダ動作を設定します：
+
+- **`theme`** (文字列): UIテーマ。指定可能な値の例: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"KanagawaWave"` など。(デフォルト: `"Dark"`)
+- **`locale`** (文字列/null): 表示言語のロケールコードを手動で指定します。OSの言語設定を自動検出する場合は `null` に設定し、明示的に指定する場合は `"en"`, `"de"`, `"ja"` などを指定します。(デフォルト: `null`)
+- **`reopen_last_opened_folder`** (真偽値): 最後に開いていたディレクトリを次回起動時に自動的に再開するかどうか。(デフォルト: `true`)
+- **`last_opened_folder`** (文字列/null): 再開するフォルダパス。自動的に記録されます。
+- **`animate_gifs`** (真偽値): プレビューおよびグリッド表示でGIF画像をアニメーション表示するかどうか。(デフォルト: `true`)
+- **`folder_tree_width`** (数値): 左側のナビゲーションパネルの幅（ピクセル単位）。(デフォルト: `260.0`)
+- **`check_for_updates_on_startup`** (真偽値、Windows/macOSパッケージ版のみ): 起動時に自動的にアップデートを確認するかどうか。(デフォルト: `true`)
+- **`install_prerelease_builds`** (真偽値、Windows/macOSパッケージ版のみ): アップデート確認の際に開発版（アルファ/ベータ版など）を含めるかどうか。(デフォルト: `false`)
+- **`integration_with_windows`** (真偽値、Windows版のみ): Windowsエクスプローラーの右クリックメニュー項目を追加するかどうか。(デフォルト: `false`)
+
+---
+
+### `[metadata_panel]`
+EXIFタグやコンテナメタデータを表示する、右側の折りたたみ式サイドパネルの設定です：
+
+- **`expanded`** (真偽値): デフォルトでパネルを展開した状態にするかどうか。(デフォルト: `true`)
+- **`width`** (数値): メタデータパネルの幅（ピクセル単位）。(デフォルト: `320.0`)
+
+---
+
+### `[pinned_folders]`
+クイック移動用のピン留めフォルダを管理します：
+
+- **`paths`** (文字列のリスト): ピン留めするフォルダの絶対パスのリスト。
+  ```toml
+  [pinned_folders]
+  paths = [
+      "/home/user/Pictures/Sorted",
+      "/home/user/Pictures/Keep"
+  ]
+  ```
+
+---
+
+### `[window_position]`
+起動時のウィンドウサイズと表示位置を復元するために使用されます：
+
+- **`left`** (数値): ウィンドウのX座標。
+- **`top`** (数値): ウィンドウのY座標。
+- **`width`** (数値): ウィンドウの幅。
+- **`height`** (数値): ウィンドウの高さ。
+
+---
+
+## キーバインドのカスタマイズ
+
+`[keybindings]` テーブル以下で、独自のアクションショートカットキーを定義できます。
+
+### 構成スキーマ
+各ショートカットは、以下のキーを持つテーブルとして定義されます：
+- **`key`** (文字列): Winitライブラリで定義されているプライマリキー名。
+- **`ctrl`** (真偽値): Controlキー（macOSではCommandキー）の同時押しを必須にするかどうか。
+- **`shift`** (真偽値): Shiftキーの同時押しを必須にするかどうか。
+- **`alt`** (真偽値): Altキー（macOSではOptionキー）の同時押しを必須にするかどうか。
+- **`meta`** (真偽値): システムキー（Windows/Commandキー）の同時押しを必須にするかどうか。
+
+#### 例：Undo（元に戻す）を Ctrl+Z に割り当てる場合
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+### 指定可能なキー名
+
+`key` フィールドには、Winitがサポートするキー名文字列を指定します。主に使用されるキー名は以下の通りです：
+
+- **単一文字:** `"A"` 〜 `"Z"`, `"0"` 〜 `"9"`
+- **ナビゲーション:** `"Up"` (上矢印), `"Down"` (下矢印), `"Left"` (左矢印), `"Right"` (右矢印), `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- **特殊キー:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- **ファンクションキー:** `"F1"` 〜 `"F12"`

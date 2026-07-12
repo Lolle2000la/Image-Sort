@@ -30,42 +30,6 @@ Below is an interactive video demonstrating how to open settings and remap a sho
   fallbackText="Your browser does not support the video tag."
 />
 
----
-
-## Advanced: Modifying the Configuration File
-
-Alternatively, you can manually customize keybindings by editing the `config.toml` file in a text editor.
-
-### Configuration File Location
-The configuration resides in your system-specific configuration directory:
-- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (usually `~/.config/media-sort/config.toml`)
-- **macOS:** `~/Library/Application Support/media-sort/config.toml`
-- **Windows:** `%APPDATA%\media-sort\config.toml` (usually `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
-
-### Editing Keybindings in TOML
-Look for the `[keybindings]` section. Each action keybinding is defined by a table containing:
-- `key` (string): The name of the primary key (e.g. `"W"`, `"ArrowUp"`, `"Space"`, `"Enter"`).
-- `ctrl` (boolean): Set to `true` to require the Control key.
-- `shift` (boolean): Set to `true` to require the Shift key.
-- `alt` (boolean): Set to `true` to require the Alt key.
-- `meta` (boolean): Set to `true` to require the System/Meta/Windows key.
-
-#### Example: Remapping Undo to Ctrl+Z
-```toml
-[keybindings.undo]
-key = "Z"
-ctrl = true
-shift = false
-alt = false
-meta = false
-```
 
 ---
 
-## Allowed Key Names
-
-The primary `key` field matches the string representation of Winit's key names. Commonly used key names include:
-- Single characters: `"A"` to `"Z"`, `"0"` to `"9"`
-- Navigation: `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
-- System: `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
-- Function keys: `"F1"` to `"F12"`

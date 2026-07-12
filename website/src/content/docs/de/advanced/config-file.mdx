@@ -1,0 +1,100 @@
+---
+title: Konfigurationsdatei
+description: Detaillierte manuelle Konfiguration von Media Sort über die Datei config.toml, inklusive Tastaturbelegungen und Fenstereigenschaften.
+---
+
+Für automatisierte Setups oder fortgeschrittene Anpassungen können die Einstellungen von Media Sort direkt durch Bearbeiten der Datei `config.toml` in einem Texteditor angepasst werden.
+
+---
+
+## Speicherorte der Konfigurationsdatei
+
+Die Konfigurationsdatei befindet sich im Standard-Konfigurationsordner des jeweiligen Betriebssystems:
+
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (normalerweise `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (normalerweise `C:\Benutzer\<Benutzername>\AppData\Roaming\media-sort\config.toml`)
+
+---
+
+## Konfigurationsschlüssel
+
+Die Datei `config.toml` ist in verschiedene Abschnitte unterteilt, die unterschiedliche Einstellungsprofile repräsentieren.
+
+### `[general]`
+Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das Verhalten beim Laden von Ordnern:
+
+- **`theme`** (String): Das Benutzeroberflächendesign. Beispiele: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"KanagawaWave"`, etc. (Standard: `"Dark"`)
+- **`locale`** (String/null): Manuelle Sprachcode-Festlegung. Auf `null` setzen, um die automatische Erkennung des Betriebssystems zu verwenden, oder einen Sprachcode wie `"en"`, `"de"` oder `"ja"` angeben. (Standard: `null`)
+- **`reopen_last_opened_folder`** (Boolean): Zuletzt aktiven Ordner beim nächsten Start automatisch wiederherstellen. (Standard: `true`)
+- **`last_opened_folder`** (String/null): Der Pfad des zuletzt geöffneten Ordners.
+- **`animate_gifs`** (Boolean): Steuert, ob GIF-Bilder in Vorschauen und Rastern animiert werden. (Standard: `true`)
+- **`folder_tree_width`** (Zahl): Die Breite des linken Ordner-Navigations-Panels in Pixeln. (Standard: `260.0`)
+- **`check_for_updates_on_startup`** (Boolean, nur Windows/macOS): Automatische Update-Prüfung beim Start aktivieren/deaktivieren. (Standard: `true`)
+- **`install_prerelease_builds`** (Boolean, nur Windows/macOS): Bezieht Vorabversionen (Alpha/Beta) in die Update-Prüfung ein. (Standard: `false`)
+- **`integration_with_windows`** (Boolean, nur Windows): Steuert die Windows Explorer-Kontextmenüintegration. (Standard: `false`)
+
+---
+
+### `[metadata_panel]`
+Konfiguriert das einklappbare Seitenpanel für EXIF- und Dateimetadaten:
+
+- **`expanded`** (Boolean): Steuert, ob das Panel standardmäßig geöffnet ist. (Standard: `true`)
+- **`width`** (Zahl): Die Breite des Metadatenpanels in Pixeln. (Standard: `320.0`)
+
+---
+
+### `[pinned_folders]`
+Verwaltet angepinnte Verzeichnisse für Schnellzugriffs-Shortcuts:
+
+- **`paths`** (Liste von Strings): Eine Liste von Ordnerpfaden auf Ihrem System.
+  ```toml
+  [pinned_folders]
+  paths = [
+      "/home/user/Bilder/Sorted",
+      "/home/user/Bilder/Keep"
+  ]
+  ```
+
+---
+
+### `[window_position]`
+Speichert Fensterkoordinaten und -größen zur Wiederherstellung des Fensterzustands:
+
+- **`left`** (Zahl): X-Koordinate des Fensters.
+- **`top`** (Zahl): Y-Koordinate des Fensters.
+- **`width`** (Zahl): Fensterbreite.
+- **`height`** (Zahl): Fensterhöhe.
+
+---
+
+## Eigene Tastaturbelegungen
+
+Unter der Tabelle `[keybindings]` können Sie eigene Tastenkombinationen definieren.
+
+### Struktur
+Jedes Tastenkürzel wird durch eine Tabelle mit folgenden Parametern definiert:
+- **`key`** (String): Der Name der Haupttaste laut Winit-Spezifikation.
+- **`ctrl`** (Boolean): Erfordert das Halten der Strg-Taste (bzw. Command-Taste auf macOS).
+- **`shift`** (Boolean): Erfordert das Halten der Umschalttaste (Shift).
+- **`alt`** (Boolean): Erfordert das Halten der Alt-Taste.
+- **`meta`** (Boolean): Erfordert das Halten der System-/Windows-Taste.
+
+#### Beispiel: Strg+Z für Rückgängig
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+### Gültige Tastennamen
+
+Das Feld `key` entspricht der Winit-Tastennamen-Spezifikation. Häufig verwendete Namen sind:
+
+- **Einzelne Zeichen:** `"A"` bis `"Z"`, `"0"` bis `"9"`
+- **Navigationstasten:** `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- **Systemsteuerung:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- **Funktionstasten:** `"F1"` bis `"F12"`

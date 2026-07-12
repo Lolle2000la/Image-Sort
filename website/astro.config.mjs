@@ -114,6 +114,14 @@ export default defineConfig({
                             },
                             slug: 'advanced/building-from-source',
                         },
+                        {
+                            label: 'Configuration File',
+                            translations: {
+                                de: 'Konfigurationsdatei',
+                                ja: '設定ファイルの詳細',
+                            },
+                            slug: 'advanced/config-file',
+                        },
                     ],
                 },
             ],

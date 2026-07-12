@@ -1,0 +1,100 @@
+---
+title: Configuration File
+description: Detailed manual configuration of Media Sort via config.toml, covering keybindings, window states, and general settings.
+---
+
+For automated setups or advanced needs, Media Sort's settings can be configured manually by modifying the `config.toml` file directly using a text editor.
+
+---
+
+## File Locations
+
+The configuration file resides in your operating system's standard user configuration folder:
+
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (typically `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (typically `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
+
+---
+
+## Configuration Keys
+
+The `config.toml` file is organized into several sections representing different settings profiles.
+
+### `[general]`
+Exposes appearance, locale, automatic update properties, and startup folder configurations:
+
+- **`theme`** (string): The UI theme. Examples: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"KanagawaWave"`, etc. (Default: `"Dark"`)
+- **`locale`** (string/null): Toggles language locale code manually. Set to `null` to use system auto-detection, or specify a language code like `"en"`, `"de"`, or `"ja"`. (Default: `null`)
+- **`reopen_last_opened_folder`** (boolean): Automatically re-open the last active directory. (Default: `true`)
+- **`last_opened_folder`** (string/null): Keeps track of the folder path to reopen.
+- **`animate_gifs`** (boolean): Controls whether GIF images animate in previews and grids. (Default: `true`)
+- **`folder_tree_width`** (number): Width of the left navigation panel in pixels. (Default: `260.0`)
+- **`check_for_updates_on_startup`** (boolean, Windows/macOS bundles only): Toggles update checks at launch. (Default: `true`)
+- **`install_prerelease_builds`** (boolean, Windows/macOS bundles only): Includes alpha/beta builds in update checks. (Default: `false`)
+- **`integration_with_windows`** (boolean, Windows only): Toggles Windows Explorer context menu shortcuts. (Default: `false`)
+
+---
+
+### `[metadata_panel]`
+Configures the collapsable sidebar displaying EXIF and container metadata tags:
+
+- **`expanded`** (boolean): Toggles whether the panel is expanded by default. (Default: `true`)
+- **`width`** (number): Width of the metadata panel in pixels. (Default: `320.0`)
+
+---
+
+### `[pinned_folders]`
+Manages pinned directories for quick-move shortcuts:
+
+- **`paths`** (list of strings): A list of folder paths saved on your system.
+  ```toml
+  [pinned_folders]
+  paths = [
+      "/home/user/Pictures/Sorted",
+      "/home/user/Pictures/Keep"
+  ]
+  ```
+
+---
+
+### `[window_position]`
+Stores window coordinates and sizes to restore state between launches:
+
+- **`left`** (number): X coordinate.
+- **`top`** (number): Y coordinate.
+- **`width`** (number): Window width.
+- **`height`** (number): Window height.
+
+---
+
+## Custom Keybindings
+
+You can define custom key combinations under the `[keybindings]` table.
+
+### Structure
+Each shortcut is a table specifying:
+- **`key`** (string): Winit primary key name string.
+- **`ctrl`** (boolean): Require the Control modifier key (or Command key on macOS).
+- **`shift`** (boolean): Require the Shift modifier key.
+- **`alt`** (boolean): Require the Alt/Option modifier key.
+- **`meta`** (boolean): Require the OS/Windows/System modifier key.
+
+#### Example: Remapping Undo to Ctrl+Z
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+### Allowed Key Names
+
+The primary `key` field matches the string representations of Winit's key names. Frequently used key names include:
+
+- **Single Characters:** `"A"` through `"Z"`, `"0"` through `"9"`
+- **Navigation Keys:** `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- **System Controls:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- **Function Keys:** `"F1"` through `"F12"`
