@@ -16,7 +16,7 @@ Falls Sie zuvor die ältere WPF-Version (v2.x) verwendet haben, **migriert** Med
 Um ein Verzeichnis mit den zu sortierenden Mediendateien (Bilder, Videos, Audio) auszuwählen:
 
 - Klicken Sie in der linken Seitenleiste unter **Ordner** auf die Schaltfläche **Öffnen**, um den nativen Ordnerauswahldialog zu öffnen.
-- Alternativ drücken Sie `O`, um das aktuelle Arbeitsverzeichnis direkt zu öffnen.
+- Alternativ drücken Sie `O`, um den nativen Ordnerauswahldialog zu öffnen.
 - Media Sort scannt den ausgewählten Ordner automatisch und findet rekursiv alle unterstützten Formate, die in einem strukturierten Raster dargestellt werden.
 
 ## 2. Angepinnte Ordner einrichten

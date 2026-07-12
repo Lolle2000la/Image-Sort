@@ -676,9 +676,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             return Task::done(Message::Media(MediaMessage::Redo));
                         }
                         "open_folder" => {
-                            if let Ok(p) = std::env::current_dir() {
-                                return Task::done(Message::Folder(FolderMessage::Open(p)));
-                            }
+                            return Task::done(Message::Folder(FolderMessage::Pick));
                         }
                         "toggle_metadata_panel" => {
                             return Task::done(Message::Settings(

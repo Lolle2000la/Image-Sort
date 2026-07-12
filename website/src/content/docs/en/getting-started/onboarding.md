@@ -16,7 +16,7 @@ If you previously used the legacy WPF version (v2.x), Media Sort will **silently
 To choose a directory containing the media files (images, videos, audio) you want to sort:
 
 - Click the **Open** button under **Folder** in the left sidebar to open the native folder picker dialog.
-- Alternatively, press `O` to open the current working directory directly.
+- Alternatively, press `O` to open the native folder picker dialog.
 - Media Sort will automatically scan the selected folder and recursively find all supported formats, presenting them in a structured grid.
 
 ## 2. Set Up Pinned Folders

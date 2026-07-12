@@ -49,7 +49,7 @@ Führen Sie Dateiverwaltungsaktionen sofort auf der aktiven Mediendatei aus:
 
 | Aktion | Standard-Shortcut | Beschreibung |
 | :--- | :--- | :--- |
-| **Ordnerauswahl öffnen** | `O` | Öffnet das aktuelle Arbeitsverzeichnis. Verwenden Sie die Schaltfläche **Öffnen** in der Seitenleiste, um stattdessen den nativen Ordnerauswahldialog zu öffnen. |
+| **Ordnerauswahl öffnen** | `O` | Öffnet den nativen Systemdialog zur Auswahl eines neuen Quellverzeichnisses. |
 | **Suchleiste fokussieren** | `I` | Setzt den Fokus in das Suchfeld, um Mediendateien zu filtern. |
 | **Metadaten-Panel umschalten** | `M` | Blendet die rechte Metadaten-Leiste ein oder aus. |
 | **Ordner erstellen** | `C` | Erstellt einen neuen Unterordner im aktiven Ordner. |

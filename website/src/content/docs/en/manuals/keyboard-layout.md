@@ -49,7 +49,7 @@ Perform file management tasks on the active media file instantly:
 
 | Action | Default Keybinding | Description |
 | :--- | :--- | :--- |
-| **Open Folder Picker** | `O` | Open the current working directory. Use the **Open** button in the sidebar to open the native folder picker dialog instead. |
+| **Open Folder Picker** | `O` | Open the native system dialog to select a new root directory. |
 | **Focus Search Bar** | `I` | Focus the search input field to filter media files. |
 | **Toggle Metadata Panel** | `M` | Expand or collapse the right-hand metadata inspector. |
 | **Create Folder** | `C` | Create a new subdirectory inside the active folder. |
