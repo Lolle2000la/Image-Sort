@@ -7,13 +7,23 @@ import DemoVideo from '../../../../components/DemoVideo.astro';
 
 Media Sort allows you to customize all keyboard shortcuts. You can easily remap them directly in the application GUI or modify the raw configuration file for advanced needs.
 
----
+## Available Keybinding Actions
+
+Media Sort provides the following configurable actions:
+
+| Category | Actions |
+| :--- | :--- |
+| **Image Management** | Move, Copy, Delete, Rename |
+| **Image Navigation** | Go left, Go right, Search images, Toggle metadata panel |
+| **Folder Tree** | Move selection up/down, Collapse/Expand, Create folder, Open folder, Open selected folder |
+| **Pinned Folders** | Pin active folder, Pin selected, Unpin, Reorder up/down |
+| **History** | Undo, Redo |
 
 ## Remapping Keybindings via GUI
 
 To customize a keyboard shortcut inside the app:
 
-1. Click the **Open** button under **Settings** in the left sidebar panel (or press `Ctrl + ,`).
+1. Click the **Open** button under **Settings** in the left sidebar panel.
 2. Select the **Key bindings** tab at the top of the settings window.
 3. Click the secondary button showing the current keybinding next to the action you want to modify. The button text will change to *Press a key...*.
 4. Press the key combination you wish to bind (including modifiers like `Ctrl`, `Shift`, or `Alt`).
@@ -30,6 +40,8 @@ Below is an interactive video demonstrating how to open settings and remap a sho
   fallbackText="Your browser does not support the video tag."
 />
 
-
 ---
 
+## Advanced: Configuration File
+
+For programmatic or bulk changes, edit the `config.toml` file directly. See the [Configuration File](/advanced/config-file/) page for the full schema, key names, and allowed values.

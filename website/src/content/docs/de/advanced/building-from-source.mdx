@@ -3,7 +3,7 @@ title: Aus dem Quellcode bauen
 description: So bauen Sie Media Sort direkt aus dem Quellcode.
 ---
 
-Wenn Sie Media Sort lieber selbst kompilieren möchten, benötigen Sie die Rust-Toolchain und Clang (erforderlich, um Bindungen über `libmpv-sys` zu generieren).
+Wenn Sie Media Sort lieber selbst kompilieren möchten, benötigen Sie die Rust-Toolchain (Version **1.96** oder höher) und Clang (erforderlich, um Bindungen über `libmpv-sys` zu generieren). Media Sort benötigt außerdem `libmpv` zur Laufzeit für die Video-Wiedergabe.
 
 ---
 
@@ -20,7 +20,7 @@ sudo pacman -S clang mpv
 
 #### Debian / Ubuntu
 ```bash
-sudo apt install clang libclang-dev libmpv-dev libasound2-dev
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
 ```
 
 ### macOS
@@ -30,6 +30,17 @@ Installieren Sie die Xcode-Befehlszeilentools und Homebrew-Abhängigkeiten:
 xcode-select --install
 brew install mpv
 ```
+
+### Windows
+
+Installieren Sie die folgenden Voraussetzungen:
+- [Rust-Toolchain](https://rustup.rs/) (1.96 oder höher)
+- [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (für den MSVC-Linker)
+- [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
+- mpv-Entwicklungsdateien über [vcpkg](https://github.com/microsoft/vcpkg):
+  ```powershell
+  vcpkg install mpv
+  ```
 
 ---
 
@@ -50,3 +61,9 @@ brew install mpv
    ```bash
    ./target/release/media-sort-gui
    ```
+
+---
+
+## Laufzeitanforderungen
+
+Nach dem Bau muss `libmpv` auf Ihrem System installiert sein, um die Video-Wiedergabe zu ermöglichen. Ohne `libmpv` funktioniert Media Sort weiterhin für Bilder und Audio, jedoch sind Video- und GIF-Wiedergabe deaktiviert.

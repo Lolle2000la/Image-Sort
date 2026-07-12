@@ -5,9 +5,7 @@ description: Übersicht über Benutzereinstellungen, GUI-Optionen, Farbschemata 
 
 Media Sort bietet einen integrierten Einstellungsdialog, mit dem Sie das Erscheinungsbild, das Verhalten, die Sprache und die Tastaturkürzel der Anwendung anpassen können.
 
-So öffnen Sie den Einstellungsdialog:
-- Klicken Sie in der linken Navigationsleiste unter **Einstellungen** auf die Schaltfläche **Öffnen**.
-- Drücken Sie alternativ die Standard-Tastenkombination: `Strg + ,`.
+So öffnen Sie den Einstellungsdialog: Klicken Sie in der linken Navigationsleiste unter **Einstellungen** auf die Schaltfläche **Öffnen**.
 
 ---
 
@@ -19,24 +17,24 @@ Die Registerkarte **Allgemeine Einstellungen** umfasst Optionen für das Ordnerv
 
 #### Thema (Theme)
 Media Sort enthält vorkonfigurierte visuelle Designs zur Anpassung der Benutzeroberfläche. Die Auswahl eines Themas aktualisiert sofort die Farben aller UI-Komponenten:
-- Zu den verfügbaren Optionen gehören **Dunkel** (Dark), **Hell** (Light), **Dracula**, **Nord**, **Solarized (Hell/Dunkel)**, **Gruvbox (Hell/Dunkel)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa** und weitere.
+- Zu den verfügbaren Optionen gehören **Dark**, **Light**, **Dracula**, **Nord**, **Solarized (Hell/Dunkel)**, **Gruvbox (Hell/Dunkel)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa**, **Moonfly**, **Nightfly**, **Oxocarbon**, **Ferra** und weitere.
 
 #### Zuletzt geöffneten Ordner beim Start wiederherstellen
-- **Verhalten:** Wenn diese Option aktiviert ist, öffnet die Anwendung beim Start automatisch das Verzeichnis, in dem Sie zuletzt gearbeitet haben. Wenn sie deaktiviert ist, startet Media Sort mit einer leeren Ansicht und fordert Sie zur Ordnerauswahl auf.
+- **Verhalten:** Wenn diese Option aktiviert ist, öffnet die Anwendung beim Start automatisch das Verzeichnis, in dem Sie zuletzt gearbeitet haben. Wenn sie deaktiviert ist, startet Media Sort mit dem systemseitigen Bilder-Verzeichnis.
 
 ---
 
 ### Animierte GIFs
 
 #### Animierte GIFs abspielen
-- **Verhalten:** Steuert, ob GIF-Animationen im Vorschau- und Bildrasterbereich abgespielt werden. Wenn deaktiviert, wird nur das erste Frame des GIFs statisch angezeigt, was die Performance beim Laden großer Ordner optimieren kann.
+- **Verhalten:** Steuert, ob GIF-Animationen im Vorschau- und Bildrasterbereich abgespielt werden. Wenn deaktiviert, wird nur das erste Frame des GIFs statisch angezeigt, was die Performance beim Laden großer Ordner optimieren kann. Ein einziger Schalter steuert sowohl das Vorschau- als auch das Rasterverhalten.
 
 ---
 
 ### Updates
 
 :::note
-Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installern bereitgestellt werden (derzeit Linux AppImage, Windows und macOS).
+Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installer-Bundles bereitgestellt werden (derzeit Linux AppImage, Windows und macOS).
 :::
 
 #### Beim Start nach Updates suchen
@@ -50,7 +48,7 @@ Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installe
 ### Integration mit Windows (nur Windows)
 
 #### Explorer-Kontextmenü
-- **Verhalten:** Integriert einen Kontextmenüeintrag in den Windows Explorer. Durch Rechtsklick auf einen Ordner können Sie direkt "In Media Sort öffnen" wählen, um die App im entsprechenden Verzeichnis zu starten.
+- **Verhalten:** Integriert einen Kontextmenüeintrag in den Windows Explorer. Durch Rechtsklick auf einen Ordner können Sie direkt „In Media Sort öffnen" wählen, um die App im entsprechenden Verzeichnis zu starten.
 
 ---
 
@@ -58,6 +56,12 @@ Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installe
 
 #### Sprachauswahl
 - **Verhalten:** Ermöglicht die Auswahl der Benutzeroberflächensprache aus allen unterstützten Lokalisierungen. Standardmäßig erkennt Media Sort beim Start die aktive Sprache Ihres Betriebssystems automatisch und weicht auf Englisch aus, falls die Systemsprache nicht unterstützt wird.
+
+---
+
+## Tastaturkürzel
+
+Die Registerkarte **Tastenkürzel** ermöglicht die Neubelegung aller Tastaturkürzel. Details zur GUI-Neubelegung finden Sie auf der Seite [Eigene Tastaturbelegungen](/config/keybindings/) und das TOML-Schema auf der Seite [Konfigurationsdatei](/advanced/config-file/).
 
 ---
 

@@ -200,10 +200,9 @@ Audio playback uses `rodio` for output and `symphonia` (all codecs) for decoding
 
 ## GIF handling
 
-GIF files are classified as `MediaType::Video`, not `MediaType::Image`. The `MediaType::Video::extensions()` list includes `"gif"`, and native image extensions do not include it. Two settings control behavior:
+GIF files are classified as `MediaType::Video`, not `MediaType::Image`. The `MediaType::Video::extensions()` list includes `"gif"`, and native image extensions do not include it. One setting controls behavior:
 
-- `animate_gifs` — whether the preview animates GIFs
-- `animate_gif_thumbnails` — whether grid thumbnails animate
+- `animate_gifs` — whether GIFs animate in both the preview and grid thumbnails
 
 At the file system level the `image` crate can decode GIF natively. The mpv path is also available if the installed mpv supports GIF demuxing.
 

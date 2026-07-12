@@ -39,6 +39,7 @@ keybindings-open = Öffnen
 keybindings-pinned = Angeheftet
 keybindings-history = Verlauf
 keybindings-move = Verschieben
+keybindings-copy = Kopieren
 keybindings-delete = Löschen
 keybindings-rename = Umbenennen
 keybindings-select-left = Bild links auswählen

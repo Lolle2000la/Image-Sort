@@ -7,13 +7,23 @@ import DemoVideo from '../../../../components/DemoVideo.astro';
 
 Media Sort ermöglicht es Ihnen, alle Tastaturkürzel anzupassen. Sie können diese entweder direkt über die Benutzeroberfläche (GUI) neu belegen oder die Konfigurationsdatei für erweiterte Anforderungen manuell bearbeiten.
 
----
+## Verfügbare Tastenkürzel-Aktionen
+
+Media Sort bietet die folgenden konfigurierbaren Aktionen:
+
+| Kategorie | Aktionen |
+| :--- | :--- |
+| **Bildverwaltung** | Verschieben, Kopieren, Löschen, Umbenennen |
+| **Bildnavigation** | Nach links, Nach rechts, Bilder suchen, Metadaten-Panel umschalten |
+| **Ordnerbaum** | Auswahl hoch/runter, Zuklappen/Aufklappen, Ordner erstellen, Ordner öffnen, Ausgewählten Ordner öffnen |
+| **Angepinnte Ordner** | Aktiven Ordner anpinnen, Ausgewählten anpinnen, Entpinnen, Neu ordnen hoch/runter |
+| **Verlauf** | Rückgängig, Wiederholen |
 
 ## Tastaturkürzel über die GUI ändern
 
 So passen Sie ein Tastenkürzel in der App an:
 
-1. Klicken Sie in der linken Seitenleiste unter **Einstellungen** auf **Öffnen** (oder drücken Sie `Strg + ,`).
+1. Klicken Sie in der linken Seitenleiste unter **Einstellungen** auf **Öffnen**.
 2. Wählen Sie oben im Einstellungsfenster den Reiter **Tastenkürzel** (Keybindings) aus.
 3. Klicken Sie auf die Schaltfläche neben der Aktion, die Sie ändern möchten (dort wird das aktuelle Kürzel angezeigt). Der Text ändert sich zu *Taste drücken...*.
 4. Drücken Sie die gewünschte Tastenkombination (einschließlich Modifikatoren wie `Strg`, `Umschalt` oder `Alt`).
@@ -30,6 +40,8 @@ Das folgende interaktive Video zeigt, wie Sie die Einstellungen öffnen und ein 
   fallbackText="Ihr Browser unterstützt das Video-Tag nicht."
 />
 
-
 ---
 
+## Erweitert: Konfigurationsdatei
+
+Für programmatische oder Massenänderungen bearbeiten Sie die `config.toml`-Datei direkt. Siehe die Seite [Konfigurationsdatei](/advanced/config-file/) für das vollständige Schema, die Schlüsselnamen und die erlaubten Werte.

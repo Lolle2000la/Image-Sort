@@ -49,7 +49,7 @@ Führen Sie Dateiverwaltungsaktionen sofort auf der aktiven Mediendatei aus:
 
 | Aktion | Standard-Shortcut | Beschreibung |
 | :--- | :--- | :--- |
-| **Ordnerauswahl öffnen** | `O` | Öffnet den nativen Systemdialog zur Auswahl eines neuen Quellverzeichnisses. |
+| **Ordnerauswahl öffnen** | `O` | Öffnet das aktuelle Arbeitsverzeichnis. Verwenden Sie die Schaltfläche **Öffnen** in der Seitenleiste, um stattdessen den nativen Ordnerauswahldialog zu öffnen. |
 | **Suchleiste fokussieren** | `I` | Setzt den Fokus in das Suchfeld, um Mediendateien zu filtern. |
 | **Metadaten-Panel umschalten** | `M` | Blendet die rechte Metadaten-Leiste ein oder aus. |
 | **Ordner erstellen** | `C` | Erstellt einen neuen Unterordner im aktiven Ordner. |
@@ -62,9 +62,27 @@ Angepinnte Ordner sind Sortierziele, die Tastenkombinationen zugewiesen sind:
 
 | Aktion | Standard-Shortcut | Beschreibung |
 | :--- | :--- | :--- |
-| **In angepinnten Ordner 1-9** | `Alt + 1` bis `Alt + 9` | Verschiebt die ausgewählte Mediendatei direkt in den angepinnten Ordner. |
-| **Aktiven Ordner anpinnen** | `P` | Pinnt den aktuell aktiven Knoten des Ordnerbaums an. |
-| **Ausgewählten Ordner anpinnen** | `F` | Pinnt den ausgewählten Ordner an. |
-| **Ausgewählten Ordner entpinnen** | `U` | Entpinnt den ausgewählten Ordner. |
+| **In angepinnten Ordner 1-9 verschieben** | `Alt + 1` bis `Alt + 9` | Verschiebt die ausgewählte Mediendatei direkt in den angepinnten Zielordner. |
+| **Ordnerauswahl zum Anpinnen öffnen** | `P` | Öffnet einen nativen Ordnerauswahldialog, um einen neuen Ordner zum Anpinnen auszuwählen. |
+| **Ausgewählten Ordner anpinnen** | `F` | Pinnt den ausgewählten Ordner im Ordnerbaum an. |
+| **Aktuellen Ordner entpinnen** | `U` | Entpinnt den aktuell aktiven Ordner. |
 | **Pin nach oben verschieben** | `Strg + W` | Verschiebt den angepinnten Ordner in der Liste nach oben. |
 | **Pin nach unten verschieben** | `Strg + S` | Verschiebt den angepinnten Ordner in der Liste nach unten. |
+
+---
+
+## Medienwiedergabe-Shortcuts
+
+Diese Shortcuts sind **fest vorgegeben** und können nicht über den Einstellungsdialog geändert werden:
+
+| Aktion | Standard-Shortcut | Beschreibung |
+| :--- | :--- | :--- |
+| **Pause/Fortsetzen umschalten** | `Leertaste` | Video-Wiedergabe pausieren oder fortsetzen. |
+| **Medien Wiedergabe/Pause** | `MediaPlayPause` / `MediaPlay` / `MediaPause` | Video-Pause umschalten (Multimediatasten). |
+| **Video stoppen** | `MediaStop` | Video-Wiedergabe stoppen. |
+| **Nächstes Medium** | `MediaTrackNext` | Zur nächsten Mediendatei springen. |
+| **Vorheriges Medium** | `MediaTrackPrevious` | Zur vorherigen Mediendatei springen. |
+| **Lauter** | `AudioVolumeUp` | Lautstärke um 5 % erhöhen. |
+| **Leiser** | `AudioVolumeDown` | Lautstärke um 5 % verringern. |
+| **Stummschaltung umschalten** | `AudioVolumeMute` | Stummschaltung ein-/ausschalten. |
+| **Anwendung beenden** | `Strg + Q` | Media Sort sofort beenden. |

@@ -49,7 +49,7 @@ Perform file management tasks on the active media file instantly:
 
 | Action | Default Keybinding | Description |
 | :--- | :--- | :--- |
-| **Open Folder Picker** | `O` | Open a native system dialog to select a new root directory. |
+| **Open Folder Picker** | `O` | Open the current working directory. Use the **Open** button in the sidebar to open the native folder picker dialog instead. |
 | **Focus Search Bar** | `I` | Focus the search input field to filter media files. |
 | **Toggle Metadata Panel** | `M` | Expand or collapse the right-hand metadata inspector. |
 | **Create Folder** | `C` | Create a new subdirectory inside the active folder. |
@@ -63,8 +63,26 @@ Pinned folders are target destinations assigned quick shortcuts:
 | Action | Default Keybinding | Description |
 | :--- | :--- | :--- |
 | **Move to Pinned Folder 1-9** | `Alt + 1` to `Alt + 9` | Move selected media file directly to a pinned folder target. |
-| **Pin Active Folder** | `P` | Pin the currently active folder tree node. |
-| **Pin Selected Folder** | `F` | Pin the selected folder. |
-| **Unpin Selected Folder** | `U` | Unpin the selected folder. |
+| **Open Folder Picker to Pin** | `P` | Open a native folder picker dialog to choose a new folder to pin. |
+| **Pin Selected Folder** | `F` | Pin the selected folder in the folder tree. |
+| **Unpin Current Folder** | `U` | Unpin the currently active folder. |
 | **Move Pinned Up** | `Ctrl + W` | Reorder pinned folder list up. |
 | **Move Pinned Down** | `Ctrl + S` | Reorder pinned folder list down. |
+
+---
+
+## Media Playback Shortcuts
+
+These shortcuts are **hardcoded** and not configurable via the settings dialog:
+
+| Action | Default Keybinding | Description |
+| :--- | :--- | :--- |
+| **Toggle Pause/Resume** | `Space` | Pause or resume video playback. |
+| **Media Play/Pause** | `MediaPlayPause` / `MediaPlay` / `MediaPause` | Toggle video pause (multimedia keys). |
+| **Stop Video** | `MediaStop` | Stop video playback. |
+| **Next Media** | `MediaTrackNext` | Go to the next media file. |
+| **Previous Media** | `MediaTrackPrevious` | Go to the previous media file. |
+| **Volume Up** | `AudioVolumeUp` | Increase volume by 5%. |
+| **Volume Down** | `AudioVolumeDown` | Decrease volume by 5%. |
+| **Toggle Mute** | `AudioVolumeMute` | Toggle mute on/off. |
+| **Quit Application** | `Ctrl + Q` | Exit Media Sort immediately. |

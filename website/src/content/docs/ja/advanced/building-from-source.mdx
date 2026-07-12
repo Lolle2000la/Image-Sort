@@ -3,7 +3,7 @@ title: ソースからのビルド
 description: Media Sortのソースコードをご自身でコンパイルおよびビルドする方法。
 ---
 
-ご自身でMedia Sortをコンパイルする場合は、RustツールチェーンとClang（`libmpv-sys` を介したバインディング生成に必要）が必要です。
+ご自身でMedia Sortをコンパイルする場合は、Rustツールチェーン（バージョン **1.96** 以降）とClang（`libmpv-sys` を介したバインディング生成に必要）が必要です。Media Sortは実行時に動画再生サポートのために `libmpv` も必要とします。
 
 ---
 
@@ -20,7 +20,7 @@ sudo pacman -S clang mpv
 
 #### Debian / Ubuntu
 ```bash
-sudo apt install clang libclang-dev libmpv-dev libasound2-dev
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
 ```
 
 ### macOS
@@ -30,6 +30,17 @@ Xcode Command Line ToolsとHomebrew依存関係をインストールします：
 xcode-select --install
 brew install mpv
 ```
+
+### Windows
+
+以下の前提条件をインストールします：
+- [Rustツールチェーン](https://rustup.rs/) (1.96以降)
+- [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVCリンカ用)
+- [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
+- [vcpkg](https://github.com/microsoft/vcpkg) 経由のmpv開発ファイル:
+  ```powershell
+  vcpkg install mpv
+  ```
 
 ---
 
@@ -50,3 +61,9 @@ brew install mpv
    ```bash
    ./target/release/media-sort-gui
    ```
+
+---
+
+## 実行時の要件
+
+ビルド後、動画再生にはシステムに `libmpv` がインストールされている必要があります。`libmpv` がない場合でも、Media Sortは画像と音声に対しては機能しますが、動画とGIFの再生は無効になります。

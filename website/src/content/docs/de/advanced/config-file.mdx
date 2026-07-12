@@ -15,6 +15,8 @@ Die Konfigurationsdatei befindet sich im Standard-Konfigurationsordner des jewei
 - **macOS:** `~/Library/Application Support/media-sort/config.toml`
 - **Windows:** `%APPDATA%\media-sort\config.toml` (normalerweise `C:\Benutzer\<Benutzername>\AppData\Roaming\media-sort\config.toml`)
 
+Beim ersten Start migriert Media Sort automatisch die Einstellungen der älteren WPF-v2.x-Anwendung, falls eine `config.json`-Datei unter `$CONFIG_DIR/Image Sort/config.json` (oder `debug_config.json` in Debug-Builds) existiert. Eine manuelle Migration ist nicht erforderlich.
+
 ---
 
 ## Konfigurationsschlüssel
@@ -24,23 +26,23 @@ Die Datei `config.toml` ist in verschiedene Abschnitte unterteilt, die unterschi
 ### `[general]`
 Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das Verhalten beim Laden von Ordnern:
 
-- **`theme`** (String): Das Benutzeroberflächendesign. Beispiele: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"KanagawaWave"`, etc. (Standard: `"Dark"`)
+- **`theme`** (String): Das Benutzeroberflächendesign. Beispiele: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"SolarizedLight"`, `"SolarizedDark"`, `"GruvboxLight"`, `"GruvboxDark"`, `"CatppuccinLatte"`, `"CatppuccinFrappe"`, `"CatppuccinMacchiato"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"KanagawaWave"`, `"Moonfly"`, `"Nightfly"`, `"Oxocarbon"`, `"Ferra"`. (Standard: `"Light"`)
 - **`locale`** (String/null): Manuelle Sprachcode-Festlegung. Auf `null` setzen, um die automatische Erkennung des Betriebssystems zu verwenden, oder einen Sprachcode wie `"en"`, `"de"` oder `"ja"` angeben. (Standard: `null`)
 - **`reopen_last_opened_folder`** (Boolean): Zuletzt aktiven Ordner beim nächsten Start automatisch wiederherstellen. (Standard: `true`)
 - **`last_opened_folder`** (String/null): Der Pfad des zuletzt geöffneten Ordners.
 - **`animate_gifs`** (Boolean): Steuert, ob GIF-Bilder in Vorschauen und Rastern animiert werden. (Standard: `true`)
-- **`folder_tree_width`** (Zahl): Die Breite des linken Ordner-Navigations-Panels in Pixeln. (Standard: `260.0`)
-- **`check_for_updates_on_startup`** (Boolean, nur Windows/macOS): Automatische Update-Prüfung beim Start aktivieren/deaktivieren. (Standard: `true`)
-- **`install_prerelease_builds`** (Boolean, nur Windows/macOS): Bezieht Vorabversionen (Alpha/Beta) in die Update-Prüfung ein. (Standard: `false`)
+- **`folder_tree_width`** (Zahl): Die Breite des linken Ordner-Navigations-Panels in Pixeln. (Standard: `240`)
+- **`check_for_updates_on_startup`** (Boolean, nur Windows/macOS-Bundles): Automatische Update-Prüfung beim Start aktivieren/deaktivieren. (Standard: `true`)
+- **`install_prerelease_builds`** (Boolean, nur Windows/macOS-Bundles): Bezieht Vorabversionen (Alpha/Beta) in die Update-Prüfung ein. (Standard: `false`)
 - **`integration_with_windows`** (Boolean, nur Windows): Steuert die Windows Explorer-Kontextmenüintegration. (Standard: `false`)
 
 ---
 
 ### `[metadata_panel]`
-Konfiguriert das einklappbare Seitenpanel für EXIF- und Dateimetadaten:
+Konfiguriert das einklappbare Seitenpanel für EXIF- und Container-Tag-Metadaten:
 
-- **`expanded`** (Boolean): Steuert, ob das Panel standardmäßig geöffnet ist. (Standard: `true`)
-- **`width`** (Zahl): Die Breite des Metadatenpanels in Pixeln. (Standard: `320.0`)
+- **`is_expanded`** (Boolean): Steuert, ob das Panel standardmäßig geöffnet ist. (Standard: `false`)
+- **`panel_width`** (Zahl): Die Breite des Metadatenpanels in Pixeln. (Standard: `300`)
 
 ---
 
@@ -61,10 +63,12 @@ Verwaltet angepinnte Verzeichnisse für Schnellzugriffs-Shortcuts:
 ### `[window_position]`
 Speichert Fensterkoordinaten und -größen zur Wiederherstellung des Fensterzustands:
 
-- **`left`** (Zahl): X-Koordinate des Fensters.
-- **`top`** (Zahl): Y-Koordinate des Fensters.
-- **`width`** (Zahl): Fensterbreite.
-- **`height`** (Zahl): Fensterhöhe.
+- **`left`** (Zahl): X-Koordinate. (Standard: `100`)
+- **`top`** (Zahl): Y-Koordinate. (Standard: `100`)
+- **`width`** (Zahl): Fensterbreite. (Standard: `1000`)
+- **`height`** (Zahl): Fensterhöhe. (Standard: `600`)
+- **`maximized`** (Boolean): Ob das Fenster beim letzten Schließen maximiert war. (Standard: `false`)
+- **`screen_count`** (Zahl): Anzahl der erkannten Bildschirme, wird zur Erkennung von Display-Änderungen verwendet. (Standard: `1`)
 
 ---
 
@@ -74,7 +78,7 @@ Unter der Tabelle `[keybindings]` können Sie eigene Tastenkombinationen definie
 
 ### Struktur
 Jedes Tastenkürzel wird durch eine Tabelle mit folgenden Parametern definiert:
-- **`key`** (String): Der Name der Haupttaste laut Winit-Spezifikation.
+- **`key`** (String): Der Name der Haupttaste (abgeleitet vom iced-`Key`-Typ).
 - **`ctrl`** (Boolean): Erfordert das Halten der Strg-Taste (bzw. Command-Taste auf macOS).
 - **`shift`** (Boolean): Erfordert das Halten der Umschalttaste (Shift).
 - **`alt`** (Boolean): Erfordert das Halten der Alt-Taste.
@@ -92,9 +96,16 @@ meta = false
 
 ### Gültige Tastennamen
 
-Das Feld `key` entspricht der Winit-Tastennamen-Spezifikation. Häufig verwendete Namen sind:
+Das Feld `key` akzeptiert folgende Namen:
 
 - **Einzelne Zeichen:** `"A"` bis `"Z"`, `"0"` bis `"9"`
 - **Navigationstasten:** `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
-- **Systemsteuerung:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Escape"`, `"Tab"`
+- **Systemsteuerung:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Esc"`, `"Tab"`
 - **Funktionstasten:** `"F1"` bis `"F12"`
+- **Medientasten:** `"MediaPlayPause"`, `"MediaPlay"`, `"MediaPause"`, `"MediaStop"`, `"MediaTrackNext"`, `"MediaTrackPrevious"`, `"AudioVolumeUp"`, `"AudioVolumeDown"`, `"AudioVolumeMute"`
+
+Hinweis: Verwenden Sie `"Esc"`, nicht `"Escape"`, für die Escape-Taste.
+
+### Verfügbare Tastaturbelegungen
+
+Die vollständige Liste der konfigurierbaren Tastaturbelegungen und ihrer Standardwerte finden Sie auf der Seite [Eigene Tastaturbelegungen](/config/keybindings/). |

@@ -12,12 +12,13 @@ Media Sort teilt Dateien in drei verschiedene Medientypen ein:
 ### 1. Bilder
 Unterstützte native Bildformate (dekodiert über das reine Rust-Crate `image`):
 - **Formate:** JPEG/JPG, PNG, WebP, BMP, TIFF, TGA, Farbfeld (FF), AVIF, DDS, OpenEXR (EXR), HDR, ICO, QOI und PNM (PBM, PGM, PPM, PAM).
-- **GIF-Handhabung:** Animierte GIFs werden intern verarbeitet und an die Video-Render-Pipeline weitergeleitet, um Wiedergabe-, Pause- und Vorschau-Schleifen im Raster und im Vorschau-Panel zu unterstützen.
+- **GIF-Handhabung:** Alle GIF-Dateien (animiert und statisch) werden als Video klassifiziert und an die Video-Render-Pipeline weitergeleitet. Dies ermöglicht Autoplay-, Loop- und Pause-Steuerung im Raster und im Vorschau-Panel.
 
 ### 2. Video & Container
 Unterstützte Videoformate (dynamisch verarbeitet über systemgebundenes `libmpv` und zugrunde liegende FFmpeg-Demuxer):
-- **Unterstützte Formate (z. B. unter CachyOS/Linux mit aktuellem mpv v0.41.0):** MP4, MKV, WebM, AVI, MOV, WMV, FLV, M4V, MPEG/MPG, TS, VOB, 3GP, OGM und animierte GIFs.
-- **Dynamische Abhängigkeit:** Die Kompatibilität von Codecs und Containerformaten hängt vollständig von der installierten Version von `libmpv` und der zugrunde liegenden FFmpeg-Kompilierung (z. B. `libavcodec`/`libavformat`) auf dem Host-System ab.
+- **Kernformate:** MP4, MKV, WebM, AVI, MOV, WMV, FLV, M4V, GIF (fest kodiert, immer verfügbar).
+- **Dynamische Formate:** Die Anwendung fragt `libmpv` beim Start nach zusätzlichen Formaten über `demuxer-lavf-list` ab. Beispiele sind MPEG/MPG, TS, VOB, 3GP und OGM.
+- **Dynamische Abhängigkeit:** Die Kompatibilität von Codecs und Containerformaten hängt vollständig von der installierten Version von `libmpv` und der zugrunde liegenden FFmpeg-Kompilierung (z. B. `libavcodec`/`libavformat`) auf dem Host-System ab. Wenn `libmpv` nicht installiert ist, funktioniert die App weiterhin für Bilder und Audio, jedoch ist die Video-Wiedergabe deaktiviert.
 
 ### 3. Audio
 Unterstützte native Audioformate (dekodiert über Symphonia / Rodio):
@@ -31,9 +32,9 @@ Wenn Sie eine Mediendatei auswählen, zeigt das Metadaten-Panel Details an, die 
 
 | Medientyp | Extrahierte Metadaten-Attribute | Wichtigste Library |
 | :--- | :--- | :--- |
-| **Bilder** | EXIF-Felder (Kameramodell, Belichtungszeit, ISO, Blendenzahl, Aufnahmedatum, GPS-Koordinaten, Dimensionen) | `kamadak-exif` |
-| **Audio** | Audio-Tags (Titel, Künstler, Album, Jahr, Genre, Tracknummer, Bitrate, Dauer) | `id3` / `metaflac` / `mp4ameta` |
-| **Video** | Parameter der Videodatei (Codec, Auflösung, Bitrate, Framerate, Dauer) | Eigener Parser |
+| **Bilder** | EXIF-Felder (Kameramodell, Belichtungszeit, ISO, Blendenzahl, Aufnahmedatum, GPS-Koordinaten, Abmessungen) | `kamadak-exif` |
+| **Audio** | Audio-Tags (Titel, Künstler, Album, Jahr, Genre, Tracknummer) | `id3` / `metaflac` / `mp4ameta` / `symphonia` |
+| **Video** | Container-Tag-Metadaten (Titel, Künstler, Album, Jahr, Genre, Track, Gesamttitelanzahl für MP4/M4V/MOV/MKV/WebM) | `mp4ameta` / `symphonia` |
 
 ---
 
@@ -41,8 +42,8 @@ Wenn Sie eine Mediendatei auswählen, zeigt das Metadaten-Panel Details an, die 
 
 Sie können die aktuelle Dateiliste über die Suchleiste (Fokus mit Taste `I`) durchsuchen und filtern:
 
-- **Dateinamensuche:** Geben Sie einen Teil des Dateinamens ein, um das Raster sofort zu filtern (z. B. die Suche nach „Urlaub“).
-- **Dateiendungsfilter:** Filtern Sie Dateien nach ihrer Dateiendung, da Endungen Teil des Dateinamens sind (z. B. die Eingabe von `.mp4` oder `.flac`, um nur Dateien dieses Typs anzuzeigen).
+- **Dateinamensuche:** Geben Sie einen Teil des Dateinamens ein, um das Raster sofort zu filtern (z. B. die Suche nach „Urlaub“).
+- **Dateiendungsfilter:** Filtern Sie Dateien nach ihrer Dateiendung, da Endungen Teil des Dateinamens sind (z. B. die Eingabe von `.mp4` oder `.flac`, um nur Dateien dieses Typs anzuzeigen).
 
 *Hinweis: Der Suchfilter vergleicht Eingaben unabhängig von Groß- und Kleinschreibung ausschließlich mit dem Dateinamen. Interne Metadatenfelder (wie EXIF-Tags oder Audio-Künstler) werden bei der Suche nicht abgefragt.*
 
@@ -53,6 +54,6 @@ Sie können die aktuelle Dateiliste über die Suchleiste (Fokus mit Taste `I`) d
 Um die Navigation und das Durchsuchen absolut flüssig zu halten, implementiert Media Sort ein intelligentes Vorabruf- und Caching-System im Hintergrund:
 
 - **Miniaturansicht-Prefetching:** Startet vorausschauend Hintergrund-Worker, um Miniaturansichten für die nächsten Dateien in Ihrem aktuellen Verzeichnis zu generieren.
+- **Audio-Cover-Art:** Audiodateien mit eingebetteten Cover-Bildern (MP3, FLAC, M4A, OGG usw.) generieren automatisch Miniaturansichten aus dem Cover-Bild.
 - **LRU-Cache:** Speichert Bilder und Miniaturansichten in einem schnellen LRU-Cache (Least Recently Used) mit einer Kapazität von bis zu 200 Miniaturansichten und 20 hochauflösenden Vorschauen für sofortigen Zugriff.
 - **Asynchroner Dateisystem-Watcher:** Überwacht Ihr aktives Verzeichnis automatisch auf Änderungen (Hinzufügungen, Löschungen oder Änderungen), die außerhalb der App vorgenommen werden, und aktualisiert das UI-Raster dynamisch.
-

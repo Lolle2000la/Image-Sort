@@ -3,19 +3,34 @@ title: Erste Schritte & Einrichtung
 description: Eine Kurzanleitung für die ersten Schritte mit Media Sort nach dem Start.
 ---
 
-Willkommen bei Media Sort! Wenn Sie die Anwendung zum ersten Mal starten, können Sie Ihren Arbeitsbereich in wenigen einfachen Schritten einrichten. Hier erfahren Sie, wie Sie Ihren Workflow für maximale Sortiergeschwindigkeit optimieren.
+Wenn Sie Media Sort zum ersten Mal starten, öffnet sich die Anwendung direkt in der Medienraster-Ansicht. Das erwartet Sie und so richten Sie Ihren Arbeitsbereich ein.
+
+## Startverhalten
+
+Beim ersten Start öffnet Media Sort automatisch das systemseitige **Bilder**-Verzeichnis (z. B. `~/Bilder` unter Linux, `~/Pictures` unter macOS). Wenn Sie dort keine Dateien haben, ist das Raster leer – verwenden Sie die Ordnerauswahl, um ein anderes Verzeichnis zu wählen.
+
+Falls Sie zuvor die ältere WPF-Version (v2.x) verwendet haben, **migriert** Media Sort Ihre Einstellungen (angepinnte Ordner, Dark Mode, Hotkeys, Fensterposition) **still und automatisch** aus der alten `config.json` in das neue `config.toml`-Format. Ein manuelles Eingreifen ist nicht erforderlich.
 
 ## 1. Quellordner auswählen
 
-Beim Start von Media Sort werden Sie aufgefordert, ein Stammverzeichnis (Root) auszuwählen. Dies ist der Hauptordner, der die zu sortierenden Mediendateien (Bilder, Videos, Audio) enthält.
+Um ein Verzeichnis mit den zu sortierenden Mediendateien (Bilder, Videos, Audio) auszuwählen:
 
-- Klicken Sie auf das Ordnersymbol oder verwenden Sie den nativen Datei-Auswahldialog, um Ihren Zielordner auszuwählen.
-- Media Sort scannt den Ordner automatisch und findet rekursiv alle unterstützten Formate, die in einem strukturierten Raster dargestellt werden.
+- Klicken Sie in der linken Seitenleiste unter **Ordner** auf die Schaltfläche **Öffnen**, um den nativen Ordnerauswahldialog zu öffnen.
+- Alternativ drücken Sie `O`, um das aktuelle Arbeitsverzeichnis direkt zu öffnen.
+- Media Sort scannt den ausgewählten Ordner automatisch und findet rekursiv alle unterstützten Formate, die in einem strukturierten Raster dargestellt werden.
 
 ## 2. Angepinnte Ordner einrichten
 
-Angepinnte Ordner sind Ihre Sortierziele. Indem Sie Ordner anpinnen, weisen Sie ihnen Tastatur-Shortcuts zu (z. B. um ausgewählte Medien mit einem einzigen Tastendruck zu verschieben oder zu kopieren).
+Angepinnte Ordner sind Ihre Zielverzeichnisse zum Sortieren. Durch das Anpinnen von Ordnern weisen Sie ihnen Kurzbefehle zu, mit denen Sie ausgewählte Medien mit einem einzigen Tastendruck verschieben können.
 
-- Navigieren Sie mithilfe des Ordnerbaums auf der linken Seite zum gewünschten Zielverzeichnis.
-- Klicken Sie mit der rechten Maustaste auf einen Ordner, um ihn anzupinnen, oder nutzen Sie das Panel "Angepinnte Ordner", um Verzeichnisse hinzuzufügen.
-- Sobald sie angepinnt sind, werden diesen Ordnern Schnellwahltasten zugewiesen (standardmäßig `Verschieben/Kopieren in angepinnten Ordner 1-9`).
+- Navigieren Sie mithilfe des Ordnerbaums auf der linken Seite zu Ihrem Zielverzeichnis.
+- Wählen Sie einen Ordner aus und drücken Sie `F`, um ihn anzupinnen, oder nutzen Sie das Panel „Angepinnte Ordner“, um Zielverzeichnisse hinzuzufügen.
+- Sobald sie angepinnt sind, werden diesen Ordnern Schnellwahltasten zugewiesen: Drücken Sie `Alt + 1` bis `Alt + 9`, um die ausgewählte Mediendatei direkt in den entsprechenden angepinnten Ordner zu verschieben.
+
+## 3. Ihre Konfiguration anpassen
+
+Öffnen Sie den **Einstellungen**-Dialog über die linke Seitenleiste, um Folgendes zu konfigurieren:
+- **Design** – wählen Sie zwischen Dark, Light, Dracula, Nord, Catppuccin und weiteren
+- **Tastenkürzel** – belegen Sie alle Shortcuts nach Ihren Wünschen neu
+- **Sprache** – wechseln Sie zwischen Deutsch, Englisch und Japanisch
+- **GIF-Animation** – schalten Sie die animierte GIF-Wiedergabe im Raster und in der Vorschau ein oder aus

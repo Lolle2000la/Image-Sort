@@ -27,7 +27,7 @@ Depending on your platform, you may need to install the `mpv` media playback eng
 **No manual setup is needed!** The precompiled packages for both Windows and macOS automatically bundle all required `libmpv` libraries natively inside the application bundle.
 
 ### Linux
-Linux AppImage packages run dynamically on the host environment and require `libmpv` to be installed on your system:
+The Linux AppImage packages run dynamically on the host environment and require `libmpv` to be installed on your system. The AppImage also depends on `libasound2` and X11/Wayland libraries which are typically pre-installed on desktop Linux distributions.
 
 #### Arch Linux / CachyOS
 ```bash
@@ -36,10 +36,14 @@ sudo pacman -S mpv
 
 #### Debian / Ubuntu
 ```bash
-sudo apt install libmpv-dev
+sudo apt install libmpv2 libasound2
 ```
 
 #### Fedora
 ```bash
-sudo dnf install mpv-libs-devel
+sudo dnf install mpv-libs
 ```
+
+:::note
+If `libmpv` is not installed, Media Sort will still launch and function for images and audio. Video and GIF playback will be automatically disabled.
+:::
