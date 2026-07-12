@@ -31,9 +31,30 @@ export default defineConfig({
                         ja: 'はじめに',
                     },
                     items: [
-                        { label: 'Download & Installation', slug: 'getting-started/installation' },
-                        { label: 'Building from Source', slug: 'getting-started/building-from-source' },
-                        { label: 'First Run Onboarding', slug: 'getting-started/onboarding' },
+                        {
+                            label: 'Download & Installation',
+                            translations: {
+                                de: 'Download & Installation',
+                                ja: 'ダウンロードとインストール',
+                            },
+                            slug: 'getting-started/installation',
+                        },
+                        {
+                            label: 'Building from Source',
+                            translations: {
+                                de: 'Aus dem Quellcode kompilieren',
+                                ja: 'ソースからのビルド',
+                            },
+                            slug: 'getting-started/building-from-source',
+                        },
+                        {
+                            label: 'First Run Onboarding',
+                            translations: {
+                                de: 'Erste Schritte & Einrichtung',
+                                ja: '初回起動時のオンボーディング',
+                            },
+                            slug: 'getting-started/onboarding',
+                        },
                     ],
                 },
                 {
@@ -43,8 +64,22 @@ export default defineConfig({
                         ja: 'ユーザーガイド',
                     },
                     items: [
-                        { label: 'Keyboard Layout', slug: 'manuals/keyboard-layout' },
-                        { label: 'Media Capabilities', slug: 'manuals/media-capabilities' },
+                        {
+                            label: 'Keyboard Layout',
+                            translations: {
+                                de: 'Tastaturschema & Steuerung',
+                                ja: 'キーボードレイアウトと操作方法',
+                            },
+                            slug: 'manuals/keyboard-layout',
+                        },
+                        {
+                            label: 'Media Capabilities',
+                            translations: {
+                                de: 'Medienkompatibilitäts-Matrix',
+                                ja: '対応メディアフォーマット',
+                            },
+                            slug: 'manuals/media-capabilities',
+                        },
                     ],
                 },
                 {
