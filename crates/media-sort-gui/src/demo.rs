@@ -96,21 +96,31 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                 return Err("MEDIA_SORT_DEMO_EXPORT must be a directory because MEDIA_SORT_DEMO_SPEC is a directory".into());
             }
 
-            let entries = std::fs::read_dir(&spec_path)?;
-            for entry in entries {
-                let entry = entry?;
-                let path = entry.path();
-                if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
-                    let file_stem = path.file_stem().unwrap().to_string_lossy();
-                    let output_video_path = export_path.join(format!("{}.mp4", file_stem));
+            // Collect all JSON flow specs in the directory
+            let mut flow_paths: Vec<std::path::PathBuf> = std::fs::read_dir(&spec_path)?
+                .filter_map(|e| e.ok())
+                .map(|e| e.path())
+                .filter(|p| p.is_file() && p.extension().is_some_and(|ext| ext == "json"))
+                .collect();
+            flow_paths.sort();
+
+            // Discover all available locales from the core library
+            let locales: Vec<&'static str> = media_sort_core::l10n::AVAILABLE_LOCALES.to_vec();
+
+            // Render each flow × locale combination: <stem>_<locale>.mp4
+            for path in &flow_paths {
+                let file_stem = path.file_stem().unwrap().to_string_lossy();
+                for &locale in &locales {
+                    let output_video_path =
+                        export_path.join(format!("{}_{}.mp4", file_stem, locale));
 
                     tracing::info!(
-                        "Rendering demo: {} -> {:?}",
+                        "Rendering demo [{locale}]: {} -> {:?}",
                         path.display(),
                         output_video_path
                     );
 
-                    export_demo_video(&path, &output_video_path)?;
+                    export_demo_video_with_locale(path, &output_video_path, locale)?;
                 }
             }
             Ok(())
@@ -156,8 +166,27 @@ pub fn export_demo_video(
     json_spec_path: &Path,
     output_path: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    export_demo_video_with_locale(json_spec_path, output_path, "en")
+}
+
+pub fn export_demo_video_with_locale(
+    json_spec_path: &Path,
+    output_path: &Path,
+    locale: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
     let completed = Arc::new(AtomicBool::new(false));
     let mock_state_src = resolve_workspace_path("resources/MockState");
+
+    // Override locale environment for this render.
+    // AppState::new calls detect_locale() which reads LC_ALL / LANG, so setting
+    // these env vars is sufficient to drive the rendered app's language.
+    // Safety: single-threaded export path; no other threads are mutating env vars.
+    let prev_lang = std::env::var("LANG").ok();
+    let prev_lc_all = std::env::var("LC_ALL").ok();
+    unsafe {
+        std::env::set_var("LANG", format!("{}.UTF-8", locale.replace('-', "_")));
+        std::env::set_var("LC_ALL", format!("{}.UTF-8", locale.replace('-', "_")));
+    }
 
     let config = iced_automation::DemoConfig {
         spec_path: json_spec_path.to_path_buf(),
@@ -191,7 +220,21 @@ pub fn export_demo_video(
     let mut video_config = iced_automation::ExportVideoConfig::standard(output_path.to_path_buf());
     video_config.extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
 
-    iced_automation::export_video(&headless_app, completed, &video_config)?;
+    let result = iced_automation::export_video(&headless_app, completed, &video_config);
 
+    // Restore locale environment
+    // Safety: single-threaded export path; no other threads are mutating env vars.
+    unsafe {
+        match prev_lc_all {
+            Some(v) => std::env::set_var("LC_ALL", v),
+            None => std::env::remove_var("LC_ALL"),
+        }
+        match prev_lang {
+            Some(v) => std::env::set_var("LANG", v),
+            None => std::env::remove_var("LANG"),
+        }
+    }
+
+    result?;
     Ok(())
 }
