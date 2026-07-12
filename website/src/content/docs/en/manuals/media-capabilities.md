@@ -32,9 +32,9 @@ When you select a media file, the metadata panel displays details read directly 
 
 | Media Type | Extracted Metadata Attributes | Key Library |
 | :--- | :--- | :--- |
-| **Images** | EXIF fields (Camera model, Exposure time, ISO, F-number, Date taken, GPS coordinates, Dimensions) | `kamadak-exif` |
-| **Audio** | Audio tags (Title, Artist, Album, Year, Genre, Track number) | `id3` / `metaflac` / `mp4ameta` / `symphonia` |
-| **Video** | Container tag metadata (Title, Artist, Album, Year, Genre, Track, Total Tracks for MP4/M4V/MOV/MKV/WebM) | `mp4ameta` / `symphonia` |
+| **Images** | EXIF fields (Camera model, Exposure time, ISO, F-number, Date taken, GPS coordinates) and image dimensions (width/height) | `kamadak-exif`, `image` crate |
+| **Audio** | Audio tags (Title, Artist, Album, Year, Genre, Track number for MP3/AIFF/WAV; all Vorbis comments for FLAC; all container tags for OGG/OPUS/WMA) | `id3` / `metaflac` / `mp4ameta` / `symphonia` |
+| **Video** | Container tag metadata (Title, Artist, Album, Year, Genre, Track, Total Tracks for MP4/M4V/MOV; all container tags for MKV/WebM and other formats) | `mp4ameta` / `symphonia` |
 
 ---
 
