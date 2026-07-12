@@ -179,6 +179,8 @@ To add a new persisted setting:
 1. Add the field to the appropriate sub-struct in `crates/media-sort-core/src/settings/`
 2. Add `#[serde(default)]` (or a concrete default) so old configs remain loadable
 3. If the setting has a UI toggle, call `state.settings.save()` after mutation
+4. If the setting is exposed in the GUI view, update the **Application Settings** manual ([settings.mdx](website/src/content/docs/en/config/settings.mdx)) in all supported locales
+5. If the configuration schema changes (new key/default/section), update the **Configuration File** manual ([config-file.mdx](website/src/content/docs/en/advanced/config-file.mdx)) in all supported locales
 
 ## Video pipeline
 
@@ -288,6 +290,10 @@ The `docs/` directory is the GitHub Pages site at `imagesort.org`. As of v3.0 th
 ### Documentation website (`website/`)
 The `website/` directory is the new Astro/Starlight documentation site deployed to `gh-pages`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
 To render all automated demo videos (headless iced simulation) to the public assets directory for deployment, run `npm run render-demos` from the `website/` directory. Output videos are saved in `website/public/demos/`.
+
+**CRITICAL REQUIREMENT:**
+- **GUI Setting Changes**: If you create, change, or remove settings from the user interface, you **must** update the Application Settings page (`website/src/content/docs/*/config/settings.mdx`) in all languages.
+- **Schema Changes**: If any configuration schema/TOML keys are added, updated, or removed, you **must** update the Configuration File page (`website/src/content/docs/*/advanced/config-file.mdx`) in all languages.
 
 ### Locale files
 When you add user-facing strings, add entries to all three locale files (`resources/locale/{en,de,ja}/main.ftl`). The build script detects changes automatically.**
