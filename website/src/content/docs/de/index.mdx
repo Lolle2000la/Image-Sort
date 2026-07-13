@@ -38,23 +38,41 @@ import Features from '../../../components/Features.astro';
   </div>
 </div>
 
+<div class="value-section">
+  <h2 class="value-heading">Sortiere so schnell, wie du denkst</h2>
+  <div class="value-points">
+    <div class="value-point">
+      <strong>Tastaturgesteuerter Workflow.</strong> Jede Aktion ist nur einen Tastendruck entfernt. Verschieben, kopieren, umbenennen oder löschen — ohne die Maus zu benutzen. Sortiere Hunderte von Dateien in Minuten.
+    </div>
+    <div class="value-point">
+      <strong>Sofortiges visuelles Feedback.</strong> Vorschaubilder laden so schnell, wie du navigierst. Thumbnails werden zwischengespeichert, Bilder werden bei Bedarf dekodiert, und Videos werden inline abgespielt. Keine Verzögerung, kein Warten.
+    </div>
+    <div class="value-point">
+      <strong>Alles rückgängig machen.</strong> Ein Fehler passiert? Rückgängig. Andere Meinung? Wiederherstellen. Der vollständige Aktionsverlauf lässt dich frei experimentieren, denn nichts ist endgültig, bis du es sagst.
+    </div>
+    <div class="value-point">
+      <strong>Bilder, Videos und Audio.</strong> Ein einheitliches Raster für alle deine Medien. Kein App-Wechsel, keine getrennten Workflows. Alles an einem Ort vorschauen, sortieren und organisieren.
+    </div>
+  </div>
+</div>
+
 <Features 
-  sectionTitle="Warum Media Sort?"
+  sectionTitle="Mit Sorgfalt entwickelt"
   features={[
     {
       icon: "zap",
-      title: "Echte Multi-Format-Leistung",
-      description: "Nicht mehr nur für Bilder. Dekodiert und zeigt Videos, Audio (MP3/FLAC) und Grafiken nahtlos in einem einheitlichen Raster an, angetrieben von media-sort-backend und integriertem libmpv."
+      title: "Native Performance",
+      description: "In Rust geschrieben. Medien-Dekodierung ohne Overhead durch libmpv, symphonia und die image-Bibliothek. Flüssiges Scrollen durch tausende Dateien ohne Ruckeln."
     },
     {
       icon: "shield",
-      title: "Sorgenfreies Sortieren",
-      description: "Tippen Sie Tasten mit Mach 5. Jedes Verschieben, Kopieren, Umbenennen und Löschen kann sofort rückgängig gemacht oder wiederholt werden. Unsere robuste history.rs- und reversible.rs-Architektur schützt Ihre Daten."
+      title: "Robustes Undo-System",
+      description: "Jedes Verschieben, Kopieren, Umbenennen und Löschen ist eine umkehrbare Aktion. Der gesamte Verlauf ist im Speicher für sofortiges Rückgängigmachen, mit klaren Namen für jede Aktion."
     },
     {
       icon: "lock",
-      title: "Privatsphäre zuerst & Lokal",
-      description: "Keine Cloud-Telemetrie, keine Registrierung. Eine native Rust-Anwendung, die direkt mit Ihrem lokalen Dateisystem-Wächter spricht. Ihre Medien bleiben vollständig bei Ihnen."
+      title: "100% Lokal & Privat",
+      description: "Keine Konten, keine Analysen, keine Netzwerkanfragen außer optionalen Update-Prüfungen. Deine Dateien und Ordnerstruktur bleiben auf deinem Rechner. Immer."
     }
   ]}
 />
@@ -138,5 +156,46 @@ import Features from '../../../components/Features.astro';
 
   .hero-visual {
     width: 100%;
+  }
+
+  .value-section {
+    padding: 3rem 0 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .value-heading {
+    text-align: center;
+    font-size: 2rem !important;
+    margin-bottom: 2.5rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .value-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .value-points {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .value-point {
+    padding: 1.25rem;
+    margin: 0 !important;
+    border-left: 3px solid #6366f1;
+    background: var(--sl-color-gray-7);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  :global([data-theme="dark"]) .value-heading {
+    color: #ffffff;
   }
 `}</style>

@@ -183,7 +183,7 @@ const iconMap = {
 
   .version-tag {
     font-size: 1rem;
-    color: #a78bfa;
+    color: #7c3aed;
   }
 
   .error-alert {
@@ -191,7 +191,7 @@ const iconMap = {
     background: rgba(239, 68, 68, 0.1);
     border: 1px solid rgba(239, 68, 68, 0.2);
     border-radius: 0.5rem;
-    color: #f87171;
+    color: #dc2626;
     margin-bottom: 2rem;
   }
 
@@ -202,11 +202,12 @@ const iconMap = {
   }
 
   .platform-group h3 {
+    --heading-color: var(--sl-color-gray-1);
     font-size: 1.5rem !important;
     margin: 0 0 1rem 0 !important;
     padding: 0 0 0.5rem 0 !important;
-    border-bottom: 1px solid var(--sl-color-gray-6);
-    color: #ffffff;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+    color: var(--heading-color);
   }
 
   .badges-grid {
@@ -217,8 +218,13 @@ const iconMap = {
   }
 
   .download-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--sl-color-gray-6);
+    --card-bg: rgba(0, 0, 0, 0.02);
+    --card-icon-bg: rgba(0, 0, 0, 0.04);
+    --card-text: var(--sl-color-gray-1);
+    --card-border: var(--sl-color-gray-5);
+
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
     border-radius: 0.75rem;
     padding: 1rem;
     display: flex;
@@ -241,12 +247,12 @@ const iconMap = {
     align-items: center;
     gap: 1rem;
     text-decoration: none;
-    color: #ffffff !important;
+    color: var(--card-text) !important;
     margin: 0 !important;
   }
 
   .badge-icon {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--card-icon-bg);
     padding: 0.5rem;
     border-radius: 0.5rem;
     width: 3.5rem;
@@ -258,7 +264,7 @@ const iconMap = {
   }
 
   .icon-lucide {
-    color: #a78bfa;
+    color: #7c3aed;
   }
 
   .badge-content {
@@ -283,23 +289,23 @@ const iconMap = {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(127, 127, 127, 0.08);
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     font-size: 0.8rem;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--sl-color-gray-6);
     margin: 0 !important;
   }
 
   .hash-label {
-    color: var(--sl-color-gray-4);
+    color: var(--sl-color-gray-3);
     font-weight: 500;
     margin: 0 !important;
   }
 
   .hash-value {
     font-family: var(--__sl-font-mono);
-    color: #a78bfa;
+    color: #7c3aed;
     flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -308,8 +314,8 @@ const iconMap = {
   }
 
   .copy-btn {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--sl-color-gray-6);
+    border: 1px solid var(--sl-color-gray-5);
     color: var(--sl-color-gray-2);
     padding: 0.35rem;
     border-radius: 0.25rem;
@@ -329,5 +335,25 @@ const iconMap = {
   .copy-btn.copied {
     background: #10b981;
     color: white;
+  }
+
+  :global([data-theme="dark"]) .download-card {
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --card-icon-bg: rgba(255, 255, 255, 0.05);
+    --card-text: #ffffff;
+    --card-border: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .platform-group h3 {
+    --heading-color: #ffffff;
+    border-bottom-color: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .hash-section {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global([data-theme="dark"]) .error-alert {
+    color: #f87171;
   }
 </style>

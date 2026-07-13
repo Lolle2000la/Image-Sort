@@ -42,7 +42,7 @@ const iconMap: Record<string, any> = {
 <style>
   .features-section {
     padding: 4rem 0;
-    border-top: 1px solid var(--sl-color-gray-6);
+    border-top: 1px solid var(--sl-color-gray-5);
     margin-top: 4rem;
     width: 100%;
   }
@@ -51,7 +51,7 @@ const iconMap: Record<string, any> = {
     text-align: center;
     font-size: 2.25rem !important;
     margin-bottom: 3rem;
-    color: #ffffff;
+    color: var(--sl-color-gray-1);
   }
 
   .features-grid {
@@ -63,11 +63,11 @@ const iconMap: Record<string, any> = {
   }
 
   .feature-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--sl-color-gray-6);
+    background: var(--sl-color-gray-7);
+    border: 1px solid var(--sl-color-gray-5);
     border-radius: 0.75rem;
     padding: 2rem;
-    transition: transform 0.2s, border-color 0.2s;
+    transition: border-color 0.2s;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -75,8 +75,7 @@ const iconMap: Record<string, any> = {
   }
 
   .feature-card:hover {
-    transform: translateY(-4px);
-    border-color: #6366f1;
+    border-color: var(--sl-color-gray-4);
   }
 
   .feature-icon {
@@ -88,14 +87,14 @@ const iconMap: Record<string, any> = {
   }
 
   .icon-lucide {
-    color: #818cf8;
+    color: #7c3aed;
   }
 
   .feature-title {
     font-size: 1.25rem !important;
     margin: 0 0 0.75rem 0 !important;
     padding: 0 !important;
-    color: #ffffff;
+    color: var(--sl-color-white);
     line-height: 1.2;
   }
 
@@ -103,7 +102,16 @@ const iconMap: Record<string, any> = {
     font-size: 0.95rem !important;
     margin: 0 !important;
     padding: 0 !important;
-    color: var(--sl-color-gray-3) !important;
+    color: var(--sl-color-gray-2) !important;
     line-height: 1.5;
+  }
+
+  :global([data-theme="dark"]) .section-title {
+    color: #ffffff;
+  }
+
+  :global([data-theme="dark"]) .feature-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: var(--sl-color-gray-6);
   }
 </style>

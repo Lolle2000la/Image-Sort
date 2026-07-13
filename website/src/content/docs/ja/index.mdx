@@ -38,23 +38,41 @@ import Features from '../../../components/Features.astro';
   </div>
 </div>
 
+<div class="value-section">
+  <h2 class="value-heading">思考の速さで整理する</h2>
+  <div class="value-points">
+    <div class="value-point">
+      <strong>キーボードファーストのワークフロー。</strong>すべての操作はワンキーです。マウスに触れることなく移動、コピー、名前変更、削除が可能。数分で数百のファイルを整理できます。
+    </div>
+    <div class="value-point">
+      <strong>即座の視覚的フィードバック。</strong>ナビゲーションと同じ速度でプレビューが読み込まれます。サムネイルはキャッシュされ、画像はオンデマンドでデコードされ、動画はインラインで再生されます。遅延も待機もなし。
+    </div>
+    <div class="value-point">
+      <strong>すべて取り消し可能。</strong>ミスをした？元に戻す。気が変わった？やり直す。完全なアクション履歴があるので、自由に試せます。何も決定は最終ではありません。
+    </div>
+    <div class="value-point">
+      <strong>画像、動画、音声に対応。</strong>すべてのメディアを一つのグリッドで。アプリを切り替える必要も、別々のワークフローもなし。すべてを一か所でプレビュー、整理、管理できます。
+    </div>
+  </div>
+</div>
+
 <Features 
-  sectionTitle="なぜ Media Sort なのか？"
+  sectionTitle="丁寧に作られています"
   features={[
     {
       icon: "zap",
-      title: "真のマルチフォーマット対応",
-      description: "画像だけではありません。media-sort-backendと統合されたlibmpvにより、動画、音声（MP3/FLAC）、静止画を1つのグリッドにシームレスにデコードして表示します。"
+      title: "ネイティブパフォーマンス",
+      description: "Rustで記述。libmpv、symphonia、imageクレートによるオーバーヘッドのないメディアデコード。何千ものファイルをカクつくことなくスムーズにスクロール。"
     },
     {
       icon: "shield",
-      title: "安心の整理（取り消し・やり直し）",
-      description: "キーを爆速で叩いても大丈夫。ファイルの移動、コピー、名前変更、削除はすべて即座に取り消し・やり直しが可能です。堅牢なhistory.rsとreversible.rsアーキテクチャがデータを安全に保ちます。"
+      title: "堅牢なUndoシステム",
+      description: "すべての移動、コピー、名前変更、削除は可逆的なアクションです。履歴全体がメモリに保持され、即座に取り消し・やり直しが可能。各アクションの名前も明確に表示。"
     },
     {
       icon: "lock",
-      title: "プライバシー優先＆ローカル動作",
-      description: "クラウド送信やアカウント作成は一切不要。ローカルのファイルシステム監視モジュールと直接通信する、ネイティブのRustバイナリです。メディアは完全にあなたの管理下に置かれます。"
+      title: "100%ローカル＆プライベート",
+      description: "アカウント不要、分析なし、オプションのアップデートチェック以外のネットワーク通信は一切ありません。ファイルとフォルダ構造は常にあなたのマシン上にあります。"
     }
   ]}
 />
@@ -138,5 +156,46 @@ import Features from '../../../components/Features.astro';
 
   .hero-visual {
     width: 100%;
+  }
+
+  .value-section {
+    padding: 3rem 0 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .value-heading {
+    text-align: center;
+    font-size: 2rem !important;
+    margin-bottom: 2.5rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .value-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .value-points {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .value-point {
+    padding: 1.25rem;
+    margin: 0 !important;
+    border-left: 3px solid #6366f1;
+    background: var(--sl-color-gray-7);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  :global([data-theme="dark"]) .value-heading {
+    color: #ffffff;
   }
 `}</style>

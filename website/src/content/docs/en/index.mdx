@@ -38,23 +38,41 @@ import Features from '../../../components/Features.astro';
   </div>
 </div>
 
+<div class="value-section">
+  <h2 class="value-heading">Organize at the speed of thought</h2>
+  <div class="value-points">
+    <div class="value-point">
+      <strong>Keyboard-first workflow.</strong> Every action is one keypress away. Move, copy, rename, or delete without ever touching the mouse. Sort hundreds of files in minutes.
+    </div>
+    <div class="value-point">
+      <strong>Instant visual feedback.</strong> Previews load as fast as you navigate. Thumbnails are cached, images decode on demand, and video plays inline. No lag, no waiting.
+    </div>
+    <div class="value-point">
+      <strong>Undo everything.</strong> Made a mistake? Hit undo. Changed your mind? Redo it. The full action history lets you experiment freely, because nothing is permanent until you say so.
+    </div>
+    <div class="value-point">
+      <strong>Images, video, and audio.</strong> One unified grid for all your media. No switching apps, no separate workflows. Preview, sort, and organize everything in one place.
+    </div>
+  </div>
+</div>
+
 <Features 
-  sectionTitle="Why Media Sort?"
+  sectionTitle="Built with care"
   features={[
     {
       icon: "zap",
-      title: "True Multi-Format Performance",
-      description: "It's not just for images anymore. Decodes and previews video, audio (MP3/FLAC), and graphics seamlessly in one unified grid, powered by media-sort-backend and integrated libmpv."
+      title: "Native Performance",
+      description: "Written in Rust. Zero overhead media decoding via libmpv, symphonia, and the image crate. Smooth scrolling through thousands of files without stutter."
     },
     {
       icon: "shield",
-      title: "Zero-Anxiety Sorting",
-      description: "Hit keys at Mach 5. Every single folder move, copy, rename, and deletion can be instantly undone or redone. Our robust history.rs and reversible.rs architecture keeps your data safe."
+      title: "Robust Undo System",
+      description: "Every move, copy, rename, and deletion is a reversible action. The entire history stack is in memory for instant undo/redo, with clear names so you always know what you're undoing."
     },
     {
       icon: "lock",
-      title: "Privacy-First & Local",
-      description: "No cloud telemetry, no account creation, no phoning home. A native Rust binary talking directly to your local filesystem checker and watcher. Your media remains entirely yours."
+      title: "100% Local & Private",
+      description: "No accounts, no analytics, no network requests beyond optional update checks. Your files and folder structure stay on your machine. Always."
     }
   ]}
 />
@@ -138,5 +156,46 @@ import Features from '../../../components/Features.astro';
 
   .hero-visual {
     width: 100%;
+  }
+
+  .value-section {
+    padding: 3rem 0 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .value-heading {
+    text-align: center;
+    font-size: 2rem !important;
+    margin-bottom: 2.5rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .value-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .value-points {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .value-point {
+    padding: 1.25rem;
+    margin: 0 !important;
+    border-left: 3px solid #6366f1;
+    background: var(--sl-color-gray-7);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  :global([data-theme="dark"]) .value-heading {
+    color: #ffffff;
   }
 `}</style>

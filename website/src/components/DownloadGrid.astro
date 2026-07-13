@@ -124,6 +124,11 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
   }
 
   .download-btn {
+    --btn-bg: rgba(0, 0, 0, 0.03);
+    --btn-text: var(--sl-color-gray-1);
+    --btn-icon-bg: rgba(0, 0, 0, 0.04);
+    --btn-icon-color: #7c3aed;
+
     position: relative;
     display: flex;
     align-items: center;
@@ -132,21 +137,21 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
     border-radius: 0.85rem;
     text-decoration: none;
     font-weight: 600;
-    color: var(--sl-color-gray-2) !important;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--sl-color-gray-6);
+    color: var(--btn-text) !important;
+    background: var(--btn-bg);
+    border: 1px solid var(--sl-color-gray-5);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
 
   .download-btn:hover {
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.06);
     transform: translateY(-2px);
     border-color: var(--sl-color-gray-4);
   }
 
   .download-btn .btn-icon {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--btn-icon-bg);
     padding: 0.4rem;
     border-radius: 0.5rem;
     width: 3rem;
@@ -157,11 +162,7 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
   }
 
   .icon-lucide {
-    color: #a78bfa;
-  }
-
-  .download-btn.recommended .icon-lucide {
-    color: #ffffff;
+    color: var(--btn-icon-color);
   }
 
   .download-btn .btn-text {
@@ -172,7 +173,6 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
 
   .download-btn .btn-title {
     font-size: 1.05rem;
-    color: #ffffff;
   }
 
   .download-btn small {
@@ -182,16 +182,17 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
     margin-top: 0.15rem;
   }
 
-  /* Recommended highlight styling */
   .download-btn.recommended {
+    --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+    --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
     border-color: #6366f1;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+    background: var(--btn-bg);
     box-shadow: 0 4px 25px rgba(99, 102, 241, 0.2);
   }
 
   .download-btn.recommended:hover {
     border-color: #818cf8;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
+    background: var(--btn-hover-bg);
     box-shadow: 0 6px 30px rgba(99, 102, 241, 0.3);
   }
 
@@ -214,5 +215,25 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
 
   .download-btn.recommended .rec-badge {
     display: block;
+  }
+
+  :global([data-theme="dark"]) .download-btn {
+    --btn-bg: rgba(255, 255, 255, 0.02);
+    --btn-text: #ffffff;
+    --btn-icon-bg: rgba(255, 255, 255, 0.04);
+    border-color: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .download-btn.recommended {
+    --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.20) 0%, rgba(59, 130, 246, 0.08) 100%);
+    --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.30) 0%, rgba(59, 130, 246, 0.12) 100%);
+  }
+
+  :global([data-theme="dark"]) .download-btn.recommended .icon-lucide {
+    color: #ffffff;
+  }
+
+  :global([data-theme="dark"]) .download-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
   }
 </style>
