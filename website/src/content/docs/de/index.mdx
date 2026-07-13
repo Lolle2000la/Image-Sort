@@ -4,6 +4,7 @@ description: Der blitzschnelle, tastaturgesteuerte Organizer für Medien.
 template: splash
 ---
 
+import { ArrowRight } from '@lucide/astro';
 import DownloadGrid from '../../../components/DownloadGrid.astro';
 import DemoVideo from '../../../components/DemoVideo.astro';
 import Features from '../../../components/Features.astro';
@@ -23,7 +24,7 @@ import Features from '../../../components/Features.astro';
     />
     
     <div class="secondary-actions">
-      <a href="/de/getting-started/installation/" class="action-btn primary">Loslegen &rarr;</a>
+      <a href="/de/getting-started/installation/" class="action-btn primary">Loslegen <ArrowRight size={18} /></a>
     </div>
   </div>
 
@@ -116,7 +117,9 @@ import Features from '../../../components/Features.astro';
   }
 
   .action-btn {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
     padding: 0.75rem 1.5rem;
     border-radius: 0.5rem;
     text-decoration: none;
