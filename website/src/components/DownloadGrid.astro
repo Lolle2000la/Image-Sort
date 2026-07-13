@@ -185,6 +185,7 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
   .download-btn.recommended {
     --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
     --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
+    --btn-icon-bg: rgba(99, 102, 241, 0.08);
     border-color: #6366f1;
     background: var(--btn-bg);
     box-shadow: 0 4px 25px rgba(99, 102, 241, 0.2);
@@ -227,10 +228,7 @@ const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
   :global([data-theme="dark"]) .download-btn.recommended {
     --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.20) 0%, rgba(59, 130, 246, 0.08) 100%);
     --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.30) 0%, rgba(59, 130, 246, 0.12) 100%);
-  }
-
-  :global([data-theme="dark"]) .download-btn.recommended .icon-lucide {
-    color: #ffffff;
+    --btn-icon-bg: rgba(99, 102, 241, 0.15);
   }
 
   :global([data-theme="dark"]) .download-btn:hover {
