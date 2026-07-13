@@ -1,0 +1,94 @@
+---
+title: Architekturüberblick
+description: "High-Level-Architektur der Media Sort-Codebasis: Workspace-Layout, Crate-Abhängigkeiten und das Elm-inspirierte UI-Pattern."
+---
+
+Media Sort ist ein Rust-Workspace mit vier Crates, die in einer strengen Abhängigkeitsreihenfolge angeordnet sind. Diese Seite bietet eine Übersichtskarte der Codebasis, um neuen Mitwirkenden die Orientierung zu erleichtern.
+
+## Workspace-Layout
+
+```
+crates/
+├── media-sort-core       # Einstellungen, i18n, Rückgängig/Wiederholen, Medientypen (keine Systemabhängigkeiten)
+├── media-sort-backend    # Dateisystem, Medien-Dekodierung, Metadatenextraktion
+├── iced-automation       # Headless-iced-App-Simulation & Video-Rendering
+└── media-sort-gui        # Die iced-GUI-Anwendungsbinary
+```
+
+Abhängigkeitsrichtung: `media-sort-gui` → `media-sort-backend` + `iced-automation` → `media-sort-core`
+
+`media-sort-core` darf niemals von den anderen drei Crates abhängen. Es enthält ausschließlich reine Datentypen, Einstellungslogik und Lokalisierung: kein Dateisystemzugriff, keine Medien-Dekodierung, kein GUI-Code.
+
+## Zuständigkeiten der Crates
+
+### media-sort-core
+
+- **Einstellungen:** `SettingsStore` mit 5 Unterstrukturen (General, KeyBindings, MetadataPanel, PinnedFolders, WindowPosition). Geladen/gespeichert als TOML unter `$CONFIG_DIR/media-sort/config.toml`.
+- **Internationalisierung:** Fluent-basierte Lokalisierung mit automatischer Erkennung der Systemsprache. Die Sprachdateien befinden sich in `resources/locale/{en,de,ja}/`.
+- **Rückgängig/Wiederholen:** `ReversibleAction`-Trait mit `done`/`undone`-Stapeln. Aktionen umfassen Move, Copy, Rename und Delete.
+- **Medientypen:** `MediaType`-Enum (Image/Video/Audio), globales `MediaRegistry`, das beim Start initialisiert wird.
+
+### media-sort-backend
+
+- **Dateisystem:** `walkdir`-basierter rekursiver Scan, `notify`-basierte Live-Änderungsüberwachung, plattformspezifisches Löschen in den Papierkorb.
+- **Medien-Dekodierung:** libmpv für Video (mit benutzerdefiniertem wgpu-Shader), `image`-Crate für Bilder, `rodio` + `symphonia` für Audio.
+- **Metadaten:** EXIF (`kamadak-exif`), ID3 (`id3`), Vorbis-Kommentare (`metaflac`), MP4-Tags (`mp4ameta`).
+- **Thumbnails:** Miniaturbildgenerierung im Hintergrund mit LRU-Caching.
+
+### iced-automation
+
+- **Headless-Emulation:** Führt die iced-App ohne Fenster aus und erfasst gerenderte Frames.
+- **Video-Export:** Rendert Demo-Abläufe über eine ffmpeg-Pipeline als MP4.
+- **Makros:** Prozedurale Makros zur Reduzierung von Boilerplate (`#[message]`, `#[state]`).
+
+### media-sort-gui
+
+- **App:** Einstiegspunkt, Update-Funktion (`app.rs`), View-Komposition, Subscriptions.
+- **State:** `AppState`-Struktur, die den gesamten UI-Zustand, den Ordnerbaum, Medieneinträge und Caches enthält.
+- **Messages:** `Message`-Enum mit verschachtelten Unter-Enums (`FolderMessage`, `MediaMessage`, `SettingsMessage`, `VideoMessage`).
+- **Views:** 10 View-Module, die die UI zusammensetzen (Hauptlayout, Ordnerbedienfeld, Raster, Vorschau usw.).
+- **Widgets:** Benutzerdefinierte Widgets (Videoplayer, Shader, Modals, Ordnersymbole).
+- **Subscriptions:** Tastaturereignisse, Videowiedergabe-Ereignisse, Fensterereignisse, Tick-Timer.
+
+## UI-Architektur: The Elm Architecture (TEA)
+
+Media Sort folgt der iced-Implementierung der Elm-Architektur:
+
+1. **Model**: `AppState` enthält den gesamten Anwendungszustand
+2. **Message**: `Message`-Enum repräsentiert jedes mögliche Ereignis
+3. **Update**: `app::update()` ist eine pure Funktion: `(AppState, Message) → (AppState, Task<Message>)`
+4. **View**: `app::view()` rendert den aktuellen Zustand als Widget-Baum
+5. **Subscription**: `app::subscription()` führt 4 Ereignisströme zusammen: Tick-Timer, Tastatur, Fensterereignisse, Videowiedergabe
+
+Zustandsänderungen sind pur. Seiteneffekte (Datei-I/O, Miniaturbildgenerierung, Medienwiedergabe) werden über `Task`-Objekte behandelt, die von der Update-Funktion zurückgegeben werden.
+
+## Wichtige Abhängigkeiten
+
+| Abhängigkeit | Zweck |
+| :--- | :--- |
+| `iced` | GUI-Framework (Widgets, Futures, wgpu-Rendering) |
+| `libmpv` / `libmpv-sys` | Video-Dekodierung und -Wiedergabe |
+| `symphonia` + `rodio` | Audio-Dekodierung und -Ausgabe |
+| `kamadak-exif` | EXIF-Metadatenextraktion |
+| `image` | Bildladen und Miniaturbildgenerierung |
+| `fluent` / `unic-langid` | Internationalisierung |
+| `wgpu` + `ash` | GPU-Rendering, Vulkan-Interop für Video |
+| `lucide-icons` | Icon-Schriftart |
+
+## Build-System
+
+- **Entwicklung:** `opt-level = 3` für alle Abhängigkeiten, um die GUI im Debug-Modus reaktionsfähig zu halten.
+- **Release:** `lto = "fat"`, `codegen-units = 1` für maximale Optimierung.
+- **Pre-Commit:** `cargo fmt --all --` und `cargo clippy --fix --all-targets -- -D warnings`.
+- **Codegenerierung:** `media-sort-core/build.rs` scannt die Sprachdateien und generiert `locales_codegen.rs`.
+
+## Wo Sie suchen sollten
+
+| Aufgabe | Hier anfangen |
+| :--- | :--- |
+| Einstellung hinzufügen | `crates/media-sort-core/src/settings/` + Dokumentation aktualisieren |
+| Tastenkürzel hinzufügen | `crates/media-sort-core/src/settings/keybindings.rs` |
+| UI-Komponente hinzufügen | `crates/media-sort-gui/src/view/` oder `widgets/` |
+| Medienformat-Unterstützung hinzufügen | `crates/media-sort-core/src/media_type.rs` + Backend-Dekoder |
+| Video-Problem beheben | `crates/media-sort-backend/src/media/mpv_context.rs` |
+| Sprach-String hinzufügen | `resources/locale/{en,de,ja}/main.ftl` |

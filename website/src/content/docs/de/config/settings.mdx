@@ -65,17 +65,6 @@ Die Registerkarte **Tastenkürzel** ermöglicht die Neubelegung aller Tastaturk�
 
 ---
 
-## Dateilöschung & System-Papierkorb
+## Rückgängigmachen & Wiederholen
 
-Ein Kernprinzip des Designs von Media Sort ist **Sorgenfreies Sortieren**, das sich auf zerstörungsfreie Löschungen verlässt, um sofortiges **Rückgängigmachen / Wiederholen** zu unterstützen.
-
-### Funktionsweise von Löschungen
-Wenn Sie eine Datei löschen (durch Drücken der `Pfeiltaste Unten`), wird die Datei nicht dauerhaft von der Festplatte gelöscht. Stattdessen wird sie in den nativen Papierkorb Ihres Betriebssystems verschoben:
-- **Windows:** Wird über die native Shell-API in den Windows-Papierkorb verschoben.
-- **macOS:** Wird über die Cocoa-API `NSFileManager` in den Papierkorb verschoben.
-- **Linux:** Wird gemäß der Freedesktop.org-Papierkorbspezifikation in den Papierkorb des Benutzers verschoben.
-
-### Rückgängigmachen / Wiederholen (Wiederherstellung)
-Da gelöschte Dateien in den nativen Papierkorb verschoben werden, können sie wieder an ihren ursprünglichen Ort zurückgebracht werden, wenn Sie die Taste `Rückgängig` (`Q`) drücken:
-1. **Zustandserhaltung:** Media Sort behält Referenz-Handles (`TrashRestoreHandle`) mit den ursprünglichen Dateipfaden im Speicher.
-2. **Leerung beim Schließen:** Während die Anwendung läuft, verbleiben diese Handles im Undo-Stack. Wenn Sie die Anwendung beenden, wird der Undo-Stack geleert und die Handles verworfen. Nach dem Schließen sind die Löschaktionen finalisiert und können nicht mehr aus der Anwendung heraus rückgängig gemacht werden (sie befinden sich jedoch weiterhin im System-Papierkorb des Betriebssystems, wo Sie sie manuell wiederherstellen können).
+Media Sort verwendet zerstörungsfreie Dateioperationen, um sofortiges Rückgängigmachen und Wiederholen aller Sortiervorgänge zu ermöglichen. Gelöschte Dateien werden in den System-Papierkorb verschoben und nicht dauerhaft gelöscht. Eine vollständige Erklärung des Verlaufssystems, einschließlich Papierkorbverhalten und Wiederherstellungsgrenzen, finden Sie auf der Seite [Rückgängigmachen & Wiederholen](/manuals/undo-redo/).

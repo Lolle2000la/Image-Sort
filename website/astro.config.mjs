@@ -21,6 +21,7 @@ export default defineConfig({
                 de: { label: 'Deutsch', lang: 'de' },
                 ja: { label: '日本語', lang: 'ja' },
             },
+            customCss: ['/src/styles/custom.css'],
             social: [
                 { icon: 'github', label: 'GitHub', href: repoUrl }
             ],
@@ -67,6 +68,54 @@ export default defineConfig({
                                 ja: 'キーボードレイアウトと操作方法',
                             },
                             slug: 'manuals/keyboard-layout',
+                        },
+                        {
+                            label: 'Folder Tree Navigation',
+                            translations: {
+                                de: 'Ordnerbaum-Navigation',
+                                ja: 'フォルダツリーの操作',
+                            },
+                            slug: 'manuals/folder-tree',
+                        },
+                        {
+                            label: 'Pinned Folders',
+                            translations: {
+                                de: 'Angepinnte Ordner',
+                                ja: 'ピン留めフォルダ',
+                            },
+                            slug: 'manuals/pinned-folders',
+                        },
+                        {
+                            label: 'Search & Filter',
+                            translations: {
+                                de: 'Suche & Filter',
+                                ja: '検索とフィルター',
+                            },
+                            slug: 'manuals/search-filter',
+                        },
+                        {
+                            label: 'Undo & Redo',
+                            translations: {
+                                de: 'Rückgängig & Wiederholen',
+                                ja: '取り消しとやり直し',
+                            },
+                            slug: 'manuals/undo-redo',
+                        },
+                        {
+                            label: 'Metadata Panel',
+                            translations: {
+                                de: 'Metadaten-Panel',
+                                ja: 'メタデータパネル',
+                            },
+                            slug: 'manuals/metadata-panel',
+                        },
+                        {
+                            label: 'Media Playback & Controls',
+                            translations: {
+                                de: 'Medienwiedergabe & Steuerung',
+                                ja: 'メディア再生と操作',
+                            },
+                            slug: 'manuals/media-playback',
                         },
                         {
                             label: 'Media Capabilities',
@@ -125,6 +174,65 @@ export default defineConfig({
                                 ja: '設定ファイルの詳細',
                             },
                             slug: 'advanced/config-file',
+                        },
+                    ],
+                },
+                {
+                    label: 'Help & Support',
+                    translations: {
+                        de: 'Hilfe & Support',
+                        ja: 'ヘルプとサポート',
+                    },
+                    items: [
+                        {
+                            label: 'FAQ / Troubleshooting',
+                            translations: {
+                                de: 'FAQ & Fehlerbehebung',
+                                ja: 'FAQとトラブルシューティング',
+                            },
+                            slug: 'help/faq',
+                        },
+                    ],
+                },
+                {
+                    label: 'Contributing',
+                    translations: {
+                        de: 'Mitwirken',
+                        ja: '貢献',
+                    },
+                    items: [
+                        {
+                            label: 'Architecture Overview',
+                            translations: {
+                                de: 'Architekturüberblick',
+                                ja: 'アーキテクチャ概要',
+                            },
+                            slug: 'contributing/architecture',
+                        },
+                        {
+                            label: 'Development Guide',
+                            translations: {
+                                de: 'Entwicklungsumgebung',
+                                ja: '開発ガイド',
+                            },
+                            slug: 'contributing/development',
+                        },
+                    ],
+                },
+                {
+                    label: 'About',
+                    translations: {
+                        de: 'Über',
+                        ja: 'について',
+                    },
+                    items: [
+                        {
+                            label: 'Privacy Policy',
+                            translations: {
+                                de: 'Datenschutzerklärung',
+                                ja: 'プライバシーポリシー',
+                            },
+                            slug: 'about/privacy',
                         },
                     ],
                 },

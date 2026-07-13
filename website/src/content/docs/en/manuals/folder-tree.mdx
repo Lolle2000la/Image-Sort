@@ -1,0 +1,70 @@
+---
+title: Folder Tree Navigation
+description: How to navigate, expand, collapse, and manage the folder tree in Media Sort.
+---
+
+import { Folder, FolderOpen, ArrowUp, ChevronRight, ChevronDown, Pin } from '@lucide/astro';
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort displays your filesystem as an interactive folder tree in the left panel. This tree reflects the directory structure of your currently opened root folder and allows you to browse and manage subdirectories entirely via keyboard.
+
+## Navigating the Tree
+
+The folder tree supports standard WASD-style navigation:
+
+| Key | Action |
+| :--- | :--- |
+| <Kbd>W</Kbd> | Move selection up to the previous folder |
+| <Kbd>S</Kbd> | Move selection down to the next folder |
+| <Kbd>A</Kbd> | Collapse the selected folder, or navigate to the closest visible parent if already collapsed |
+| <Kbd>D</Kbd> | Expand the selected folder, or move to its first child if already expanded |
+
+When you select a folder in the tree, the media grid updates to display all files recursively contained in that folder and its subdirectories.
+
+## Expanding and Collapsing
+
+- **Expand** (<Kbd>D</Kbd>): Opens a folder node to list its immediate child folders below it, indicated by a <span class="icon-inline"><ChevronDown size={14} /></span> icon. Subfolders are indented to indicate nesting depth. If the folder is already expanded, pressing <Kbd>D</Kbd> moves the selection into its first child.
+- **Collapse** (<Kbd>A</Kbd>): Hides the child folders of the selected node, switching to a <span class="icon-inline"><ChevronRight size={14} /></span> icon. If the folder is already collapsed, pressing <Kbd>A</Kbd> moves the selection to the closest visible parent in the tree.
+
+## Parent Breadcrumbs
+
+The current folder and each pinned folder display a chain of parent directories directly above their subfolder listings. These breadcrumbs are full tree nodes. They replace the regular folder icon with an <span class="icon-inline"><ArrowUp size={14} /></span> icon and can be expanded and collapsed just like ordinary folders, showing their own chevron indicator.
+
+For example, if your current folder is `/home/user/Pictures/Vacation/`, the tree will show:
+
+```
+📂 Vacation/                          (current folder)
+  ▲ home/                             (parent breadcrumb: click to open)
+    ▲ user/                           (parent breadcrumb)
+      ▲ Pictures/                     (parent breadcrumb)
+  📁 beach_photos/                     (real subfolder)
+  📁 mountains/                        (real subfolder)
+```
+
+Clicking any breadcrumb opens that directory as the new current folder, updating the media grid and tree accordingly.
+
+## Opening a Folder
+
+Press <Kbd>Enter</Kbd> on any selected folder to open it as the new root folder. The folder tree, grid, and search all reset to reflect the contents of the newly opened directory.
+
+## Creating a New Folder
+
+Press <Kbd>C</Kbd> to open the "Create Folder" dialog. The new folder is created as a subdirectory of the currently selected folder. Type the desired name and press <Kbd>Enter</Kbd> or click **Create** to confirm.
+
+## Folder Icons
+
+The tree uses three distinct lucide icons to convey state:
+
+| Icon | Meaning |
+| :--- | :--- |
+| <Folder size={18} /> | The folder is collapsed. It may contain subfolders. |
+| <FolderOpen size={18} /> | The folder is expanded. Its children are visible. |
+| <ArrowUp size={18} /> | Parent breadcrumb. Opens the ancestor directory. |
+
+## Pinned Folders
+
+Pinned folders appear as additional root-level nodes below the current folder, marked with a <span class="icon-inline"><Pin size={14} /></span> pin icon and numbered shortcut labels (<Kbd>Alt+1</Kbd> through <Kbd>Alt+9</Kbd>). Each pinned folder also displays its own parent breadcrumb chain when expanded. See the [Pinned Folders](/manuals/pinned-folders/) page for details.
+
+## Scrolling
+
+If your directory structure is deep or wide, a scrollbar appears automatically. Keyboard navigation (<Kbd>W</Kbd> / <Kbd>S</Kbd>) automatically scrolls the tree to keep the selected folder visible.

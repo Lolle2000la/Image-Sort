@@ -1,0 +1,45 @@
+---
+title: Rückgängig & Wiederholen
+description: Funktionsweise des Aktionsverlaufs und der System-Papierkorb-Integration in Media Sort.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort zeichnet jede Sortieraktion (Verschieben, Kopieren, Umbenennen und Löschen) in einem Verlaufsstapel auf, sodass Sie Fehler sofort rückgängig machen und Aktionen, bei denen Sie Ihre Meinung geändert haben, wiederholen können.
+
+## Tastenkürzel
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>Q</Kbd> | Letzte Aktion rückgängig machen |
+| <Kbd>E</Kbd> | Zuvor rückgängig gemachte Aktion wiederholen |
+
+## Was rückgängig gemacht werden kann
+
+Die folgenden Aktionen sind umkehrbar:
+
+- **Verschieben**: die Datei wird an ihren ursprünglichen Speicherort zurückverschoben
+- **Kopieren**: die kopierte Datei wird vom Zielort gelöscht
+- **Umbenennen**: die Datei wird auf ihren ursprünglichen Namen zurückbenannt
+- **Löschen**: die Datei wird aus dem System-Papierkorb an ihren ursprünglichen Speicherort wiederhergestellt
+
+## So funktionieren Löschvorgänge
+
+Wenn Sie eine Datei löschen (durch Drücken von <Kbd>Down</Kbd>), wird sie **nicht** dauerhaft von der Festplatte entfernt. Stattdessen wird sie in die native Papierkorbeinrichtung Ihres Betriebssystems verschoben:
+
+- **Windows:** Windows-Papierkorb (über native Shell-API)
+- **macOS:** Trash-Ordner (über Cocoa `NSFileManager`)
+- **Linux:** Desktop-Trash (Freedesktop.org-Trash-Spezifikation)
+
+Da die Datei im System-Papierkorb verbleibt, stellt das Rückgängigmachen einer Löschung sie programmgesteuert an ihrem exakten ursprünglichen Pfad wieder her.
+
+## Lebenszyklus des Verlaufs
+
+- **Während die App läuft**, verbleiben alle Aktionen im Rückgängig/Wiederholen-Stapel und können jederzeit rückgängig gemacht werden. Es gibt keine feste Begrenzung der Verlaufstiefe.
+- **Wenn Sie die App beenden**, wird der Verlaufsstapel gelöscht. Alle Löschaktionen, die sich im Rückgängig-Stapel befanden, werden endgültig. Sie können sie nicht mehr über Media Sort rückgängig machen.
+- **Nach dem Beenden** befinden sich gelöschte Dateien weiterhin in Ihrem System-Papierkorb und können mit dem Dateimanager Ihres Betriebssystems manuell wiederhergestellt werden.
+
+## Einschränkungen
+
+- Aktionen, die Dateien betrafen, welche später außerhalb von Media Sort geändert oder verschoben wurden, können möglicherweise nicht korrekt rückgängig gemacht werden. In solchen Fällen wird die Aktion übersprungen und eine Benachrichtigung angezeigt.
+- Dateisystem-Überwachungsereignisse (von externen Programmen hinzugefügte, geänderte oder gelöschte Dateien) werden nicht im Rückgängig-Verlauf erfasst.

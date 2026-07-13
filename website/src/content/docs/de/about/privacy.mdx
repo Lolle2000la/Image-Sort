@@ -1,0 +1,34 @@
+---
+title: Datenschutzerklärung
+description: Datenverarbeitung in Media Sort. Lokal, keine Telemetrie, keine Analyse.
+---
+
+Media Sort ist so konzipiert, dass es vollständig auf Ihrem lokalen Rechner arbeitet. Ihre Dateien, Einstellungen und Ihr Browserverlauf verlassen niemals Ihren Computer.
+
+## Datenspeicherung
+
+Alle Anwendungsdaten werden lokal auf Ihrem Gerät gespeichert:
+
+- **Einstellungen:** Gespeichert in `config.toml` in Ihrem Betriebssystem-Konfigurationsverzeichnis (`~/.config/media-sort/` unter Linux, `~/Library/Application Support/media-sort/` unter macOS, `%APPDATA%\media-sort\` unter Windows).
+- **Dateizugriff:** Media Sort liest Mediendateien aus Verzeichnissen, die Sie explizit öffnen. Dateiinhalte werden zur Metadatenextraktion, Miniaturbildgenerierung und Wiedergabe gelesen. Es werden keine Dateidaten hochgeladen oder übertragen.
+- **Verlauf:** Der Rückgängig/Wiederholen-Verlauf wird nur im Arbeitsspeicher gehalten, solange die Anwendung läuft. Der Pfad des zuletzt geöffneten Ordners wird in `config.toml` gespeichert. Nichts davon wird gesendet.
+
+## Keine Telemetrie oder Analyse
+
+Media Sort enthält **keine** Telemetrie, Analyse, Absturzberichterstattung oder Nutzungsverfolgung. Es gibt keine SDKs von Drittanbietern für Analyse, keine Ereignisprotokollierungsdienste und keinerlei Datenerfassung.
+
+## Netzwerkzugriff
+
+Media Sort stellt nur in einem Szenario Netzwerkanfragen:
+
+- **Update-Prüfungen** (optional, standardmäßig aktiviert): Wenn **Beim Start nach Updates suchen** in den Einstellungen aktiviert ist, kontaktiert die Anwendung die GitHub Releases API (`api.github.com`), um nach neuen Versionen zu suchen. Diese Anfrage ist ein standardmäßiger HTTPS-GET-Aufruf an einen öffentlichen API-Endpunkt. Es werden keine persönlichen Informationen, Dateidaten oder Nutzungsstatistiken in die Anfrage aufgenommen.
+
+Sie können Update-Prüfungen jederzeit im Einstellungsdialog deaktivieren.
+
+## Open Source
+
+Media Sort ist Open-Source-Software, lizenziert unter der MIT-Lizenz. Der vollständige Quellcode ist verfügbar unter [github.com/Lolle2000la/Image-Sort](https://github.com/Lolle2000la/Image-Sort).
+
+## Kontakt
+
+Bei datenschutzbezogenen Fragen öffnen Sie bitte ein Issue im [GitHub-Repository](https://github.com/Lolle2000la/Image-Sort/issues).

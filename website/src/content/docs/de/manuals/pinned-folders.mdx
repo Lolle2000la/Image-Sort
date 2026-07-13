@@ -1,0 +1,45 @@
+---
+title: Angepinnte Ordner
+description: So verwenden Sie angepinnte Ordner für das Sortieren per Tastendruck in Media Sort.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+Angepinnte Ordner sind Ihre primären Sortierziele. Indem Sie häufig verwendete Zielordner anpinnen, können Sie Mediendateien mit einem einzigen Tastendruck dorthin verschieben oder kopieren, was Ihren Sortier-Workflow erheblich beschleunigt.
+
+## So funktionieren angepinnte Ordner
+
+Angepinnte Ordner erscheinen in einem eigenen Bereich des Ordnerbedienfelds und sind mit Nummern (1 bis 9) gekennzeichnet. Jedem angepinnten Ordner ist ein nummerierter Shortcut zugewiesen:
+
+- <Kbd>Alt+1</Kbd> bis <Kbd>Alt+9</Kbd>: Verschiebt die aktuell ausgewählte Mediendatei direkt in den entsprechenden angepinnten Ordner.
+- <Kbd>Alt+Shift+1</Kbd> bis <Kbd>Alt+Shift+9</Kbd>: Kopiert (statt verschiebt) die ausgewählte Mediendatei in den angepinnten Ordner.
+
+Die Nummern ergeben sich aus der Reihenfolge der angepinnten Ordner in der Liste.
+
+## Einen Ordner anpinnen
+
+Es gibt zwei Möglichkeiten, einen Ordner anzupinnen:
+
+| Methode | Taste | Beschreibung |
+| :--- | :--- | :--- |
+| **Ausgewählten Ordner anpinnen** | <Kbd>F</Kbd> | Pinnt den aktuell im Ordnerbaum hervorgehobenen Ordner an |
+| **Beliebigen Ordner anpinnen** | <Kbd>P</Kbd> | Öffnet einen nativen Ordnerauswahldialog, um ein beliebiges Verzeichnis auf Ihrem System auszuwählen |
+
+## Einen Ordner entpinnen
+
+Drücken Sie <Kbd>U</Kbd>, um den aktuell in der Liste der angepinnten Ordner ausgewählten Ordner zu entpinnen. Der Ordner wird aus der angepinnten Liste entfernt, aber nicht von der Festplatte gelöscht.
+
+## Angepinnte Ordner neu anordnen
+
+Da angepinnte Ordner nach ihrer Listenposition nummeriert sind, ändert eine Neuanordnung, welche Nummer auf welchen Ordner zeigt:
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>Ctrl+W</Kbd> | Ausgewählten angepinnten Ordner in der Liste nach oben verschieben |
+| <Kbd>Ctrl+S</Kbd> | Ausgewählten angepinnten Ordner in der Liste nach unten verschieben |
+
+Ordnen Sie angepinnte Ordner so an, dass Ihre am häufigsten verwendeten Ziele auf den Positionen 1–3 liegen, um sie am einfachsten zu erreichen.
+
+## Persistenz
+
+Angepinnte Ordner werden in Ihrer `config.toml`-Datei gespeichert und bleiben über Anwendungsneustarts hinweg erhalten. Sie sind auch in der automatischen Migration der alten Konfiguration enthalten, falls Sie von der WPF-v2.x-Anwendung aktualisiert haben.

@@ -1,0 +1,72 @@
+---
+title: Media Playback & Controls
+description: How audio and video playback works in Media Sort, including controls, keyboard shortcuts, and system dependencies.
+---
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort includes built-in audio and video players with full playback controls. Audio and video are handled by different backend systems.
+
+## On-Screen Controls
+
+Both the audio and video preview panes share a common set of on-screen controls:
+
+| Control | Description |
+| :--- | :--- |
+| **Play / Pause** | Start or pause playback |
+| **Stop** | Stop playback and reset position to the beginning |
+| **Seek Bar** | Click or drag to jump to a specific position |
+| **Volume Slider** | Adjust playback volume |
+| **Mute Toggle** | Mute or unmute audio |
+
+## Keyboard Shortcuts for Playback
+
+These shortcuts are active whenever a playable media file is selected. They are **hardcoded** and cannot be remapped in the settings dialog.
+
+| Key | Action |
+| :--- | :--- |
+| <Kbd>Space</Kbd> | Toggle play / pause |
+| <Kbd>MediaPlayPause</Kbd> / <Kbd>MediaPlay</Kbd> / <Kbd>MediaPause</Kbd> | Toggle play / pause (multimedia keys) |
+| <Kbd>MediaStop</Kbd> | Stop playback |
+| <Kbd>MediaTrackNext</Kbd> | Select next media file |
+| <Kbd>MediaTrackPrevious</Kbd> | Select previous media file |
+| <Kbd>AudioVolumeUp</Kbd> | Increase volume by 5% |
+| <Kbd>AudioVolumeDown</Kbd> | Decrease volume by 5% |
+| <Kbd>AudioVolumeMute</Kbd> | Toggle mute |
+
+## Video Playback
+
+Video playback is powered by **libmpv** (via FFmpeg). The video frame is rendered using a custom wgpu shader for zero-copy GPU-accelerated display.
+
+### System Requirements
+
+- **libmpv** must be installed on your system. On Linux, install the `libmpv-dev` or `libmpv1` package. On macOS and Windows, mpv is bundled with the application.
+- A **Vulkan-capable GPU** with up-to-date drivers is required for video rendering.
+- If libmpv is not found, in-app video playback is disabled but video files are still detected and browsable. Images and audio continue to work normally. Video thumbnails also require mpv; without it, a placeholder is shown instead.
+
+### Supported Video Formats
+
+See the [Media Capabilities](/manuals/media-capabilities/) page for the full list of supported video formats. Format support depends on the installed version of libmpv and its underlying FFmpeg codecs.
+
+### GIF Playback
+
+GIF files are classified as video in Media Sort. To control whether GIFs animate in the preview and grid, use the **Play animated GIFs** setting in the Settings dialog (also available as `animate_gifs` in `config.toml`). When disabled, GIFs display only their first frame as a static image.
+
+## Audio Playback
+
+Audio is decoded using **Symphonia** (all codecs) and output through **Rodio**. No external dependencies beyond what ships with the application are required.
+
+### Supported Audio Formats
+
+See the [Media Capabilities](/manuals/media-capabilities/) page for the full list of supported audio formats.
+
+### Album Art
+
+Audio files with embedded cover art (common in MP3, FLAC, M4A, OGG) display the cover image in the preview pane instead of a generic music icon.
+
+## Fallback: Opening in System Player
+
+When Media Sort cannot decode a file (for example, missing mpv or an unsupported image format), a **"Open in system player"** or **"Open externally"** button appears in the preview pane. Clicking it launches the file using your default system application:
+
+- **Linux:** `xdg-open`
+- **macOS:** `open`
+- **Windows:** `cmd /C start`

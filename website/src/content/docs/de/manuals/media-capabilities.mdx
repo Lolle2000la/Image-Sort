@@ -18,7 +18,7 @@ Unterstützte native Bildformate (dekodiert über das reine Rust-Crate `image`):
 Unterstützte Videoformate (dynamisch verarbeitet über systemgebundenes `libmpv` und zugrunde liegende FFmpeg-Demuxer):
 - **Kernformate:** MP4, MKV, WebM, AVI, MOV, WMV, FLV, M4V, GIF (fest kodiert, immer verfügbar).
 - **Dynamische Formate:** Die Anwendung fragt `libmpv` beim Start nach zusätzlichen Formaten über `demuxer-lavf-list` ab. Beispiele sind MPEG/MPG, TS, VOB, 3GP und OGM.
-- **Dynamische Abhängigkeit:** Die Kompatibilität von Codecs und Containerformaten hängt vollständig von der installierten Version von `libmpv` und der zugrunde liegenden FFmpeg-Kompilierung (z. B. `libavcodec`/`libavformat`) auf dem Host-System ab. Wenn `libmpv` nicht installiert ist, funktioniert die App weiterhin für Bilder und Audio, jedoch ist die Video-Wiedergabe deaktiviert.
+- **Dynamische Abhängigkeit:** Die Kompatibilität von Codecs und Containerformaten hängt vollständig von der installierten Version von `libmpv` und der zugrunde liegenden FFmpeg-Kompilierung (z. B. `libavcodec`/`libavformat`) auf dem Host-System ab. Wenn `libmpv` nicht installiert ist, ist die interne Video-Wiedergabe deaktiviert. Videodateien werden jedoch weiterhin erkannt und können durchsucht werden. Video-Miniaturansichten benötigen ebenfalls mpv. Bilder und Audio sind davon nicht betroffen.
 
 ### 3. Audio
 Unterstützte native Audioformate (dekodiert über Symphonia / Rodio):

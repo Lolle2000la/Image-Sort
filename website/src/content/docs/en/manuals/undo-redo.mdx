@@ -1,0 +1,44 @@
+---
+title: Undo & Redo
+description: How the action history and system trash integration work in Media Sort.
+---
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort records every sorting action (moves, copies, renames, and deletions) in a history stack, allowing you to undo mistakes instantly and redo actions you change your mind about.
+
+## Keyboard Shortcuts
+
+| Key | Action |
+| :--- | :--- |
+| <Kbd>Q</Kbd> | Undo the last action |
+| <Kbd>E</Kbd> | Redo the previously undone action |
+
+## What Can Be Undone
+
+The following actions are reversible:
+
+- **Move**: the file is moved back to its original location
+- **Copy**: the copied file is deleted from the destination
+- **Rename**: the file is renamed back to its original name
+- **Delete**: the file is restored from the system trash to its original location
+
+## How Deletions Work
+
+When you delete a file (by pressing <Kbd>Down</Kbd>), it is **not** permanently removed from disk. Instead, it is moved to your operating system's native trash facility:
+
+- **Windows:** Windows Recycle Bin (via native shell API)
+- **macOS:** Trash folder (via Cocoa `NSFileManager`)
+- **Linux:** Desktop Trash (Freedesktop.org trash specification)
+
+Because the file remains in the system trash, undoing a deletion programmatically restores it to its exact original path.
+
+## History Lifecycle
+
+- **While the app is running**, all actions remain in the undo/redo stack and can be reversed at any time. There is no fixed limit on history depth.
+- **When you exit the app**, the history stack is cleared. Any delete actions that were in the undo stack are finalized. You can no longer undo them through Media Sort.
+- **After exit**, deleted files still exist in your system trash and can be manually restored using your operating system's file manager.
+
+## Limitations
+
+- Actions that involved files which were later modified or moved outside of Media Sort may fail to undo correctly. In such cases the action is skipped and a notification is shown.
+- File system watcher events (files added, modified, or deleted by external programs) are not tracked in the undo history.

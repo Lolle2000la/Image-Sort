@@ -1,0 +1,94 @@
+---
+title: Architecture Overview
+description: "High-level architecture of the Media Sort codebase: workspace layout, crate dependencies, and the Elm-inspired UI pattern."
+---
+
+Media Sort is a Rust workspace with four crates arranged in a strict dependency order. This page provides a high-level map of the codebase to help new contributors find their way around.
+
+## Workspace Layout
+
+```
+crates/
+├── media-sort-core       # Settings, i18n, undo/redo, media types (no system deps)
+├── media-sort-backend    # Filesystem, media decoding, metadata extraction
+├── iced-automation       # Headless iced app simulation & video rendering
+└── media-sort-gui        # The iced GUI application binary
+```
+
+Dependency direction: `media-sort-gui` → `media-sort-backend` + `iced-automation` → `media-sort-core`
+
+`media-sort-core` must never depend on the other three crates. It contains only pure data types, settings logic, and localization: no filesystem access, no media decoding, no GUI code.
+
+## Crate Responsibilities
+
+### media-sort-core
+
+- **Settings:** `SettingsStore` with 5 sub-structs (General, KeyBindings, MetadataPanel, PinnedFolders, WindowPosition). Loaded/saved as TOML at `$CONFIG_DIR/media-sort/config.toml`.
+- **Internationalization:** Fluent-based localization with auto-detection from system locale. Locale files live in `resources/locale/{en,de,ja}/`.
+- **Undo/Redo:** `ReversibleAction` trait with `done`/`undone` stacks. Actions include Move, Copy, Rename, and Delete.
+- **Media Types:** `MediaType` enum (Image/Video/Audio), global `MediaRegistry` initialized at startup.
+
+### media-sort-backend
+
+- **Filesystem:** `walkdir`-based recursive scanning, `notify`-based live change watching, platform-specific delete-to-trash.
+- **Media Decoding:** libmpv for video (with custom wgpu shader), `image` crate for images, `rodio` + `symphonia` for audio.
+- **Metadata:** EXIF (`kamadak-exif`), ID3 (`id3`), Vorbis comments (`metaflac`), MP4 tags (`mp4ameta`).
+- **Thumbnails:** Background thumbnail generation with LRU caching.
+
+### iced-automation
+
+- **Headless emulation:** Runs the iced app without a window, captures rendered frames.
+- **Video export:** Renders demo flows to MP4 via ffmpeg pipeline.
+- **Macros:** Procedural macros for boilerplate reduction (`#[message]`, `#[state]`).
+
+### media-sort-gui
+
+- **App:** Entry point, update function (`app.rs`), view composition, subscriptions.
+- **State:** `AppState` struct holding all UI state, folder tree, media entries, caches.
+- **Messages:** `Message` enum with nested sub-enums (`FolderMessage`, `MediaMessage`, `SettingsMessage`, `VideoMessage`).
+- **Views:** 10 view modules composing the UI (main layout, folder panel, grid, preview, etc.).
+- **Widgets:** Custom widgets (video player, shader, modals, folder icons).
+- **Subscriptions:** Keyboard events, video playback events, window events, tick timer.
+
+## UI Architecture: The Elm Architecture (TEA)
+
+Media Sort follows iced's implementation of The Elm Architecture:
+
+1. **Model**: `AppState` holds all application state
+2. **Message**: `Message` enum represents every possible event
+3. **Update**: `app::update()` is a pure function: `(AppState, Message) → (AppState, Task<Message>)`
+4. **View**: `app::view()` renders the current state as a widget tree
+5. **Subscription**: `app::subscription()` merges 4 event streams: tick timer, keyboard, window events, video playback
+
+State mutations are pure. Side effects (file I/O, thumbnail generation, media playback) are handled via `Task` objects returned from the update function.
+
+## Key Dependencies
+
+| Dependency | Purpose |
+| :--- | :--- |
+| `iced` | GUI framework (widgets, futures, wgpu rendering) |
+| `libmpv` / `libmpv-sys` | Video decoding and playback |
+| `symphonia` + `rodio` | Audio decoding and output |
+| `kamadak-exif` | EXIF metadata extraction |
+| `image` | Image loading and thumbnail generation |
+| `fluent` / `unic-langid` | Internationalization |
+| `wgpu` + `ash` | GPU rendering, Vulkan interop for video |
+| `lucide-icons` | Icon font |
+
+## Build System
+
+- **Development:** `opt-level = 3` for all dependencies to keep the GUI responsive in debug mode.
+- **Release:** `lto = "fat"`, `codegen-units = 1` for maximum optimization.
+- **Pre-commit:** `cargo fmt --all --` and `cargo clippy --fix --all-targets -- -D warnings`.
+- **Code generation:** `media-sort-core/build.rs` scans locale files and generates `locales_codegen.rs`.
+
+## Where to Look
+
+| Task | Start Here |
+| :--- | :--- |
+| Add a setting | `crates/media-sort-core/src/settings/` + update docs |
+| Add a keybinding | `crates/media-sort-core/src/settings/keybindings.rs` |
+| Add UI component | `crates/media-sort-gui/src/view/` or `widgets/` |
+| Add media format support | `crates/media-sort-core/src/media_type.rs` + backend decoder |
+| Fix a video issue | `crates/media-sort-backend/src/media/mpv_context.rs` |
+| Add a locale string | `resources/locale/{en,de,ja}/main.ftl` |

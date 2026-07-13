@@ -1,0 +1,59 @@
+---
+title: FAQ & Fehlerbehebung
+description: Häufig gestellte Fragen und Lösungen für häufige Probleme in Media Sort.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+## Häufige Probleme
+
+### Ich sehe keine Dateien im Raster
+
+- Stellen Sie sicher, dass Sie einen Ordner geöffnet haben, der unterstützte Mediendateien enthält. Drücken Sie <Kbd>O</Kbd>, um die Ordnerauswahl zu öffnen.
+- Überprüfen Sie, ob Ihre Dateien erkannte Erweiterungen haben. Eine vollständige Liste der unterstützten Formate finden Sie auf der Seite [Medienfunktionen](/manuals/media-capabilities/).
+- Wenn Sie eine Suche durchführen, klicken Sie auf die Löschen-Schaltfläche (×) in der Suchleiste, um den Filter zurückzusetzen und alle Dateien anzuzeigen.
+
+### Videos werden nicht abgespielt (die Vorschau ist leer oder zeigt einen Platzhalter)
+
+Die Videowiedergabe erfordert, dass **libmpv** auf Ihrem System installiert ist:
+
+- **Linux:** Installieren Sie `libmpv-dev` oder `libmpv1` über Ihren Paketmanager (z. B. `sudo apt install libmpv2` unter Debian/Ubuntu).
+- **macOS und Windows:** mpv ist in der Anwendung enthalten. Wenn Videos dennoch nicht funktionieren, stellen Sie sicher, dass Ihre GPU-Treiber aktuell sind und Vulkan unterstützen.
+
+Sie können Bilder weiterhin anzeigen und Audio auch ohne libmpv abspielen. Verwenden Sie die Schaltfläche **„Im Systemplayer öffnen"**, um Videodateien in Ihrem Standard-Mediaplayer abzuspielen.
+
+### Die Anwendung startet nicht oder stürzt beim Start ab
+
+- **Veraltete Konfiguration:** Versuchen Sie, Ihre `config.toml`-Datei zu löschen. Den Speicherort finden Sie auf der Seite [Konfigurationsdatei](/advanced/config-file/). Die App erstellt sie beim nächsten Start mit den Standardwerten neu.
+- **Vulkan-/GPU-Probleme:** Media Sort verwendet wgpu für das Rendering, was Vulkan-, Metal- oder DirectX-12-Unterstützung erfordert. Aktualisieren Sie Ihre GPU-Treiber und stellen Sie sicher, dass Ihr Grafik-Stack funktionsfähig ist.
+- **Fehlende Systembibliotheken:** Stellen Sie unter Linux sicher, dass `libx11`, `libwayland` und `libasound2` installiert sind.
+
+### Wie setze ich alle Einstellungen auf die Standardwerte zurück?
+
+Löschen Sie die `config.toml`-Datei an dem auf der Seite [Konfigurationsdatei](/advanced/config-file/) angegebenen Speicherort. Media Sort erstellt beim nächsten Start eine neue Konfigurationsdatei.
+
+### Ich habe von der alten WPF-v2.x-Version aktualisiert. Wo sind meine Einstellungen?
+
+Media Sort migriert die Einstellungen der alten WPF-Anwendung beim ersten Start automatisch. Wenn die Migration nicht funktioniert hat, stellen Sie sicher, dass die alte `config.json`-Datei am erwarteten Speicherort existiert:
+
+- `$CONFIG_DIR/Image Sort/config.json`
+
+Wenn die Datei vorhanden ist, die Einstellungen aber dennoch nicht migriert wurden, löschen Sie die neue `config.toml` und starten Sie die Anwendung neu. Die Migration wird nur einmal ausgeführt, wenn keine `config.toml` existiert.
+
+### Kann ich Media Sort vollständig mit der Tastatur bedienen?
+
+Ja. Media Sort ist für die tastaturorientierte Bedienung konzipiert. Jede Aktion (Ordner navigieren, Dateien auswählen, verschieben/kopieren/löschen, umbenennen, Ordner erstellen und angepinnte Ordner verwalten) hat ein Tastenkürzel. Eine vollständige Referenz finden Sie auf der Seite [Tastaturschema](/manuals/keyboard-layout/).
+
+### Wo sind meine Dateien, nachdem ich sie gelöscht habe?
+
+Gelöschte Dateien werden in den Papierkorb Ihres Betriebssystems verschoben (Windows-Papierkorb, Trash unter macOS/Linux). Sie werden nicht dauerhaft gelöscht. Solange Media Sort läuft, können Sie <Kbd>Q</Kbd> drücken, um eine Löschung rückgängig zu machen und die Datei an ihrem ursprünglichen Speicherort wiederherzustellen. Nach dem Schließen der App können Sie Dateien weiterhin manuell aus dem System-Papierkorb wiederherstellen.
+
+### Verändert Media Sort meine Originaldateien?
+
+Sortieraktionen (Verschieben, Kopieren, Umbenennen, Löschen) ändern Dateispeicherorte und -namen, aber Media Sort verändert **niemals** Dateiinhalte. Die Metadatenextraktion ist schreibgeschützt. Bild- und Videodateien werden niemals neu kodiert oder verändert.
+
+## Wo Sie Probleme melden können
+
+Wenn Sie auf einen Fehler stoßen oder einen Funktionswunsch haben, öffnen Sie bitte ein Issue auf GitHub:
+
+[github.com/Lolle2000la/Image-Sort/issues](https://github.com/Lolle2000la/Image-Sort/issues)

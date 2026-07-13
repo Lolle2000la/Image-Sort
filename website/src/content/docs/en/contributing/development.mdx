@@ -1,0 +1,145 @@
+---
+title: Development Guide
+description: How to set up a development environment, build, test, and contribute to Media Sort.
+---
+
+This guide covers everything you need to start contributing code to Media Sort. For an overview of how the codebase is organized, see the [Architecture Overview](/contributing/architecture/) page.
+
+## Prerequisites
+
+- **Rust** 1.96 or later (install via [rustup](https://rustup.rs))
+- **Clang** (required by `libmpv-sys` for FFI bindings)
+- **libmpv** development files:
+  - Linux: `libmpv-dev` (Debian/Ubuntu) or equivalent
+  - macOS: `brew install mpv`
+  - Windows: vcpkg or manual installation
+- **Platform libraries** (Linux):
+  - `libasound2-dev` (ALSA for audio)
+  - `libx11-dev`, `libwayland-dev` (window system)
+  - Vulkan drivers and loader
+
+## Building
+
+```bash
+# Build the entire workspace
+cargo build --workspace
+
+# Build only the GUI binary
+cargo build -p media-sort-gui
+
+# Release build
+cargo build --workspace --release
+```
+
+## Running
+
+```bash
+# Run the GUI (opens your system Pictures directory by default)
+cargo run -p media-sort-gui
+
+# Open a specific directory
+cargo run -p media-sort-gui -- /path/to/media
+
+# Run with interactive demo mode
+cargo run -p media-sort-gui -- --demo
+```
+
+## Testing
+
+```bash
+# Run all tests
+cargo test --workspace
+
+# Run tests for a specific crate
+cargo test -p media-sort-core
+cargo test -p media-sort-backend
+cargo test -p media-sort-gui
+```
+
+Tests live in:
+- `crates/media-sort-core/tests/`: integration tests
+- `crates/media-sort-backend/tests/`: integration tests (with test fixtures in `tests/fixtures/`)
+- `crates/media-sort-gui/src/`: `#[cfg(test)]` unit tests
+
+## Code Style
+
+Before committing, run formatter and linter:
+
+```bash
+# Format all code
+cargo fmt --all --
+
+# Run clippy with warnings as errors
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+Pre-commit hooks enforce these automatically. If clippy fails, the commit is rejected.
+
+## Internationalization
+
+User-facing strings live in Fluent (`.ftl`) files:
+
+```
+resources/locale/
+├── en/main.ftl
+├── de/main.ftl
+└── ja/main.ftl
+```
+
+When you add a new user-facing string in the code, you must add the corresponding entry to **all three** locale files. The English file serves as the source of truth.
+
+The build script (`crates/media-sort-core/build.rs`) automatically detects changes to locale files and regenerates the lookup code.
+
+## Working with Settings
+
+Settings are defined in `crates/media-sort-core/src/settings/`. To add a new persisted setting:
+
+1. Add the field to the appropriate sub-struct (e.g., `GeneralSettings`)
+2. Add `#[serde(default)]` so old configs remain loadable
+3. If the setting has a UI toggle, update the settings dialog view
+4. Call `state.settings.save()` after mutation
+5. Update the documentation in `website/` (both `settings.mdx` and `config-file.mdx`)
+
+## Video Playback Pipeline
+
+Video playback involves several layers:
+
+1. **Startup:** `main.rs` queries mpv for supported formats and initializes the `MediaRegistry`
+2. **Subscription:** A `VideoWorker` thread runs an mpv event loop
+3. **Communication:** GUI sends `VideoCommand` via channel; worker responds with `VideoEvent`
+4. **Rendering:** Frame data arrives as RGBA pixels, rendered via custom wgpu shader for zero-copy Vulkan interop
+5. **Lifecycle:** `Deactivate` stops rendering when navigating away from a video
+
+See `crates/media-sort-backend/src/media/mpv_context.rs` for the video worker implementation and `crates/media-sort-gui/src/widgets/video_shader.rs` for the GPU shader.
+
+## Demo System
+
+Media Sort includes a headless automation engine used to generate demo videos for the documentation website:
+
+```bash
+# Render all demo flows to MP4 videos
+cd website && npm run render-demos
+```
+
+Demo flow specifications are JSON files in `resources/demo_flows/`. The automation engine (`crates/iced-automation/`) runs the full application headlessly (no window) and captures frames via the rendering pipeline.
+
+## Documentation
+
+The website at `imagesort.org` is an Astro/Starlight project in the `website/` directory:
+
+```bash
+cd website
+npm ci
+npm run dev           # Start dev server
+npm run render-demos  # Render demo videos
+npm run build         # Production build
+```
+
+Documentation pages live in `website/src/content/docs/` with one subdirectory per locale (`en/`, `de/`, `ja/`). The sidebar is configured in `astro.config.mjs`.
+
+## Environment Variables
+
+| Variable | Purpose |
+| :--- | :--- |
+| `UI_TEST` | Switches config path to `ui_test_config.toml` in the current directory |
+| `LANG` / `LC_ALL` | Override locale detection (used during demo video rendering) |
