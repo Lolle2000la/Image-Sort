@@ -11,6 +11,10 @@ export default defineConfig({
     integrations: [
         starlight({
             title: 'Media Sort',
+            logo: {
+                src: './src/assets/logo.svg',
+            },
+            favicon: '/favicon.svg',
             defaultLocale: 'en',
             locales: {
                 en: { label: 'English', lang: 'en' },
