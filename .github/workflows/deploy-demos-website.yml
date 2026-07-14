@@ -16,8 +16,8 @@ permissions:
 
 jobs:
   build-and-deploy:
-    # Run on workflow_dispatch or if the release workflow succeeded
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    # Run on workflow_dispatch or if the release workflow succeeded and it is a stable release (no '-' in the tag name)
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-')) }}
     runs-on: ubuntu-latest
 
     steps:
