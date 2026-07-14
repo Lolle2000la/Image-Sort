@@ -278,10 +278,13 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
         let theme_picklist = column![
             text(state.l10n.tr("settings-theme")).size(12),
-            pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
-                Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
-            },)
-            .width(Length::Fixed(200.0)),
+            container(
+                pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
+                    Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
+                },)
+                .width(Length::Fixed(200.0))
+            )
+            .id(iced::widget::Id::new("theme_pick_list")),
         ]
         .spacing(4);
 
