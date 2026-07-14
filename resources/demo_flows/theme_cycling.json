@@ -3,11 +3,6 @@
   "steps": [
     {
       "delay_ms": 2000,
-      "target": { "type": "Widget", "value": { "id": "settings_btn" } },
-      "message": { "Settings": "Open" }
-    },
-    {
-      "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
       "message": { "Settings": { "SetTheme": "Dark" } }
     },
@@ -123,7 +118,7 @@
     },
     {
       "delay_ms": 2000,
-      "target": { "type": "Widget", "value": { "id": "settings_btn" } },
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
       "message": "Quit"
     }
   ]

@@ -7,6 +7,9 @@ use iced_automation::{AutomationStateTrait, DemoApp};
 use crate::message::{FolderMessage, Message};
 use crate::state::AppState;
 
+use std::sync::Mutex;
+static ACTIVE_SPEC_PATH: Mutex<Option<PathBuf>> = Mutex::new(None);
+
 impl DemoApp for AppState {
     type Message = Message;
     type Settings = media_sort_core::settings::store::SettingsStore;
@@ -33,10 +36,21 @@ impl DemoApp for AppState {
     }
 
     fn bootstrap_messages(settings: &Self::Settings, demo_root: &Path) -> Vec<Self::Message> {
-        vec![
+        let mut msgs = vec![
             Message::Folder(FolderMessage::Open(demo_root.to_path_buf())),
             Message::SettingsLoaded(Box::new(Ok(settings.clone()))),
-        ]
+        ];
+
+        if let Ok(guard) = ACTIVE_SPEC_PATH.lock() {
+            if let Some(spec_path) = guard.as_ref() {
+                let file_name = spec_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if file_name.contains("theme") {
+                    msgs.push(Message::Settings(crate::message::SettingsMessage::Open));
+                }
+            }
+        }
+
+        msgs
     }
 }
 
@@ -140,6 +154,10 @@ pub fn init(cli: &crate::Cli, state: &mut AppState) -> Option<PathBuf> {
     let spec_path = resolve_workspace_path(&cli.demo_spec);
     let final_spec_path = find_spec_path(&spec_path);
 
+    if let Ok(mut guard) = ACTIVE_SPEC_PATH.lock() {
+        *guard = Some(final_spec_path.clone());
+    }
+
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let mock_state_src = resolve_workspace_path("resources/MockState");
 
@@ -200,6 +218,9 @@ pub fn export_demo_video_with_locale(
         style: iced_automation::AutomationStyle::default(),
     };
 
+    if let Ok(mut guard) = ACTIVE_SPEC_PATH.lock() {
+        *guard = Some(json_spec_path.to_path_buf());
+    }
     let bootstrap = iced_automation::init_demo::<AppState>(&config).expect("failed to init demo");
 
     let completed_clone = completed.clone();

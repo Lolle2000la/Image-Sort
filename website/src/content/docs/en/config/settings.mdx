@@ -3,6 +3,8 @@ title: Application Settings
 description: Overview of user settings, GUI options, appearance themes, and update configurations in Media Sort.
 ---
 
+import DemoVideo from '../../../../components/DemoVideo.astro';
+
 Media Sort provides a built-in Settings dialog that lets you customize the appearance, behavior, language, and shortcut keys of the application. 
 
 To open the settings dialog, click the **Open** button under **Settings** in the left sidebar navigation panel.
@@ -18,6 +20,13 @@ The **General settings** tab covers configuration options for directory behavior
 #### Theme
 Media Sort includes pre-configured visual themes to customize the interface. Selecting a theme immediately updates the colors of all UI components:
 - Available options: **Dark**, **Light**, **Dracula**, **Nord**, **Solarized (Light/Dark)**, **Gruvbox (Light/Dark)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa**, **Moonfly**, **Nightfly**, **Oxocarbon**, **Ferra**, and more.
+
+<DemoVideo 
+  videoUrl="/demos/theme_cycling_en.mp4"
+  zoomLabel="Click to expand video"
+  caption="Cycling through visual themes in Settings"
+  fallbackText="Your browser does not support the video tag."
+/>
 
 #### Reopen last opened folder on startup
 - **Behavior:** When enabled, the application automatically re-opens the directory you were working on when you last closed the application. If disabled, Media Sort starts with your system Pictures directory.
