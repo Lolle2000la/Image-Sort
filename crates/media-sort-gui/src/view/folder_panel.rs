@@ -50,7 +50,12 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
         .spacing(4)
         .wrap();
 
-    let tree_content = folder_tree::folder_tree_view(&state.folder_tree, state.selected_folder_idx);
+    let tree_content = folder_tree::folder_tree_view(
+        &state.folder_tree,
+        state.selected_folder_idx,
+        state.dragging_pinned_folder.as_deref(),
+        state.hovered_pinned_folder.as_deref(),
+    );
     let scrollable_tree = scrollable(tree_content)
         .id(FOLDER_TREE_SCROLLABLE_ID.clone())
         .direction(iced::widget::scrollable::Direction::Both {

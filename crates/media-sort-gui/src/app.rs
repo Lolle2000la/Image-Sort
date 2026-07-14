@@ -280,6 +280,42 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             Task::none()
         }
         Message::Folder(FolderMessage::PickPinResult(None)) => Task::none(),
+        Message::Folder(FolderMessage::SelectedPinned(path, idx)) => {
+            state.set_selected_folder(path.clone(), idx);
+            state.dragging_pinned_folder = Some(path);
+            Task::none()
+        }
+        Message::Folder(FolderMessage::DragPinnedOver(target_path)) => {
+            if let Some(source_path) = state.dragging_pinned_folder.clone()
+                && source_path != target_path
+                && let Some(pos_source) = state
+                    .pinned_folders
+                    .iter()
+                    .position(|p| p.path == source_path)
+                && let Some(pos_target) = state
+                    .pinned_folders
+                    .iter()
+                    .position(|p| p.path == target_path)
+            {
+                state.swap_pinned_folders(pos_source, pos_target);
+            }
+            Task::none()
+        }
+        Message::Folder(FolderMessage::DragPinnedReleased) => {
+            if state.dragging_pinned_folder.is_some() {
+                state.dragging_pinned_folder = None;
+                let _ = state.settings.save();
+            }
+            Task::none()
+        }
+        Message::Folder(FolderMessage::HoverPinned(path)) => {
+            state.hovered_pinned_folder = Some(path);
+            Task::none()
+        }
+        Message::Folder(FolderMessage::HoverPinnedNone) => {
+            state.hovered_pinned_folder = None;
+            Task::none()
+        }
         Message::Folder(FolderMessage::Selected(path, idx)) => {
             state.set_selected_folder(path, idx);
             Task::none()
@@ -898,10 +934,18 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
             iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
+                let mut saved = false;
                 if state.dragging_folder_divider || state.dragging_metadata_divider {
                     state.dragging_folder_divider = false;
                     state.dragging_metadata_divider = false;
                     let _ = state.settings.save();
+                    saved = true;
+                }
+                if state.dragging_pinned_folder.is_some() {
+                    state.dragging_pinned_folder = None;
+                    if !saved {
+                        let _ = state.settings.save();
+                    }
                 }
                 Task::none()
             }
@@ -2392,5 +2436,63 @@ mod tests {
         assert_eq!(reloaded.general.theme, "Dark");
 
         let _ = std::fs::remove_file(&tmp);
+    }
+
+    #[test]
+    fn test_pinned_folder_drag_and_drop() {
+        let mut state = AppState::new(SettingsStore::default());
+        let path1 = PathBuf::from("/pinned1");
+        let path2 = PathBuf::from("/pinned2");
+
+        state.pinned_folders = vec![
+            media_sort_core::models::PinnedFolder {
+                path: path1.clone(),
+                name: "p1".into(),
+                numeric_shortcut: None,
+            },
+            media_sort_core::models::PinnedFolder {
+                path: path2.clone(),
+                name: "p2".into(),
+                numeric_shortcut: None,
+            },
+        ];
+        state.current_folder = Some(PathBuf::from("/current"));
+        state.build_folder_tree();
+
+        // 1. Hover should start when cursor enters node area
+        let _ = update(
+            &mut state,
+            Message::Folder(FolderMessage::HoverPinned(path1.clone())),
+        );
+        assert_eq!(state.hovered_pinned_folder, Some(path1.clone()));
+
+        // 2. Hover should stop when cursor exits node area
+        let _ = update(&mut state, Message::Folder(FolderMessage::HoverPinnedNone));
+        assert_eq!(state.hovered_pinned_folder, None);
+
+        // 3. Drag should start on press
+        let _ = update(
+            &mut state,
+            Message::Folder(FolderMessage::SelectedPinned(path1.clone(), 1)),
+        );
+        assert_eq!(state.selected_folder, Some(path1.clone()));
+        assert_eq!(state.dragging_pinned_folder, Some(path1.clone()));
+
+        // 4. Moving cursor over path2 should swap them
+        let _ = update(
+            &mut state,
+            Message::Folder(FolderMessage::DragPinnedOver(path2.clone())),
+        );
+        assert_eq!(state.pinned_folders[0].path, path2);
+        assert_eq!(state.pinned_folders[1].path, path1);
+        // Dragged path tracking should remain path1
+        assert_eq!(state.dragging_pinned_folder, Some(path1.clone()));
+
+        // 5. Releasing drag should stop dragging
+        let _ = update(
+            &mut state,
+            Message::Folder(FolderMessage::DragPinnedReleased),
+        );
+        assert_eq!(state.dragging_pinned_folder, None);
     }
 }

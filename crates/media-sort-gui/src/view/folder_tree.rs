@@ -1,5 +1,6 @@
-use iced::widget::{button, column, container, row, text};
+use iced::widget::{button, column, container, mouse_area, row, text};
 use iced::{Color, Element, Length};
+use std::path::Path;
 
 use media_sort_core::models::FolderNode;
 
@@ -11,12 +12,24 @@ const INDENT_WIDTH: f32 = 20.0;
 pub fn folder_tree_view<'a>(
     tree: &'a [FolderNode],
     selected_folder_idx: Option<usize>,
+    dragging_pinned_folder: Option<&'a Path>,
+    hovered_pinned_folder: Option<&'a Path>,
 ) -> Element<'a, Message> {
     let mut running_idx = 0;
     column(
         tree.iter()
             .enumerate()
-            .map(|(i, node)| render_node(node, 0, i, selected_folder_idx, &mut running_idx))
+            .map(|(i, node)| {
+                render_node(
+                    node,
+                    0,
+                    i,
+                    selected_folder_idx,
+                    dragging_pinned_folder,
+                    hovered_pinned_folder,
+                    &mut running_idx,
+                )
+            })
             .collect::<Vec<_>>(),
     )
     .spacing(0)
@@ -28,6 +41,8 @@ fn render_node<'a>(
     depth: u16,
     root_index: usize,
     selected_folder_idx: Option<usize>,
+    dragging_pinned_folder: Option<&'a Path>,
+    hovered_pinned_folder: Option<&'a Path>,
     running_idx: &mut usize,
 ) -> Element<'a, Message> {
     let current_flat_idx = *running_idx;
@@ -125,14 +140,95 @@ fn render_node<'a>(
 
     let folder_action = if node.is_parent_nav {
         FolderMessage::Open(node_path.clone())
+    } else if depth == 0 && root_index > 0 {
+        FolderMessage::SelectedPinned(node_path.clone(), current_flat_idx)
     } else {
         FolderMessage::Selected(node_path.clone(), current_flat_idx)
     };
     let folder_id_str = format!("folder_{}", node.path.display());
     let is_selected = selected_folder_idx == Some(current_flat_idx);
+    let is_dragging_this = dragging_pinned_folder == Some(&node.path);
+    let is_hovered = hovered_pinned_folder == Some(&node.path) && dragging_pinned_folder.is_none();
 
-    let select_button = container(
-        button(row_content)
+    let select_button = if depth == 0 && root_index > 0 {
+        let container_element = container(row_content)
+            .padding([4, 8])
+            .style(move |theme: &iced::Theme| {
+                let palette = theme.palette();
+                let base = iced::widget::container::Style::default();
+                if is_dragging_this {
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(Color {
+                            a: 0.2,
+                            ..palette.primary
+                        })),
+                        text_color: Some(Color {
+                            a: 0.4,
+                            ..palette.text
+                        }),
+                        ..base
+                    }
+                } else if is_selected {
+                    let selected_bg = Color {
+                        a: 0.4,
+                        ..palette.primary
+                    };
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(selected_bg)),
+                        text_color: Some(palette.text),
+                        ..base
+                    }
+                } else if is_hovered {
+                    let hovered_bg = Color {
+                        a: 0.15,
+                        ..palette.text
+                    };
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(hovered_bg)),
+                        text_color: Some(palette.text),
+                        ..base
+                    }
+                } else {
+                    iced::widget::container::Style {
+                        text_color: Some(palette.text),
+                        ..base
+                    }
+                }
+            })
+            .width(Length::Shrink);
+
+        let cursor_interaction = if dragging_pinned_folder.is_some() {
+            iced::mouse::Interaction::Grabbing
+        } else {
+            iced::mouse::Interaction::Grab
+        };
+
+        let mouse_area_element = mouse_area(container_element)
+            .on_press(Message::Folder(FolderMessage::SelectedPinned(
+                node_path.clone(),
+                current_flat_idx,
+            )))
+            .on_release(Message::Folder(FolderMessage::DragPinnedReleased))
+            .on_exit(Message::Folder(FolderMessage::HoverPinnedNone))
+            .interaction(cursor_interaction);
+
+        let mouse_area_element = if dragging_pinned_folder.is_none() {
+            mouse_area_element.on_enter(Message::Folder(FolderMessage::HoverPinned(
+                node_path.clone(),
+            )))
+        } else {
+            mouse_area_element.on_enter(Message::Folder(FolderMessage::DragPinnedOver(
+                node_path.clone(),
+            )))
+        };
+
+        container(mouse_area_element)
+            .id(iced::widget::Id::new(Box::leak(
+                folder_id_str.into_boxed_str(),
+            )))
+            .width(Length::Shrink)
+    } else {
+        let button_element = button(row_content)
             .on_press(Message::Folder(folder_action))
             .style(move |theme: &iced::Theme, _status| {
                 let palette = theme.palette();
@@ -170,12 +266,14 @@ fn render_node<'a>(
                     }
                 }
             })
-            .width(Length::Shrink),
-    )
-    .id(iced::widget::Id::new(Box::leak(
-        folder_id_str.into_boxed_str(),
-    )))
-    .width(Length::Shrink);
+            .width(Length::Shrink);
+
+        container(button_element)
+            .id(iced::widget::Id::new(Box::leak(
+                folder_id_str.into_boxed_str(),
+            )))
+            .width(Length::Shrink)
+    };
 
     let item_layout = row![arrow_content, select_button]
         .spacing(4)
@@ -196,6 +294,8 @@ fn render_node<'a>(
                                 depth + 1,
                                 root_index,
                                 selected_folder_idx,
+                                dragging_pinned_folder,
+                                hovered_pinned_folder,
                                 running_idx,
                             )
                         })

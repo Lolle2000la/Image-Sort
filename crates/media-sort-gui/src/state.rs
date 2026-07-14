@@ -65,6 +65,8 @@ pub struct AppState {
     pub create_folder_placeholder: String,
     pub dragging_folder_divider: bool,
     pub dragging_metadata_divider: bool,
+    pub dragging_pinned_folder: Option<PathBuf>,
+    pub hovered_pinned_folder: Option<PathBuf>,
     pub video_sender:
         Option<tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>>,
     pub video_frame: Option<iced::widget::image::Handle>,
@@ -195,6 +197,8 @@ impl AppState {
             create_folder_placeholder,
             dragging_folder_divider: false,
             dragging_metadata_divider: false,
+            dragging_pinned_folder: None,
+            hovered_pinned_folder: None,
             video_sender: None,
             video_frame: None,
             video_position: 0.0,
@@ -409,6 +413,18 @@ impl AppState {
                 .collect();
             let _ = self.settings.save();
         }
+    }
+
+    pub fn swap_pinned_folders(&mut self, pos_a: usize, pos_b: usize) {
+        self.pinned_folders.swap(pos_a, pos_b);
+        if pos_a + 1 < self.folder_tree.len() && pos_b + 1 < self.folder_tree.len() {
+            self.folder_tree.swap(pos_a + 1, pos_b + 1);
+        }
+        self.settings.pinned_folders.paths = self
+            .pinned_folders
+            .iter()
+            .map(|p| p.path.display().to_string())
+            .collect();
     }
 
     pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
@@ -1729,6 +1745,35 @@ mod tests {
         state.build_folder_tree();
 
         assert_eq!(state.folder_tree.len(), 3);
+        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
+    }
+
+    #[test]
+    fn test_swap_pinned_folders() {
+        let mut state = AppState::new(SettingsStore::default());
+        state.current_folder = Some(PathBuf::from("/current"));
+        state.pinned_folders = vec![
+            PinnedFolder {
+                path: PathBuf::from("/pinned1"),
+                name: "p1".into(),
+                numeric_shortcut: None,
+            },
+            PinnedFolder {
+                path: PathBuf::from("/pinned2"),
+                name: "p2".into(),
+                numeric_shortcut: None,
+            },
+        ];
+        state.build_folder_tree();
+        assert_eq!(state.folder_tree.len(), 3);
+        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned1"));
+        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned2"));
+
+        state.swap_pinned_folders(0, 1);
+
+        assert_eq!(state.pinned_folders[0].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.pinned_folders[1].path, PathBuf::from("/pinned1"));
         assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
         assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
     }

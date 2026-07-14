@@ -75,6 +75,11 @@ pub enum FolderMessage {
     PickPin,
     #[serde(skip_deserializing)]
     PickPinResult(Option<PathBuf>),
+    SelectedPinned(PathBuf, usize),
+    DragPinnedOver(PathBuf),
+    DragPinnedReleased,
+    HoverPinned(PathBuf),
+    HoverPinnedNone,
     #[automation(keycap = "Arrow Keys\nSelect Destination")]
     Selected(PathBuf, usize),
     #[automation(keycap = "Space\nExpand Folder")]
