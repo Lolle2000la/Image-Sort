@@ -39,42 +39,49 @@ import Features from '../../../components/Features.astro';
 </div>
 
 <div class="value-section">
-  <h2 class="value-heading">思考の速さで整理する</h2>
-  <div class="value-points">
-    <div class="value-point">
-      <strong>キーボードファーストのワークフロー。</strong>すべての操作はワンキーです。マウスに触れることなく移動、コピー、名前変更、削除が可能。数分で数百のファイルを整理できます。
+    <h2 class="value-heading">思考の速さで整理する</h2>
+    <div class="value-points">
+        <div class="value-point">
+            <strong>キーボードファーストのワークフロー。</strong>
+            すべての操作はワンキーです。マウスに触れることなく移動、コピー、名前変更、削除が可能。数分で数百のファイルを整理できます。
+        </div>
+        <div class="value-point">
+            <strong>即座の視覚的フィードバック。</strong>
+            ナビゲーションと同じ速度でプレビューが読み込まれます。サムネイルはキャッシュされ、画像はオンデマンドでデコードされ、動画はインラインで再生されます。遅延も待機もなし。
+        </div>
+        <div class="value-point">
+            <strong>すべて取り消し可能。</strong>
+            ミスをした？元に戻す。気が変わった？やり直す。完全なアクション履歴があるので、自由に試せます。何も決定は最終ではありません。
+        </div>
+        <div class="value-point">
+            <strong>画像、動画、音声に対応。</strong>
+            すべてのメディアを一つのグリッドで。アプリを切り替える必要も、別々のワークフローもなし。すべてを一か所でプレビュー、整理、管理できます。
+        </div>
     </div>
-    <div class="value-point">
-      <strong>即座の視覚的フィードバック。</strong>ナビゲーションと同じ速度でプレビューが読み込まれます。サムネイルはキャッシュされ、画像はオンデマンドでデコードされ、動画はインラインで再生されます。遅延も待機もなし。
-    </div>
-    <div class="value-point">
-      <strong>すべて取り消し可能。</strong>ミスをした？元に戻す。気が変わった？やり直す。完全なアクション履歴があるので、自由に試せます。何も決定は最終ではありません。
-    </div>
-    <div class="value-point">
-      <strong>画像、動画、音声に対応。</strong>すべてのメディアを一つのグリッドで。アプリを切り替える必要も、別々のワークフローもなし。すべてを一か所でプレビュー、整理、管理できます。
-    </div>
-  </div>
 </div>
 
-<Features 
-  sectionTitle="丁寧に作られています"
-  features={[
-    {
-      icon: "zap",
-      title: "ネイティブパフォーマンス",
-      description: "Rustで記述。libmpv、symphonia、imageクレートによるオーバーヘッドのないメディアデコード。何千ものファイルをカクつくことなくスムーズにスクロール。"
-    },
-    {
-      icon: "shield",
-      title: "堅牢なUndoシステム",
-      description: "すべての移動、コピー、名前変更、削除は可逆的なアクションです。履歴全体がメモリに保持され、即座に取り消し・やり直しが可能。各アクションの名前も明確に表示。"
-    },
-    {
-      icon: "lock",
-      title: "100%ローカル＆プライベート",
-      description: "アカウント不要、分析なし、オプションのアップデートチェック以外のネットワーク通信は一切ありません。ファイルとフォルダ構造は常にあなたのマシン上にあります。"
-    }
-  ]}
+<Features
+    sectionTitle="丁寧に作られています"
+    features={[
+        {
+            icon: 'zap',
+            title: 'ネイティブパフォーマンス',
+            description:
+                'Rustで記述。libmpv、symphonia、imageクレートによるオーバーヘッドのないメディアデコード。何千ものファイルをカクつくことなくスムーズにスクロール。',
+        },
+        {
+            icon: 'shield',
+            title: '堅牢なUndoシステム',
+            description:
+                'すべての移動、コピー、名前変更、削除は可逆的なアクションです。履歴全体がメモリに保持され、即座に取り消し・やり直しが可能。各アクションの名前も明確に表示。',
+        },
+        {
+            icon: 'lock',
+            title: '100%ローカル＆プライベート',
+            description:
+                'アカウント不要、分析なし、オプションのアップデートチェック以外のネットワーク通信は一切ありません。ファイルとフォルダ構造は常にあなたのマシン上にあります。',
+        },
+    ]}
 />
 
 <style>{`

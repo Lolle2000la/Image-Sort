@@ -24,6 +24,7 @@ On first launch, Media Sort will automatically migrate settings from the legacy 
 The `config.toml` file is organized into several sections representing different settings profiles.
 
 ### `[general]`
+
 Exposes appearance, locale, automatic update properties, and startup folder configurations:
 
 - **`theme`** (string): The UI theme. Examples: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"SolarizedLight"`, `"SolarizedDark"`, `"GruvboxLight"`, `"GruvboxDark"`, `"CatppuccinLatte"`, `"CatppuccinFrappe"`, `"CatppuccinMacchiato"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"TokyoNightStorm"`, `"TokyoNightLight"`, `"KanagawaWave"`, `"KanagawaDragon"`, `"KanagawaLotus"`, `"Moonfly"`, `"Nightfly"`, `"Oxocarbon"`, `"Ferra"`. (Default: `"Light"`)
@@ -39,6 +40,7 @@ Exposes appearance, locale, automatic update properties, and startup folder conf
 ---
 
 ### `[metadata_panel]`
+
 Configures the collapsable sidebar displaying EXIF and container metadata tags:
 
 - **`is_expanded`** (boolean): Toggles whether the panel is expanded by default. (Default: `false`)
@@ -47,20 +49,22 @@ Configures the collapsable sidebar displaying EXIF and container metadata tags:
 ---
 
 ### `[pinned_folders]`
+
 Manages pinned directories for quick-move shortcuts:
 
 - **`paths`** (list of strings): A list of folder paths saved on your system.
-  ```toml
-  [pinned_folders]
-  paths = [
-      "/home/user/Pictures/Sorted",
-      "/home/user/Pictures/Keep"
-  ]
-  ```
+    ```toml
+    [pinned_folders]
+    paths = [
+        "/home/user/Pictures/Sorted",
+        "/home/user/Pictures/Keep"
+    ]
+    ```
 
 ---
 
 ### `[window_position]`
+
 Stores window coordinates and sizes to restore state between launches:
 
 - **`left`** (number): X coordinate. (Default: `100`)
@@ -77,7 +81,9 @@ Stores window coordinates and sizes to restore state between launches:
 You can define custom key combinations under the `[keybindings]` table.
 
 ### Structure
+
 Each shortcut is a sub-table specifying:
+
 - **`key`** (string): Key name string (derived from iced's Key type).
 - **`ctrl`** (boolean): Require the Control modifier key (or Command key on macOS).
 - **`shift`** (boolean): Require the Shift modifier key.
@@ -85,6 +91,7 @@ Each shortcut is a sub-table specifying:
 - **`meta`** (boolean): Require the OS/Windows/System modifier key.
 
 #### Example: Remapping Undo to Ctrl+Z
+
 ```toml
 [keybindings.undo]
 key = "Z"

@@ -3,7 +3,14 @@ title: Ordnerbaum-Navigation
 description: Navigieren, ein- und ausklappen und Verwalten des Ordnerbaums in Media Sort.
 ---
 
-import { Folder, FolderOpen, ArrowUp, ChevronRight, ChevronDown, Pin } from '@lucide/astro';
+import {
+    Folder,
+    FolderOpen,
+    ArrowUp,
+    ChevronRight,
+    ChevronDown,
+    Pin,
+} from '@lucide/astro';
 import Kbd from '../../../../components/Kbd.astro';
 
 Media Sort zeigt Ihr Dateisystem als interaktiven Ordnerbaum im linken Panel an. Dieser Baum spiegelt die Verzeichnisstruktur Ihres aktuell geöffneten Stammordners wider und ermöglicht die Navigation und Verwaltung von Unterordnern vollständig per Tastatur.
@@ -12,12 +19,12 @@ Media Sort zeigt Ihr Dateisystem als interaktiven Ordnerbaum im linken Panel an.
 
 Der Ordnerbaum unterstützt die WASD-Navigation:
 
-| Taste | Aktion |
-| :--- | :--- |
-| <Kbd>W</Kbd> | Auswahl zum vorherigen Ordner nach oben bewegen |
-| <Kbd>S</Kbd> | Auswahl zum nächsten Ordner nach unten bewegen |
+| Taste        | Aktion                                                                                                                 |
+| :----------- | :--------------------------------------------------------------------------------------------------------------------- |
+| <Kbd>W</Kbd> | Auswahl zum vorherigen Ordner nach oben bewegen                                                                        |
+| <Kbd>S</Kbd> | Auswahl zum nächsten Ordner nach unten bewegen                                                                         |
 | <Kbd>A</Kbd> | Ausgewählten Ordner einklappen oder, falls bereits eingeklappt, zum nächsten sichtbaren übergeordneten Ordner springen |
-| <Kbd>D</Kbd> | Ausgewählten Ordner aufklappen oder, falls bereits aufgeklappt, in das erste Unterverzeichnis springen |
+| <Kbd>D</Kbd> | Ausgewählten Ordner aufklappen oder, falls bereits aufgeklappt, in das erste Unterverzeichnis springen                 |
 
 Wenn Sie einen Ordner im Baum auswählen, zeigt das Medienraster alle Dateien an, die rekursiv in diesem Ordner und seinen Unterverzeichnissen enthalten sind.
 
@@ -55,11 +62,11 @@ Drücken Sie <Kbd>C</Kbd>, um den „Ordner erstellen"-Dialog zu öffnen. Der ne
 
 Der Baum verwendet drei verschiedene Lucide-Icons:
 
-| Icon | Bedeutung |
-| :--- | :--- |
-| <Folder size={18} /> | Der Ordner ist eingeklappt. Er kann Unterordner enthalten. |
+| Icon                     | Bedeutung                                                    |
+| :----------------------- | :----------------------------------------------------------- |
+| <Folder size={18} />     | Der Ordner ist eingeklappt. Er kann Unterordner enthalten.   |
 | <FolderOpen size={18} /> | Der Ordner ist aufgeklappt. Seine Unterordner sind sichtbar. |
-| <ArrowUp size={18} /> | Breadcrumb. Öffnet das übergeordnete Verzeichnis. |
+| <ArrowUp size={18} />    | Breadcrumb. Öffnet das übergeordnete Verzeichnis.            |
 
 ## Angepinnte Ordner
 

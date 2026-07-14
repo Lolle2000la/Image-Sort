@@ -14,11 +14,13 @@ Installieren Sie vor dem Kompilieren die erforderlichen Compiler-Tools und Entwi
 ### Linux
 
 #### Arch Linux / CachyOS
+
 ```bash
 sudo pacman -S clang mpv
 ```
 
 #### Debian / Ubuntu
+
 ```bash
 sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
 ```
@@ -26,6 +28,7 @@ sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev l
 ### macOS
 
 Installieren Sie die Xcode-Befehlszeilentools und Homebrew-Abhängigkeiten:
+
 ```bash
 xcode-select --install
 brew install mpv
@@ -34,33 +37,36 @@ brew install mpv
 ### Windows
 
 Installieren Sie die folgenden Voraussetzungen:
+
 - [Rust-Toolchain](https://rustup.rs/) (1.96 oder höher)
 - [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (für den MSVC-Linker)
 - [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
 - mpv-Entwicklungsdateien über [vcpkg](https://github.com/microsoft/vcpkg):
-  ```powershell
-  vcpkg install mpv
-  ```
+    ```powershell
+    vcpkg install mpv
+    ```
 
 ---
 
 ## Projekt kompilieren
 
 1. Klonen Sie das Projekt-Repository:
-   ```bash
-   git clone https://github.com/Lolle2000la/Image-Sort.git
-   cd Image-Sort
-   ```
+
+    ```bash
+    git clone https://github.com/Lolle2000la/Image-Sort.git
+    cd Image-Sort
+    ```
 
 2. Kompilieren Sie den Workspace mit Cargo:
-   ```bash
-   cargo build --release
-   ```
+
+    ```bash
+    cargo build --release
+    ```
 
 3. Die kompilierte Binärdatei wird unter dem Zielverzeichnis generiert:
-   ```bash
-   ./target/release/media-sort-gui
-   ```
+    ```bash
+    ./target/release/media-sort-gui
+    ```
 
 ---
 

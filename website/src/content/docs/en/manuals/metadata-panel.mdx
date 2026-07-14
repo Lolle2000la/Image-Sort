@@ -2,14 +2,15 @@
 title: Metadata Panel
 description: How to inspect EXIF, audio tags, and container metadata for media files in Media Sort.
 ---
+
 import Kbd from '../../../../components/Kbd.astro';
 
 The metadata panel is a collapsible sidebar on the right side of the window that displays detailed information about the currently selected media file. It supports images, audio files, and videos, extracting as much metadata as each format provides.
 
 ## Opening and Closing
 
-| Key | Action |
-| :--- | :--- |
+| Key          | Action                                   |
+| :----------- | :--------------------------------------- |
 | <Kbd>M</Kbd> | Toggle the metadata panel open or closed |
 
 You can also resize the panel by dragging its left edge. The panel width is persisted in your settings.
@@ -22,72 +23,72 @@ The panel is organized into collapsible sections. Not all sections appear for ev
 
 Basic file properties available for all media types:
 
-| Field | Description |
-| :--- | :--- |
-| **Name** | File name with extension |
-| **Size** | File size (auto-formatted as B, KB, MB, GB) |
-| **Modified** | Last modification timestamp |
-| **Dimensions** | Image/video width × height in pixels |
-| **Duration** | Playback duration for audio and video files |
+| Field          | Description                                 |
+| :------------- | :------------------------------------------ |
+| **Name**       | File name with extension                    |
+| **Size**       | File size (auto-formatted as B, KB, MB, GB) |
+| **Modified**   | Last modification timestamp                 |
+| **Dimensions** | Image/video width × height in pixels        |
+| **Duration**   | Playback duration for audio and video files |
 
 ### Container Metadata
 
 Tags embedded in the file container format:
 
-| Field | Description |
-| :--- | :--- |
-| **Title** | Media title |
-| **Artist** | Performing artist or author |
-| **Album** | Album name (audio), collection name (video) |
-| **Genre** | Content genre |
-| **Date / Year** | Release or recording date |
-| **Track** | Track number (audio) |
-| **Comment** | Embedded comment or description |
-| **Copyright** | Copyright notice |
-| **Language** | Content language code |
-| **Composer** | Composer name |
-| **Conductor** | Conductor name |
-| **Lyrics** | Embedded lyrics text |
-| **BPM** | Beats per minute (audio) |
-| **Label** | Record label |
-| **Disc Number** | Disc number in a multi-disc set |
-| **Total Tracks** | Total tracks on the album |
-| **Description** | Media description |
+| Field            | Description                                 |
+| :--------------- | :------------------------------------------ |
+| **Title**        | Media title                                 |
+| **Artist**       | Performing artist or author                 |
+| **Album**        | Album name (audio), collection name (video) |
+| **Genre**        | Content genre                               |
+| **Date / Year**  | Release or recording date                   |
+| **Track**        | Track number (audio)                        |
+| **Comment**      | Embedded comment or description             |
+| **Copyright**    | Copyright notice                            |
+| **Language**     | Content language code                       |
+| **Composer**     | Composer name                               |
+| **Conductor**    | Conductor name                              |
+| **Lyrics**       | Embedded lyrics text                        |
+| **BPM**          | Beats per minute (audio)                    |
+| **Label**        | Record label                                |
+| **Disc Number**  | Disc number in a multi-disc set             |
+| **Total Tracks** | Total tracks on the album                   |
+| **Description**  | Media description                           |
 
 ### EXIF Data (Images)
 
 Photographic metadata extracted from JPEG, TIFF, and other EXIF-capable formats:
 
-| Field | Description |
-| :--- | :--- |
-| **Date/Time Taken** | Original capture timestamp |
-| **Camera Maker** | Camera manufacturer (e.g., Canon, Sony) |
-| **Camera Model** | Camera model name |
-| **Software** | Image processing software |
-| **Exposure Time** | Shutter speed (e.g., 1/250) |
-| **Aperture** | F-number (e.g., f/2.8) |
-| **ISO Speed** | ISO sensitivity rating |
-| **Focal Length** | Lens focal length in mm |
-| **Lens** | Lens model name |
+| Field               | Description                             |
+| :------------------ | :-------------------------------------- |
+| **Date/Time Taken** | Original capture timestamp              |
+| **Camera Maker**    | Camera manufacturer (e.g., Canon, Sony) |
+| **Camera Model**    | Camera model name                       |
+| **Software**        | Image processing software               |
+| **Exposure Time**   | Shutter speed (e.g., 1/250)             |
+| **Aperture**        | F-number (e.g., f/2.8)                  |
+| **ISO Speed**       | ISO sensitivity rating                  |
+| **Focal Length**    | Lens focal length in mm                 |
+| **Lens**            | Lens model name                         |
 
 ### GPS Data (Images)
 
 If the image contains geolocation EXIF tags:
 
-| Field | Description |
-| :--- | :--- |
-| **Latitude** | Decimal latitude coordinate |
+| Field         | Description                  |
+| :------------ | :--------------------------- |
+| **Latitude**  | Decimal latitude coordinate  |
 | **Longitude** | Decimal longitude coordinate |
-| **Altitude** | Elevation in meters |
+| **Altitude**  | Elevation in meters          |
 
 ## Format-Specific Support
 
-| Media Type | Metadata Source | Library |
-| :--- | :--- | :--- |
-| **Images** | EXIF, image dimensions | `kamadak-exif`, `image` |
-| **Audio (MP3/AIFF/WAV)** | ID3 tags | `id3` |
-| **Audio (FLAC)** | Vorbis comments | `metaflac` |
-| **Audio (M4A/AAC/ALAC)** | MPEG-4 container tags | `mp4ameta` |
-| **Audio (OGG/Opus/WMA)** | Container tags | `symphonia` |
-| **Video (MP4/M4V/MOV)** | MPEG-4 container tags | `mp4ameta` |
-| **Video (MKV/WebM/other)** | Container tags | `symphonia` |
+| Media Type                 | Metadata Source        | Library                 |
+| :------------------------- | :--------------------- | :---------------------- |
+| **Images**                 | EXIF, image dimensions | `kamadak-exif`, `image` |
+| **Audio (MP3/AIFF/WAV)**   | ID3 tags               | `id3`                   |
+| **Audio (FLAC)**           | Vorbis comments        | `metaflac`              |
+| **Audio (M4A/AAC/ALAC)**   | MPEG-4 container tags  | `mp4ameta`              |
+| **Audio (OGG/Opus/WMA)**   | Container tags         | `symphonia`             |
+| **Video (MP4/M4V/MOV)**    | MPEG-4 container tags  | `mp4ameta`              |
+| **Video (MKV/WebM/other)** | Container tags         | `symphonia`             |

@@ -10,13 +10,13 @@ description: Media Sortの開発環境のセットアップ、ビルド、テス
 - **Rust** 1.96以降（[rustup](https://rustup.rs)でインストール）
 - **Clang**（FFIバインディング用に`libmpv-sys`が必要）
 - **libmpv**開発ファイル:
-  - Linux: `libmpv-dev`（Debian/Ubuntu）または同等品
-  - macOS: `brew install mpv`
-  - Windows: vcpkgまたは手動インストール
+    - Linux: `libmpv-dev`（Debian/Ubuntu）または同等品
+    - macOS: `brew install mpv`
+    - Windows: vcpkgまたは手動インストール
 - **プラットフォームライブラリ**（Linux）:
-  - `libasound2-dev`（音声用ALSA）
-  - `libx11-dev`、`libwayland-dev`（ウィンドウシステム）
-  - Vulkanドライバとローダー
+    - `libasound2-dev`（音声用ALSA）
+    - `libx11-dev`、`libwayland-dev`（ウィンドウシステム）
+    - Vulkanドライバとローダー
 
 ## ビルド
 
@@ -57,6 +57,7 @@ cargo test -p media-sort-gui
 ```
 
 テストの配置場所:
+
 - `crates/media-sort-core/tests/`: 統合テスト
 - `crates/media-sort-backend/tests/`: 統合テスト（テストフィクスチャは`tests/fixtures/`にあります）
 - `crates/media-sort-gui/src/`: `#[cfg(test)]`ユニットテスト
@@ -139,7 +140,7 @@ npm run build         # プロダクションビルド
 
 ## 環境変数
 
-| 変数 | 目的 |
-| :--- | :--- |
-| `UI_TEST` | 設定パスをカレントディレクトリの`ui_test_config.toml`に切り替え |
-| `LANG` / `LC_ALL` | ロケール検出を上書き（デモ動画レンダリング時に使用） |
+| 変数              | 目的                                                            |
+| :---------------- | :-------------------------------------------------------------- |
+| `UI_TEST`         | 設定パスをカレントディレクトリの`ui_test_config.toml`に切り替え |
+| `LANG` / `LC_ALL` | ロケール検出を上書き（デモ動画レンダリング時に使用）            |

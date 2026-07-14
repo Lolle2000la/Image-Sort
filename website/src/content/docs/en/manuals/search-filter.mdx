@@ -2,17 +2,18 @@
 title: Search & Filter
 description: How to filter media files by filename and extension in Media Sort.
 ---
+
 import Kbd from '../../../../components/Kbd.astro';
 
 The search bar lets you instantly filter the media grid to find specific files within the currently open folder. It is located at the top of the media grid area.
 
 ## Using the Search Bar
 
-| Key | Action |
-| :--- | :--- |
-| <Kbd>I</Kbd> | Focus the search input and start typing |
+| Key            | Action                                                               |
+| :------------- | :------------------------------------------------------------------- |
+| <Kbd>I</Kbd>   | Focus the search input and start typing                              |
 | <Kbd>Esc</Kbd> | Unfocus the search bar, returning keyboard control to the media grid |
-| **Click** | Click the input field to focus it |
+| **Click**      | Click the input field to focus it                                    |
 
 As you type, the grid updates in real time to show only files whose names match your query. The search is case-insensitive.
 
@@ -20,12 +21,12 @@ As you type, the grid updates in real time to show only files whose names match 
 
 Search queries are matched against **filenames only** (including the file extension). For example:
 
-| Query | Matches |
-| :--- | :--- |
+| Query      | Matches                                   |
+| :--------- | :---------------------------------------- |
 | `vacation` | `vacation_2024.jpg`, `beach-vacation.png` |
-| `.mp4` | All MP4 video files |
-| `.flac` | All FLAC audio files |
-| `photo` | `photo1.jpg`, `Screenshot_photo.png` |
+| `.mp4`     | All MP4 video files                       |
+| `.flac`    | All FLAC audio files                      |
+| `photo`    | `photo1.jpg`, `Screenshot_photo.png`      |
 
 Filtering by extension (e.g., typing `.mp4`) is a quick way to isolate all files of a specific format.
 

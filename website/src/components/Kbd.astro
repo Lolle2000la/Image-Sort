@@ -7,18 +7,24 @@ const { keys } = Astro.props;
 
 let parts: string[] = [];
 if (!keys) {
-    const slot = await Astro.slots.render("default");
-    parts = slot.trim().split("+").map(k => k.trim()).filter(Boolean);
+    const slot = await Astro.slots.render('default');
+    parts = slot
+        .trim()
+        .split('+')
+        .map((k) => k.trim())
+        .filter(Boolean);
 } else {
     parts = keys;
 }
 ---
 
 <span class="kbd-combo">
-    {parts.flatMap((k, i) => [
-        <kbd>{k}</kbd>,
-        i < parts.length - 1 && <span class="kbd-sep">+</span>,
-    ])}
+    {
+        parts.flatMap((k, i) => [
+            <kbd>{k}</kbd>,
+            i < parts.length - 1 && <span class="kbd-sep">+</span>,
+        ])
+    }
 </span>
 
 <style>

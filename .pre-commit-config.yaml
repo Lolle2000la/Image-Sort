@@ -16,3 +16,19 @@ repos:
         language: system
         types: [rust]
         pass_filenames: false
+
+      - id: website-format
+        name: website format
+        description: Format website files in-place
+        entry: npm --prefix website run format
+        language: system
+        files: ^website/
+        pass_filenames: false
+
+      - id: website-lint
+        name: website lint
+        description: Check website files for lint issues
+        entry: npm --prefix website run lint
+        language: system
+        files: ^website/
+        pass_filenames: false

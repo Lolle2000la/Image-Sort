@@ -24,22 +24,27 @@ Wählen Sie das passende Paket für Ihr Betriebssystem und Ihre Prozessorarchite
 Je nach Ihrer Plattform müssen Sie eventuell die Bibliotheken des `mpv`-Medien-Frameworks installieren:
 
 ### Windows & macOS
+
 **Keine manuelle Einrichtung erforderlich!** Die vorkompilierten Pakete für Windows und macOS enthalten bereits alle erforderlichen `libmpv`-Bibliotheken direkt im Anwendungsbundle.
 
 ### Linux
+
 Die Linux-AppImage-Pakete laufen dynamisch im Host-System und setzen die Installation von `libmpv` voraus. Das AppImage benötigt außerdem `libasound2` sowie X11-/Wayland-Bibliotheken, die auf Desktop-Linux-Distributionen üblicherweise bereits vorinstalliert sind.
 
 #### Arch Linux / CachyOS
+
 ```bash
 sudo pacman -S mpv
 ```
 
 #### Debian / Ubuntu
+
 ```bash
 sudo apt install libmpv2 libasound2
 ```
 
 #### Fedora
+
 ```bash
 sudo dnf install mpv-libs
 ```

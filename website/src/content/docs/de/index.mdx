@@ -39,42 +39,56 @@ import Features from '../../../components/Features.astro';
 </div>
 
 <div class="value-section">
-  <h2 class="value-heading">Sortiere so schnell, wie du denkst</h2>
-  <div class="value-points">
-    <div class="value-point">
-      <strong>Tastaturgesteuerter Workflow.</strong> Jede Aktion ist nur einen Tastendruck entfernt. Verschieben, kopieren, umbenennen oder löschen — ohne die Maus zu benutzen. Sortiere Hunderte von Dateien in Minuten.
+    <h2 class="value-heading">Sortiere so schnell, wie du denkst</h2>
+    <div class="value-points">
+        <div class="value-point">
+            <strong>Tastaturgesteuerter Workflow.</strong> Jede Aktion ist nur
+            einen Tastendruck entfernt. Verschieben, kopieren, umbenennen oder
+            löschen — ohne die Maus zu benutzen. Sortiere Hunderte von Dateien
+            in Minuten.
+        </div>
+        <div class="value-point">
+            <strong>Sofortiges visuelles Feedback.</strong> Vorschaubilder laden
+            so schnell, wie du navigierst. Thumbnails werden
+            zwischengespeichert, Bilder werden bei Bedarf dekodiert, und Videos
+            werden inline abgespielt. Keine Verzögerung, kein Warten.
+        </div>
+        <div class="value-point">
+            <strong>Alles rückgängig machen.</strong> Ein Fehler passiert?
+            Rückgängig. Andere Meinung? Wiederherstellen. Der vollständige
+            Aktionsverlauf lässt dich frei experimentieren, denn nichts ist
+            endgültig, bis du es sagst.
+        </div>
+        <div class="value-point">
+            <strong>Bilder, Videos und Audio.</strong> Ein einheitliches Raster
+            für alle deine Medien. Kein App-Wechsel, keine getrennten Workflows.
+            Alles an einem Ort vorschauen, sortieren und organisieren.
+        </div>
     </div>
-    <div class="value-point">
-      <strong>Sofortiges visuelles Feedback.</strong> Vorschaubilder laden so schnell, wie du navigierst. Thumbnails werden zwischengespeichert, Bilder werden bei Bedarf dekodiert, und Videos werden inline abgespielt. Keine Verzögerung, kein Warten.
-    </div>
-    <div class="value-point">
-      <strong>Alles rückgängig machen.</strong> Ein Fehler passiert? Rückgängig. Andere Meinung? Wiederherstellen. Der vollständige Aktionsverlauf lässt dich frei experimentieren, denn nichts ist endgültig, bis du es sagst.
-    </div>
-    <div class="value-point">
-      <strong>Bilder, Videos und Audio.</strong> Ein einheitliches Raster für alle deine Medien. Kein App-Wechsel, keine getrennten Workflows. Alles an einem Ort vorschauen, sortieren und organisieren.
-    </div>
-  </div>
 </div>
 
-<Features 
-  sectionTitle="Mit Sorgfalt entwickelt"
-  features={[
-    {
-      icon: "zap",
-      title: "Native Performance",
-      description: "In Rust geschrieben. Medien-Dekodierung ohne Overhead durch libmpv, symphonia und die image-Bibliothek. Flüssiges Scrollen durch tausende Dateien ohne Ruckeln."
-    },
-    {
-      icon: "shield",
-      title: "Robustes Undo-System",
-      description: "Jedes Verschieben, Kopieren, Umbenennen und Löschen ist eine umkehrbare Aktion. Der gesamte Verlauf ist im Speicher für sofortiges Rückgängigmachen, mit klaren Namen für jede Aktion."
-    },
-    {
-      icon: "lock",
-      title: "100% Lokal & Privat",
-      description: "Keine Konten, keine Analysen, keine Netzwerkanfragen außer optionalen Update-Prüfungen. Deine Dateien und Ordnerstruktur bleiben auf deinem Rechner. Immer."
-    }
-  ]}
+<Features
+    sectionTitle="Mit Sorgfalt entwickelt"
+    features={[
+        {
+            icon: 'zap',
+            title: 'Native Performance',
+            description:
+                'In Rust geschrieben. Medien-Dekodierung ohne Overhead durch libmpv, symphonia und die image-Bibliothek. Flüssiges Scrollen durch tausende Dateien ohne Ruckeln.',
+        },
+        {
+            icon: 'shield',
+            title: 'Robustes Undo-System',
+            description:
+                'Jedes Verschieben, Kopieren, Umbenennen und Löschen ist eine umkehrbare Aktion. Der gesamte Verlauf ist im Speicher für sofortiges Rückgängigmachen, mit klaren Namen für jede Aktion.',
+        },
+        {
+            icon: 'lock',
+            title: '100% Lokal & Privat',
+            description:
+                'Keine Konten, keine Analysen, keine Netzwerkanfragen außer optionalen Update-Prüfungen. Deine Dateien und Ordnerstruktur bleiben auf deinem Rechner. Immer.',
+        },
+    ]}
 />
 
 <style>{`

@@ -3,7 +3,14 @@ title: Folder Tree Navigation
 description: How to navigate, expand, collapse, and manage the folder tree in Media Sort.
 ---
 
-import { Folder, FolderOpen, ArrowUp, ChevronRight, ChevronDown, Pin } from '@lucide/astro';
+import {
+    Folder,
+    FolderOpen,
+    ArrowUp,
+    ChevronRight,
+    ChevronDown,
+    Pin,
+} from '@lucide/astro';
 import Kbd from '../../../../components/Kbd.astro';
 
 Media Sort displays your filesystem as an interactive folder tree in the left panel. This tree reflects the directory structure of your currently opened root folder and allows you to browse and manage subdirectories entirely via keyboard.
@@ -12,12 +19,12 @@ Media Sort displays your filesystem as an interactive folder tree in the left pa
 
 The folder tree supports standard WASD-style navigation:
 
-| Key | Action |
-| :--- | :--- |
-| <Kbd>W</Kbd> | Move selection up to the previous folder |
-| <Kbd>S</Kbd> | Move selection down to the next folder |
+| Key          | Action                                                                                       |
+| :----------- | :------------------------------------------------------------------------------------------- |
+| <Kbd>W</Kbd> | Move selection up to the previous folder                                                     |
+| <Kbd>S</Kbd> | Move selection down to the next folder                                                       |
 | <Kbd>A</Kbd> | Collapse the selected folder, or navigate to the closest visible parent if already collapsed |
-| <Kbd>D</Kbd> | Expand the selected folder, or move to its first child if already expanded |
+| <Kbd>D</Kbd> | Expand the selected folder, or move to its first child if already expanded                   |
 
 When you select a folder in the tree, the media grid updates to display all files recursively contained in that folder and its subdirectories.
 
@@ -55,11 +62,11 @@ Press <Kbd>C</Kbd> to open the "Create Folder" dialog. The new folder is created
 
 The tree uses three distinct lucide icons to convey state:
 
-| Icon | Meaning |
-| :--- | :--- |
-| <Folder size={18} /> | The folder is collapsed. It may contain subfolders. |
-| <FolderOpen size={18} /> | The folder is expanded. Its children are visible. |
-| <ArrowUp size={18} /> | Parent breadcrumb. Opens the ancestor directory. |
+| Icon                     | Meaning                                             |
+| :----------------------- | :-------------------------------------------------- |
+| <Folder size={18} />     | The folder is collapsed. It may contain subfolders. |
+| <FolderOpen size={18} /> | The folder is expanded. Its children are visible.   |
+| <ArrowUp size={18} />    | Parent breadcrumb. Opens the ancestor directory.    |
 
 ## Pinned Folders
 

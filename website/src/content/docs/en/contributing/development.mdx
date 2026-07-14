@@ -10,13 +10,13 @@ This guide covers everything you need to start contributing code to Media Sort. 
 - **Rust** 1.96 or later (install via [rustup](https://rustup.rs))
 - **Clang** (required by `libmpv-sys` for FFI bindings)
 - **libmpv** development files:
-  - Linux: `libmpv-dev` (Debian/Ubuntu) or equivalent
-  - macOS: `brew install mpv`
-  - Windows: vcpkg or manual installation
+    - Linux: `libmpv-dev` (Debian/Ubuntu) or equivalent
+    - macOS: `brew install mpv`
+    - Windows: vcpkg or manual installation
 - **Platform libraries** (Linux):
-  - `libasound2-dev` (ALSA for audio)
-  - `libx11-dev`, `libwayland-dev` (window system)
-  - Vulkan drivers and loader
+    - `libasound2-dev` (ALSA for audio)
+    - `libx11-dev`, `libwayland-dev` (window system)
+    - Vulkan drivers and loader
 
 ## Building
 
@@ -57,6 +57,7 @@ cargo test -p media-sort-gui
 ```
 
 Tests live in:
+
 - `crates/media-sort-core/tests/`: integration tests
 - `crates/media-sort-backend/tests/`: integration tests (with test fixtures in `tests/fixtures/`)
 - `crates/media-sort-gui/src/`: `#[cfg(test)]` unit tests
@@ -139,7 +140,7 @@ Documentation pages live in `website/src/content/docs/` with one subdirectory pe
 
 ## Environment Variables
 
-| Variable | Purpose |
-| :--- | :--- |
-| `UI_TEST` | Switches config path to `ui_test_config.toml` in the current directory |
-| `LANG` / `LC_ALL` | Override locale detection (used during demo video rendering) |
+| Variable          | Purpose                                                                |
+| :---------------- | :--------------------------------------------------------------------- |
+| `UI_TEST`         | Switches config path to `ui_test_config.toml` in the current directory |
+| `LANG` / `LC_ALL` | Override locale detection (used during demo video rendering)           |

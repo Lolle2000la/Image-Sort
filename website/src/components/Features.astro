@@ -2,116 +2,122 @@
 import { Zap, ShieldCheck, Lock } from '@lucide/astro';
 
 interface Feature {
-  icon: string;
-  title: string;
-  description: string;
+    icon: string;
+    title: string;
+    description: string;
 }
 
 interface Props {
-  sectionTitle?: string;
-  features: Feature[];
+    sectionTitle?: string;
+    features: Feature[];
 }
 
-const { sectionTitle = "Why Media Sort?", features } = Astro.props;
+const { sectionTitle = 'Why Media Sort?', features } = Astro.props;
 
 const iconMap: Record<string, any> = {
-  zap: Zap,
-  shield: ShieldCheck,
-  lock: Lock,
+    zap: Zap,
+    shield: ShieldCheck,
+    lock: Lock,
 };
 ---
 
 <div class="features-section">
-  <h2 class="section-title">{sectionTitle}</h2>
-  <div class="features-grid">
-    {features.map((f) => {
-      const IconComponent = iconMap[f.icon.toLowerCase()];
-      return (
-        <div class="feature-card">
-          <div class="feature-icon">
-            {IconComponent ? <IconComponent size={32} class="icon-lucide" /> : f.icon}
-          </div>
-          <h3 class="feature-title">{f.title}</h3>
-          <p class="feature-desc">{f.description}</p>
-        </div>
-      );
-    })}
-  </div>
+    <h2 class="section-title">{sectionTitle}</h2>
+    <div class="features-grid">
+        {
+            features.map((f) => {
+                const IconComponent = iconMap[f.icon.toLowerCase()];
+                return (
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            {IconComponent ? (
+                                <IconComponent size={32} class="icon-lucide" />
+                            ) : (
+                                f.icon
+                            )}
+                        </div>
+                        <h3 class="feature-title">{f.title}</h3>
+                        <p class="feature-desc">{f.description}</p>
+                    </div>
+                );
+            })
+        }
+    </div>
 </div>
 
 <style>
-  .features-section {
-    padding: 4rem 0;
-    border-top: 1px solid var(--sl-color-gray-5);
-    margin-top: 4rem;
-    width: 100%;
-  }
+    .features-section {
+        padding: 4rem 0;
+        border-top: 1px solid var(--sl-color-gray-5);
+        margin-top: 4rem;
+        width: 100%;
+    }
 
-  .section-title {
-    text-align: center;
-    font-size: 2.25rem !important;
-    margin-bottom: 3rem;
-    color: var(--sl-color-gray-1);
-  }
+    .section-title {
+        text-align: center;
+        font-size: 2.25rem !important;
+        margin-bottom: 3rem;
+        color: var(--sl-color-gray-1);
+    }
 
-  .features-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 2rem;
-    width: 100%;
-    align-items: stretch;
-  }
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        width: 100%;
+        align-items: stretch;
+    }
 
-  .feature-card {
-    background: var(--sl-color-gray-7);
-    border: 1px solid var(--sl-color-gray-5);
-    border-radius: 0.75rem;
-    padding: 2rem;
-    transition: border-color 0.2s;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    margin: 0 !important;
-  }
+    .feature-card {
+        background: var(--sl-color-gray-7);
+        border: 1px solid var(--sl-color-gray-5);
+        border-radius: 0.75rem;
+        padding: 2rem;
+        transition: border-color 0.2s;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        margin: 0 !important;
+    }
 
-  .feature-card:hover {
-    border-color: var(--sl-color-gray-4);
-  }
+    .feature-card:hover {
+        border-color: var(--sl-color-gray-4);
+    }
 
-  .feature-icon {
-    margin: 0 0 1rem 0 !important;
-    padding: 0 !important;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-  }
+    .feature-icon {
+        margin: 0 0 1rem 0 !important;
+        padding: 0 !important;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+    }
 
-  .icon-lucide {
-    color: #7c3aed;
-  }
+    .icon-lucide {
+        color: #7c3aed;
+    }
 
-  .feature-title {
-    font-size: 1.25rem !important;
-    margin: 0 0 0.75rem 0 !important;
-    padding: 0 !important;
-    color: var(--sl-color-white);
-    line-height: 1.2;
-  }
+    .feature-title {
+        font-size: 1.25rem !important;
+        margin: 0 0 0.75rem 0 !important;
+        padding: 0 !important;
+        color: var(--sl-color-white);
+        line-height: 1.2;
+    }
 
-  .feature-desc {
-    font-size: 0.95rem !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    color: var(--sl-color-gray-2) !important;
-    line-height: 1.5;
-  }
+    .feature-desc {
+        font-size: 0.95rem !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: var(--sl-color-gray-2) !important;
+        line-height: 1.5;
+    }
 
-  :global([data-theme="dark"]) .section-title {
-    color: #ffffff;
-  }
+    :global([data-theme='dark']) .section-title {
+        color: #ffffff;
+    }
 
-  :global([data-theme="dark"]) .feature-card {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: var(--sl-color-gray-6);
-  }
+    :global([data-theme='dark']) .feature-card {
+        background: rgba(255, 255, 255, 0.02);
+        border-color: var(--sl-color-gray-6);
+    }
 </style>

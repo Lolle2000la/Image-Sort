@@ -1,6 +1,6 @@
 ---
 title: Architecture Overview
-description: "High-level architecture of the Media Sort codebase: workspace layout, crate dependencies, and the Elm-inspired UI pattern."
+description: 'High-level architecture of the Media Sort codebase: workspace layout, crate dependencies, and the Elm-inspired UI pattern.'
 ---
 
 Media Sort is a Rust workspace with four crates arranged in a strict dependency order. This page provides a high-level map of the codebase to help new contributors find their way around.
@@ -64,16 +64,16 @@ State mutations are pure. Side effects (file I/O, thumbnail generation, media pl
 
 ## Key Dependencies
 
-| Dependency | Purpose |
-| :--- | :--- |
-| `iced` | GUI framework (widgets, futures, wgpu rendering) |
-| `libmpv` / `libmpv-sys` | Video decoding and playback |
-| `symphonia` + `rodio` | Audio decoding and output |
-| `kamadak-exif` | EXIF metadata extraction |
-| `image` | Image loading and thumbnail generation |
-| `fluent` / `unic-langid` | Internationalization |
-| `wgpu` + `ash` | GPU rendering, Vulkan interop for video |
-| `lucide-icons` | Icon font |
+| Dependency               | Purpose                                          |
+| :----------------------- | :----------------------------------------------- |
+| `iced`                   | GUI framework (widgets, futures, wgpu rendering) |
+| `libmpv` / `libmpv-sys`  | Video decoding and playback                      |
+| `symphonia` + `rodio`    | Audio decoding and output                        |
+| `kamadak-exif`           | EXIF metadata extraction                         |
+| `image`                  | Image loading and thumbnail generation           |
+| `fluent` / `unic-langid` | Internationalization                             |
+| `wgpu` + `ash`           | GPU rendering, Vulkan interop for video          |
+| `lucide-icons`           | Icon font                                        |
 
 ## Build System
 
@@ -84,11 +84,11 @@ State mutations are pure. Side effects (file I/O, thumbnail generation, media pl
 
 ## Where to Look
 
-| Task | Start Here |
-| :--- | :--- |
-| Add a setting | `crates/media-sort-core/src/settings/` + update docs |
-| Add a keybinding | `crates/media-sort-core/src/settings/keybindings.rs` |
-| Add UI component | `crates/media-sort-gui/src/view/` or `widgets/` |
+| Task                     | Start Here                                                   |
+| :----------------------- | :----------------------------------------------------------- |
+| Add a setting            | `crates/media-sort-core/src/settings/` + update docs         |
+| Add a keybinding         | `crates/media-sort-core/src/settings/keybindings.rs`         |
+| Add UI component         | `crates/media-sort-gui/src/view/` or `widgets/`              |
 | Add media format support | `crates/media-sort-core/src/media_type.rs` + backend decoder |
-| Fix a video issue | `crates/media-sort-backend/src/media/mpv_context.rs` |
-| Add a locale string | `resources/locale/{en,de,ja}/main.ftl` |
+| Fix a video issue        | `crates/media-sort-backend/src/media/mpv_context.rs`         |
+| Add a locale string      | `resources/locale/{en,de,ja}/main.ftl`                       |

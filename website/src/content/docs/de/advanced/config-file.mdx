@@ -24,6 +24,7 @@ Beim ersten Start migriert Media Sort automatisch die Einstellungen der älteren
 Die Datei `config.toml` ist in verschiedene Abschnitte unterteilt, die unterschiedliche Einstellungsprofile repräsentieren.
 
 ### `[general]`
+
 Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das Verhalten beim Laden von Ordnern:
 
 - **`theme`** (String): Das Benutzeroberflächendesign. Beispiele: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"SolarizedLight"`, `"SolarizedDark"`, `"GruvboxLight"`, `"GruvboxDark"`, `"CatppuccinLatte"`, `"CatppuccinFrappe"`, `"CatppuccinMacchiato"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"TokyoNightStorm"`, `"TokyoNightLight"`, `"KanagawaWave"`, `"KanagawaDragon"`, `"KanagawaLotus"`, `"Moonfly"`, `"Nightfly"`, `"Oxocarbon"`, `"Ferra"`. (Standard: `"Light"`)
@@ -39,6 +40,7 @@ Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das
 ---
 
 ### `[metadata_panel]`
+
 Konfiguriert das einklappbare Seitenpanel für EXIF- und Container-Tag-Metadaten:
 
 - **`is_expanded`** (Boolean): Steuert, ob das Panel standardmäßig geöffnet ist. (Standard: `false`)
@@ -47,20 +49,22 @@ Konfiguriert das einklappbare Seitenpanel für EXIF- und Container-Tag-Metadaten
 ---
 
 ### `[pinned_folders]`
+
 Verwaltet angepinnte Verzeichnisse für Schnellzugriffs-Shortcuts:
 
 - **`paths`** (Liste von Strings): Eine Liste von Ordnerpfaden auf Ihrem System.
-  ```toml
-  [pinned_folders]
-  paths = [
-      "/home/user/Bilder/Sorted",
-      "/home/user/Bilder/Keep"
-  ]
-  ```
+    ```toml
+    [pinned_folders]
+    paths = [
+        "/home/user/Bilder/Sorted",
+        "/home/user/Bilder/Keep"
+    ]
+    ```
 
 ---
 
 ### `[window_position]`
+
 Speichert Fensterkoordinaten und -größen zur Wiederherstellung des Fensterzustands:
 
 - **`left`** (Zahl): X-Koordinate. (Standard: `100`)
@@ -77,7 +81,9 @@ Speichert Fensterkoordinaten und -größen zur Wiederherstellung des Fensterzust
 Unter der Tabelle `[keybindings]` können Sie eigene Tastenkombinationen definieren.
 
 ### Struktur
+
 Jedes Tastenkürzel wird durch eine Tabelle mit folgenden Parametern definiert:
+
 - **`key`** (String): Der Name der Haupttaste (abgeleitet vom iced-`Key`-Typ).
 - **`ctrl`** (Boolean): Erfordert das Halten der Strg-Taste (bzw. Command-Taste auf macOS).
 - **`shift`** (Boolean): Erfordert das Halten der Umschalttaste (Shift).
@@ -85,6 +91,7 @@ Jedes Tastenkürzel wird durch eine Tabelle mit folgenden Parametern definiert:
 - **`meta`** (Boolean): Erfordert das Halten der System-/Windows-Taste.
 
 #### Beispiel: Strg+Z für Rückgängig
+
 ```toml
 [keybindings.undo]
 key = "Z"

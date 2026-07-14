@@ -5,7 +5,7 @@ description: Overview of user settings, GUI options, appearance themes, and upda
 
 import DemoVideo from '../../../../components/DemoVideo.astro';
 
-Media Sort provides a built-in Settings dialog that lets you customize the appearance, behavior, language, and shortcut keys of the application. 
+Media Sort provides a built-in Settings dialog that lets you customize the appearance, behavior, language, and shortcut keys of the application.
 
 To open the settings dialog, click the **Open** button under **Settings** in the left sidebar navigation panel.
 
@@ -18,17 +18,20 @@ The **General settings** tab covers configuration options for directory behavior
 ### Appearance
 
 #### Theme
+
 Media Sort includes pre-configured visual themes to customize the interface. Selecting a theme immediately updates the colors of all UI components:
+
 - Available options: **Dark**, **Light**, **Dracula**, **Nord**, **Solarized (Light/Dark)**, **Gruvbox (Light/Dark)**, **Catppuccin (Latte/Frappe/Macchiato/Mocha)**, **Tokyo Night**, **Kanagawa**, **Moonfly**, **Nightfly**, **Oxocarbon**, **Ferra**, and more.
 
-<DemoVideo 
-  videoUrl="/demos/theme_cycling_en.mp4"
-  zoomLabel="Click to expand video"
-  caption="Cycling through visual themes in Settings"
-  fallbackText="Your browser does not support the video tag."
+<DemoVideo
+    videoUrl="/demos/theme_cycling_en.mp4"
+    zoomLabel="Click to expand video"
+    caption="Cycling through visual themes in Settings"
+    fallbackText="Your browser does not support the video tag."
 />
 
 #### Reopen last opened folder on startup
+
 - **Behavior:** When enabled, the application automatically re-opens the directory you were working on when you last closed the application. If disabled, Media Sort starts with your system Pictures directory.
 
 ---
@@ -36,6 +39,7 @@ Media Sort includes pre-configured visual themes to customize the interface. Sel
 ### Animated GIFs
 
 #### Play animated gifs
+
 - **Behavior:** Toggles whether GIF animations are active in the previewer and image grid panels. Disabling this displays a static first frame, which can optimize rendering performance on folder loads. A single toggle controls both the preview and grid behavior.
 
 ---
@@ -47,9 +51,11 @@ Update features are supported on platforms built with Velopack bundle targets (c
 :::
 
 #### Check for updates on startup
+
 - **Behavior:** Automatically checks the GitHub repository releases upon launching the application. If a new version is discovered, a dialog prompts you to apply the update.
 
 #### Install prerelease builds
+
 - **Behavior:** Includes pre-release (beta/alpha) builds in the update checker. Enable this option if you want to test and participate in verifying experimental features.
 
 ---
@@ -57,6 +63,7 @@ Update features are supported on platforms built with Velopack bundle targets (c
 ### Integration with Windows (Windows Only)
 
 #### Explorer Context Menu
+
 - **Behavior:** Integrates a context menu item into Windows Explorer. When right-clicking any folder in Windows, you can choose "Open in Media Sort" to launch the program directly in that workspace.
 
 ---
@@ -64,6 +71,7 @@ Update features are supported on platforms built with Velopack bundle targets (c
 ### Language
 
 #### Language Selection
+
 - **Behavior:** Allows you to select the interface language from all supported localizations. By default, Media Sort auto-detects your operating system's active language at launch and falls back to English if the system language is not supported.
 
 ---

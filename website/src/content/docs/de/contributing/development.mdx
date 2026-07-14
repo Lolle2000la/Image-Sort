@@ -10,13 +10,13 @@ Dieser Leitfaden behandelt alles, was Sie benötigen, um mit der Code-Beitragsen
 - **Rust** 1.96 oder neuer (Installation über [rustup](https://rustup.rs))
 - **Clang** (erforderlich für `libmpv-sys` für FFI-Bindings)
 - **libmpv**-Entwicklungsdateien:
-  - Linux: `libmpv-dev` (Debian/Ubuntu) oder äquivalent
-  - macOS: `brew install mpv`
-  - Windows: vcpkg oder manuelle Installation
+    - Linux: `libmpv-dev` (Debian/Ubuntu) oder äquivalent
+    - macOS: `brew install mpv`
+    - Windows: vcpkg oder manuelle Installation
 - **Plattformbibliotheken** (Linux):
-  - `libasound2-dev` (ALSA für Audio)
-  - `libx11-dev`, `libwayland-dev` (Fenstersystem)
-  - Vulkan-Treiber und -Loader
+    - `libasound2-dev` (ALSA für Audio)
+    - `libx11-dev`, `libwayland-dev` (Fenstersystem)
+    - Vulkan-Treiber und -Loader
 
 ## Bauen
 
@@ -57,6 +57,7 @@ cargo test -p media-sort-gui
 ```
 
 Tests befinden sich in:
+
 - `crates/media-sort-core/tests/`: Integrationstests
 - `crates/media-sort-backend/tests/`: Integrationstests (mit Test-Fixtures in `tests/fixtures/`)
 - `crates/media-sort-gui/src/`: `#[cfg(test)]`-Unit-Tests
@@ -139,7 +140,7 @@ Dokumentationsseiten befinden sich in `website/src/content/docs/` mit einem Unte
 
 ## Umgebungsvariablen
 
-| Variable | Zweck |
-| :--- | :--- |
-| `UI_TEST` | Schaltet den Konfigurationspfad auf `ui_test_config.toml` im aktuellen Verzeichnis um |
-| `LANG` / `LC_ALL` | Überschreibt die Spracheerkennung (wird beim Rendern von Demo-Videos verwendet) |
+| Variable          | Zweck                                                                                 |
+| :---------------- | :------------------------------------------------------------------------------------ |
+| `UI_TEST`         | Schaltet den Konfigurationspfad auf `ui_test_config.toml` im aktuellen Verzeichnis um |
+| `LANG` / `LC_ALL` | Überschreibt die Spracheerkennung (wird beim Rendern von Demo-Videos verwendet)       |

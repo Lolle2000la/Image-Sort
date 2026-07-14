@@ -1,6 +1,6 @@
 ---
 title: Architekturüberblick
-description: "High-Level-Architektur der Media Sort-Codebasis: Workspace-Layout, Crate-Abhängigkeiten und das Elm-inspirierte UI-Pattern."
+description: 'High-Level-Architektur der Media Sort-Codebasis: Workspace-Layout, Crate-Abhängigkeiten und das Elm-inspirierte UI-Pattern.'
 ---
 
 Media Sort ist ein Rust-Workspace mit vier Crates, die in einer strengen Abhängigkeitsreihenfolge angeordnet sind. Diese Seite bietet eine Übersichtskarte der Codebasis, um neuen Mitwirkenden die Orientierung zu erleichtern.
@@ -64,16 +64,16 @@ Zustandsänderungen sind pur. Seiteneffekte (Datei-I/O, Miniaturbildgenerierung,
 
 ## Wichtige Abhängigkeiten
 
-| Abhängigkeit | Zweck |
-| :--- | :--- |
-| `iced` | GUI-Framework (Widgets, Futures, wgpu-Rendering) |
-| `libmpv` / `libmpv-sys` | Video-Dekodierung und -Wiedergabe |
-| `symphonia` + `rodio` | Audio-Dekodierung und -Ausgabe |
-| `kamadak-exif` | EXIF-Metadatenextraktion |
-| `image` | Bildladen und Miniaturbildgenerierung |
-| `fluent` / `unic-langid` | Internationalisierung |
-| `wgpu` + `ash` | GPU-Rendering, Vulkan-Interop für Video |
-| `lucide-icons` | Icon-Schriftart |
+| Abhängigkeit             | Zweck                                            |
+| :----------------------- | :----------------------------------------------- |
+| `iced`                   | GUI-Framework (Widgets, Futures, wgpu-Rendering) |
+| `libmpv` / `libmpv-sys`  | Video-Dekodierung und -Wiedergabe                |
+| `symphonia` + `rodio`    | Audio-Dekodierung und -Ausgabe                   |
+| `kamadak-exif`           | EXIF-Metadatenextraktion                         |
+| `image`                  | Bildladen und Miniaturbildgenerierung            |
+| `fluent` / `unic-langid` | Internationalisierung                            |
+| `wgpu` + `ash`           | GPU-Rendering, Vulkan-Interop für Video          |
+| `lucide-icons`           | Icon-Schriftart                                  |
 
 ## Build-System
 
@@ -84,11 +84,11 @@ Zustandsänderungen sind pur. Seiteneffekte (Datei-I/O, Miniaturbildgenerierung,
 
 ## Wo Sie suchen sollten
 
-| Aufgabe | Hier anfangen |
-| :--- | :--- |
-| Einstellung hinzufügen | `crates/media-sort-core/src/settings/` + Dokumentation aktualisieren |
-| Tastenkürzel hinzufügen | `crates/media-sort-core/src/settings/keybindings.rs` |
-| UI-Komponente hinzufügen | `crates/media-sort-gui/src/view/` oder `widgets/` |
-| Medienformat-Unterstützung hinzufügen | `crates/media-sort-core/src/media_type.rs` + Backend-Dekoder |
-| Video-Problem beheben | `crates/media-sort-backend/src/media/mpv_context.rs` |
-| Sprach-String hinzufügen | `resources/locale/{en,de,ja}/main.ftl` |
+| Aufgabe                               | Hier anfangen                                                        |
+| :------------------------------------ | :------------------------------------------------------------------- |
+| Einstellung hinzufügen                | `crates/media-sort-core/src/settings/` + Dokumentation aktualisieren |
+| Tastenkürzel hinzufügen               | `crates/media-sort-core/src/settings/keybindings.rs`                 |
+| UI-Komponente hinzufügen              | `crates/media-sort-gui/src/view/` oder `widgets/`                    |
+| Medienformat-Unterstützung hinzufügen | `crates/media-sort-core/src/media_type.rs` + Backend-Dekoder         |
+| Video-Problem beheben                 | `crates/media-sort-backend/src/media/mpv_context.rs`                 |
+| Sprach-String hinzufügen              | `resources/locale/{en,de,ja}/main.ftl`                               |

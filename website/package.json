@@ -8,7 +8,10 @@
         "build": "astro build",
         "preview": "astro preview",
         "astro": "astro",
-        "render-demos": "cd .. && cargo run -p media-sort-gui --features demo -- --export"
+        "render-demos": "cd .. && cargo run -p media-sort-gui --features demo -- --export",
+        "lint": "eslint .",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
     },
     "dependencies": {
         "@astrojs/mdx": "^7.0.2",
@@ -23,7 +26,16 @@
         "sharp": "^0.34.5"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.7.0",
+        "eslint-plugin-astro": "^3.0.0",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^7.1.1",
         "node-addon-api": "^8.9.0",
-        "node-gyp": "^13.0.1"
+        "node-gyp": "^13.0.1",
+        "prettier": "^3.9.5",
+        "prettier-plugin-astro": "^0.14.1",
+        "typescript": "^5.5.4",
+        "typescript-eslint": "^8.64.0"
     }
 }

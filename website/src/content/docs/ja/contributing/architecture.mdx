@@ -64,16 +64,16 @@ Media SortはicedのThe Elm Architecture実装に従っています。
 
 ## 主要な依存関係
 
-| 依存関係 | 目的 |
-| :--- | :--- |
-| `iced` | GUIフレームワーク（ウィジェット、futures、wgpuレンダリング） |
-| `libmpv` / `libmpv-sys` | 動画デコードと再生 |
-| `symphonia` + `rodio` | 音声デコードと出力 |
-| `kamadak-exif` | EXIFメタデータ抽出 |
-| `image` | 画像読み込みとサムネイル生成 |
-| `fluent` / `unic-langid` | 国際化 |
-| `wgpu` + `ash` | GPUレンダリング、動画用Vulkan相互運用 |
-| `lucide-icons` | アイコンフォント |
+| 依存関係                 | 目的                                                         |
+| :----------------------- | :----------------------------------------------------------- |
+| `iced`                   | GUIフレームワーク（ウィジェット、futures、wgpuレンダリング） |
+| `libmpv` / `libmpv-sys`  | 動画デコードと再生                                           |
+| `symphonia` + `rodio`    | 音声デコードと出力                                           |
+| `kamadak-exif`           | EXIFメタデータ抽出                                           |
+| `image`                  | 画像読み込みとサムネイル生成                                 |
+| `fluent` / `unic-langid` | 国際化                                                       |
+| `wgpu` + `ash`           | GPUレンダリング、動画用Vulkan相互運用                        |
+| `lucide-icons`           | アイコンフォント                                             |
 
 ## ビルドシステム
 
@@ -84,11 +84,11 @@ Media SortはicedのThe Elm Architecture実装に従っています。
 
 ## どこを見ればよいか
 
-| 作業内容 | 出発点 |
-| :--- | :--- |
-| 設定の追加 | `crates/media-sort-core/src/settings/` + ドキュメント更新 |
-| キーバインドの追加 | `crates/media-sort-core/src/settings/keybindings.rs` |
-| UIコンポーネントの追加 | `crates/media-sort-gui/src/view/`または`widgets/` |
+| 作業内容                       | 出発点                                                              |
+| :----------------------------- | :------------------------------------------------------------------ |
+| 設定の追加                     | `crates/media-sort-core/src/settings/` + ドキュメント更新           |
+| キーバインドの追加             | `crates/media-sort-core/src/settings/keybindings.rs`                |
+| UIコンポーネントの追加         | `crates/media-sort-gui/src/view/`または`widgets/`                   |
 | メディアフォーマット対応の追加 | `crates/media-sort-core/src/media_type.rs` + バックエンドデコーダー |
-| 動画の問題修正 | `crates/media-sort-backend/src/media/mpv_context.rs` |
-| ロケール文字列の追加 | `resources/locale/{en,de,ja}/main.ftl` |
+| 動画の問題修正                 | `crates/media-sort-backend/src/media/mpv_context.rs`                |
+| ロケール文字列の追加           | `resources/locale/{en,de,ja}/main.ftl`                              |

@@ -14,11 +14,13 @@ description: Media Sortのソースコードをご自身でコンパイルおよ
 ### Linux
 
 #### Arch Linux / CachyOS
+
 ```bash
 sudo pacman -S clang mpv
 ```
 
 #### Debian / Ubuntu
+
 ```bash
 sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
 ```
@@ -26,6 +28,7 @@ sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev l
 ### macOS
 
 Xcode Command Line ToolsとHomebrew依存関係をインストールします：
+
 ```bash
 xcode-select --install
 brew install mpv
@@ -34,33 +37,36 @@ brew install mpv
 ### Windows
 
 以下の前提条件をインストールします：
+
 - [Rustツールチェーン](https://rustup.rs/) (1.96以降)
 - [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVCリンカ用)
 - [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
 - [vcpkg](https://github.com/microsoft/vcpkg) 経由のmpv開発ファイル:
-  ```powershell
-  vcpkg install mpv
-  ```
+    ```powershell
+    vcpkg install mpv
+    ```
 
 ---
 
 ## プロジェクトのコンパイル
 
 1. プロジェクトのリポジトリをクローンします：
-   ```bash
-   git clone https://github.com/Lolle2000la/Image-Sort.git
-   cd Image-Sort
-   ```
+
+    ```bash
+    git clone https://github.com/Lolle2000la/Image-Sort.git
+    cd Image-Sort
+    ```
 
 2. Cargoを使用してワークスペースをコンパイルします：
-   ```bash
-   cargo build --release
-   ```
+
+    ```bash
+    cargo build --release
+    ```
 
 3. コンパイルされたバイナリはターゲットディレクトリに生成されます：
-   ```bash
-   ./target/release/media-sort-gui
-   ```
+    ```bash
+    ./target/release/media-sort-gui
+    ```
 
 ---
 

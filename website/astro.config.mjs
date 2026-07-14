@@ -22,9 +22,7 @@ export default defineConfig({
                 ja: { label: '日本語', lang: 'ja' },
             },
             customCss: ['/src/styles/custom.css'],
-            social: [
-                { icon: 'github', label: 'GitHub', href: repoUrl }
-            ],
+            social: [{ icon: 'github', label: 'GitHub', href: repoUrl }],
             components: {
                 Header: './src/components/Header.astro',
             },
