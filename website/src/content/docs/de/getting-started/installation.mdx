@@ -1,0 +1,49 @@
+---
+title: Download & Installation
+description: Laden Sie vorkompilierte Binärdateien herunter oder installieren Sie Abhängigkeiten, um Media Sort auszuführen.
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sort ist als vorkompiliertes eigenständiges Paket für Windows, Linux und macOS verfügbar.
+
+Da Media Sort native System-APIs für die Medienwiedergabe und die Benutzeroberfläche nutzt, überprüfen Sie bitte die folgenden Systemvoraussetzungen für Ihr Betriebssystem.
+
+---
+
+## Media Sort herunterladen
+
+Wählen Sie das passende Paket für Ihr Betriebssystem und Ihre Prozessorarchitektur aus:
+
+<ReleaseDownloads />
+
+---
+
+## Systemvoraussetzungen
+
+Je nach Ihrer Plattform müssen Sie eventuell die Bibliotheken des `mpv`-Medien-Frameworks installieren:
+
+### Windows & macOS
+**Keine manuelle Einrichtung erforderlich!** Die vorkompilierten Pakete für Windows und macOS enthalten bereits alle erforderlichen `libmpv`-Bibliotheken direkt im Anwendungsbundle.
+
+### Linux
+Die Linux-AppImage-Pakete laufen dynamisch im Host-System und setzen die Installation von `libmpv` voraus. Das AppImage benötigt außerdem `libasound2` sowie X11-/Wayland-Bibliotheken, die auf Desktop-Linux-Distributionen üblicherweise bereits vorinstalliert sind.
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install libmpv2 libasound2
+```
+
+#### Fedora
+```bash
+sudo dnf install mpv-libs
+```
+
+:::note
+Wenn `libmpv` nicht installiert ist, startet Media Sort dennoch und funktioniert für Bilder und Audio. Die interne Video- und GIF-Wiedergabe wird automatisch deaktiviert. Videodateien werden jedoch weiterhin erkannt und können durchsucht werden, allerdings ohne Miniaturansichten.
+:::

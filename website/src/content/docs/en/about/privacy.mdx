@@ -1,0 +1,34 @@
+---
+title: Privacy Policy
+description: How Media Sort handles your data. Local-first, no telemetry, no analytics.
+---
+
+Media Sort is designed to work entirely on your local machine. Your files, settings, and browsing history never leave your computer.
+
+## Data Storage
+
+All application data is stored locally on your device:
+
+- **Settings:** Stored in `config.toml` in your OS configuration directory (`~/.config/media-sort/` on Linux, `~/Library/Application Support/media-sort/` on macOS, `%APPDATA%\media-sort\` on Windows).
+- **File access:** Media Sort reads media files from directories you explicitly open. File contents are read for metadata extraction, thumbnail generation, and playback. No file data is uploaded or transmitted.
+- **History:** The undo/redo history is kept only in memory while the application is running. The last-opened folder path is stored in `config.toml`. Neither is sent anywhere.
+
+## No Telemetry or Analytics
+
+Media Sort does **not** include any telemetry, analytics, crash reporting, or usage tracking. There are no third-party analytics SDKs, no event logging services, and no data collection of any kind.
+
+## Network Access
+
+Media Sort makes network requests in only one scenario:
+
+- **Update checks** (optional, enabled by default): When **Check for updates on startup** is enabled in settings, the application contacts the GitHub Releases API (`api.github.com`) to check for new versions. This request is a standard HTTPS GET to a public API endpoint. No personal information, file data, or usage statistics are included in the request.
+
+You can disable update checks in the Settings dialog at any time.
+
+## Open Source
+
+Media Sort is open source software licensed under the MIT License. The full source code is available at [github.com/Lolle2000la/Image-Sort](https://github.com/Lolle2000la/Image-Sort).
+
+## Contact
+
+For privacy-related questions, please open an issue on the [GitHub repository](https://github.com/Lolle2000la/Image-Sort/issues).

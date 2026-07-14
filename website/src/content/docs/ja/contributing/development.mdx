@@ -1,0 +1,145 @@
+---
+title: 開発ガイド
+description: Media Sortの開発環境のセットアップ、ビルド、テスト、貢献方法。
+---
+
+このガイドでは、Media Sortにコードで貢献し始めるために必要なすべてを説明します。コードベースの構成概要については、[アーキテクチャ概要](/contributing/architecture/)のページをご覧ください。
+
+## 前提条件
+
+- **Rust** 1.96以降（[rustup](https://rustup.rs)でインストール）
+- **Clang**（FFIバインディング用に`libmpv-sys`が必要）
+- **libmpv**開発ファイル:
+  - Linux: `libmpv-dev`（Debian/Ubuntu）または同等品
+  - macOS: `brew install mpv`
+  - Windows: vcpkgまたは手動インストール
+- **プラットフォームライブラリ**（Linux）:
+  - `libasound2-dev`（音声用ALSA）
+  - `libx11-dev`、`libwayland-dev`（ウィンドウシステム）
+  - Vulkanドライバとローダー
+
+## ビルド
+
+```bash
+# ワークスペース全体をビルド
+cargo build --workspace
+
+# GUIバイナリのみをビルド
+cargo build -p media-sort-gui
+
+# リリースビルド
+cargo build --workspace --release
+```
+
+## 実行
+
+```bash
+# GUIを実行（デフォルトでシステムのPicturesディレクトリを開きます）
+cargo run -p media-sort-gui
+
+# 特定のディレクトリを開く
+cargo run -p media-sort-gui -- /path/to/media
+
+# インタラクティブデモモードで実行
+cargo run -p media-sort-gui -- --demo
+```
+
+## テスト
+
+```bash
+# すべてのテストを実行
+cargo test --workspace
+
+# 特定のクレートのテストを実行
+cargo test -p media-sort-core
+cargo test -p media-sort-backend
+cargo test -p media-sort-gui
+```
+
+テストの配置場所:
+- `crates/media-sort-core/tests/`: 統合テスト
+- `crates/media-sort-backend/tests/`: 統合テスト（テストフィクスチャは`tests/fixtures/`にあります）
+- `crates/media-sort-gui/src/`: `#[cfg(test)]`ユニットテスト
+
+## コードスタイル
+
+コミット前にフォーマッタとリンターを実行してください。
+
+```bash
+# すべてのコードをフォーマット
+cargo fmt --all --
+
+# 警告をエラーとしてclippyを実行
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+プレコミットフックがこれらを自動的に強制します。clippyが失敗した場合、コミットは拒否されます。
+
+## 国際化
+
+ユーザー向け文字列はFluent（`.ftl`）ファイルにあります。
+
+```
+resources/locale/
+├── en/main.ftl
+├── de/main.ftl
+└── ja/main.ftl
+```
+
+コードに新しいユーザー向け文字列を追加する場合、**3つすべて**のロケールファイルに対応するエントリを追加する必要があります。英語ファイルが正本となります。
+
+ビルドスクリプト（`crates/media-sort-core/build.rs`）はロケールファイルの変更を自動的に検出し、ルックアップコードを再生成します。
+
+## 設定の操作
+
+設定は`crates/media-sort-core/src/settings/`で定義されています。新しい永続化設定を追加するには:
+
+1. 適切なサブ構造体（例: `GeneralSettings`）にフィールドを追加
+2. 古い設定ファイルが読み込み可能なように`#[serde(default)]`を追加
+3. 設定にUIトグルがある場合、設定ダイアログビューを更新
+4. 変更後に`state.settings.save()`を呼び出す
+5. `website/`内のドキュメントを更新（`settings.mdx`と`config-file.mdx`の両方）
+
+## 動画再生パイプライン
+
+動画再生は複数のレイヤーで構成されています。
+
+1. **起動時:** `main.rs`がmpvにサポートフォーマットを問い合わせ、`MediaRegistry`を初期化
+2. **サブスクリプション:** `VideoWorker`スレッドがmpvイベントループを実行
+3. **通信:** GUIがチャネル経由で`VideoCommand`を送信、ワーカーが`VideoEvent`で応答
+4. **レンダリング:** フレームデータがRGBAピクセルとして到着し、ゼロコピーVulkan相互運用のためのカスタムwgpuシェーダーでレンダリング
+5. **ライフサイクル:** 動画から離れると`Deactivate`がレンダリングを停止
+
+動画ワーカーの実装は`crates/media-sort-backend/src/media/mpv_context.rs`、GPUシェーダーは`crates/media-sort-gui/src/widgets/video_shader.rs`を参照してください。
+
+## デモシステム
+
+Media Sortには、ドキュメントウェブサイト用のデモ動画を生成するために使用されるヘッドレス自動化エンジンが含まれています。
+
+```bash
+# すべてのデモフローをMP4動画にレンダリング
+cd website && npm run render-demos
+```
+
+デモフロー仕様は`resources/demo_flows/`のJSONファイルです。自動化エンジン（`crates/iced-automation/`）はフルアプリケーションをヘッドレスで（ウィンドウなしで）実行し、レンダリングパイプラインを通じてフレームをキャプチャします。
+
+## ドキュメント
+
+`imagesort.org`のウェブサイトは、`website/`ディレクトリにあるAstro/Starlightプロジェクトです。
+
+```bash
+cd website
+npm ci
+npm run dev           # 開発サーバーを起動
+npm run render-demos  # デモ動画をレンダリング
+npm run build         # プロダクションビルド
+```
+
+ドキュメントページは`website/src/content/docs/`にロケールごとにサブディレクトリ（`en/`、`de/`、`ja/`）で配置されています。サイドバーは`astro.config.mjs`で設定されています。
+
+## 環境変数
+
+| 変数 | 目的 |
+| :--- | :--- |
+| `UI_TEST` | 設定パスをカレントディレクトリの`ui_test_config.toml`に切り替え |
+| `LANG` / `LC_ALL` | ロケール検出を上書き（デモ動画レンダリング時に使用） |

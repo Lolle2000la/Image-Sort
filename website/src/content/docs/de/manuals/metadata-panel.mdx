@@ -1,0 +1,94 @@
+---
+title: Metadaten-Panel
+description: Anzeige von EXIF-Daten, Audio-Tags und Container-Metadaten für Mediendateien in Media Sort.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+Das Metadaten-Panel ist eine einklappbare Seitenleiste auf der rechten Seite des Fensters, die detaillierte Informationen zur aktuell ausgewählten Mediendatei anzeigt. Es unterstützt Bilder, Audiodateien und Videos und extrahiert so viele Metadaten, wie das jeweilige Format bereitstellt.
+
+## Öffnen und Schließen
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>M</Kbd> | Metadaten-Panel ein- oder ausblenden |
+
+Sie können das Panel auch durch Ziehen an seiner linken Kante in der Größe verändern. Die Panel-Breite wird in Ihren Einstellungen gespeichert.
+
+## Metadaten-Abschnitte
+
+Das Panel ist in einklappbare Abschnitte unterteilt. Nicht alle Abschnitte erscheinen für jeden Dateityp.
+
+### Dateiinformationen
+
+Grundlegende Dateieigenschaften, die für alle Medientypen verfügbar sind:
+
+| Feld | Beschreibung |
+| :--- | :--- |
+| **Name** | Dateiname mit Erweiterung |
+| **Größe** | Dateigröße (automatisch formatiert als B, KB, MB, GB) |
+| **Geändert** | Zeitstempel der letzten Änderung |
+| **Abmessungen** | Bild-/Video-Breite × Höhe in Pixeln |
+| **Dauer** | Wiedergabedauer für Audio- und Videodateien |
+
+### Container-Metadaten
+
+Tags, die in das Datei-Containerformat eingebettet sind:
+
+| Feld | Beschreibung |
+| :--- | :--- |
+| **Title** | Medientitel |
+| **Artist** | Ausführender Künstler oder Autor |
+| **Album** | Albumname (Audio), Sammlungsname (Video) |
+| **Genre** | Inhaltsgenre |
+| **Date / Year** | Veröffentlichungs- oder Aufnahmedatum |
+| **Track** | Titelnummer (Audio) |
+| **Comment** | Eingebetteter Kommentar oder Beschreibung |
+| **Copyright** | Urheberrechtsvermerk |
+| **Language** | Sprachcode des Inhalts |
+| **Composer** | Name des Komponisten |
+| **Conductor** | Name des Dirigenten |
+| **Lyrics** | Eingebetteter Liedtext |
+| **BPM** | Beats per minute (Audio) |
+| **Label** | Plattenlabel |
+| **Disc Number** | Disc-Nummer in einem Mehrfach-Disc-Set |
+| **Total Tracks** | Gesamtanzahl der Titel auf dem Album |
+| **Description** | Medienbeschreibung |
+
+### EXIF-Daten (Bilder)
+
+Fotografische Metadaten, extrahiert aus JPEG, TIFF und anderen EXIF-fähigen Formaten:
+
+| Feld | Beschreibung |
+| :--- | :--- |
+| **Date/Time Taken** | Ursprünglicher Aufnahmezeitpunkt |
+| **Camera Maker** | Kamerahersteller (z. B. Canon, Sony) |
+| **Camera Model** | Kameramodellname |
+| **Software** | Bildbearbeitungssoftware |
+| **Exposure Time** | Verschlusszeit (z. B. 1/250) |
+| **Aperture** | Blendenzahl (z. B. f/2.8) |
+| **ISO Speed** | ISO-Empfindlichkeitswert |
+| **Focal Length** | Brennweite des Objektivs in mm |
+| **Lens** | Objektivmodellname |
+
+### GPS-Daten (Bilder)
+
+Wenn das Bild EXIF-Geolokalisierungs-Tags enthält:
+
+| Feld | Beschreibung |
+| :--- | :--- |
+| **Latitude** | Breitengrad als Dezimalzahl |
+| **Longitude** | Längengrad als Dezimalzahl |
+| **Altitude** | Höhe über dem Meeresspiegel in Metern |
+
+## Formatspezifische Unterstützung
+
+| Medientyp | Metadatenquelle | Bibliothek |
+| :--- | :--- | :--- |
+| **Bilder** | EXIF, Bildabmessungen | `kamadak-exif`, `image` |
+| **Audio (MP3/AIFF/WAV)** | ID3-Tags | `id3` |
+| **Audio (FLAC)** | Vorbis-Kommentare | `metaflac` |
+| **Audio (M4A/AAC/ALAC)** | MPEG-4-Container-Tags | `mp4ameta` |
+| **Audio (OGG/Opus/WMA)** | Container-Tags | `symphonia` |
+| **Video (MP4/M4V/MOV)** | MPEG-4-Container-Tags | `mp4ameta` |
+| **Video (MKV/WebM/andere)** | Container-Tags | `symphonia` |

@@ -1,0 +1,201 @@
+---
+title: Media Sort
+description: キーボード操作に最適化された超高速メディア整理ツール。
+template: splash
+---
+
+import { ArrowRight } from '@lucide/astro';
+import DownloadGrid from '../../../components/DownloadGrid.astro';
+import DemoVideo from '../../../components/DemoVideo.astro';
+import Features from '../../../components/Features.astro';
+
+<div class="landing-hero">
+  <div class="hero-text">
+    <h1 class="gradient-text">Media Sort</h1>
+    <p class="tagline">キーボード操作に最適化された超高速メディア整理ツール。</p>
+    
+    <DownloadGrid 
+      linuxLabel="Linux版をダウンロード"
+      linuxSub=".AppImage"
+      windowsLabel="Windows版をダウンロード"
+      windowsSub=".msi / ポータブル版"
+      macosLabel="macOS版をダウンロード"
+      macosSub=".dmg"
+    />
+    
+    <div class="secondary-actions">
+      <a href="/ja/getting-started/installation/" class="action-btn primary">はじめに <ArrowRight size={18} /></a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <DemoVideo 
+      videoUrl="/demos/sorting_workflow_ja.mp4"
+      zoomLabel="クリックして拡大"
+      caption="iced-automationでスクリプト化されたヘッドレス整理セッション"
+      fallbackText="お使いのブラウザはビデオタグに対応していません。"
+    />
+  </div>
+</div>
+
+<div class="value-section">
+  <h2 class="value-heading">思考の速さで整理する</h2>
+  <div class="value-points">
+    <div class="value-point">
+      <strong>キーボードファーストのワークフロー。</strong>すべての操作はワンキーです。マウスに触れることなく移動、コピー、名前変更、削除が可能。数分で数百のファイルを整理できます。
+    </div>
+    <div class="value-point">
+      <strong>即座の視覚的フィードバック。</strong>ナビゲーションと同じ速度でプレビューが読み込まれます。サムネイルはキャッシュされ、画像はオンデマンドでデコードされ、動画はインラインで再生されます。遅延も待機もなし。
+    </div>
+    <div class="value-point">
+      <strong>すべて取り消し可能。</strong>ミスをした？元に戻す。気が変わった？やり直す。完全なアクション履歴があるので、自由に試せます。何も決定は最終ではありません。
+    </div>
+    <div class="value-point">
+      <strong>画像、動画、音声に対応。</strong>すべてのメディアを一つのグリッドで。アプリを切り替える必要も、別々のワークフローもなし。すべてを一か所でプレビュー、整理、管理できます。
+    </div>
+  </div>
+</div>
+
+<Features 
+  sectionTitle="丁寧に作られています"
+  features={[
+    {
+      icon: "zap",
+      title: "ネイティブパフォーマンス",
+      description: "Rustで記述。libmpv、symphonia、imageクレートによるオーバーヘッドのないメディアデコード。何千ものファイルをカクつくことなくスムーズにスクロール。"
+    },
+    {
+      icon: "shield",
+      title: "堅牢なUndoシステム",
+      description: "すべての移動、コピー、名前変更、削除は可逆的なアクションです。履歴全体がメモリに保持され、即座に取り消し・やり直しが可能。各アクションの名前も明確に表示。"
+    },
+    {
+      icon: "lock",
+      title: "100%ローカル＆プライベート",
+      description: "アカウント不要、分析なし、オプションのアップデートチェック以外のネットワーク通信は一切ありません。ファイルとフォルダ構造は常にあなたのマシン上にあります。"
+    }
+  ]}
+/>
+
+<style>{`
+  .landing-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  @media (min-width: 900px) {
+    .landing-hero {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .hero-text {
+      flex: 1;
+      max-width: 50%;
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    .hero-visual {
+      flex: 1;
+      max-width: 45%;
+    }
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .gradient-text {
+    font-size: 3.5rem !important;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa 0%, #6366f1 50%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: 1.5rem;
+    color: var(--sl-color-gray-2);
+    margin-bottom: 2.5rem;
+    line-height: 1.4;
+  }
+
+  .secondary-actions {
+    margin-top: 1rem;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .action-btn.primary {
+    background: #6366f1;
+    color: white !important;
+  }
+
+  .action-btn.primary:hover {
+    background: #4f46e5;
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+
+  .value-section {
+    padding: 3rem 0 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .value-heading {
+    text-align: center;
+    font-size: 2rem !important;
+    margin-bottom: 2.5rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .value-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .value-points {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .value-point {
+    padding: 1.25rem;
+    margin: 0 !important;
+    border-left: 3px solid #6366f1;
+    background: var(--sl-color-gray-7);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  :global([data-theme="dark"]) .value-heading {
+    color: #ffffff;
+  }
+`}</style>

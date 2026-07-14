@@ -7,6 +7,12 @@ cargo build --workspace
 cargo test --workspace
 cargo fmt --all --
 cargo clippy --workspace --all-targets -- -D warnings
+
+# Documentation Website (Astro / Node.js 24 LTS)
+cd website
+npm ci
+npm run render-demos  # Renders all demo flows to website/public/demos/
+npm run build
 ```
 
 Clang is required (libmpv-sys needs `libclang`).
@@ -17,15 +23,18 @@ Hooks run `cargo fmt --all --` and `cargo clippy --fix --allow-dirty --allow-sta
 
 ## Workspace layout
 
-Three crates in `crates/` with strict dependency order:
+Four crates in `crates/` with strict dependency order:
 
 ```
 media-sort-gui       (iced 0.14, winit, wgpu — the app binary)
+  ├─ iced-automation     (generic iced app automation & video rendering)
   └─ media-sort-backend  (filesystem, media decoding, libmpv)
        └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
+
+website/             (Astro, Starlight docs template, React components)
 ```
 
-`media-sort-core` must never depend on `media-sort-backend` or `media-sort-gui`.
+`media-sort-core` must never depend on `media-sort-backend`, `iced-automation` or `media-sort-gui`.
 
 ## libmpv
 
@@ -72,6 +81,8 @@ The dev profile sets `opt-level = 3` for all dependencies (`[profile.dev.package
 Conventional commits (`feat:`, `fix:`, `chore:`). The `docs/` directory is the GitHub Pages site served at `imagesort.org` via Jekyll. It is intentionally kept even though the help pages are outdated for v3.0.
 
 `.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored and must never be committed.
+
+**CI Routing:** GitHub Actions path filtering decouples builds. Commits touching `website/` trigger the Astro production build and push to the `gh-pages` branch. Changes to application crates skip web deployment and route to the multi-platform Rust test matrices.
 
 ## Architecture pattern (iced / The Elm Architecture)
 
@@ -123,6 +134,14 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `metadata/video_meta.rs` | Video metadata extraction |
 | `platform/trash.rs` | OS-specific trash implementation |
 
+### iced-automation (generic, no system deps)
+
+| Module / Sub-crate | Purpose |
+|--------|---------|
+| `automation.rs` | Generic iced app simulation/automation engine, bounding box queries, custom HUD wrapper views, update interceptor helper |
+| `headless.rs` | Headless emulator runner, raw video screenshot loops, ffmpeg pipeline encoder |
+| `macros/` | Procedural macros (`#[message]` and `#[state(Message)]`) to generate boilerplate and traits for automation |
+
 ### media-sort-gui
 
 | Module | Purpose |
@@ -130,10 +149,19 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `app.rs` | `update()`, `view()`, `theme()`, `subscription()`, helper async tasks |
 | `main.rs` | Entry point: init mpv registry, load settings, launch iced application |
 | `message.rs` | `Message` and sub-enum definitions |
+| `demo.rs` | Consolidates both interactive demo initialization and headless video export |
 | `state.rs` | `AppState` struct, folder tree logic, media scanning, `detect_media_type()` |
 | `view/` | 10 view files: `main_layout`, `folder_tree`, `folder_panel`, `media_grid`, `media_preview`, `metadata_panel`, `control_panel`, `search_bar`, `settings_dialog`, `credits_dialog` |
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |
 | `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation) |
+
+### website (Astro + Starlight)
+
+| Directory / File | Purpose |
+| --- | --- |
+| `astro.config.mjs` | Multi-language routing configuration, Starlight options, and React integration layer |
+| `src/content/docs/` | Localized technical documentation manuals (`.md` and `.mdx` extensions) |
+| `src/components/` | Custom interactive UI layers (e.g., React keyboard maps) embedded into manuals |
 
 ## Settings
 
@@ -151,6 +179,8 @@ To add a new persisted setting:
 1. Add the field to the appropriate sub-struct in `crates/media-sort-core/src/settings/`
 2. Add `#[serde(default)]` (or a concrete default) so old configs remain loadable
 3. If the setting has a UI toggle, call `state.settings.save()` after mutation
+4. If the setting is exposed in the GUI view, update the **Application Settings** manual ([settings.mdx](website/src/content/docs/en/config/settings.mdx)) in all supported locales
+5. If the configuration schema changes (new key/default/section), update the **Configuration File** manual ([config-file.mdx](website/src/content/docs/en/advanced/config-file.mdx)) in all supported locales
 
 ## Video pipeline
 
@@ -170,10 +200,9 @@ Audio playback uses `rodio` for output and `symphonia` (all codecs) for decoding
 
 ## GIF handling
 
-GIF files are classified as `MediaType::Video`, not `MediaType::Image`. The `MediaType::Video::extensions()` list includes `"gif"`, and native image extensions do not include it. Two settings control behavior:
+GIF files are classified as `MediaType::Video`, not `MediaType::Image`. The `MediaType::Video::extensions()` list includes `"gif"`, and native image extensions do not include it. One setting controls behavior:
 
-- `animate_gifs` — whether the preview animates GIFs
-- `animate_gif_thumbnails` — whether grid thumbnails animate
+- `animate_gifs` — whether GIFs animate in both the preview and grid thumbnails
 
 At the file system level the `image` crate can decode GIF natively. The mpv path is also available if the installed mpv supports GIF demuxing.
 
@@ -256,6 +285,14 @@ When you add a new module, dependency, build step, architectural decision, or te
 The `docs/` directory is the GitHub Pages site at `imagesort.org`. As of v3.0 the help pages are outdated and intentionally kept for historical reference. If you update the user-facing UI or workflow, update the corresponding help page:
 - `docs/help.md` (English)
 - `docs/help/help.de.md` (German)
+
+### Documentation website (`website/`)
+The `website/` directory is the new Astro/Starlight documentation site deployed to `gh-pages`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
+To render all automated demo videos (headless iced simulation) to the public assets directory for deployment, run `npm run render-demos` from the `website/` directory. Output videos are saved in `website/public/demos/`.
+
+**CRITICAL REQUIREMENT:**
+- **GUI Setting Changes**: If you create, change, or remove settings from the user interface, you **must** update the Application Settings page (`website/src/content/docs/*/config/settings.mdx`) in all languages.
+- **Schema Changes**: If any configuration schema/TOML keys are added, updated, or removed, you **must** update the Configuration File page (`website/src/content/docs/*/advanced/config-file.mdx`) in all languages.
 
 ### Locale files
 When you add user-facing strings, add entries to all three locale files (`resources/locale/{en,de,ja}/main.ftl`). The build script detects changes automatically.**

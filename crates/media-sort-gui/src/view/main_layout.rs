@@ -33,12 +33,15 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ]
         .spacing(2)
         .align_y(iced::Alignment::Center);
-        let btn = iced::widget::button(btn_content).width(Length::Fill);
-        if can_move_or_copy {
-            btn.on_press(Message::Media(MediaMessage::MoveActive))
+        let inner = iced::widget::button(btn_content).width(Length::Fill);
+        let inner = if can_move_or_copy {
+            inner.on_press(Message::Media(MediaMessage::MoveActive))
         } else {
-            btn
-        }
+            inner
+        };
+        container(inner)
+            .id(iced::widget::Id::new("move_btn"))
+            .width(Length::Fill)
     };
 
     let copy_btn = {
@@ -51,11 +54,14 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         .spacing(2)
         .align_y(iced::Alignment::Center);
         let btn = iced::widget::button(btn_content).width(Length::Fill);
-        if can_move_or_copy {
+        let inner = if can_move_or_copy {
             btn.on_press(Message::Media(MediaMessage::CopyActive))
         } else {
             btn
-        }
+        };
+        container(inner)
+            .id(iced::widget::Id::new("copy_btn"))
+            .width(Length::Fill)
     };
 
     // Rename (R) button next to search bar:
@@ -81,7 +87,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
             .style(iced::widget::button::danger);
-        if let Some(index) = state.selected_index {
+        let inner = if let Some(index) = state.selected_index {
             let filtered = state.filtered_media_entries();
             if let Some(entry) = filtered.get(index) {
                 btn.on_press(Message::Media(MediaMessage::DeleteEntry(
@@ -92,7 +98,10 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
             }
         } else {
             btn
-        }
+        };
+        container(inner)
+            .id(iced::widget::Id::new("delete_btn"))
+            .width(Length::Fill)
     };
 
     // Metadata button:

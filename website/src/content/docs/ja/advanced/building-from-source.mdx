@@ -1,0 +1,69 @@
+---
+title: ソースからのビルド
+description: Media Sortのソースコードをご自身でコンパイルおよびビルドする方法。
+---
+
+ご自身でMedia Sortをコンパイルする場合は、Rustツールチェーン（バージョン **1.96** 以降）とClang（`libmpv-sys` を介したバインディング生成に必要）が必要です。Media Sortは実行時に動画再生サポートのために `libmpv` も必要とします。
+
+---
+
+## ビルドの前提条件
+
+コンパイルを行う前に、必要なコンパイラツールと開発用ライブラリをインストールしてください：
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S clang mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
+```
+
+### macOS
+
+Xcode Command Line ToolsとHomebrew依存関係をインストールします：
+```bash
+xcode-select --install
+brew install mpv
+```
+
+### Windows
+
+以下の前提条件をインストールします：
+- [Rustツールチェーン](https://rustup.rs/) (1.96以降)
+- [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (MSVCリンカ用)
+- [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
+- [vcpkg](https://github.com/microsoft/vcpkg) 経由のmpv開発ファイル:
+  ```powershell
+  vcpkg install mpv
+  ```
+
+---
+
+## プロジェクトのコンパイル
+
+1. プロジェクトのリポジトリをクローンします：
+   ```bash
+   git clone https://github.com/Lolle2000la/Image-Sort.git
+   cd Image-Sort
+   ```
+
+2. Cargoを使用してワークスペースをコンパイルします：
+   ```bash
+   cargo build --release
+   ```
+
+3. コンパイルされたバイナリはターゲットディレクトリに生成されます：
+   ```bash
+   ./target/release/media-sort-gui
+   ```
+
+---
+
+## 実行時の要件
+
+ビルド後、動画再生にはシステムに `libmpv` がインストールされている必要があります。`libmpv` がない場合でも、Media Sortは画像と音声に対しては機能しますが、アプリ内での動画とGIFの再生は無効になります。動画ファイルは引き続き検出され、ブラウズできますが、サムネイルは利用できません。

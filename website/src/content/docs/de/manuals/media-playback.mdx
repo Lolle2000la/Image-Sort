@@ -1,0 +1,73 @@
+---
+title: Medienwiedergabe & Steuerung
+description: Audio- und Videowiedergabe in Media Sort. Bedienelemente, Tastenkürzel und Systemabhängigkeiten.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort enthält integrierte Audio- und Videoplayer mit vollständigen Wiedergabesteuerungen. Audio und Video werden von unterschiedlichen Backend-Systemen verarbeitet.
+
+## Bildschirmsteuerungen
+
+Sowohl die Audio- als auch die Video-Vorschau verfügen über einen gemeinsamen Satz an Bildschirmsteuerungen:
+
+| Steuerung | Beschreibung |
+| :--- | :--- |
+| **Wiedergabe / Pause** | Wiedergabe starten oder pausieren |
+| **Stopp** | Wiedergabe beenden und Position auf den Anfang zurücksetzen |
+| **Fortschrittsbalken** | Klicken oder ziehen, um zu einer bestimmten Position zu springen |
+| **Lautstärkeregler** | Wiedergabelautstärke anpassen |
+| **Stummschaltung** | Ton ein- oder ausschalten |
+
+## Tastenkürzel für die Wiedergabe
+
+Diese Shortcuts sind aktiv, sobald eine abspielbare Mediendatei ausgewählt ist. Sie sind **fest vorgegeben** und können nicht im Einstellungsdialog neu belegt werden.
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>Space</Kbd> | Wiedergabe/Pause umschalten |
+| <Kbd>MediaPlayPause</Kbd> / <Kbd>MediaPlay</Kbd> / <Kbd>MediaPause</Kbd> | Wiedergabe/Pause umschalten (Multimediatasten) |
+| <Kbd>MediaStop</Kbd> | Wiedergabe stoppen |
+| <Kbd>MediaTrackNext</Kbd> | Nächste Mediendatei auswählen |
+| <Kbd>MediaTrackPrevious</Kbd> | Vorherige Mediendatei auswählen |
+| <Kbd>AudioVolumeUp</Kbd> | Lautstärke um 5 % erhöhen |
+| <Kbd>AudioVolumeDown</Kbd> | Lautstärke um 5 % verringern |
+| <Kbd>AudioVolumeMute</Kbd> | Stummschaltung umschalten |
+
+## Videowiedergabe
+
+Die Videowiedergabe wird von **libmpv** (via FFmpeg) angetrieben. Das Videobild wird mit einem benutzerdefinierten wgpu-Shader für eine kopierfreie, GPU-beschleunigte Anzeige gerendert.
+
+### Systemvoraussetzungen
+
+- **libmpv** muss auf Ihrem System installiert sein. Unter Linux installieren Sie das Paket `libmpv-dev` oder `libmpv1`. Unter macOS und Windows ist mpv in der Anwendung enthalten.
+- Eine **Vulkan-fähige GPU** mit aktuellen Treibern ist für die Videodarstellung erforderlich.
+- Wenn libmpv nicht gefunden wird, ist die interne Videowiedergabe deaktiviert. Videodateien werden jedoch weiterhin erkannt und können durchsucht werden. Bilder und Audio funktionieren weiterhin normal. Video-Miniaturansichten benötigen ebenfalls mpv; ohne wird stattdessen ein Platzhalter angezeigt.
+
+### Unterstützte Videoformate
+
+Eine vollständige Liste der unterstützten Videoformate finden Sie auf der Seite [Medienfunktionen](/manuals/media-capabilities/). Die Formatunterstützung hängt von der installierten Version von libmpv und den zugrunde liegenden FFmpeg-Codecs ab.
+
+### GIF-Wiedergabe
+
+GIF-Dateien werden in Media Sort als Video klassifiziert. Um zu steuern, ob GIFs in der Vorschau und im Raster animiert werden, verwenden Sie die Einstellung **Animierte GIFs abspielen** im Einstellungsdialog (auch als `animate_gifs` in `config.toml` verfügbar). Wenn deaktiviert, zeigen GIFs nur ihr erstes Einzelbild als statisches Bild an.
+
+## Audiowiedergabe
+
+Audio wird mit **Symphonia** (alle Codecs) dekodiert und über **Rodio** ausgegeben. Es sind keine externen Abhängigkeiten über das hinaus erforderlich, was mit der Anwendung ausgeliefert wird.
+
+### Unterstützte Audioformate
+
+Eine vollständige Liste der unterstützten Audioformate finden Sie auf der Seite [Medienfunktionen](/manuals/media-capabilities/).
+
+### Albumcover
+
+Audiodateien mit eingebettetem Cover-Art (üblich bei MP3, FLAC, M4A, OGG) zeigen das Coverbild im Vorschaubereich anstelle eines generischen Musiksymbols an.
+
+## Fallback: Im Systemplayer öffnen
+
+Wenn Media Sort eine Datei nicht dekodieren kann (z. B. fehlendes mpv oder ein nicht unterstütztes Bildformat), erscheint im Vorschaubereich eine Schaltfläche **„Im Systemplayer öffnen"** oder **„Extern öffnen"**. Ein Klick darauf startet die Datei mit der Standardanwendung Ihres Systems:
+
+- **Linux:** `xdg-open`
+- **macOS:** `open`
+- **Windows:** `cmd /C start`

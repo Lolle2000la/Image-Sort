@@ -186,10 +186,15 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
 
     row![
         text(label).size(12).width(Length::Fixed(240.0)),
-        button(btn_label)
-            .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
-            .style(iced::widget::button::secondary)
-            .width(Length::Fixed(120.0)),
+        container(
+            button(btn_label)
+                .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
+                .style(iced::widget::button::secondary)
+                .width(Length::Fixed(120.0)),
+        )
+        .id(iced::widget::Id::new(Box::leak(
+            format!("keybinding_edit_{}", idx).into_boxed_str()
+        ),)),
     ]
     .spacing(8)
     .align_y(Alignment::Center)
@@ -219,20 +224,26 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     // Tab bar
     let tab_bar = row![
-        button(text(state.l10n.tr("settings-tab-general")).size(13))
-            .on_press(Message::Settings(SettingsMessage::Open))
-            .style(if !state.show_keybindings {
-                iced::widget::button::primary
-            } else {
-                iced::widget::button::secondary
-            }),
-        button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
-            .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
-            .style(if state.show_keybindings {
-                iced::widget::button::primary
-            } else {
-                iced::widget::button::secondary
-            }),
+        container(
+            button(text(state.l10n.tr("settings-tab-general")).size(13))
+                .on_press(Message::Settings(SettingsMessage::Open))
+                .style(if !state.show_keybindings {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
+        )
+        .id(iced::widget::Id::new("settings_tab_general")),
+        container(
+            button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
+                .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
+                .style(if state.show_keybindings {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
+        )
+        .id(iced::widget::Id::new("settings_tab_keybindings")),
     ]
     .spacing(10);
 
@@ -267,10 +278,13 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
 
         let theme_picklist = column![
             text(state.l10n.tr("settings-theme")).size(12),
-            pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
-                Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
-            },)
-            .width(Length::Fixed(200.0)),
+            container(
+                pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
+                    Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
+                },)
+                .width(Length::Fixed(200.0))
+            )
+            .id(iced::widget::Id::new("theme_pick_list")),
         ]
         .spacing(4);
 
@@ -361,22 +375,23 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             state.l10n.tr("keybindings-management"),
             vec![
                 keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
-                keybinding_row(state, 1, state.l10n.tr("keybindings-delete")),
-                keybinding_row(state, 2, state.l10n.tr("keybindings-rename")),
+                keybinding_row(state, 1, state.l10n.tr("keybindings-copy")),
+                keybinding_row(state, 2, state.l10n.tr("keybindings-delete")),
+                keybinding_row(state, 3, state.l10n.tr("keybindings-rename")),
             ],
         );
         let images_selection = keybinding_subsection(
             state.l10n.tr("keybindings-selection"),
             vec![
-                keybinding_row(state, 3, state.l10n.tr("keybindings-select-left")),
-                keybinding_row(state, 4, state.l10n.tr("keybindings-select-right")),
+                keybinding_row(state, 4, state.l10n.tr("keybindings-select-left")),
+                keybinding_row(state, 5, state.l10n.tr("keybindings-select-right")),
             ],
         );
         let images_search = keybinding_subsection(
             state.l10n.tr("keybindings-search"),
             vec![keybinding_row(
                 state,
-                19,
+                20,
                 state.l10n.tr("keybindings-search-images"),
             )],
         );
@@ -384,7 +399,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             state.l10n.tr("keybindings-metadata"),
             vec![keybinding_row(
                 state,
-                20,
+                21,
                 state.l10n.tr("keybindings-toggle-metadata"),
             )],
         );
@@ -403,43 +418,43 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             state.l10n.tr("keybindings-management"),
             vec![keybinding_row(
                 state,
-                5,
+                6,
                 state.l10n.tr("keybindings-create-folder"),
             )],
+        );
+        let folders_selection = keybinding_subsection(
+            state.l10n.tr("keybindings-selection"),
+            vec![
+                keybinding_row(state, 7, state.l10n.tr("keybindings-select-above")),
+                keybinding_row(state, 8, state.l10n.tr("keybindings-collapse")),
+                keybinding_row(state, 9, state.l10n.tr("keybindings-select-below")),
+                keybinding_row(state, 10, state.l10n.tr("keybindings-expand")),
+            ],
         );
         let folders_open = keybinding_subsection(
             state.l10n.tr("keybindings-open"),
             vec![
-                keybinding_row(state, 12, state.l10n.tr("keybindings-open-folder")),
-                keybinding_row(state, 13, state.l10n.tr("keybindings-open-selected")),
+                keybinding_row(state, 13, state.l10n.tr("keybindings-open-folder")),
+                keybinding_row(state, 14, state.l10n.tr("keybindings-open-selected")),
             ],
         );
         let folders_pinned = keybinding_subsection(
             state.l10n.tr("keybindings-pinned"),
             vec![
-                keybinding_row(state, 14, state.l10n.tr("keybindings-pin")),
-                keybinding_row(state, 15, state.l10n.tr("keybindings-pin-selected")),
-                keybinding_row(state, 16, state.l10n.tr("keybindings-unpin")),
-                keybinding_row(state, 17, state.l10n.tr("keybindings-move-pinned-up")),
-                keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-down")),
-            ],
-        );
-        let folders_selection = keybinding_subsection(
-            state.l10n.tr("keybindings-selection"),
-            vec![
-                keybinding_row(state, 6, state.l10n.tr("keybindings-select-above")),
-                keybinding_row(state, 7, state.l10n.tr("keybindings-collapse")),
-                keybinding_row(state, 8, state.l10n.tr("keybindings-select-below")),
-                keybinding_row(state, 9, state.l10n.tr("keybindings-expand")),
+                keybinding_row(state, 15, state.l10n.tr("keybindings-pin")),
+                keybinding_row(state, 16, state.l10n.tr("keybindings-pin-selected")),
+                keybinding_row(state, 17, state.l10n.tr("keybindings-unpin")),
+                keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-up")),
+                keybinding_row(state, 19, state.l10n.tr("keybindings-move-pinned-down")),
             ],
         );
         let folders_section = keybinding_section(
             state.l10n.tr("keybindings-folders"),
             vec![
                 folders_management,
+                folders_selection,
                 folders_open,
                 folders_pinned,
-                folders_selection,
             ],
         );
 
@@ -447,8 +462,8 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         let other_history = keybinding_subsection(
             state.l10n.tr("keybindings-history"),
             vec![
-                keybinding_row(state, 10, state.l10n.tr("keybindings-undo")),
-                keybinding_row(state, 11, state.l10n.tr("keybindings-redo")),
+                keybinding_row(state, 11, state.l10n.tr("keybindings-undo")),
+                keybinding_row(state, 12, state.l10n.tr("keybindings-redo")),
             ],
         );
         let other_section =
@@ -460,9 +475,12 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         scrollable(bindings_column).height(Length::Fill).into()
     };
 
-    let close_btn = button(text(state.l10n.tr("settings-close")))
-        .on_press(Message::Settings(SettingsMessage::Close))
-        .style(iced::widget::button::primary);
+    let close_btn = container(
+        button(text(state.l10n.tr("settings-close")))
+            .on_press(Message::Settings(SettingsMessage::Close))
+            .style(iced::widget::button::primary),
+    )
+    .id(iced::widget::Id::new("close_settings_btn"));
 
     container(
         column![title, tab_bar, tab_content, close_btn,]

@@ -13,6 +13,7 @@ use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
+#[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
 pub struct AppState {
     pub history: History,
     pub settings: SettingsStore,
@@ -213,6 +214,8 @@ impl AppState {
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
             media_grid_scroll: MediaGridScrollState::default(),
+            #[cfg(feature = "demo")]
+            automation: None,
             scan_receiver: None,
             pending_select_index: None,
             folder_tree_receiver: None,
@@ -409,8 +412,13 @@ impl AppState {
     }
 
     pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
-        self.selected_folder = Some(path);
-        self.selected_folder_idx = Some(idx);
+        self.selected_folder = Some(path.clone());
+        let visible = self.collect_visible_folders();
+        if let Some(pos) = visible.iter().position(|p| p == &path) {
+            self.selected_folder_idx = Some(pos);
+        } else {
+            self.selected_folder_idx = Some(idx);
+        }
     }
 
     pub(crate) fn sync_selected_folder_idx(&mut self) {

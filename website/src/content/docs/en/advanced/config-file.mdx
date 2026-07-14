@@ -1,0 +1,111 @@
+---
+title: Configuration File
+description: Detailed manual configuration of Media Sort via config.toml, covering keybindings, window states, and general settings.
+---
+
+For automated setups or advanced needs, Media Sort's settings can be configured manually by modifying the `config.toml` file directly using a text editor.
+
+---
+
+## File Locations
+
+The configuration file resides in your operating system's standard user configuration folder:
+
+- **Linux:** `$XDG_CONFIG_HOME/media-sort/config.toml` (typically `~/.config/media-sort/config.toml`)
+- **macOS:** `~/Library/Application Support/media-sort/config.toml`
+- **Windows:** `%APPDATA%\media-sort\config.toml` (typically `C:\Users\<Username>\AppData\Roaming\media-sort\config.toml`)
+
+On first launch, Media Sort will automatically migrate settings from the legacy WPF v2.x application if a config.json file exists at `$CONFIG_DIR/Image Sort/config.json` (or `debug_config.json` in debug builds). No manual migration is needed.
+
+---
+
+## Configuration Keys
+
+The `config.toml` file is organized into several sections representing different settings profiles.
+
+### `[general]`
+Exposes appearance, locale, automatic update properties, and startup folder configurations:
+
+- **`theme`** (string): The UI theme. Examples: `"Dark"`, `"Light"`, `"Dracula"`, `"Nord"`, `"SolarizedLight"`, `"SolarizedDark"`, `"GruvboxLight"`, `"GruvboxDark"`, `"CatppuccinLatte"`, `"CatppuccinFrappe"`, `"CatppuccinMacchiato"`, `"CatppuccinMocha"`, `"TokyoNight"`, `"TokyoNightStorm"`, `"TokyoNightLight"`, `"KanagawaWave"`, `"KanagawaDragon"`, `"KanagawaLotus"`, `"Moonfly"`, `"Nightfly"`, `"Oxocarbon"`, `"Ferra"`. (Default: `"Light"`)
+- **`locale`** (string/null): Toggles language locale code manually. Set to `null` to use system auto-detection, or specify a language code like `"en"`, `"de"`, or `"ja"`. (Default: `null`)
+- **`reopen_last_opened_folder`** (boolean): Automatically re-open the last active directory. (Default: `true`)
+- **`last_opened_folder`** (string/null): Keeps track of the folder path to reopen.
+- **`animate_gifs`** (boolean): Controls whether GIF images animate in both the preview and grid thumbnails. (Default: `true`)
+- **`folder_tree_width`** (number): Width of the left navigation panel in pixels. (Default: `240`)
+- **`check_for_updates_on_startup`** (boolean, Windows/macOS bundles only): Toggles update checks at launch. (Default: `true`)
+- **`install_prerelease_builds`** (boolean, Windows/macOS bundles only): Includes alpha/beta builds in update checks. (Default: `false`)
+- **`integration_with_windows`** (boolean, Windows only): Toggles Windows Explorer context menu shortcuts. (Default: `false`)
+
+---
+
+### `[metadata_panel]`
+Configures the collapsable sidebar displaying EXIF and container metadata tags:
+
+- **`is_expanded`** (boolean): Toggles whether the panel is expanded by default. (Default: `false`)
+- **`panel_width`** (number): Width of the metadata panel in pixels. (Default: `300`)
+
+---
+
+### `[pinned_folders]`
+Manages pinned directories for quick-move shortcuts:
+
+- **`paths`** (list of strings): A list of folder paths saved on your system.
+  ```toml
+  [pinned_folders]
+  paths = [
+      "/home/user/Pictures/Sorted",
+      "/home/user/Pictures/Keep"
+  ]
+  ```
+
+---
+
+### `[window_position]`
+Stores window coordinates and sizes to restore state between launches:
+
+- **`left`** (number): X coordinate. (Default: `100`)
+- **`top`** (number): Y coordinate. (Default: `100`)
+- **`width`** (number): Window width. (Default: `1000`)
+- **`height`** (number): Window height. (Default: `600`)
+- **`maximized`** (boolean): Whether the window was maximized on last close. (Default: `false`)
+- **`screen_count`** (number): Number of screens detected, used to detect display changes. (Default: `1`)
+
+---
+
+## Custom Keybindings
+
+You can define custom key combinations under the `[keybindings]` table.
+
+### Structure
+Each shortcut is a sub-table specifying:
+- **`key`** (string): Key name string (derived from iced's Key type).
+- **`ctrl`** (boolean): Require the Control modifier key (or Command key on macOS).
+- **`shift`** (boolean): Require the Shift modifier key.
+- **`alt`** (boolean): Require the Alt/Option modifier key.
+- **`meta`** (boolean): Require the OS/Windows/System modifier key.
+
+#### Example: Remapping Undo to Ctrl+Z
+```toml
+[keybindings.undo]
+key = "Z"
+ctrl = true
+shift = false
+alt = false
+meta = false
+```
+
+### Allowed Key Names
+
+The `key` field accepts these name strings:
+
+- **Single Characters:** `"A"` through `"Z"`, `"0"` through `"9"`, and any other single character (e.g., `"."`, `"["`, `"/"`)
+- **Navigation Keys:** `"Up"`, `"Down"`, `"Left"`, `"Right"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`
+- **System Controls:** `"Enter"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Esc"`, `"Tab"`
+- **Function Keys:** `"F1"` through `"F12"`
+- **Media Keys:** `"MediaPlayPause"`, `"MediaPlay"`, `"MediaPause"`, `"MediaStop"`, `"MediaTrackNext"`, `"MediaTrackPrevious"`, `"AudioVolumeUp"`, `"AudioVolumeDown"`, `"AudioVolumeMute"`
+
+Note: Use `"Esc"` not `"Escape"` for the Escape key.
+
+### Available Keybinding Names
+
+For the complete list of configurable keybinding names and their default values, see the [Custom Keybindings](/config/keybindings/) page. |

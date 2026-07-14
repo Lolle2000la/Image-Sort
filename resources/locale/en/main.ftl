@@ -39,6 +39,7 @@ keybindings-open = Open
 keybindings-pinned = Pinned
 keybindings-history = History
 keybindings-move = Move
+keybindings-copy = Copy
 keybindings-delete = Delete
 keybindings-rename = Rename
 keybindings-select-left = Select image on the left

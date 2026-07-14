@@ -23,7 +23,7 @@ pub fn update_prompt_view(state: &AppState) -> Element<'_, Message> {
     .line_height(1.5);
 
     let update_btn = button(text(state.l10n.tr("update-confirm")).size(14)).on_press(
-        Message::Update(UpdateMessage::UserConfirmedUpdate(update.clone())),
+        Message::Update(UpdateMessage::UserConfirmedUpdate(Box::new(update.clone()))),
     );
 
     let dismiss_btn = button(text(state.l10n.tr("update-dismiss")).size(14))

@@ -1,0 +1,69 @@
+---
+title: Building from Source
+description: How to compile and build Media Sort directly from its source code.
+---
+
+If you prefer to compile Media Sort yourself, you will need the Rust toolchain (version **1.96** or later) and Clang (needed to build bindings via `libmpv-sys`). Media Sort also requires `libmpv` at runtime for video playback support.
+
+---
+
+## Build Prerequisites
+
+Before compiling, install the required compiler tools and development libraries:
+
+### Linux
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S clang mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
+```
+
+### macOS
+
+Install Xcode Command Line Tools and Homebrew dependencies:
+```bash
+xcode-select --install
+brew install mpv
+```
+
+### Windows
+
+Install the following prerequisites:
+- [Rust toolchain](https://rustup.rs/) (1.96 or later)
+- [Microsoft Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (for the MSVC linker)
+- [LLVM / Clang](https://github.com/llvm/llvm-project/releases)
+- mpv development files via [vcpkg](https://github.com/microsoft/vcpkg):
+  ```powershell
+  vcpkg install mpv
+  ```
+
+---
+
+## Compiling the Project
+
+1. Clone the project repository:
+   ```bash
+   git clone https://github.com/Lolle2000la/Image-Sort.git
+   cd Image-Sort
+   ```
+
+2. Compile the workspace using Cargo:
+   ```bash
+   cargo build --release
+   ```
+
+3. The compiled binary will be generated under the target directory:
+   ```bash
+   ./target/release/media-sort-gui
+   ```
+
+---
+
+## Runtime Requirements
+
+After building, `libmpv` must be installed on your system for video playback. Without it, Media Sort still functions for images and audio, but in-app video and GIF playback will be disabled. Video files are still detected and browsable, though thumbnails will not be available for them.

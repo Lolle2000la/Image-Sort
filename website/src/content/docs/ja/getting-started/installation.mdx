@@ -1,0 +1,49 @@
+---
+title: ダウンロードとインストール
+description: Media Sortを実行するためのプリコンパイル済みバイナリのダウンロード、または依存関係のインストール。
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sortは、Windows、Linux、およびmacOS向けのプリコンパイル済みスタンドアロンパッケージとして利用可能です。
+
+Media Sortはメディア再生やUI制御にネイティブのシステムAPIを統合しているため、お使いのプラットフォームのシステム要件を以下からご確認ください。
+
+---
+
+## Media Sort のダウンロード
+
+お使いのオペレーティングシステムとプロセッサアーキテクチャに適したパッケージを選択してください：
+
+<ReleaseDownloads />
+
+---
+
+## システムの前提条件
+
+お使いのプラットフォームによっては、`mpv` メディア再生エンジンのライブラリをインストールする必要があります：
+
+### Windows & macOS
+**手動のセットアップは不要です！** Windows版とmacOS版のプリコンパイルパッケージには、必要なすべての `libmpv` ライブラリがアプリケーション内に同梱されています。
+
+### Linux
+Linux版のAppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+
+#### Arch Linux / CachyOS
+```bash
+sudo pacman -S mpv
+```
+
+#### Debian / Ubuntu
+```bash
+sudo apt install libmpv2 libasound2
+```
+
+#### Fedora
+```bash
+sudo dnf install mpv-libs
+```
+
+:::note
+`libmpv` がインストールされていない場合でも、Media Sortは起動し、画像と音声に対しては機能します。アプリ内での動画とGIFの再生は自動的に無効になります。動画ファイルは引き続き検出され、ブラウズできますが、サムネイルは利用できません。
+:::

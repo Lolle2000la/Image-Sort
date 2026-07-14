@@ -1,0 +1,53 @@
+---
+import config from 'virtual:starlight/user-config';
+
+// Determine default locale (standard fallback is 'en')
+const defaultLocale = config.defaultLocale?.locale || 'en';
+
+// Determine all other supported locales (excluding default/root)
+const supportedLocales = Object.keys(config.locales || {}).filter(
+  (lang) => lang !== 'root' && lang !== defaultLocale
+);
+
+const localesList = Object.entries(config.locales || {}).filter(([code]) => code !== 'root');
+---
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting...</title>
+    <link rel="canonical" href={`/${defaultLocale}/`} />
+    <meta name="robots" content="noindex" />
+    <script is:inline define:vars={{ supportedLocales, defaultLocale }}>
+      (function() {
+        const supported = supportedLocales;
+        const defaultLg = defaultLocale;
+        const userLangs = navigator.languages || [navigator.language || defaultLg];
+        let target = defaultLg;
+        for (const lang of userLangs) {
+          const code = lang.split('-')[0].toLowerCase();
+          if (supported.includes(code)) {
+            target = code;
+            break;
+          }
+          if (code === defaultLg) {
+            break;
+          }
+        }
+        window.location.replace('/' + target + '/');
+      })();
+    </script>
+    <meta http-equiv="refresh" content={`2;url=/${defaultLocale}/`} />
+  </head>
+  <body>
+    <p>
+      Redirecting to
+      {localesList.map(([code, loc], idx) => (
+        <>
+          <a href={`/${code}/`}>{loc.label || code}</a>
+          {idx < localesList.length - 1 ? ', ' : ''}
+        </>
+      ))}...
+    </p>
+  </body>
+</html>

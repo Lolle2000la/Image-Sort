@@ -1,0 +1,201 @@
+---
+title: Media Sort
+description: Der blitzschnelle, tastaturgesteuerte Organizer für Medien.
+template: splash
+---
+
+import { ArrowRight } from '@lucide/astro';
+import DownloadGrid from '../../../components/DownloadGrid.astro';
+import DemoVideo from '../../../components/DemoVideo.astro';
+import Features from '../../../components/Features.astro';
+
+<div class="landing-hero">
+  <div class="hero-text">
+    <h1 class="gradient-text">Media Sort</h1>
+    <p class="tagline">Der blitzschnelle, tastaturgesteuerte Organizer für Medien.</p>
+    
+    <DownloadGrid 
+      linuxLabel="Herunterladen für Linux"
+      linuxSub=".AppImage"
+      windowsLabel="Herunterladen für Windows"
+      windowsSub=".msi / tragbar"
+      macosLabel="Herunterladen für macOS"
+      macosSub=".dmg"
+    />
+    
+    <div class="secondary-actions">
+      <a href="/de/getting-started/installation/" class="action-btn primary">Loslegen <ArrowRight size={18} /></a>
+    </div>
+  </div>
+
+  <div class="hero-visual">
+    <DemoVideo 
+      videoUrl="/demos/sorting_workflow_de.mp4"
+      zoomLabel="Zum Vergrößern klicken"
+      caption="Headless-Sortierung, geskriptet mit iced-automation"
+      fallbackText="Ihr Browser unterstützt das Video-Tag nicht."
+    />
+  </div>
+</div>
+
+<div class="value-section">
+  <h2 class="value-heading">Sortiere so schnell, wie du denkst</h2>
+  <div class="value-points">
+    <div class="value-point">
+      <strong>Tastaturgesteuerter Workflow.</strong> Jede Aktion ist nur einen Tastendruck entfernt. Verschieben, kopieren, umbenennen oder löschen — ohne die Maus zu benutzen. Sortiere Hunderte von Dateien in Minuten.
+    </div>
+    <div class="value-point">
+      <strong>Sofortiges visuelles Feedback.</strong> Vorschaubilder laden so schnell, wie du navigierst. Thumbnails werden zwischengespeichert, Bilder werden bei Bedarf dekodiert, und Videos werden inline abgespielt. Keine Verzögerung, kein Warten.
+    </div>
+    <div class="value-point">
+      <strong>Alles rückgängig machen.</strong> Ein Fehler passiert? Rückgängig. Andere Meinung? Wiederherstellen. Der vollständige Aktionsverlauf lässt dich frei experimentieren, denn nichts ist endgültig, bis du es sagst.
+    </div>
+    <div class="value-point">
+      <strong>Bilder, Videos und Audio.</strong> Ein einheitliches Raster für alle deine Medien. Kein App-Wechsel, keine getrennten Workflows. Alles an einem Ort vorschauen, sortieren und organisieren.
+    </div>
+  </div>
+</div>
+
+<Features 
+  sectionTitle="Mit Sorgfalt entwickelt"
+  features={[
+    {
+      icon: "zap",
+      title: "Native Performance",
+      description: "In Rust geschrieben. Medien-Dekodierung ohne Overhead durch libmpv, symphonia und die image-Bibliothek. Flüssiges Scrollen durch tausende Dateien ohne Ruckeln."
+    },
+    {
+      icon: "shield",
+      title: "Robustes Undo-System",
+      description: "Jedes Verschieben, Kopieren, Umbenennen und Löschen ist eine umkehrbare Aktion. Der gesamte Verlauf ist im Speicher für sofortiges Rückgängigmachen, mit klaren Namen für jede Aktion."
+    },
+    {
+      icon: "lock",
+      title: "100% Lokal & Privat",
+      description: "Keine Konten, keine Analysen, keine Netzwerkanfragen außer optionalen Update-Prüfungen. Deine Dateien und Ordnerstruktur bleiben auf deinem Rechner. Immer."
+    }
+  ]}
+/>
+
+<style>{`
+  .landing-hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3rem;
+    padding: 2rem 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  @media (min-width: 900px) {
+    .landing-hero {
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .hero-text {
+      flex: 1;
+      max-width: 50%;
+      align-items: flex-start !important;
+      text-align: left !important;
+    }
+    .hero-visual {
+      flex: 1;
+      max-width: 45%;
+    }
+  }
+
+  .hero-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .gradient-text {
+    font-size: 3.5rem !important;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a78bfa 0%, #6366f1 50%, #3b82f6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .tagline {
+    font-size: 1.5rem;
+    color: var(--sl-color-gray-2);
+    margin-bottom: 2.5rem;
+    line-height: 1.4;
+  }
+
+  .secondary-actions {
+    margin-top: 1rem;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+
+  .action-btn.primary {
+    background: #6366f1;
+    color: white !important;
+  }
+
+  .action-btn.primary:hover {
+    background: #4f46e5;
+  }
+
+  .hero-visual {
+    width: 100%;
+  }
+
+  .value-section {
+    padding: 3rem 0 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .value-heading {
+    text-align: center;
+    font-size: 2rem !important;
+    margin-bottom: 2.5rem;
+    color: var(--sl-color-gray-1);
+  }
+
+  .value-points {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+
+  @media (max-width: 700px) {
+    .value-points {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .value-point {
+    padding: 1.25rem;
+    margin: 0 !important;
+    border-left: 3px solid #6366f1;
+    background: var(--sl-color-gray-7);
+    border-radius: 0 0.5rem 0.5rem 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  :global([data-theme="dark"]) .value-heading {
+    color: #ffffff;
+  }
+`}</style>

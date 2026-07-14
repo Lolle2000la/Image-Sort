@@ -1,0 +1,44 @@
+---
+title: Pinned Folders
+description: How to use pinned folders for one-key quick-move sorting in Media Sort.
+---
+import Kbd from '../../../../components/Kbd.astro';
+
+Pinned folders are your primary sorting targets. By pinning frequently used destination folders, you can move or copy media files to them with a single keystroke, dramatically speeding up your sorting workflow.
+
+## How Pinned Folders Work
+
+Pinned folders appear in a dedicated section of the folder panel, labeled with numbers (1 through 9). Each pinned folder is assigned a numbered shortcut:
+
+- <Kbd>Alt+1</Kbd> through <Kbd>Alt+9</Kbd>: Move the currently selected media file directly to the corresponding pinned folder.
+- <Kbd>Alt+Shift+1</Kbd> through <Kbd>Alt+Shift+9</Kbd>: Copy (instead of move) the selected media file to the pinned folder.
+
+The numbers are determined by the order of pinned folders in the list.
+
+## Pinning a Folder
+
+There are two ways to pin a folder:
+
+| Method | Key | Description |
+| :--- | :--- | :--- |
+| **Pin selected folder** | <Kbd>F</Kbd> | Pins the folder currently highlighted in the folder tree |
+| **Pin any folder** | <Kbd>P</Kbd> | Opens a native folder picker dialog to choose any directory on your system |
+
+## Unpinning a Folder
+
+Press <Kbd>U</Kbd> to unpin the folder currently selected in the pinned folders list. The folder is removed from the pinned list but is not deleted from disk.
+
+## Reordering Pinned Folders
+
+Since pinned folders are numbered by their list order, reordering changes which number targets which folder:
+
+| Key | Action |
+| :--- | :--- |
+| <Kbd>Ctrl+W</Kbd> | Move the selected pinned folder up in the list |
+| <Kbd>Ctrl+S</Kbd> | Move the selected pinned folder down in the list |
+
+Reorder pinned folders to put your most-used destinations at positions 1-3 for easiest reach.
+
+## Persistence
+
+Pinned folders are saved to your `config.toml` file and persist across application restarts. They are also included in the automatic legacy config migration if you upgraded from the WPF v2.x application.

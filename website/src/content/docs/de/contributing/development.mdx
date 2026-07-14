@@ -1,0 +1,145 @@
+---
+title: Entwicklungsumgebung
+description: Einrichtung einer Entwicklungsumgebung, Build, Tests und Beiträge zu Media Sort.
+---
+
+Dieser Leitfaden behandelt alles, was Sie benötigen, um mit der Code-Beitragsentwicklung für Media Sort zu beginnen. Einen Überblick über die Organisation der Codebasis finden Sie auf der Seite [Architekturüberblick](/contributing/architecture/).
+
+## Voraussetzungen
+
+- **Rust** 1.96 oder neuer (Installation über [rustup](https://rustup.rs))
+- **Clang** (erforderlich für `libmpv-sys` für FFI-Bindings)
+- **libmpv**-Entwicklungsdateien:
+  - Linux: `libmpv-dev` (Debian/Ubuntu) oder äquivalent
+  - macOS: `brew install mpv`
+  - Windows: vcpkg oder manuelle Installation
+- **Plattformbibliotheken** (Linux):
+  - `libasound2-dev` (ALSA für Audio)
+  - `libx11-dev`, `libwayland-dev` (Fenstersystem)
+  - Vulkan-Treiber und -Loader
+
+## Bauen
+
+```bash
+# Gesamten Workspace bauen
+cargo build --workspace
+
+# Nur die GUI-Binary bauen
+cargo build -p media-sort-gui
+
+# Release-Build
+cargo build --workspace --release
+```
+
+## Ausführen
+
+```bash
+# GUI ausführen (öffnet standardmäßig Ihr systemeigenes Bilder-Verzeichnis)
+cargo run -p media-sort-gui
+
+# Ein bestimmtes Verzeichnis öffnen
+cargo run -p media-sort-gui -- /pfad/zu/medien
+
+# Mit interaktivem Demo-Modus ausführen
+cargo run -p media-sort-gui -- --demo
+```
+
+## Testen
+
+```bash
+# Alle Tests ausführen
+cargo test --workspace
+
+# Tests für eine bestimmte Crate ausführen
+cargo test -p media-sort-core
+cargo test -p media-sort-backend
+cargo test -p media-sort-gui
+```
+
+Tests befinden sich in:
+- `crates/media-sort-core/tests/`: Integrationstests
+- `crates/media-sort-backend/tests/`: Integrationstests (mit Test-Fixtures in `tests/fixtures/`)
+- `crates/media-sort-gui/src/`: `#[cfg(test)]`-Unit-Tests
+
+## Code-Stil
+
+Führen Sie vor dem Committen Formatter und Linter aus:
+
+```bash
+# Gesamten Code formatieren
+cargo fmt --all --
+
+# Clippy mit Warnungen als Fehler ausführen
+cargo clippy --workspace --all-targets -- -D warnings
+```
+
+Pre-Commit-Hooks setzen dies automatisch durch. Wenn Clippy fehlschlägt, wird der Commit abgelehnt.
+
+## Internationalisierung
+
+Benutzersichtbare Zeichenketten befinden sich in Fluent-Dateien (`.ftl`):
+
+```
+resources/locale/
+├── en/main.ftl
+├── de/main.ftl
+└── ja/main.ftl
+```
+
+Wenn Sie eine neue benutzersichtbare Zeichenkette im Code hinzufügen, müssen Sie den entsprechenden Eintrag in **allen drei** Sprachdateien hinzufügen. Die englische Datei dient als Referenz.
+
+Das Build-Skript (`crates/media-sort-core/build.rs`) erkennt automatisch Änderungen an den Sprachdateien und generiert den Lookup-Code neu.
+
+## Mit Einstellungen arbeiten
+
+Einstellungen sind in `crates/media-sort-core/src/settings/` definiert. So fügen Sie eine neue persistierte Einstellung hinzu:
+
+1. Das Feld zur entsprechenden Unterstruktur hinzufügen (z. B. `GeneralSettings`)
+2. `#[serde(default)]` hinzufügen, damit alte Konfigurationen ladbar bleiben
+3. Falls die Einstellung einen UI-Schalter hat, den Einstellungsdialog-View aktualisieren
+4. Nach der Änderung `state.settings.save()` aufrufen
+5. Die Dokumentation in `website/` aktualisieren (sowohl `settings.mdx` als auch `config-file.mdx`)
+
+## Video-Wiedergabe-Pipeline
+
+Die Videowiedergabe umfasst mehrere Schichten:
+
+1. **Start:** `main.rs` fragt mpv nach unterstützten Formaten ab und initialisiert die `MediaRegistry`
+2. **Subscription:** Ein `VideoWorker`-Thread führt eine mpv-Ereignisschleife aus
+3. **Kommunikation:** Die GUI sendet `VideoCommand` über einen Kanal; der Worker antwortet mit `VideoEvent`
+4. **Rendering:** Frame-Daten kommen als RGBA-Pixel an und werden über einen benutzerdefinierten wgpu-Shader für kopierfreies Vulkan-Interop gerendert
+5. **Lebenszyklus:** `Deactivate` stoppt das Rendering, wenn von einem Video wegnavigiert wird
+
+Siehe `crates/media-sort-backend/src/media/mpv_context.rs` für die Video-Worker-Implementierung und `crates/media-sort-gui/src/widgets/video_shader.rs` für den GPU-Shader.
+
+## Demo-System
+
+Media Sort enthält eine Headless-Automatisierungs-Engine, die verwendet wird, um Demo-Videos für die Dokumentations-Website zu generieren:
+
+```bash
+# Alle Demo-Abläufe als MP4-Videos rendern
+cd website && npm run render-demos
+```
+
+Demo-Ablaufspezifikationen sind JSON-Dateien in `resources/demo_flows/`. Die Automatisierungs-Engine (`crates/iced-automation/`) führt die vollständige Anwendung headless (ohne Fenster) aus und erfasst Frames über die Rendering-Pipeline.
+
+## Dokumentation
+
+Die Website unter `imagesort.org` ist ein Astro/Starlight-Projekt im Verzeichnis `website/`:
+
+```bash
+cd website
+npm ci
+npm run dev           # Dev-Server starten
+npm run render-demos  # Demo-Videos rendern
+npm run build         # Produktions-Build
+```
+
+Dokumentationsseiten befinden sich in `website/src/content/docs/` mit einem Unterverzeichnis pro Sprache (`en/`, `de/`, `ja/`). Die Seitenleiste wird in `astro.config.mjs` konfiguriert.
+
+## Umgebungsvariablen
+
+| Variable | Zweck |
+| :--- | :--- |
+| `UI_TEST` | Schaltet den Konfigurationspfad auf `ui_test_config.toml` im aktuellen Verzeichnis um |
+| `LANG` / `LC_ALL` | Überschreibt die Spracheerkennung (wird beim Rendern von Demo-Videos verwendet) |

@@ -1,0 +1,70 @@
+---
+title: Ordnerbaum-Navigation
+description: Navigieren, ein- und ausklappen und Verwalten des Ordnerbaums in Media Sort.
+---
+
+import { Folder, FolderOpen, ArrowUp, ChevronRight, ChevronDown, Pin } from '@lucide/astro';
+import Kbd from '../../../../components/Kbd.astro';
+
+Media Sort zeigt Ihr Dateisystem als interaktiven Ordnerbaum im linken Panel an. Dieser Baum spiegelt die Verzeichnisstruktur Ihres aktuell geöffneten Stammordners wider und ermöglicht die Navigation und Verwaltung von Unterordnern vollständig per Tastatur.
+
+## Navigation im Baum
+
+Der Ordnerbaum unterstützt die WASD-Navigation:
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>W</Kbd> | Auswahl zum vorherigen Ordner nach oben bewegen |
+| <Kbd>S</Kbd> | Auswahl zum nächsten Ordner nach unten bewegen |
+| <Kbd>A</Kbd> | Ausgewählten Ordner einklappen oder, falls bereits eingeklappt, zum nächsten sichtbaren übergeordneten Ordner springen |
+| <Kbd>D</Kbd> | Ausgewählten Ordner aufklappen oder, falls bereits aufgeklappt, in das erste Unterverzeichnis springen |
+
+Wenn Sie einen Ordner im Baum auswählen, zeigt das Medienraster alle Dateien an, die rekursiv in diesem Ordner und seinen Unterverzeichnissen enthalten sind.
+
+## Ein- und Ausklappen
+
+- **Aufklappen** (<Kbd>D</Kbd>): Öffnet einen Ordnerknoten und listet seine direkten Unterordner darunter auf, gekennzeichnet durch ein <span class="icon-inline"><ChevronDown size={14} /></span>-Symbol. Unterordner werden eingerückt, um die Verschachtelungstiefe anzuzeigen. Ist der Ordner bereits aufgeklappt, springt die Auswahl mit <Kbd>D</Kbd> in das erste Unterverzeichnis.
+- **Einklappen** (<Kbd>A</Kbd>): Versteckt die Unterordner des ausgewählten Knotens und wechselt zu einem <span class="icon-inline"><ChevronRight size={14} /></span>-Symbol. Ist der Ordner bereits eingeklappt, springt die Auswahl mit <Kbd>A</Kbd> zum nächsten sichtbaren übergeordneten Ordner.
+
+## Übergeordnete Ordner (Breadcrumbs)
+
+Der aktuelle Ordner und jeder angepinnte Ordner zeigen eine Kette von übergeordneten Verzeichnissen direkt über ihren Unterordner-Auflistungen an. Diese Breadcrumbs sind vollständige Baumknoten. Sie ersetzen das reguläre Ordnersymbol durch ein <span class="icon-inline"><ArrowUp size={14} /></span>-Symbol und lassen sich wie normale Ordner ein- und ausklappen, mit eigener Chevron-Anzeige.
+
+Beispiel: Wenn Ihr aktueller Ordner `/home/benutzer/Bilder/Urlaub/` ist, zeigt der Baum:
+
+```
+📂 Urlaub/                           (aktueller Ordner)
+  ▲ home/                            (Breadcrumb: Klick öffnet das Verzeichnis)
+    ▲ benutzer/                      (Breadcrumb)
+      ▲ Bilder/                      (Breadcrumb)
+  📁 strandbilder/                    (echter Unterordner)
+  📁 berge/                           (echter Unterordner)
+```
+
+Ein Klick auf einen Breadcrumb öffnet dieses Verzeichnis als neuen aktuellen Ordner und aktualisiert das Medienraster sowie den Baum entsprechend.
+
+## Einen Ordner öffnen
+
+Drücken Sie <Kbd>Enter</Kbd> auf einem ausgewählten Ordner, um ihn als neuen Stammordner zu öffnen. Ordnerbaum, Raster und Suche werden zurückgesetzt, um den Inhalt des neu geöffneten Verzeichnisses anzuzeigen.
+
+## Einen neuen Ordner erstellen
+
+Drücken Sie <Kbd>C</Kbd>, um den „Ordner erstellen"-Dialog zu öffnen. Der neue Ordner wird als Unterverzeichnis des aktuell ausgewählten Ordners erstellt. Geben Sie den gewünschten Namen ein und drücken Sie <Kbd>Enter</Kbd> oder klicken Sie auf **Erstellen**, um zu bestätigen.
+
+## Ordnersymbole
+
+Der Baum verwendet drei verschiedene Lucide-Icons:
+
+| Icon | Bedeutung |
+| :--- | :--- |
+| <Folder size={18} /> | Der Ordner ist eingeklappt. Er kann Unterordner enthalten. |
+| <FolderOpen size={18} /> | Der Ordner ist aufgeklappt. Seine Unterordner sind sichtbar. |
+| <ArrowUp size={18} /> | Breadcrumb. Öffnet das übergeordnete Verzeichnis. |
+
+## Angepinnte Ordner
+
+Angepinnte Ordner erscheinen als zusätzliche Knoten auf der obersten Ebene unterhalb des aktuellen Ordners, markiert mit einem <span class="icon-inline"><Pin size={14} /></span>-Pin-Symbol und nummerierten Tastenkürzeln (<Kbd>Alt+1</Kbd> bis <Kbd>Alt+9</Kbd>). Jeder angepinnte Ordner zeigt beim Aufklappen ebenfalls seine eigene Breadcrumb-Kette an. Details finden Sie auf der Seite [Angepinnte Ordner](/manuals/pinned-folders/).
+
+## Scrollen
+
+Wenn Ihre Ordnerstruktur tief oder breit ist, erscheint automatisch eine Bildlaufleiste. Die Tastaturnavigation (<Kbd>W</Kbd> / <Kbd>S</Kbd>) scrollt den Baum automatisch, um den ausgewählten Ordner sichtbar zu halten.

@@ -1,0 +1,12 @@
+/* Inline lucide icons in prose — prevent line-span breakage */
+.sl-markdown-content svg[class*="lucide"] {
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+/* Wrapper for inline icons to keep them anchored to surrounding text */
+.icon-inline {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}

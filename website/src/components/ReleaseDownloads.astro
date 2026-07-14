@@ -1,0 +1,359 @@
+---
+import { execSync } from 'child_process';
+import { Terminal, Monitor, Laptop, Copy } from '@lucide/astro';
+import { repoFull } from '../config.ts';
+
+interface Asset {
+  name: string;
+  size: number;
+  digest: string;
+  url: string;
+}
+
+let tagName = "";
+let assets: Asset[] = [];
+let errorMsg = "";
+
+try {
+  const releasesJson = execSync(`gh release list --repo ${repoFull} --json tagName,isPrerelease,isDraft`).toString();
+  const releases = JSON.parse(releasesJson);
+  const v3Releases = releases.filter((r: any) => r.tagName.startsWith('v3.') && !r.isDraft);
+  let targetRelease = v3Releases.find((r: any) => !r.isPrerelease);
+  if (!targetRelease && v3Releases.length > 0) {
+    targetRelease = v3Releases[0];
+  }
+  if (targetRelease) {
+    tagName = targetRelease.tagName;
+    const releaseDetailsJson = execSync(`gh release view ${tagName} --repo ${repoFull} --json tagName,name,assets`).toString();
+    const releaseDetails = JSON.parse(releaseDetailsJson);
+    assets = releaseDetails.assets || [];
+  } else {
+    errorMsg = "No v3.x.x releases found.";
+  }
+} catch (e: any) {
+  errorMsg = "Failed to fetch release details from GitHub CLI: " + e.message;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / 1048576).toFixed(1) + " MB";
+}
+
+function getSha256(digest: string): string {
+  if (digest.startsWith("sha256:")) {
+    return digest.substring(7);
+  }
+  return digest;
+}
+
+// Group assets by OS category
+const categories = {
+  Linux: [
+    { name: "Linux (x64) AppImage", filePattern: /linux-x64.*\.AppImage$/i, icon: "terminal" },
+    { name: "Linux (ARM64) AppImage", filePattern: /linux-arm64.*\.AppImage$/i, icon: "terminal" },
+  ],
+  macOS: [
+    { name: "macOS Setup (PKG)", filePattern: /osx-arm64-Setup\.pkg$/i, icon: "laptop" },
+    { name: "macOS Portable (ZIP)", filePattern: /osx-arm64-Portable\.zip$/i, icon: "laptop" },
+  ],
+  Windows: [
+    { name: "Windows (x64) Setup", filePattern: /win-x64-Setup\.exe$/i, icon: "monitor" },
+    { name: "Windows (x64) Portable", filePattern: /win-x64-Portable\.zip$/i, icon: "monitor" },
+    { name: "Windows (x86) Setup", filePattern: /win-x86-Setup\.exe$/i, icon: "monitor" },
+    { name: "Windows (x86) Portable", filePattern: /win-x86-Portable\.zip$/i, icon: "monitor" },
+    { name: "Windows (ARM64) Setup", filePattern: /win-arm64-Setup\.exe$/i, icon: "monitor" },
+    { name: "Windows (ARM64) Portable", filePattern: /win-arm64-Portable\.zip$/i, icon: "monitor" },
+  ]
+};
+
+// Map assets
+const platformGroups = Object.entries(categories).map(([os, specs]) => {
+  const items = specs.map(spec => {
+    const asset = assets.find(a => spec.filePattern.test(a.name));
+    return asset ? {
+      label: spec.name,
+      icon: spec.icon,
+      filename: asset.name,
+      size: formatBytes(asset.size),
+      sha256: getSha256(asset.digest),
+      url: asset.url
+    } : null;
+  }).filter(Boolean);
+  
+  return { os, items };
+}).filter(g => g.items.length > 0);
+
+const iconMap = {
+  terminal: Terminal,
+  monitor: Monitor,
+  laptop: Laptop,
+};
+---
+
+<div class="download-container">
+  {errorMsg && (
+    <div class="error-alert">
+      <strong>⚠️ Build-Time Notice:</strong> {errorMsg}
+    </div>
+  )}
+
+  {tagName && (
+    <div class="release-header">
+      <span class="version-tag">Latest Release: <strong>{tagName}</strong></span>
+    </div>
+  )}
+
+  <div class="download-sections">
+    {platformGroups.map(group => (
+      <div class="platform-group">
+        <h3>{group.os}</h3>
+        <div class="badges-grid">
+          {group.items.map(item => {
+            if (!item) return null;
+            const Icon = iconMap[item.icon as keyof typeof iconMap];
+            return (
+              <div class="download-card">
+                <a href={item.url} class="download-badge">
+                  <span class="badge-icon">
+                    {Icon && <Icon size={24} class="icon-lucide" />}
+                  </span>
+                  <div class="badge-content">
+                    <span class="badge-title">{item.label}</span>
+                    <span class="badge-meta">{item.size} • Download</span>
+                  </div>
+                </a>
+                <div class="hash-section">
+                  <span class="hash-label">SHA-256:</span>
+                  <code class="hash-value" title={item.sha256}>{item.sha256.substring(0, 16)}...</code>
+                  <button class="copy-btn" data-hash={item.sha256} title="Copy Hash">
+                    <Copy size={14} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<script>
+  (function() {
+    function setupCopyButtons() {
+      const btns = document.querySelectorAll('.copy-btn');
+      btns.forEach(btn => {
+        (btn as HTMLButtonElement).onclick = () => {
+          const hash = btn.getAttribute('data-hash');
+          if (hash) {
+            navigator.clipboard.writeText(hash).then(() => {
+              const svg = btn.innerHTML;
+              btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>`;
+              btn.classList.add('copied');
+              setTimeout(() => {
+                btn.innerHTML = svg;
+                btn.classList.remove('copied');
+              }, 2000);
+            });
+          }
+        };
+      });
+    }
+
+    setupCopyButtons();
+    document.addEventListener('astro:page-load', setupCopyButtons);
+  })();
+</script>
+
+<style>
+  .download-container {
+    margin: 2rem 0;
+    width: 100%;
+  }
+
+  .release-header {
+    margin-bottom: 2rem;
+    padding: 0.5rem 1rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 0.5rem;
+    display: inline-block;
+  }
+
+  .version-tag {
+    font-size: 1rem;
+    color: #7c3aed;
+  }
+
+  .error-alert {
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 0.5rem;
+    color: #dc2626;
+    margin-bottom: 2rem;
+  }
+
+  .download-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+  }
+
+  .platform-group h3 {
+    --heading-color: var(--sl-color-gray-1);
+    font-size: 1.5rem !important;
+    margin: 0 0 1rem 0 !important;
+    padding: 0 0 0.5rem 0 !important;
+    border-bottom: 1px solid var(--sl-color-gray-5);
+    color: var(--heading-color);
+  }
+
+  .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .download-card {
+    --card-bg: rgba(0, 0, 0, 0.02);
+    --card-icon-bg: rgba(0, 0, 0, 0.04);
+    --card-text: var(--sl-color-gray-1);
+    --card-border: var(--sl-color-gray-5);
+
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: transform 0.2s, border-color 0.2s;
+    height: 100%;
+    margin: 0 !important;
+  }
+
+  .download-card:hover {
+    border-color: #6366f1;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.1);
+  }
+
+  .download-badge {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: var(--card-text) !important;
+    margin: 0 !important;
+  }
+
+  .badge-icon {
+    background: var(--card-icon-bg);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 !important;
+  }
+
+  .icon-lucide {
+    color: #7c3aed;
+  }
+
+  .badge-content {
+    display: flex;
+    flex-direction: column;
+    margin: 0 !important;
+  }
+
+  .badge-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+    margin: 0 !important;
+  }
+
+  .badge-meta {
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-3);
+    margin: 0 !important;
+  }
+
+  .hash-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(127, 127, 127, 0.08);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--sl-color-gray-6);
+    margin: 0 !important;
+  }
+
+  .hash-label {
+    color: var(--sl-color-gray-3);
+    font-weight: 500;
+    margin: 0 !important;
+  }
+
+  .hash-value {
+    font-family: var(--__sl-font-mono);
+    color: #7c3aed;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin: 0 !important;
+  }
+
+  .copy-btn {
+    background: var(--sl-color-gray-6);
+    border: 1px solid var(--sl-color-gray-5);
+    color: var(--sl-color-gray-2);
+    padding: 0.35rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    margin: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .copy-btn:hover {
+    background: #6366f1;
+    color: white;
+  }
+
+  .copy-btn.copied {
+    background: #10b981;
+    color: white;
+  }
+
+  :global([data-theme="dark"]) .download-card {
+    --card-bg: rgba(255, 255, 255, 0.02);
+    --card-icon-bg: rgba(255, 255, 255, 0.05);
+    --card-text: #ffffff;
+    --card-border: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .platform-group h3 {
+    --heading-color: #ffffff;
+    border-bottom-color: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .hash-section {
+    background: rgba(0, 0, 0, 0.2);
+  }
+
+  :global([data-theme="dark"]) .error-alert {
+    color: #f87171;
+  }
+</style>

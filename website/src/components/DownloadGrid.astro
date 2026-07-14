@@ -1,0 +1,237 @@
+---
+import { execSync } from 'child_process';
+import { Terminal, Monitor, Laptop } from '@lucide/astro';
+import { repoUrl, repoFull } from '../config.ts';
+
+interface Props {
+  linuxLabel?: string;
+  windowsLabel?: string;
+  macosLabel?: string;
+  linuxSub?: string;
+  windowsSub?: string;
+  macosSub?: string;
+}
+
+const {
+  linuxLabel = "Download for Linux",
+  windowsLabel = "Download for Windows",
+  macosLabel = "Download for macOS",
+  linuxSub = ".AppImage",
+  windowsSub = ".exe Setup",
+  macosSub = ".pkg (Apple Silicon)",
+} = Astro.props;
+
+let linuxUrl = `${repoUrl}/releases`;
+let windowsUrl = `${repoUrl}/releases`;
+let macosUrl = `${repoUrl}/releases`;
+
+try {
+  const releasesJson = execSync(`gh release list --repo ${repoFull} --json tagName,isPrerelease,isDraft`).toString();
+  const releases = JSON.parse(releasesJson);
+  const v3Releases = releases.filter((r: any) => r.tagName.startsWith('v3.') && !r.isDraft);
+  let targetRelease = v3Releases.find((r: any) => !r.isPrerelease);
+  if (!targetRelease && v3Releases.length > 0) {
+    targetRelease = v3Releases[0];
+  }
+  if (targetRelease) {
+    const tagName = targetRelease.tagName;
+    const releaseDetailsJson = execSync(`gh release view ${tagName} --repo ${repoFull} --json assets`).toString();
+    const releaseDetails = JSON.parse(releaseDetailsJson);
+    const assets = releaseDetails.assets || [];
+
+    const linuxAsset = assets.find((a: any) => /linux-x64.*\.AppImage$/i.test(a.name));
+    if (linuxAsset) linuxUrl = linuxAsset.url;
+
+    const windowsAsset = assets.find((a: any) => /win-x64-Setup\.exe$/i.test(a.name));
+    if (windowsAsset) windowsUrl = windowsAsset.url;
+
+    const macosAsset = assets.find((a: any) => /osx-arm64-Setup\.pkg$/i.test(a.name));
+    if (macosAsset) macosUrl = macosAsset.url;
+  }
+} catch (e) {
+  // Fall back to releases page
+}
+
+const isDe = /\/de(\/|$)/.test(Astro.url.pathname);
+const isJa = /\/ja(\/|$)/.test(Astro.url.pathname);
+const recLabel = isDe ? "Empfohlen" : (isJa ? "推奨" : "Recommended");
+---
+
+<div class="download-grid">
+  <a href={linuxUrl} class="download-btn linux" id="btn-linux">
+    <span class="btn-icon"><Terminal size={24} class="icon-lucide" /></span>
+    <span class="btn-text">
+      <span class="btn-title">{linuxLabel}</span>
+      <small>{linuxSub}</small>
+    </span>
+    <span class="rec-badge">{recLabel}</span>
+  </a>
+  <a href={windowsUrl} class="download-btn windows" id="btn-windows">
+    <span class="btn-icon"><Monitor size={24} class="icon-lucide" /></span>
+    <span class="btn-text">
+      <span class="btn-title">{windowsLabel}</span>
+      <small>{windowsSub}</small>
+    </span>
+    <span class="rec-badge">{recLabel}</span>
+  </a>
+  <a href={macosUrl} class="download-btn macos" id="btn-macos">
+    <span class="btn-icon"><Laptop size={24} class="icon-lucide" /></span>
+    <span class="btn-text">
+      <span class="btn-title">{macosLabel}</span>
+      <small>{macosSub}</small>
+    </span>
+    <span class="rec-badge">{recLabel}</span>
+  </a>
+</div>
+
+<script>
+  (function() {
+    function detectOS() {
+      const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+      const platform = navigator.platform || '';
+
+      const isMac = /mac/i.test(platform) || /mac/i.test(userAgent);
+      const isWin = /win/i.test(platform) || /win/i.test(userAgent);
+      const isLinux = /linux/i.test(platform) || /linux/i.test(userAgent);
+
+      // Avoid marking as desktop if mobile/tablet
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+
+      if (isMobile) return;
+
+      if (isWin) {
+        document.getElementById('btn-windows')?.classList.add('recommended');
+      } else if (isMac) {
+        document.getElementById('btn-macos')?.classList.add('recommended');
+      } else if (isLinux) {
+        document.getElementById('btn-linux')?.classList.add('recommended');
+      }
+    }
+
+    detectOS();
+    document.addEventListener('astro:page-load', detectOS);
+  })();
+</script>
+
+<style>
+  .download-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+    max-width: 450px;
+    margin-bottom: 2rem;
+  }
+
+  .download-btn {
+    --btn-bg: rgba(0, 0, 0, 0.03);
+    --btn-text: var(--sl-color-gray-1);
+    --btn-icon-bg: rgba(0, 0, 0, 0.04);
+    --btn-icon-color: #7c3aed;
+
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.85rem 1.5rem;
+    border-radius: 0.85rem;
+    text-decoration: none;
+    font-weight: 600;
+    color: var(--btn-text) !important;
+    background: var(--btn-bg);
+    border: 1px solid var(--sl-color-gray-5);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  .download-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+    border-color: var(--sl-color-gray-4);
+  }
+
+  .download-btn .btn-icon {
+    background: var(--btn-icon-bg);
+    padding: 0.4rem;
+    border-radius: 0.5rem;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .icon-lucide {
+    color: var(--btn-icon-color);
+  }
+
+  .download-btn .btn-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .download-btn .btn-title {
+    font-size: 1.05rem;
+  }
+
+  .download-btn small {
+    font-size: 0.8rem;
+    color: var(--sl-color-gray-3);
+    font-weight: 400;
+    margin-top: 0.15rem;
+  }
+
+  .download-btn.recommended {
+    --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%);
+    --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(59, 130, 246, 0.1) 100%);
+    --btn-icon-bg: rgba(99, 102, 241, 0.08);
+    border-color: #6366f1;
+    background: var(--btn-bg);
+    box-shadow: 0 4px 25px rgba(99, 102, 241, 0.2);
+  }
+
+  .download-btn.recommended:hover {
+    border-color: #818cf8;
+    background: var(--btn-hover-bg);
+    box-shadow: 0 6px 30px rgba(99, 102, 241, 0.3);
+  }
+
+  .rec-badge {
+    display: none;
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #6366f1;
+    color: #ffffff !important;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+  }
+
+  .download-btn.recommended .rec-badge {
+    display: block;
+  }
+
+  :global([data-theme="dark"]) .download-btn {
+    --btn-bg: rgba(255, 255, 255, 0.02);
+    --btn-text: #ffffff;
+    --btn-icon-bg: rgba(255, 255, 255, 0.04);
+    border-color: var(--sl-color-gray-6);
+  }
+
+  :global([data-theme="dark"]) .download-btn.recommended {
+    --btn-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.20) 0%, rgba(59, 130, 246, 0.08) 100%);
+    --btn-hover-bg: linear-gradient(135deg, rgba(99, 102, 241, 0.30) 0%, rgba(59, 130, 246, 0.12) 100%);
+    --btn-icon-bg: rgba(99, 102, 241, 0.15);
+  }
+
+  :global([data-theme="dark"]) .download-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+</style>

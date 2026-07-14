@@ -39,6 +39,7 @@ keybindings-open = 開く
 keybindings-pinned = ピン留め
 keybindings-history = 履歴
 keybindings-move = 移動
+keybindings-copy = コピー
 keybindings-delete = 削除
 keybindings-rename = 名前変更
 keybindings-select-left = 左の画像を選択

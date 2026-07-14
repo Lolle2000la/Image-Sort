@@ -1,0 +1,58 @@
+---
+title: FAQ & Troubleshooting
+description: Frequently asked questions and common troubleshooting steps for Media Sort.
+---
+import Kbd from '../../../../components/Kbd.astro';
+
+## Common Issues
+
+### I don't see any files in the grid
+
+- Make sure you have opened a folder that contains supported media files. Press <Kbd>O</Kbd> to open the folder picker.
+- Check that your files have recognized extensions. See the [Media Capabilities](/manuals/media-capabilities/) page for the full list of supported formats.
+- If you are searching, click the clear button (×) in the search bar to reset the filter and show all files.
+
+### Videos don't play (preview is blank or shows a placeholder)
+
+Video playback requires **libmpv** to be installed on your system:
+
+- **Linux:** Install `libmpv-dev` or `libmpv1` via your package manager (e.g., `sudo apt install libmpv2` on Debian/Ubuntu).
+- **macOS and Windows:** mpv is bundled with the application. If video still doesn't work, ensure your GPU drivers are up to date and support Vulkan.
+
+You can still view images and play audio without libmpv. Use the **"Open in system player"** button to play video files in your default media player.
+
+### The application won't start or crashes on launch
+
+- **Stale configuration:** Try deleting your `config.toml` file. Its location depends on your OS; see the [Configuration File](/advanced/config-file/) page. The app will recreate it with defaults on next launch.
+- **Vulkan / GPU issues:** Media Sort uses wgpu for rendering, which requires Vulkan, Metal, or DirectX 12 support. Update your GPU drivers and ensure your graphics stack is functional.
+- **Missing system libraries:** On Linux, ensure `libx11`, `libwayland`, and `libasound2` are installed.
+
+### How do I reset all settings to defaults?
+
+Delete the `config.toml` file at the location listed on the [Configuration File](/advanced/config-file/) page. Media Sort will create a fresh configuration file on next launch.
+
+### I upgraded from the old WPF v2.x version. Where are my settings?
+
+Media Sort automatically migrates settings from the legacy WPF application on first launch. If migration didn't work, ensure the old `config.json` file exists at the expected location:
+
+- `$CONFIG_DIR/Image Sort/config.json`
+
+If the file is present but settings still weren't migrated, delete the new `config.toml` and restart the application. Migration runs only once, when no `config.toml` exists.
+
+### Can I use Media Sort entirely with the keyboard?
+
+Yes. Media Sort is designed for keyboard-first operation. Every action (navigating folders, selecting files, moving, copying, deleting, renaming, creating folders, and managing pinned folders) has a keyboard shortcut. See the [Keyboard Layout](/manuals/keyboard-layout/) page for the complete reference.
+
+### Where are my files after I delete them?
+
+Deleted files are moved to your operating system's trash (Recycle Bin on Windows, Trash on macOS/Linux). They are not permanently deleted. While Media Sort is running, you can press <Kbd>Q</Kbd> to undo a deletion and restore the file to its original location. After closing the app, you can still manually restore files from the system trash.
+
+### Does Media Sort modify my original files?
+
+Sorting actions (move, copy, rename, delete) modify file locations and names, but Media Sort **never** alters file contents. Metadata extraction is read-only. Image and video files are never re-encoded or modified.
+
+## Where to Report Issues
+
+If you encounter a bug or have a feature request, please open an issue on GitHub:
+
+[github.com/Lolle2000la/Image-Sort/issues](https://github.com/Lolle2000la/Image-Sort/issues)

@@ -1,0 +1,42 @@
+---
+title: Suche & Filter
+description: So filtern Sie Mediendateien nach Dateinamen und Erweiterung in Media Sort.
+---
+
+import Kbd from '../../../../components/Kbd.astro';
+
+Die Suchleiste ermöglicht es Ihnen, das Medienraster sofort zu filtern, um bestimmte Dateien im aktuell geöffneten Ordner zu finden. Sie befindet sich oben im Bereich des Medienrasters.
+
+## Die Suchleiste verwenden
+
+| Taste | Aktion |
+| :--- | :--- |
+| <Kbd>I</Kbd> | Sucheingabe fokussieren und mit der Eingabe beginnen |
+| <Kbd>Esc</Kbd> | Fokus der Suchleiste verlassen und Tastatursteuerung an das Medienraster zurückgeben |
+| **Klick** | Klicken Sie auf das Eingabefeld, um es zu fokussieren |
+
+Während Sie tippen, aktualisiert sich das Raster in Echtzeit und zeigt nur die Dateien an, deren Namen Ihrer Anfrage entsprechen. Die Suche unterscheidet nicht zwischen Groß- und Kleinschreibung.
+
+## Was durchsucht wird
+
+Suchanfragen werden **ausschließlich mit Dateinamen** abgeglichen (einschließlich der Dateierweiterung). Zum Beispiel:
+
+| Anfrage | Treffer |
+| :--- | :--- |
+| `urlaub` | `urlaub_2024.jpg`, `strand-urlaub.png` |
+| `.mp4` | Alle MP4-Videodateien |
+| `.flac` | Alle FLAC-Audiodateien |
+| `foto` | `foto1.jpg`, `Screenshot_foto.png` |
+
+Das Filtern nach Erweiterung (z. B. durch Eingabe von `.mp4`) ist ein schneller Weg, um alle Dateien eines bestimmten Formats zu isolieren.
+
+## Was ausgeschlossen wird
+
+Die Suche durchsucht **keine** internen Dateimetadaten (EXIF-Tags, Audio-Interpreten-/Albumnamen, Video-Container-Metadaten). Es handelt sich ausschließlich um einen Dateinamenfilter. Wenn Sie Dateien anhand von Metadaten finden müssen, verwenden Sie das [Metadaten-Panel](/manuals/metadata-panel/), um einzelne Dateien zu untersuchen.
+
+## Suchstatus
+
+- Wenn eine Suche aktiv ist, wird der Filtertext in der Suchleiste angezeigt.
+- Drücken von <Kbd>Esc</Kbd> verlässt den Fokus der Suchleiste und gibt die Tastatursteuerung an das Raster zurück.
+- Ein Klick auf die Löschen-Schaltfläche (×) oder manuelles Löschen des Textes setzt den Filter zurück und zeigt wieder alle Dateien an.
+- Ein Wechsel des aktiven Ordners löscht ebenfalls die Suchanfrage.

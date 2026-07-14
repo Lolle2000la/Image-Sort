@@ -1,6 +1,9 @@
 use iced::window;
 use iced::{Element, Subscription, Task};
 
+#[cfg(feature = "demo")]
+use iced_automation::AutomationStateTrait;
+
 use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
@@ -12,7 +15,68 @@ use crate::state::AppState;
 use crate::subscriptions::keyboard;
 use crate::view;
 
+fn poll_background_channels(state: &mut AppState) -> Task<Message> {
+    let mut bg_tasks = Vec::new();
+
+    if let Some(ref rx) = state.folder_tree_receiver
+        && let Ok(tree) = rx.try_recv()
+    {
+        state.folder_tree_receiver = None;
+        state.folder_tree = tree;
+        state.sync_selected_folder_idx();
+    }
+
+    let scan_finished = if let Some(ref rx) = state.scan_receiver {
+        for path in rx.try_iter() {
+            let media_type =
+                crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+            let file_name = path
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| path.display().to_string());
+            state.media_entries.push(MediaEntry {
+                path,
+                media_type,
+                file_name,
+            });
+        }
+        matches!(
+            rx.try_recv(),
+            Err(std::sync::mpsc::TryRecvError::Disconnected)
+        )
+    } else {
+        false
+    };
+
+    if scan_finished {
+        state.scan_receiver = None;
+        state
+            .media_entries
+            .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+        let select_idx = state.pending_select_index.take().unwrap_or(0);
+        state.thumbnail_tracker.cancel_debounce();
+        bg_tasks.push(load_visible_thumbnails(state));
+        bg_tasks.push(select_and_load_entry(state, select_idx));
+    }
+
+    Task::batch(bg_tasks)
+}
+
+#[cfg(feature = "demo")]
+impl iced_automation::AutomationContext<Message> for AppState {
+    fn poll_background(&mut self) -> Task<Message> {
+        poll_background_channels(self)
+    }
+}
+
 pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
+    #[cfg(feature = "demo")]
+    if let Some(task) =
+        iced_automation::handle_automation_message(state, &message, Message::AutomationBounds)
+    {
+        return task;
+    }
+
     match message {
         Message::Tick(_instant) => {
             if state.should_exit {
@@ -20,49 +84,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 return window::latest().and_then(window::close);
             }
 
-            if let Some(ref rx) = state.folder_tree_receiver
-                && let Ok(tree) = rx.try_recv()
-            {
-                state.folder_tree_receiver = None;
-                state.folder_tree = tree;
-                state.sync_selected_folder_idx();
-            }
+            #[cfg(feature = "demo")]
+            let automation_task =
+                iced_automation::try_tick_state(state, _instant, update, Message::AutomationBounds);
+            #[cfg(not(feature = "demo"))]
+            let automation_task = Task::none();
 
+            let bg_task = poll_background_channels(state);
             let refresh_thumbnails = state.thumbnail_tracker.tick();
-
-            let scan_finished = if let Some(ref rx) = state.scan_receiver {
-                for path in rx.try_iter() {
-                    let media_type =
-                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
-                    let file_name = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().to_string())
-                        .unwrap_or_else(|| path.display().to_string());
-                    state.media_entries.push(MediaEntry {
-                        path,
-                        media_type,
-                        file_name,
-                    });
-                }
-                matches!(
-                    rx.try_recv(),
-                    Err(std::sync::mpsc::TryRecvError::Disconnected)
-                )
-            } else {
-                false
-            };
-
-            if scan_finished {
-                state.scan_receiver = None;
-                state
-                    .media_entries
-                    .sort_by(|a, b| a.file_name.cmp(&b.file_name));
-                let select_idx = state.pending_select_index.take().unwrap_or(0);
-                state.thumbnail_tracker.cancel_debounce();
-                let thumbnails = load_visible_thumbnails(state);
-                let select = select_and_load_entry(state, select_idx);
-                return Task::batch(vec![select, thumbnails]);
-            }
 
             if let Some(ref player) = state.audio_player
                 && state.audio_playing
@@ -76,9 +105,13 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 }
             }
             if refresh_thumbnails {
-                load_visible_thumbnails(state)
+                Task::batch(vec![
+                    load_visible_thumbnails(state),
+                    bg_task,
+                    automation_task,
+                ])
             } else {
-                Task::none()
+                Task::batch(vec![bg_task, automation_task])
             }
         }
         Message::Video(VideoMessage::PlayerReady(sender)) => {
@@ -192,6 +225,8 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                 Task::none()
             }
         },
+        #[cfg(feature = "demo")]
+        Message::AutomationBounds(_) | Message::AutomationVirtualTick(_) => Task::none(),
         Message::MediaScanCompleted(Ok(entries)) => {
             state.media_entries = entries;
             let select_idx = state.pending_select_index.take().unwrap_or(0);
@@ -641,9 +676,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                             return Task::done(Message::Media(MediaMessage::Redo));
                         }
                         "open_folder" => {
-                            if let Ok(p) = std::env::current_dir() {
-                                return Task::done(Message::Folder(FolderMessage::Open(p)));
-                            }
+                            return Task::done(Message::Folder(FolderMessage::Pick));
                         }
                         "toggle_metadata_panel" => {
                             return Task::done(Message::Settings(
@@ -838,6 +871,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             iced::Event::Window(iced::window::Event::Resized(size)) => {
                 state.settings.window_position.width = size.width.round() as u32;
                 state.settings.window_position.height = size.height.round() as u32;
+                #[cfg(feature = "demo")]
+                if let Some(automation) = state.automation_mut() {
+                    automation.update_window_size(size.width, size.height);
+                }
 
                 state.thumbnail_tracker.handle_scroll();
                 Task::none()
@@ -1319,7 +1356,9 @@ fn handle_update_message(
             Task::perform(
                 async move { crate::check_for_update_async(&settings).await },
                 |result| match result {
-                    Ok(Some(info)) => Message::Update(UpdateMessage::UpdateAvailable(info)),
+                    Ok(Some(info)) => {
+                        Message::Update(UpdateMessage::UpdateAvailable(Box::new(info)))
+                    }
                     Ok(None) => Message::Update(UpdateMessage::NoUpdateFound),
                     Err(e) => Message::Update(UpdateMessage::UpdateFailed(e)),
                 },
@@ -1327,7 +1366,7 @@ fn handle_update_message(
         }
         UpdateMessage::UpdateAvailable(info) => {
             state.show_update_prompt = true;
-            state.pending_update = Some(info);
+            state.pending_update = Some(*info);
             Task::none()
         }
         UpdateMessage::NoUpdateFound => {
@@ -1338,7 +1377,7 @@ fn handle_update_message(
             state.show_update_prompt = false;
             state.pending_update = None;
             Task::perform(
-                crate::download_and_apply_async(info),
+                crate::download_and_apply_async(*info),
                 |result| match result {
                     Ok(()) => Message::Update(UpdateMessage::UpdateFailed(
                         "Update applied, restarting...".into(),
@@ -1553,7 +1592,12 @@ fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
 }
 
 pub fn view(state: &AppState) -> Element<'_, Message> {
-    view::main_layout::main_layout_view(state)
+    let base_view = view::main_layout::main_layout_view(state);
+    #[cfg(feature = "demo")]
+    if let Some(automation) = state.automation() {
+        return iced_automation::wrap_view(base_view, automation);
+    }
+    base_view
 }
 
 pub fn theme(state: &AppState) -> iced::Theme {
