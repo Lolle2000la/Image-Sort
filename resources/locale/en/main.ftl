@@ -42,6 +42,7 @@ keybindings-move = Move
 keybindings-copy = Copy
 keybindings-delete = Delete
 keybindings-rename = Rename
+keybindings-reveal-in-file-manager = Reveal in file manager
 keybindings-select-left = Select image on the left
 keybindings-select-right = Select image on the right
 keybindings-search-images = Search images... (press 'Esc' to leave)

@@ -135,6 +135,7 @@ pub enum MediaMessage {
     #[serde(skip_deserializing)]
     MetadataLoaded(Result<BTreeMap<String, BTreeMap<String, String>>, String>),
     OpenExternal(PathBuf),
+    RevealInExplorer(PathBuf),
     StopAudio,
     AudioSeek(f64),
     AudioSetVolume(f64),

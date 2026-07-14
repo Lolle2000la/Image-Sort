@@ -60,6 +60,12 @@ pub struct KeyBindings {
     pub move_pinned_down: KeyBinding,
     pub search_images: KeyBinding,
     pub toggle_metadata_panel: KeyBinding,
+    #[serde(default = "default_reveal_in_file_manager_binding")]
+    pub reveal_in_file_manager: KeyBinding,
+}
+
+fn default_reveal_in_file_manager_binding() -> KeyBinding {
+    KeyBinding::new("L")
 }
 
 impl Default for KeyBindings {
@@ -87,6 +93,7 @@ impl Default for KeyBindings {
             move_pinned_down: KeyBinding::new("S").with_ctrl(),
             search_images: KeyBinding::new("I"),
             toggle_metadata_panel: KeyBinding::new("M"),
+            reveal_in_file_manager: KeyBinding::new("L"),
         }
     }
 }

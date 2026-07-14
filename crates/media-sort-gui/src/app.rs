@@ -719,6 +719,16 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
                                 SettingsMessage::ToggleMetadataPanel,
                             ));
                         }
+                        "reveal_in_file_manager" => {
+                            if let Some(index) = state.selected_index {
+                                let filtered = state.filtered_media_entries();
+                                if let Some(entry) = filtered.get(index) {
+                                    return Task::done(Message::Media(
+                                        MediaMessage::RevealInExplorer(entry.path.clone()),
+                                    ));
+                                }
+                            }
+                        }
                         "pin" => {
                             return Task::done(Message::Folder(FolderMessage::PickPin));
                         }
@@ -1083,6 +1093,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Media(MediaMessage::ThumbnailCancelled(_path)) => Task::none(),
         Message::Media(MediaMessage::OpenExternal(path)) => {
             open_externally(&path);
+            Task::none()
+        }
+        Message::Media(MediaMessage::RevealInExplorer(path)) => {
+            reveal_in_file_manager(&path);
             Task::none()
         }
         Message::Media(MediaMessage::ImageLoaded(path, result)) => {
@@ -1575,6 +1589,64 @@ fn open_externally(path: &std::path::Path) {
     };
     if let Err(e) = res {
         tracing::error!("Failed to open file externally: {e}");
+    }
+}
+
+fn reveal_in_file_manager(path: &std::path::Path) {
+    let res = if cfg!(target_os = "windows") {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{}", path.display()))
+            .spawn()
+            .map(|_| ())
+    } else if cfg!(target_os = "macos") {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(path)
+            .spawn()
+            .map(|_| ())
+    } else {
+        let mut uri = String::from("file://");
+        for ch in path.to_string_lossy().chars() {
+            match ch {
+                ' ' => uri.push_str("%20"),
+                '%' => uri.push_str("%25"),
+                '#' => uri.push_str("%23"),
+                '?' => uri.push_str("%3f"),
+                _ => uri.push(ch),
+            }
+        }
+        let mut success = false;
+        if let Ok(output) = std::process::Command::new("dbus-send")
+            .args([
+                "--session",
+                "--dest=org.freedesktop.FileManager1",
+                "--type=method_call",
+                "/org/freedesktop/FileManager1",
+                "org.freedesktop.FileManager1.ShowItems",
+                &format!("array:string:{}", uri),
+                "string:",
+            ])
+            .output()
+        {
+            success = output.status.success();
+        }
+
+        if success {
+            Ok(())
+        } else if let Some(parent) = path.parent() {
+            std::process::Command::new("xdg-open")
+                .arg(parent)
+                .spawn()
+                .map(|_| ())
+        } else {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "No parent directory",
+            ))
+        }
+    };
+    if let Err(e) = res {
+        tracing::error!("Failed to reveal file in file manager: {e}");
     }
 }
 
@@ -2494,5 +2566,15 @@ mod tests {
             Message::Folder(FolderMessage::DragPinnedReleased),
         );
         assert_eq!(state.dragging_pinned_folder, None);
+    }
+
+    #[test]
+    fn test_reveal_in_explorer_message() {
+        let mut state = AppState::new(SettingsStore::default());
+        let test_path = PathBuf::from("nonexistent_test_file_reveal.jpg");
+        let _task = update(
+            &mut state,
+            Message::Media(MediaMessage::RevealInExplorer(test_path)),
+        );
     }
 }

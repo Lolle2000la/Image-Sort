@@ -42,6 +42,7 @@ keybindings-move = Verschieben
 keybindings-copy = Kopieren
 keybindings-delete = Löschen
 keybindings-rename = Umbenennen
+keybindings-reveal-in-file-manager = Im Dateimanager anzeigen
 keybindings-select-left = Bild links auswählen
 keybindings-select-right = Bild rechts auswählen
 keybindings-search-images = Bilder suchen... (‚Esc' zum Verlassen drücken)

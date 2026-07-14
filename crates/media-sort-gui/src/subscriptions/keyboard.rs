@@ -111,6 +111,10 @@ pub fn keybinding_list(
             "toggle_metadata_panel".into(),
             kb.toggle_metadata_panel.clone(),
         ),
+        (
+            "reveal_in_file_manager".into(),
+            kb.reveal_in_file_manager.clone(),
+        ),
     ]
 }
 
@@ -152,6 +156,7 @@ pub fn update_keybinding(
         "move_pinned_down" => kb.move_pinned_down = binding,
         "search_images" => kb.search_images = binding,
         "toggle_metadata_panel" => kb.toggle_metadata_panel = binding,
+        "reveal_in_file_manager" => kb.reveal_in_file_manager = binding,
         _ => {}
     }
 }
@@ -289,7 +294,7 @@ mod tests {
 
         let state = AppState::new(SettingsStore::default());
         let list = keybinding_list(&state);
-        assert_eq!(list.len(), 22);
+        assert_eq!(list.len(), 23);
     }
 
     #[test]
@@ -305,5 +310,6 @@ mod tests {
         assert!(names.contains(&"delete"));
         assert!(names.contains(&"rename"));
         assert!(names.contains(&"move_to_folder"));
+        assert!(names.contains(&"reveal_in_file_manager"));
     }
 }

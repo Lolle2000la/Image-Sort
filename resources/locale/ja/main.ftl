@@ -42,6 +42,7 @@ keybindings-move = 移動
 keybindings-copy = コピー
 keybindings-delete = 削除
 keybindings-rename = 名前変更
+keybindings-reveal-in-file-manager = ファイルマネージャーで表示
 keybindings-select-left = 左の画像を選択
 keybindings-select-right = 右の画像を選択
 keybindings-search-images = 画像を検索...（「Esc」で終了）

@@ -89,8 +89,19 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
         .width(Length::Fill)
         .clip(true),
         text(file_size_str).size(11),
+        button(
+            text(char::from(lucide_icons::Icon::FolderOpen))
+                .font(iced::Font::with_name("lucide"))
+                .size(12)
+        )
+        .padding([2, 4])
+        .on_press(Message::Media(MediaMessage::RevealInExplorer(
+            entry.path.clone()
+        )))
+        .style(iced::widget::button::text),
     ]
     .spacing(8)
+    .align_y(Alignment::Center)
     .padding([4, 6]);
 
     let file_info_bar =

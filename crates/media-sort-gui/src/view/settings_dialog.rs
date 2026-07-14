@@ -163,6 +163,7 @@ fn get_keybinding(
         19 => &kb.move_pinned_down,
         20 => &kb.search_images,
         21 => &kb.toggle_metadata_panel,
+        22 => &kb.reveal_in_file_manager,
         _ => panic!("Invalid keybinding index: {}", idx),
     }
 }
@@ -378,6 +379,11 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 keybinding_row(state, 1, state.l10n.tr("keybindings-copy")),
                 keybinding_row(state, 2, state.l10n.tr("keybindings-delete")),
                 keybinding_row(state, 3, state.l10n.tr("keybindings-rename")),
+                keybinding_row(
+                    state,
+                    22,
+                    state.l10n.tr("keybindings-reveal-in-file-manager"),
+                ),
             ],
         );
         let images_selection = keybinding_subsection(
