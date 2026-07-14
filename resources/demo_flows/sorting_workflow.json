@@ -17,11 +17,6 @@
       "message": { "Media": "MoveActive" }
     },
     {
-      "delay_ms": 2000,
-      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
-      "message": { "Media": { "SelectEntry": 0 } }
-    },
-    {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "Subfolder 2" } },
       "message": { "Folder": { "Selected": ["$DEMO_ROOT/Subfolder 2", 0] } }
@@ -33,7 +28,47 @@
     },
     {
       "delay_ms": 2000,
-      "target": { "type": "Widget", "value": { "id": "close_settings_btn" } },
+      "target": { "type": "Widget", "value": { "id": "media_card_1" } },
+      "message": { "Media": { "SelectEntry": 1 } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "copy_btn" } },
+      "message": { "Media": "CopyActive" }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "media_card_2" } },
+      "message": { "Media": "GoRight" }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "delete_btn" } },
+      "message": { "Media": { "DeleteEntry": "$DEMO_ROOT/mock 5.jpg" } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
       "message": "Quit"
     }
   ]

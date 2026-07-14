@@ -40,20 +40,30 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
 
     // 2. History section
     let history_header = text(state.l10n.tr("ui-history")).size(15);
-    let undo_btn = if state.history.can_undo() {
-        button(text(state.l10n.tr("ui-undo")).size(12))
-            .on_press(Message::Media(MediaMessage::Undo))
+    let undo_btn = {
+        let btn = if state.history.can_undo() {
+            button(text(state.l10n.tr("ui-undo")).size(12))
+                .on_press(Message::Media(MediaMessage::Undo))
+                .width(Length::Fill)
+        } else {
+            button(text(state.l10n.tr("ui-undo")).size(12)).width(Length::Fill)
+        };
+        container(btn)
+            .id(iced::widget::Id::new("undo_btn"))
             .width(Length::Fill)
-    } else {
-        button(text(state.l10n.tr("ui-undo")).size(12)).width(Length::Fill)
     };
 
-    let redo_btn = if state.history.can_redo() {
-        button(text(state.l10n.tr("ui-redo")).size(12))
-            .on_press(Message::Media(MediaMessage::Redo))
+    let redo_btn = {
+        let btn = if state.history.can_redo() {
+            button(text(state.l10n.tr("ui-redo")).size(12))
+                .on_press(Message::Media(MediaMessage::Redo))
+                .width(Length::Fill)
+        } else {
+            button(text(state.l10n.tr("ui-redo")).size(12)).width(Length::Fill)
+        };
+        container(btn)
+            .id(iced::widget::Id::new("redo_btn"))
             .width(Length::Fill)
-    } else {
-        button(text(state.l10n.tr("ui-redo")).size(12)).width(Length::Fill)
     };
 
     let history_box =
