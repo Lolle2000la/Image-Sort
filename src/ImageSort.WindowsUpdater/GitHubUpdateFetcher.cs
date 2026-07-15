@@ -42,8 +42,10 @@ public class GitHubUpdateFetcher
                     var prereleaseCondition = allowPrerelease || !release.Prerelease;
 
                     var firstIndexOfV = release.TagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
+                    var versionString = release.TagName.Substring(firstIndexOfV + 1);
 
-                    var releaseVersion = SemVersion.Parse(release.TagName.Substring(firstIndexOfV + 1), SemVersionStyles.Any);
+                    if (!SemVersion.TryParse(versionString, SemVersionStyles.Any, out var releaseVersion))
+                        return false;
 
                     var isNewVersion = version.ComparePrecedenceTo(releaseVersion) < 0;
 
