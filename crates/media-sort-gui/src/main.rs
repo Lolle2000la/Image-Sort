@@ -66,13 +66,16 @@ pub async fn check_for_update_async(
 }
 
 #[cfg(feature = "velopack")]
-pub async fn download_and_apply_async(info: velopack::UpdateInfo) -> Result<(), String> {
+pub async fn download_and_apply_async(
+    info: velopack::UpdateInfo,
+    allow_prerelease: bool,
+) -> Result<(), String> {
     let repo_url = fetch_canonical_repo_url()
         .await
         .map_err(|e| e.to_string())?;
 
     tokio::task::spawn_blocking(move || {
-        let source = velopack::sources::GithubSource::new(&repo_url, None, false);
+        let source = velopack::sources::GithubSource::new(&repo_url, None, allow_prerelease);
         let um = velopack::UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
         um.download_updates(&info, None)
             .map_err(|e| e.to_string())?;

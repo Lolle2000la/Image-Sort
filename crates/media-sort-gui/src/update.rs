@@ -237,8 +237,10 @@ fn handle_update_message(
         UpdateMessage::UserConfirmedUpdate(info) => {
             state.show_update_prompt = false;
             state.pending_update = None;
+            let allow_prerelease = state.settings.general.install_prerelease_builds
+                || env!("CARGO_PKG_VERSION").contains('-');
             Task::perform(
-                crate::download_and_apply_async(*info),
+                crate::download_and_apply_async(*info, allow_prerelease),
                 |result| match result {
                     Ok(()) => Message::Update(UpdateMessage::UpdateFailed(
                         "Update applied, restarting...".into(),
