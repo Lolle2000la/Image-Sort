@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -20,7 +21,7 @@ public class GitHubUpdateFetcher
         this.client = client;
     }
 
-    public async Task<(bool, Release)> TryGetLatestReleaseAsync(bool allowPrerelease = false)
+    public async Task<(bool updateFound, Release release, bool hasStableV3)> TryGetLatestReleaseAsync(bool allowPrerelease = false)
     {
         var assembly = Assembly.GetAssembly(typeof(GitHubUpdateFetcher));
         var gitVersionInformationType = assembly.GetType("GitVersionInformation");
@@ -28,7 +29,7 @@ public class GitHubUpdateFetcher
             (string) gitVersionInformationType?.GetFields().First(f => f.Name == "SemVer").GetValue(null);
         var version = SemVersion.Parse(versionTag, SemVersionStyles.Any);
 
-        Release latestFitting;
+        Release latestFitting = null;
 
         try
         {
@@ -49,28 +50,16 @@ public class GitHubUpdateFetcher
                     return prereleaseCondition && isNewVersion;
                 })
                 .FirstOrDefault();
-        }
-        catch
-        {
-            latestFitting = null;
-        }
 
-        return (latestFitting != null, latestFitting);
-    }
-
-    public async Task<bool> HasStableV3ReleaseAsync()
-    {
-        try
-        {
-            var releases = await client.Repository.Release.GetAll(RepoOwner, RepoName);
-
-            return releases
+            var hasStableV3 = releases
                 .Where(release => IsV3Release(release.TagName))
                 .Any(release => !release.Prerelease);
+
+            return (latestFitting != null, latestFitting, hasStableV3);
         }
         catch
         {
-            return false;
+            return (false, null, false);
         }
     }
 
@@ -118,7 +107,8 @@ public class GitHubUpdateFetcher
 
         try
         {
-            return await httpClient.GetStreamAsync(asset.BrowserDownloadUrl);
+            var responseBytes = await httpClient.GetByteArrayAsync(asset.BrowserDownloadUrl);
+            return new MemoryStream(responseBytes);
         }
         catch (HttpRequestException)
         {

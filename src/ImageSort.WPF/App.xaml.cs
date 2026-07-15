@@ -157,7 +157,7 @@ public partial class App : System.Windows.Application
         {
             var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcher = new GitHubUpdateFetcher(ghubClient);
-            (var success, var release) = 
+            (var success, var release, var hasStableV3Release) = 
                 await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
 
             if (success)
@@ -185,7 +185,6 @@ public partial class App : System.Windows.Application
                 }
             }
 
-            var hasStableV3Release = await updateFetcher.HasStableV3ReleaseAsync().ConfigureAwait(true);
             ImageSort.WPF.MainWindow.MediaSortV3Available = hasStableV3Release;
 
             if (hasStableV3Release && this.MainWindow is ImageSort.WPF.MainWindow mainWindow)
