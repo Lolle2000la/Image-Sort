@@ -341,6 +341,33 @@ namespace ImageSort.Localization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Learn more at mediasort.app.
+        /// </summary>
+        public static string MediaSortAdButton {
+            get {
+                return ResourceManager.GetString("MediaSortAdButton", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Media Sort v3 is available!.
+        /// </summary>
+        public static string MediaSortAdHeader {
+            get {
+                return ResourceManager.GetString("MediaSortAdHeader", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Image Sort has been completely rewritten and is now Media Sort. It supports images, audio and video, and runs on Windows, macOS and Linux..
+        /// </summary>
+        public static string MediaSortAdText {
+            get {
+                return ResourceManager.GetString("MediaSortAdText", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Metadata.
         /// </summary>
         public static string MetadataPanelHeader {

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -77,18 +76,20 @@ public class GitHubUpdateFetcher
 
     private static bool IsV2Release(string tagName)
     {
+        if (string.IsNullOrEmpty(tagName)) return false;
         var firstIndexOfV = tagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
         if (firstIndexOfV < 0) return false;
         var versionPart = tagName.Substring(firstIndexOfV + 1);
-        return versionPart.StartsWith("2.");
+        return versionPart.StartsWith("2.", StringComparison.Ordinal);
     }
 
     private static bool IsV3Release(string tagName)
     {
+        if (string.IsNullOrEmpty(tagName)) return false;
         var firstIndexOfV = tagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
         if (firstIndexOfV < 0) return false;
         var versionPart = tagName.Substring(firstIndexOfV + 1);
-        return versionPart.StartsWith("3.");
+        return versionPart.StartsWith("3.", StringComparison.Ordinal);
     }
 
     public bool TryGetInstallerFromRelease(Release release, out ReleaseAsset installer)
