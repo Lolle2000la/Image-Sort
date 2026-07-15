@@ -318,4 +318,13 @@ Wollen Sie updaten?</value>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
     <value>Verknüpfung zum Öffnen eines Ordners in Image Sort im Kontextmenü des Windows Explorers hinzufügen.</value>
   </data>
+  <data name="MediaSortAdHeader" xml:space="preserve">
+    <value>Media Sort v3 ist verfügbar!</value>
+  </data>
+  <data name="MediaSortAdText" xml:space="preserve">
+    <value>Image Sort wurde komplett neu entwickelt und heißt jetzt Media Sort. Es unterstützt Bilder, Audio und Video und läuft auf Windows, macOS und Linux.</value>
+  </data>
+  <data name="MediaSortAdButton" xml:space="preserve">
+    <value>Mehr erfahren auf mediasort.app</value>
+  </data>
 </root>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
@@ -12,6 +13,8 @@ namespace ImageSort.WindowsUpdater;
 public class GitHubUpdateFetcher
 {
     private readonly GitHubClient client;
+    private const string RepoOwner = "Lolle2000la";
+    private const string RepoName = "Image-Sort";
 
     public GitHubUpdateFetcher(GitHubClient client)
     {
@@ -30,10 +33,11 @@ public class GitHubUpdateFetcher
 
         try
         {
-            var releases = await client.Repository.Release.GetAll("Lolle2000la", "Image-Sort");
+            var releases = await client.Repository.Release.GetAll(RepoOwner, RepoName);
 
             latestFitting = releases
-                .FirstOrDefault(release =>
+                .Where(release => IsV2Release(release.TagName))
+                .Where(release =>
                 {
                     var prereleaseCondition = allowPrerelease || !release.Prerelease;
 
@@ -44,7 +48,8 @@ public class GitHubUpdateFetcher
                     var isNewVersion = version.ComparePrecedenceTo(releaseVersion) < 0;
 
                     return prereleaseCondition && isNewVersion;
-                });
+                })
+                .FirstOrDefault();
         }
         catch
         {
@@ -52,6 +57,38 @@ public class GitHubUpdateFetcher
         }
 
         return (latestFitting != null, latestFitting);
+    }
+
+    public async Task<bool> HasStableV3ReleaseAsync()
+    {
+        try
+        {
+            var releases = await client.Repository.Release.GetAll(RepoOwner, RepoName);
+
+            return releases
+                .Where(release => IsV3Release(release.TagName))
+                .Any(release => !release.Prerelease);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool IsV2Release(string tagName)
+    {
+        var firstIndexOfV = tagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
+        if (firstIndexOfV < 0) return false;
+        var versionPart = tagName.Substring(firstIndexOfV + 1);
+        return versionPart.StartsWith("2.");
+    }
+
+    private static bool IsV3Release(string tagName)
+    {
+        var firstIndexOfV = tagName.IndexOf('v', StringComparison.OrdinalIgnoreCase);
+        if (firstIndexOfV < 0) return false;
+        var versionPart = tagName.Substring(firstIndexOfV + 1);
+        return versionPart.StartsWith("3.");
     }
 
     public bool TryGetInstallerFromRelease(Release release, out ReleaseAsset installer)
@@ -69,7 +106,12 @@ public class GitHubUpdateFetcher
 
     public async Task<Stream> GetStreamFromAssetAsync(ReleaseAsset asset)
     {
-        using var httpClient = new HttpClient();
+        var handler = new HttpClientHandler
+        {
+            AllowAutoRedirect = true
+        };
+
+        using var httpClient = new HttpClient(handler);
 
         httpClient.DefaultRequestHeaders.Add("User-Agent", "Image-Sort");
 

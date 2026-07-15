@@ -25,6 +25,16 @@
         <GroupBox Grid.Column="2" Margin="{adonisUi:Space 0, 1, 1, 1}">
             <StackPanel VerticalAlignment="Center">
 
+                <GroupBox x:Name="MediaSortAd" Header="{x:Static text:Text.MediaSortAdHeader}"
+                          Margin="{adonisUi:Space 0, 0, 0, 1}" Visibility="Collapsed">
+                    <StackPanel>
+                        <TextBlock Text="{x:Static text:Text.MediaSortAdText}"
+                                   TextWrapping="Wrap" Margin="{adonisUi:Space 0, 0, 0, 0.5}" />
+                        <Button Content="{x:Static text:Text.MediaSortAdButton}"
+                                Click="OnMediaSortAdClicked" />
+                    </StackPanel>
+                </GroupBox>
+
                 <GroupBox Header="{x:Static text:Text.Folder}" Margin="{adonisUi:Space 0, 1}">
                     <StackPanel>
                         <Button Content="{x:Static text:Text.OpenFolder}" x:Name="OpenFolder" />
