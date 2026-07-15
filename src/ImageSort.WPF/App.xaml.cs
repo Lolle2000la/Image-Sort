@@ -178,7 +178,7 @@ public partial class App : System.Windows.Application
                 {
                     var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(false);
 
-                    InstallerRunner.RunAsync(installer).ConfigureAwait(false);
+                    _ = InstallerRunner.RunAsync(installer);
                 }
             }
         }
@@ -187,9 +187,9 @@ public partial class App : System.Windows.Application
             var ghubClientV3 = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcherV3 = new GitHubUpdateFetcher(ghubClientV3);
             var hasStableV3Release = await updateFetcherV3.HasStableV3ReleaseAsync().ConfigureAwait(true);
-            MainWindow.MediaSortV3Available = hasStableV3Release;
+            ImageSort.WPF.MainWindow.MediaSortV3Available = hasStableV3Release;
 
-            if (hasStableV3Release && this.MainWindow is MainWindow mainWindow)
+            if (hasStableV3Release && this.MainWindow is ImageSort.WPF.MainWindow mainWindow)
             {
                 mainWindow.ShowMediaSortAd();
             }
