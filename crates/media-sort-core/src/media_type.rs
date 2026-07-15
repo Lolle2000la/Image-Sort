@@ -139,6 +139,9 @@ mod tests {
 
     #[test]
     fn test_determine_type_unknown_returns_none_without_registry() {
+        use std::collections::HashSet;
+        let mpv: HashSet<String> = ["mkv".into(), "webm".into()].into_iter().collect();
+        MediaRegistry::init(mpv);
         assert_eq!(MediaRegistry::determine_type("xyz"), None);
     }
 
@@ -238,12 +241,18 @@ mod tests {
 
     #[test]
     fn test_determine_type_empty_extension() {
+        use std::collections::HashSet;
+        let mpv: HashSet<String> = ["mkv".into(), "webm".into()].into_iter().collect();
+        MediaRegistry::init(mpv);
         let result = MediaRegistry::determine_type("");
         assert!(result.is_none());
     }
 
     #[test]
     fn test_determine_type_no_extension() {
+        use std::collections::HashSet;
+        let mpv: HashSet<String> = ["mkv".into(), "webm".into()].into_iter().collect();
+        MediaRegistry::init(mpv);
         let result = MediaRegistry::determine_type("noextension");
         assert!(result.is_none());
     }
@@ -277,6 +286,10 @@ mod tests {
         let was_init_by_us = SYSTEM_REGISTRY
             .get()
             .is_some_and(|r| r.mpv_extensions.contains("mkv"));
+        assert!(
+            was_init_by_us,
+            "registry init should have populated mpv_extensions"
+        );
         if was_init_by_us {
             assert_eq!(MediaRegistry::determine_type("mkv"), Some(MediaType::Video));
             assert_eq!(

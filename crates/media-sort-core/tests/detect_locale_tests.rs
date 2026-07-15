@@ -9,10 +9,10 @@ fn test_detect_locale_exact_match() {
     let old_lc_all = std::env::var("LC_ALL").ok();
     unsafe {
         std::env::remove_var("LC_ALL");
-        std::env::set_var("LANG", "en_US.UTF-8");
+        std::env::set_var("LANG", "ja");
     }
     let locale = media_sort_core::l10n::detect_locale();
-    assert_eq!(locale, "en");
+    assert_eq!(locale, "ja");
     if let Some(ref val) = old_lang {
         unsafe {
             std::env::set_var("LANG", val);

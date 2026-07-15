@@ -477,19 +477,21 @@ mod tests {
     }
 
     #[test]
-    fn test_settings_load_truncated_json() {
+    fn test_settings_load_truncated_toml() {
         let dir = std::env::temp_dir().join(format!("mediasort_config2_{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
-        let config_path = dir.join("test_config.json");
+        let config_path = dir.join("test_config.toml");
 
-        std::fs::write(&config_path, r#"{"general": {"theme": "Dark"#).unwrap();
+        std::fs::write(&config_path, "[general]\ntheme = \"Dar").unwrap();
 
         let result = std::fs::read_to_string(&config_path)
             .map_err(SettingsError::from)
-            .and_then(|data| {
-                serde_json::from_str::<SettingsStore>(&data).map_err(SettingsError::from)
-            });
+            .and_then(|data| toml::from_str::<SettingsStore>(&data).map_err(SettingsError::from));
         assert!(result.is_err());
+        match result {
+            Err(SettingsError::TomlDe(_)) => {}
+            _ => panic!("Expected TomlDe error, got {:?}", result.err()),
+        }
 
         std::fs::remove_dir_all(&dir).ok();
     }

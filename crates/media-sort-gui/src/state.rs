@@ -1294,6 +1294,10 @@ mod tests {
             tree[0].is_parent_nav,
             "Folder lost its special parent navigation status upon expansion!"
         );
+        assert!(
+            !tree[0].children.is_empty(),
+            "children should be populated after expand"
+        );
 
         std::fs::remove_dir_all(&dir).ok();
     }
@@ -1633,6 +1637,8 @@ mod tests {
              should fall back to the first visible item (the root)"
         );
         assert_eq!(state.selected_folder_idx, Some(0));
+        assert_ne!(state.selected_folder, Some(p_mid.clone()));
+        assert_ne!(state.selected_folder, Some(p_sub.clone()));
     }
 
     #[test]
@@ -1867,16 +1873,58 @@ mod tests {
     #[test]
     fn test_select_folder_above_at_zero() {
         let mut state = AppState::new(SettingsStore::default());
-        assert_eq!(state.selected_folder_idx, None);
+        let p_a = PathBuf::from("/a");
+        let p_b = PathBuf::from("/b");
+        state.folder_tree = vec![
+            FolderNode {
+                path: p_a.clone(),
+                name: "a".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: p_b.clone(),
+                name: "b".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+        state.set_selected_folder(p_a.clone(), 0);
+        assert_eq!(state.selected_folder_idx, Some(0));
         state.select_folder_above();
-        assert_eq!(state.selected_folder_idx, None);
+        assert_eq!(state.selected_folder_idx, Some(0));
     }
 
     #[test]
     fn test_select_folder_below_at_end() {
         let mut state = AppState::new(SettingsStore::default());
-        assert_eq!(state.selected_folder_idx, None);
+        let p_a = PathBuf::from("/a");
+        let p_b = PathBuf::from("/b");
+        state.folder_tree = vec![
+            FolderNode {
+                path: p_a.clone(),
+                name: "a".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+            FolderNode {
+                path: p_b.clone(),
+                name: "b".into(),
+                children: vec![],
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: false,
+            },
+        ];
+        state.set_selected_folder(p_b.clone(), 1);
+        assert_eq!(state.selected_folder_idx, Some(1));
         state.select_folder_below();
-        assert_eq!(state.selected_folder_idx, None);
+        assert_eq!(state.selected_folder_idx, Some(1));
     }
 }

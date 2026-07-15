@@ -51,7 +51,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     struct MockRestoreHandle {
-        restore_called: Arc<Mutex<bool>>,
+        restore_call_count: Arc<Mutex<u32>>,
         trash_called: Arc<Mutex<bool>>,
         restore_should_fail: bool,
     }
@@ -65,7 +65,7 @@ mod tests {
     impl MockRestoreHandle {
         fn new() -> Self {
             Self {
-                restore_called: Arc::new(Mutex::new(false)),
+                restore_call_count: Arc::new(Mutex::new(0)),
                 trash_called: Arc::new(Mutex::new(false)),
                 restore_should_fail: false,
             }
@@ -79,7 +79,7 @@ mod tests {
 
     impl TrashRestoreHandle for MockRestoreHandle {
         fn restore(&mut self) -> Result<(), ActionError> {
-            *self.restore_called.lock().unwrap() = true;
+            *self.restore_call_count.lock().unwrap() += 1;
             if self.restore_should_fail {
                 Err(ActionError::RestorationFailed("mock restore failed".into()))
             } else {
@@ -96,17 +96,18 @@ mod tests {
     #[test]
     fn test_delete_rollback() {
         let handle = MockRestoreHandle::new();
-        let restore_was_called = Arc::clone(&handle.restore_called);
+        let restore_call_count = Arc::clone(&handle.restore_call_count);
         let mut action = DeleteAction::new(Path::new("some/file.txt"), Box::new(handle));
 
         action.rollback().unwrap();
-        assert!(*restore_was_called.lock().unwrap());
+        assert_eq!(*restore_call_count.lock().unwrap(), 1);
     }
 
     #[test]
     fn test_delete_double_rollback() {
-        let handle = Box::new(MockRestoreHandle::new());
-        let mut action = DeleteAction::new(Path::new("some/file.txt"), handle);
+        let handle = MockRestoreHandle::new();
+        let restore_call_count = Arc::clone(&handle.restore_call_count);
+        let mut action = DeleteAction::new(Path::new("some/file.txt"), Box::new(handle));
 
         action.rollback().unwrap();
 
@@ -114,6 +115,11 @@ mod tests {
         assert!(
             result.is_ok(),
             "second rollback is a no-op after handle consumed"
+        );
+        assert_eq!(
+            *restore_call_count.lock().unwrap(),
+            1,
+            "restore should have been called exactly once; second rollback should not call it again"
         );
     }
 

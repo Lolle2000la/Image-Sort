@@ -97,13 +97,19 @@ mod tests {
         let file = dir.join("normalize_test.txt");
         std::fs::write(&file, b"data").unwrap();
 
-        let normalized = normalize_path(&file);
-        assert_eq!(normalized, file.canonicalize().unwrap());
+        let sub_dir = dir.join("inner");
+        std::fs::create_dir_all(&sub_dir).unwrap();
+        let non_canonical = sub_dir.join("../normalize_test.txt");
+
+        let normalized = normalize_path(&non_canonical);
+        let expected = file.canonicalize().unwrap();
+        assert_eq!(normalized, expected);
     }
 
     #[test]
     fn test_normalize_path_non_existent() {
-        let missing = std::path::PathBuf::from("/nonexistent/path/to/nowhere.txt");
+        let dir = temp_subdir();
+        let missing = dir.join("subdir").join("nonexistent.txt");
         let result = normalize_path(&missing);
         assert_eq!(result, missing);
     }

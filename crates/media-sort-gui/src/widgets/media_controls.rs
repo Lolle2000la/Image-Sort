@@ -95,12 +95,17 @@ mod tests {
     fn test_format_time_whole_minutes() {
         assert_eq!(format_time(60.0), "01:00");
         assert_eq!(format_time(120.0), "02:00");
+        assert_eq!(format_time(59.0), "00:59");
+        assert_eq!(format_time(119.0), "01:59");
     }
 
     #[test]
     fn test_format_time_with_seconds() {
         assert_eq!(format_time(90.0), "01:30");
         assert_eq!(format_time(3661.0), "61:01");
+        assert_eq!(format_time(61.0), "01:01");
+        assert_eq!(format_time(59.0), "00:59");
+        assert_eq!(format_time(119.0), "01:59");
     }
 
     #[test]

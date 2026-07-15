@@ -76,6 +76,14 @@ fn test_thumbnail_dimensions() {
     let path = fixtures_dir().join("test_image.jpg");
     let dims = thumbnail::thumbnail_dimensions(&path).unwrap();
     assert_eq!(dims, (64, 64));
+
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
+    assert!(w <= 32, "thumbnail width {w} should be clamped to max 32");
+    assert!(h <= 32, "thumbnail height {h} should be clamped to max 32");
+    assert!(
+        w == 32 || h == 32,
+        "at least one dimension must hit max (64x64 source should scale to 32x32), got {w}x{h}"
+    );
 }
 
 #[test]
@@ -83,6 +91,12 @@ fn test_thumbnail_generation() {
     let path = fixtures_dir().join("test_image.jpg");
     let (w, h, rgba) = thumbnail::generate_thumbnail(&path, 32, 32).unwrap();
     assert!(w > 0 && h > 0);
+    assert!(w <= 32, "width {w} should be clamped to max 32");
+    assert!(h <= 32, "height {h} should be clamped to max 32");
+    assert!(
+        w == 32 || h == 32,
+        "at least one dimension must hit max (64x64 source should scale to 32x32), got {w}x{h}"
+    );
     assert!(!rgba.is_empty());
     assert_eq!(rgba.len(), (w * h * 4) as usize);
 }

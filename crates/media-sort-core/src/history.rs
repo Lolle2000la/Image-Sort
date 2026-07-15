@@ -274,6 +274,11 @@ mod tests {
         history.push_executed(Box::new(MockAction::new("action_after_undo")));
         assert_eq!(history.done_len(), 256);
         assert_eq!(history.undone_len(), 0);
+
+        // Push one more to trigger overflow trimming - oldest entry should be dropped
+        history.push_executed(Box::new(MockAction::new("overflow_action")));
+        assert_eq!(history.done_len(), 256);
+        assert_eq!(history.last_done_name(), Some("overflow_action"));
     }
 
     #[test]

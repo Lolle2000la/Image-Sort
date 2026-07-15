@@ -28,11 +28,22 @@ fn test_select_entry_in_bounds() {
 #[test]
 fn test_select_entry_out_of_bounds() {
     let mut state = AppState::new(SettingsStore::default());
-    state.media_entries = vec![];
+    state.media_entries = vec![
+        MediaEntry {
+            path: PathBuf::from("/test/a.jpg"),
+            media_type: MediaType::Image,
+            file_name: "a.jpg".into(),
+        },
+        MediaEntry {
+            path: PathBuf::from("/test/b.jpg"),
+            media_type: MediaType::Image,
+            file_name: "b.jpg".into(),
+        },
+    ];
     state.search_query = String::new();
     state.selected_index = None;
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(99)));
-    assert_eq!(state.selected_index, None);
+    assert_eq!(state.selected_index, Some(1));
 }
 
 #[test]
@@ -44,7 +55,7 @@ fn test_select_entry_filtered_empty() {
         file_name: "a.jpg".into(),
     }];
     state.search_query = "nomatch".into();
-    state.selected_index = None;
+    state.selected_index = Some(0);
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
     assert_eq!(state.selected_index, None);
 }
@@ -449,6 +460,8 @@ fn test_redo_after_undo_move() {
     assert!(dest_file.exists());
     assert!(state.history.can_undo());
     assert!(!state.history.can_redo());
+    assert!(state.media_entries.is_empty());
+    assert_eq!(state.selected_index, None);
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -477,6 +490,7 @@ fn test_rename_entry_success() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
+    state.scan_media();
     state.selected_index = Some(0);
 
     assert!(file.exists());
@@ -493,6 +507,11 @@ fn test_rename_entry_success() {
     let renamed = root.join("renamed_image.jpg");
     assert!(renamed.exists());
     assert!(state.history.can_undo());
+    assert_eq!(state.history.done_len(), 1);
+    assert!(state.history.last_done_name().is_some());
+    assert_eq!(state.media_entries.len(), 1);
+    assert_eq!(state.media_entries[0].path, renamed);
+    assert_eq!(state.media_entries[0].file_name, "renamed_image.jpg");
 
     std::fs::remove_dir_all(&root).ok();
 }

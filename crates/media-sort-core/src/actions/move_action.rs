@@ -153,7 +153,7 @@ mod tests {
         let action = MoveAction::new(&src_file, &dst_dir).unwrap();
         let name = action.display_name();
         assert!(!name.is_empty());
-        assert!(name.contains("display_name_test.txt") || name.contains("Move"));
+        assert!(name.contains("display_name_test.txt") && name.contains("Move"));
     }
 
     #[test]
