@@ -41,44 +41,44 @@ pub enum Key {
 }
 
 impl Key {
-    pub fn display_name(&self) -> &'static str {
+    pub fn display_name(&self) -> String {
         match self {
-            Key::Enter => "Enter",
-            Key::Tab => "Tab",
-            Key::Space => "Space",
-            Key::ArrowUp => "Up",
-            Key::ArrowDown => "Down",
-            Key::ArrowLeft => "Left",
-            Key::ArrowRight => "Right",
-            Key::Escape => "Esc",
-            Key::Backspace => "Backspace",
-            Key::Delete => "Delete",
-            Key::Home => "Home",
-            Key::End => "End",
-            Key::PageUp => "PageUp",
-            Key::PageDown => "PageDown",
-            Key::F1 => "F1",
-            Key::F2 => "F2",
-            Key::F3 => "F3",
-            Key::F4 => "F4",
-            Key::F5 => "F5",
-            Key::F6 => "F6",
-            Key::F7 => "F7",
-            Key::F8 => "F8",
-            Key::F9 => "F9",
-            Key::F10 => "F10",
-            Key::F11 => "F11",
-            Key::F12 => "F12",
-            Key::MediaPlayPause => "MediaPlayPause",
-            Key::MediaPlay => "MediaPlay",
-            Key::MediaPause => "MediaPause",
-            Key::MediaStop => "MediaStop",
-            Key::MediaTrackNext => "MediaTrackNext",
-            Key::MediaTrackPrevious => "MediaTrackPrevious",
-            Key::AudioVolumeUp => "AudioVolumeUp",
-            Key::AudioVolumeDown => "AudioVolumeDown",
-            Key::AudioVolumeMute => "AudioVolumeMute",
-            Key::Character(c) => key_character_display(*c),
+            Key::Enter => "Enter".into(),
+            Key::Tab => "Tab".into(),
+            Key::Space => "Space".into(),
+            Key::ArrowUp => "Up".into(),
+            Key::ArrowDown => "Down".into(),
+            Key::ArrowLeft => "Left".into(),
+            Key::ArrowRight => "Right".into(),
+            Key::Escape => "Esc".into(),
+            Key::Backspace => "Backspace".into(),
+            Key::Delete => "Delete".into(),
+            Key::Home => "Home".into(),
+            Key::End => "End".into(),
+            Key::PageUp => "PageUp".into(),
+            Key::PageDown => "PageDown".into(),
+            Key::F1 => "F1".into(),
+            Key::F2 => "F2".into(),
+            Key::F3 => "F3".into(),
+            Key::F4 => "F4".into(),
+            Key::F5 => "F5".into(),
+            Key::F6 => "F6".into(),
+            Key::F7 => "F7".into(),
+            Key::F8 => "F8".into(),
+            Key::F9 => "F9".into(),
+            Key::F10 => "F10".into(),
+            Key::F11 => "F11".into(),
+            Key::F12 => "F12".into(),
+            Key::MediaPlayPause => "MediaPlayPause".into(),
+            Key::MediaPlay => "MediaPlay".into(),
+            Key::MediaPause => "MediaPause".into(),
+            Key::MediaStop => "MediaStop".into(),
+            Key::MediaTrackNext => "MediaTrackNext".into(),
+            Key::MediaTrackPrevious => "MediaTrackPrevious".into(),
+            Key::AudioVolumeUp => "AudioVolumeUp".into(),
+            Key::AudioVolumeDown => "AudioVolumeDown".into(),
+            Key::AudioVolumeMute => "AudioVolumeMute".into(),
+            Key::Character(c) => c.to_string(),
         }
     }
 
@@ -132,7 +132,7 @@ impl Serialize for Key {
                 let mut buf = [0u8; 4];
                 serializer.serialize_str(c.encode_utf8(&mut buf))
             }
-            _ => serializer.serialize_str(self.display_name()),
+            _ => serializer.serialize_str(&self.display_name()),
         }
     }
 }
@@ -141,49 +141,6 @@ impl<'de> Deserialize<'de> for Key {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let s = String::deserialize(deserializer)?;
         Key::parse(&s).ok_or_else(|| serde::de::Error::custom(format!("unknown key: {s}")))
-    }
-}
-
-fn key_character_display(c: char) -> &'static str {
-    match c {
-        'A' => "A",
-        'B' => "B",
-        'C' => "C",
-        'D' => "D",
-        'E' => "E",
-        'F' => "F",
-        'G' => "G",
-        'H' => "H",
-        'I' => "I",
-        'J' => "J",
-        'K' => "K",
-        'L' => "L",
-        'M' => "M",
-        'N' => "N",
-        'O' => "O",
-        'P' => "P",
-        'Q' => "Q",
-        'R' => "R",
-        'S' => "S",
-        'T' => "T",
-        'U' => "U",
-        'V' => "V",
-        'W' => "W",
-        'X' => "X",
-        'Y' => "Y",
-        'Z' => "Z",
-        '0' => "0",
-        '1' => "1",
-        '2' => "2",
-        '3' => "3",
-        '4' => "4",
-        '5' => "5",
-        '6' => "6",
-        '7' => "7",
-        '8' => "8",
-        '9' => "9",
-        ' ' => "Space",
-        _ => unreachable!("Key::Character can only be ascii alphanumeric or space"),
     }
 }
 

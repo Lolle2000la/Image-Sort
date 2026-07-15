@@ -163,15 +163,15 @@ pub fn update_keybinding(
 }
 
 pub fn format_keybinding(binding: &media_sort_core::settings::keybindings::KeyBinding) -> String {
-    let mut parts = Vec::new();
+    let mut parts: Vec<String> = Vec::new();
     if binding.ctrl {
-        parts.push("Ctrl");
+        parts.push("Ctrl".into());
     }
     if binding.shift {
-        parts.push("Shift");
+        parts.push("Shift".into());
     }
     if binding.alt {
-        parts.push("Alt");
+        parts.push("Alt".into());
     }
     parts.push(binding.key.display_name());
     parts.join("+")
