@@ -181,9 +181,7 @@ public partial class App : System.Windows.Application
                     _ = InstallerRunner.RunAsync(installer);
                 }
             }
-        }
 
-        {
             var ghubClientV3 = new GitHubClient(new ProductHeaderValue("Image-Sort"));
             var updateFetcherV3 = new GitHubUpdateFetcher(ghubClientV3);
             var hasStableV3Release = await updateFetcherV3.HasStableV3ReleaseAsync().ConfigureAwait(true);
