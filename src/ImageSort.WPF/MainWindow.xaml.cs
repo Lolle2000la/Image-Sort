@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
@@ -10,6 +11,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using AdonisUI.Controls;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
@@ -34,6 +36,8 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
 {
     private bool interceptReservedKeys = true;
 
+    public static bool MediaSortV3Available { get; set; }
+
     public MainWindow()
     {
         InitializeComponent();
@@ -55,6 +59,11 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
         var settings = Locator.Current.GetService<SettingsViewModel>();
 
         Closed += async (o, e) => await settings.SaveAsync().ConfigureAwait(false);
+
+        Loaded += (_, _) =>
+        {
+            if (MediaSortV3Available) ShowMediaSortAd();
+        };
 
         this.WhenActivated(disposableRegistration =>
         {
@@ -297,6 +306,24 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
         CreditsWindow.Window.Show();
         CreditsWindow.Window
             .Activate(); // make sure the window ends up in the foreground when already open to avoid confusion
+    }
+
+    private void OnMediaSortAdClicked(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://mediasort.app") { UseShellExecute = true });
+        }
+        catch
+        {
+            // ignored — browser may not be available
+        }
+    }
+
+    public void ShowMediaSortAd()
+    {
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        Dispatcher.BeginInvoke(() => MediaSortAd.Visibility = Visibility.Visible);
     }
 
     #region IViewFor implementation

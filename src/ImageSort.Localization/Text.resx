@@ -318,4 +318,13 @@ Do you want to update?</value>
   <data name="ShowInExplorerContextMenu" xml:space="preserve">
     <value>Add a shortcut to open a folder in Image Sort directly from the context menu in Windows Explorer.</value>
   </data>
+  <data name="MediaSortAdHeader" xml:space="preserve">
+    <value>Media Sort v3 is available!</value>
+  </data>
+  <data name="MediaSortAdText" xml:space="preserve">
+    <value>Image Sort has been completely rewritten and is now Media Sort. It supports images, audio and video, and runs on Windows, macOS and Linux.</value>
+  </data>
+  <data name="MediaSortAdButton" xml:space="preserve">
+    <value>Learn more at mediasort.app</value>
+  </data>
 </root>

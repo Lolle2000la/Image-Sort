@@ -153,32 +153,43 @@ public partial class App : System.Windows.Application
             .OfType<GeneralSettingsGroupViewModel>()
             .Single();
 
-        if (!generalSettings.CheckForUpdatesOnStartup) return;
-
-        var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
-        var updateFetcher = new GitHubUpdateFetcher(ghubClient);
-        (var success, var release) = 
-            await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
-
-        if (success)
+        if (generalSettings.CheckForUpdatesOnStartup)
         {
-            var messageBox = new MessageBoxModel
+            var ghubClient = new GitHubClient(new ProductHeaderValue("Image-Sort"));
+            var updateFetcher = new GitHubUpdateFetcher(ghubClient);
+            (var success, var release, var hasStableV3Release) = 
+                await updateFetcher.TryGetLatestReleaseAsync(generalSettings.InstallPrereleaseBuilds).ConfigureAwait(true);
+
+            if (success)
             {
-                Caption = Text.UpdateAvailablePromptTitle,
-                Text = Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName ?? "NO TAG INFORMATION AVAILABLE", StringComparison.OrdinalIgnoreCase),
-                Buttons = new[]
+                var messageBox = new MessageBoxModel
                 {
-                    MessageBoxButtons.Yes(Text.Update),
-                    MessageBoxButtons.No(Text.DoNotUpdate)
-                },
-                Icon = AdonisUI.Controls.MessageBoxImage.Question
-            };
+                    Caption = Text.UpdateAvailablePromptTitle,
+                    Text = Text.UpdateAvailablePromptText.Replace("{TagName}", release.TagName ?? "NO TAG INFORMATION AVAILABLE", StringComparison.OrdinalIgnoreCase),
+                    Buttons = new[]
+                    {
+                        MessageBoxButtons.Yes(Text.Update),
+                        MessageBoxButtons.No(Text.DoNotUpdate)
+                    },
+                    Icon = AdonisUI.Controls.MessageBoxImage.Question
+                };
 
-            if (AdonisUI.Controls.MessageBox.Show(messageBox) == AdonisUI.Controls.MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
+                if (AdonisUI.Controls.MessageBox.Show(messageBox) == AdonisUI.Controls.MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
+                {
+                    var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(true);
+
+                    if (installer != null)
+                    {
+                        _ = InstallerRunner.RunAsync(installer);
+                    }
+                }
+            }
+
+            ImageSort.WPF.MainWindow.MediaSortV3Available = hasStableV3Release;
+
+            if (hasStableV3Release && this.MainWindow is ImageSort.WPF.MainWindow mainWindow)
             {
-                var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(false);
-
-                InstallerRunner.RunAsync(installer).ConfigureAwait(false);
+                mainWindow.ShowMediaSortAd();
             }
         }
 #endif
