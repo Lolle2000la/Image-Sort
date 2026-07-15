@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Threading;
 using AdonisUI.Controls;
 using ImageSort.Localization;
 using ImageSort.SettingsManagement;
@@ -309,12 +310,20 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainViewModel>
 
     private void OnMediaSortAdClicked(object sender, RoutedEventArgs e)
     {
-        Process.Start(new ProcessStartInfo("https://mediasort.app") { UseShellExecute = true });
+        try
+        {
+            Process.Start(new ProcessStartInfo("https://mediasort.app") { UseShellExecute = true });
+        }
+        catch
+        {
+            // ignored — browser may not be available
+        }
     }
 
     public void ShowMediaSortAd()
     {
-        Dispatcher.Invoke(() => MediaSortAd.Visibility = Visibility.Visible);
+        if (Dispatcher.HasShutdownStarted || Dispatcher.HasShutdownFinished) return;
+        Dispatcher.BeginInvoke(() => MediaSortAd.Visibility = Visibility.Visible);
     }
 
     #region IViewFor implementation
