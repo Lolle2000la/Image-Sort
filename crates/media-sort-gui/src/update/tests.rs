@@ -6,6 +6,7 @@ use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
 use media_sort_core::models::MediaEntry;
+use media_sort_core::settings::keybindings::Key;
 use media_sort_core::settings::store::SettingsStore;
 use std::path::PathBuf;
 
@@ -67,7 +68,7 @@ fn test_keycaptured_undo_when_history_has_actions() {
 
     let _ = update(
         &mut state,
-        Message::KeyCaptured("Q".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('Q'), false, false, false),
     );
     let _ = update(&mut state, Message::Media(MediaMessage::Undo));
     assert!(state.history.can_redo());
@@ -83,7 +84,7 @@ fn test_keycaptured_undo_when_history_empty() {
 
     let _task = update(
         &mut state,
-        Message::KeyCaptured("Q".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('Q'), false, false, false),
     );
     assert!(!state.history.can_undo());
     assert!(!state.history.can_redo());
@@ -101,7 +102,7 @@ fn test_keycaptured_redo_when_history_has_undone() {
 
     let _ = update(
         &mut state,
-        Message::KeyCaptured("E".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('E'), false, false, false),
     );
     let _ = update(&mut state, Message::Media(MediaMessage::Redo));
     assert!(!state.history.can_redo());
@@ -118,13 +119,13 @@ fn test_keycaptured_capture_mode_updates_binding() {
 
     let _task = update(
         &mut state,
-        Message::KeyCaptured("X".into(), true, false, false),
+        Message::KeyCaptured(Key::Character('X'), true, false, false),
     );
 
     assert!(!state.waiting_for_key);
     assert_eq!(state.editing_keybinding, None);
     let kb = &state.settings.keybindings;
-    assert_eq!(kb.move_to_folder.key, "X");
+    assert_eq!(kb.move_to_folder.key, Key::Character('X'));
     assert!(kb.move_to_folder.ctrl);
     assert!(!kb.move_to_folder.shift);
     assert!(!kb.move_to_folder.alt);
@@ -138,7 +139,7 @@ fn test_keycaptured_capture_mode_clears_editing_state() {
 
     let _task = update(
         &mut state,
-        Message::KeyCaptured("Left".into(), false, false, false),
+        Message::KeyCaptured(Key::ArrowLeft, false, false, false),
     );
 
     assert!(!state.waiting_for_key);
@@ -152,7 +153,7 @@ fn test_keycaptured_toggle_metadata_panel() {
 
     let _ = update(
         &mut state,
-        Message::KeyCaptured("M".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('M'), false, false, false),
     );
     let _ = update(
         &mut state,
@@ -162,7 +163,7 @@ fn test_keycaptured_toggle_metadata_panel() {
 
     let _ = update(
         &mut state,
-        Message::KeyCaptured("M".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('M'), false, false, false),
     );
     let _ = update(
         &mut state,
@@ -176,7 +177,7 @@ fn test_keycaptured_pin_dispatches_pick() {
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
-        Message::KeyCaptured("P".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('P'), false, false, false),
     );
 }
 
@@ -190,7 +191,7 @@ fn test_keycaptured_unpin_triggers_unpin() {
 
     let _ = update(
         &mut state,
-        Message::KeyCaptured("U".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('U'), false, false, false),
     );
     let _ = update(
         &mut state,
@@ -207,7 +208,7 @@ fn test_keycaptured_pin_without_folder_is_noop() {
 
     let _task = update(
         &mut state,
-        Message::KeyCaptured("P".into(), false, false, false),
+        Message::KeyCaptured(Key::Character('P'), false, false, false),
     );
     assert!(state.pinned_folders.is_empty());
 }
@@ -218,7 +219,7 @@ fn test_keycaptured_unknown_binding_is_noop() {
     let saved_undo = state.history.can_undo();
     let _task = update(
         &mut state,
-        Message::KeyCaptured("F9".into(), false, false, false),
+        Message::KeyCaptured(Key::F9, false, false, false),
     );
     assert_eq!(state.history.can_undo(), saved_undo);
     assert!(!state.metadata_panel_expanded);

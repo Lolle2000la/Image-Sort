@@ -256,7 +256,7 @@ fn parse_wpf_settings(data: &str) -> Option<SettingsStore> {
                 return None;
             }
             Some(crate::settings::keybindings::KeyBinding {
-                key: rust_key,
+                key: crate::settings::keybindings::Key::parse(&rust_key)?,
                 ctrl: (wpf_hk.modifiers & 2) != 0,
                 shift: (wpf_hk.modifiers & 4) != 0,
                 alt: (wpf_hk.modifiers & 1) != 0,

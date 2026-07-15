@@ -1,5 +1,7 @@
 use iced::Subscription;
-use iced::keyboard::{self, Key};
+use iced::keyboard::{self, Key as IcedKey};
+
+use media_sort_core::settings::keybindings::Key;
 
 use crate::message::Message;
 
@@ -17,63 +19,62 @@ pub fn keyboard_subscription() -> Subscription<Message> {
                 return None;
             }
 
-            key_to_name(key).map(|key_name| {
-                Message::KeyCaptured(
-                    key_name,
-                    modifiers.control(),
-                    modifiers.shift(),
-                    modifiers.alt(),
-                )
+            key_to_enum(key).map(|key| {
+                Message::KeyCaptured(key, modifiers.control(), modifiers.shift(), modifiers.alt())
             })
         }
         _ => None,
     })
 }
 
-pub(crate) fn key_to_name(key: Key) -> Option<String> {
+pub(crate) fn key_to_enum(key: IcedKey) -> Option<Key> {
     match &key {
-        Key::Named(named) => {
-            let name = match named {
-                keyboard::key::Named::Enter => "Enter",
-                keyboard::key::Named::Tab => "Tab",
-                keyboard::key::Named::Space => "Space",
-                keyboard::key::Named::ArrowUp => "Up",
-                keyboard::key::Named::ArrowDown => "Down",
-                keyboard::key::Named::ArrowLeft => "Left",
-                keyboard::key::Named::ArrowRight => "Right",
-                keyboard::key::Named::Escape => "Esc",
-                keyboard::key::Named::Backspace => "Backspace",
-                keyboard::key::Named::Delete => "Delete",
-                keyboard::key::Named::Home => "Home",
-                keyboard::key::Named::End => "End",
-                keyboard::key::Named::PageUp => "PageUp",
-                keyboard::key::Named::PageDown => "PageDown",
-                keyboard::key::Named::F1 => "F1",
-                keyboard::key::Named::F2 => "F2",
-                keyboard::key::Named::F3 => "F3",
-                keyboard::key::Named::F4 => "F4",
-                keyboard::key::Named::F5 => "F5",
-                keyboard::key::Named::F6 => "F6",
-                keyboard::key::Named::F7 => "F7",
-                keyboard::key::Named::F8 => "F8",
-                keyboard::key::Named::F9 => "F9",
-                keyboard::key::Named::F10 => "F10",
-                keyboard::key::Named::F11 => "F11",
-                keyboard::key::Named::F12 => "F12",
-                keyboard::key::Named::MediaPlayPause => "MediaPlayPause",
-                keyboard::key::Named::MediaPlay => "MediaPlay",
-                keyboard::key::Named::MediaPause => "MediaPause",
-                keyboard::key::Named::MediaStop => "MediaStop",
-                keyboard::key::Named::MediaTrackNext => "MediaTrackNext",
-                keyboard::key::Named::MediaTrackPrevious => "MediaTrackPrevious",
-                keyboard::key::Named::AudioVolumeUp => "AudioVolumeUp",
-                keyboard::key::Named::AudioVolumeDown => "AudioVolumeDown",
-                keyboard::key::Named::AudioVolumeMute => "AudioVolumeMute",
+        IcedKey::Named(named) => {
+            let key = match named {
+                keyboard::key::Named::Enter => Key::Enter,
+                keyboard::key::Named::Tab => Key::Tab,
+                keyboard::key::Named::Space => Key::Space,
+                keyboard::key::Named::ArrowUp => Key::ArrowUp,
+                keyboard::key::Named::ArrowDown => Key::ArrowDown,
+                keyboard::key::Named::ArrowLeft => Key::ArrowLeft,
+                keyboard::key::Named::ArrowRight => Key::ArrowRight,
+                keyboard::key::Named::Escape => Key::Escape,
+                keyboard::key::Named::Backspace => Key::Backspace,
+                keyboard::key::Named::Delete => Key::Delete,
+                keyboard::key::Named::Home => Key::Home,
+                keyboard::key::Named::End => Key::End,
+                keyboard::key::Named::PageUp => Key::PageUp,
+                keyboard::key::Named::PageDown => Key::PageDown,
+                keyboard::key::Named::F1 => Key::F1,
+                keyboard::key::Named::F2 => Key::F2,
+                keyboard::key::Named::F3 => Key::F3,
+                keyboard::key::Named::F4 => Key::F4,
+                keyboard::key::Named::F5 => Key::F5,
+                keyboard::key::Named::F6 => Key::F6,
+                keyboard::key::Named::F7 => Key::F7,
+                keyboard::key::Named::F8 => Key::F8,
+                keyboard::key::Named::F9 => Key::F9,
+                keyboard::key::Named::F10 => Key::F10,
+                keyboard::key::Named::F11 => Key::F11,
+                keyboard::key::Named::F12 => Key::F12,
+                keyboard::key::Named::MediaPlayPause => Key::MediaPlayPause,
+                keyboard::key::Named::MediaPlay => Key::MediaPlay,
+                keyboard::key::Named::MediaPause => Key::MediaPause,
+                keyboard::key::Named::MediaStop => Key::MediaStop,
+                keyboard::key::Named::MediaTrackNext => Key::MediaTrackNext,
+                keyboard::key::Named::MediaTrackPrevious => Key::MediaTrackPrevious,
+                keyboard::key::Named::AudioVolumeUp => Key::AudioVolumeUp,
+                keyboard::key::Named::AudioVolumeDown => Key::AudioVolumeDown,
+                keyboard::key::Named::AudioVolumeMute => Key::AudioVolumeMute,
                 _ => return None,
             };
-            Some(name.to_string())
+            Some(key)
         }
-        Key::Character(c) if !c.is_empty() => Some(c.to_uppercase()),
+        IcedKey::Character(c) if !c.is_empty() => {
+            let upper = c.to_uppercase();
+            let ch = upper.chars().next().unwrap();
+            Some(Key::Character(ch))
+        }
         _ => None,
     }
 }
@@ -121,13 +122,13 @@ pub fn keybinding_list(
 pub fn update_keybinding(
     kb: &mut media_sort_core::settings::keybindings::KeyBindings,
     name: &str,
-    key: &str,
+    key: Key,
     ctrl: bool,
     shift: bool,
     alt: bool,
 ) {
     let binding = media_sort_core::settings::keybindings::KeyBinding {
-        key: key.to_string(),
+        key,
         ctrl,
         shift,
         alt,
@@ -172,97 +173,99 @@ pub fn format_keybinding(binding: &media_sort_core::settings::keybindings::KeyBi
     if binding.alt {
         parts.push("Alt");
     }
-    parts.push(&binding.key);
+    parts.push(binding.key.display_name());
     parts.join("+")
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use media_sort_core::settings::keybindings::{KeyBinding, KeyBindings};
+    use media_sort_core::settings::keybindings::{Key, KeyBinding, KeyBindings};
 
     #[test]
     fn test_key_to_name_named_keys() {
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(
+            key_to_enum(iced::keyboard::Key::Named(
                 iced::keyboard::key::Named::Enter
             )),
-            Some("Enter".into())
+            Some(Key::Enter)
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(
+            key_to_enum(iced::keyboard::Key::Named(
                 iced::keyboard::key::Named::Space
             )),
-            Some("Space".into())
+            Some(Key::Space)
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(
+            key_to_enum(iced::keyboard::Key::Named(
                 iced::keyboard::key::Named::ArrowUp
             )),
-            Some("Up".into())
+            Some(Key::ArrowUp)
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(
+            key_to_enum(iced::keyboard::Key::Named(
                 iced::keyboard::key::Named::Escape
             )),
-            Some("Esc".into())
+            Some(Key::Escape)
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(iced::keyboard::key::Named::F1)),
-            Some("F1".into())
+            key_to_enum(iced::keyboard::Key::Named(iced::keyboard::key::Named::F1)),
+            Some(Key::F1)
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Named(iced::keyboard::key::Named::F12)),
-            Some("F12".into())
+            key_to_enum(iced::keyboard::Key::Named(iced::keyboard::key::Named::F12)),
+            Some(Key::F12)
         );
     }
 
     #[test]
     fn test_key_to_name_character() {
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Character("a".into())),
-            Some("A".into())
+            key_to_enum(iced::keyboard::Key::Character("a".into())),
+            Some(Key::Character('A'))
         );
         assert_eq!(
-            key_to_name(iced::keyboard::Key::Character("z".into())),
-            Some("Z".into())
+            key_to_enum(iced::keyboard::Key::Character("z".into())),
+            Some(Key::Character('Z'))
         );
     }
 
     #[test]
     fn test_key_to_name_unknown() {
-        assert_eq!(key_to_name(iced::keyboard::Key::Unidentified), None);
-        assert_eq!(key_to_name(iced::keyboard::Key::Character("".into())), None);
+        assert_eq!(key_to_enum(iced::keyboard::Key::Unidentified), None);
+        assert_eq!(key_to_enum(iced::keyboard::Key::Character("".into())), None);
     }
 
     #[test]
     fn test_format_keybinding_plain() {
-        let kb = KeyBinding::new("A");
+        let kb = KeyBinding::new(Key::Character('A'));
         assert_eq!(format_keybinding(&kb), "A");
     }
 
     #[test]
     fn test_format_keybinding_ctrl() {
-        let kb = KeyBinding::new("X").with_ctrl();
+        let kb = KeyBinding::new(Key::Character('X')).with_ctrl();
         assert_eq!(format_keybinding(&kb), "Ctrl+X");
     }
 
     #[test]
     fn test_format_keybinding_shift() {
-        let mut kb = KeyBinding::new("A");
+        let mut kb = KeyBinding::new(Key::Character('A'));
         kb.shift = true;
         assert_eq!(format_keybinding(&kb), "Shift+A");
     }
 
     #[test]
     fn test_format_keybinding_ctrl_shift() {
-        let kb = KeyBinding::new("Z").with_ctrl().with_shift();
+        let kb = KeyBinding::new(Key::Character('Z'))
+            .with_ctrl()
+            .with_shift();
         assert_eq!(format_keybinding(&kb), "Ctrl+Shift+Z");
     }
 
     #[test]
     fn test_format_keybinding_all_modifiers() {
-        let kb = KeyBinding::new("Delete")
+        let kb = KeyBinding::new(Key::Delete)
             .with_ctrl()
             .with_shift()
             .with_alt();
@@ -272,8 +275,8 @@ mod tests {
     #[test]
     fn test_update_keybinding_known_name() {
         let mut kb = KeyBindings::default();
-        update_keybinding(&mut kb, "undo", "Z", true, false, false);
-        assert_eq!(kb.undo.key, "Z");
+        update_keybinding(&mut kb, "undo", Key::Character('Z'), true, false, false);
+        assert_eq!(kb.undo.key, Key::Character('Z'));
         assert!(kb.undo.ctrl);
         assert!(!kb.undo.shift);
         assert!(!kb.undo.alt);
@@ -282,8 +285,15 @@ mod tests {
     #[test]
     fn test_update_keybinding_unknown_name() {
         let mut kb = KeyBindings::default();
-        let saved = kb.redo.key.clone();
-        update_keybinding(&mut kb, "nonexistent_action", "X", false, false, false);
+        let saved = kb.redo.key;
+        update_keybinding(
+            &mut kb,
+            "nonexistent_action",
+            Key::Character('X'),
+            false,
+            false,
+            false,
+        );
         assert_eq!(kb.redo.key, saved);
     }
 

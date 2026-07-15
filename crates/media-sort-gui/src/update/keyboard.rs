@@ -1,12 +1,14 @@
 use iced::Task;
 
+use media_sort_core::settings::keybindings::Key;
+
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::AppState;
 use crate::subscriptions::keyboard;
 
 pub fn handle_key_captured(
     state: &mut AppState,
-    key: String,
+    key: Key,
     ctrl: bool,
     shift: bool,
     alt: bool,
@@ -19,7 +21,7 @@ pub fn handle_key_captured(
                 keyboard::update_keybinding(
                     &mut state.settings.keybindings,
                     name,
-                    &key,
+                    key,
                     ctrl,
                     shift,
                     alt,
@@ -33,33 +35,41 @@ pub fn handle_key_captured(
     }
 
     if state.renaming_path.is_some() {
-        if key == "Enter" {
-            return Task::done(Message::Media(MediaMessage::SubmitRename));
-        } else if key == "Esc" {
-            return Task::done(Message::Media(MediaMessage::CancelRename));
+        match key {
+            Key::Enter => {
+                return Task::done(Message::Media(MediaMessage::SubmitRename));
+            }
+            Key::Escape => {
+                return Task::done(Message::Media(MediaMessage::CancelRename));
+            }
+            _ => return Task::none(),
         }
-        return Task::none();
     }
 
     if state.creating_folder_parent.is_some() {
-        if key == "Enter" {
-            return Task::done(Message::Folder(FolderMessage::SubmitCreate(
-                std::path::PathBuf::new(),
-            )));
-        } else if key == "Esc" {
-            return Task::done(Message::Folder(FolderMessage::CancelCreate));
+        match key {
+            Key::Enter => {
+                return Task::done(Message::Folder(FolderMessage::SubmitCreate(
+                    std::path::PathBuf::new(),
+                )));
+            }
+            Key::Escape => {
+                return Task::done(Message::Folder(FolderMessage::CancelCreate));
+            }
+            _ => return Task::none(),
         }
-        return Task::none();
     }
 
     if state.search_focused {
-        if key == "Enter" || key == "Esc" || key == "Tab" {
-            return Task::done(Message::Media(MediaMessage::SearchBlurred));
+        match key {
+            Key::Enter | Key::Escape | Key::Tab => {
+                return Task::done(Message::Media(MediaMessage::SearchBlurred));
+            }
+            _ => return Task::none(),
         }
-        return Task::none();
     }
 
-    if key == "Space"
+    if key == Key::Space
         && !state.search_focused
         && state.renaming_path.is_none()
         && state.creating_folder_parent.is_none()
@@ -71,51 +81,55 @@ pub fn handle_key_captured(
         return Task::none();
     }
 
-    if ctrl && key == "Q" {
+    if ctrl && key == Key::Character('Q') {
         return Task::done(Message::Quit);
     }
 
-    if (key == "MediaPlayPause" || key == "MediaPlay" || key == "MediaPause")
-        && let Some(ref sender) = state.video_sender
-    {
-        let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
-        return Task::none();
+    if let Some(ref sender) = state.video_sender {
+        match key {
+            Key::MediaPlayPause | Key::MediaPlay | Key::MediaPause => {
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
+                return Task::none();
+            }
+            Key::MediaStop => {
+                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
+                return Task::none();
+            }
+            Key::AudioVolumeUp => {
+                let new_vol = (state.video_volume + 5.0).min(100.0);
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                );
+                return Task::none();
+            }
+            Key::AudioVolumeDown => {
+                let new_vol = (state.video_volume - 5.0).max(0.0);
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
+                );
+                return Task::none();
+            }
+            Key::AudioVolumeMute => {
+                let _ = sender.try_send(
+                    media_sort_backend::media::mpv_context::VideoCommand::SetMute(
+                        !state.video_muted,
+                    ),
+                );
+                return Task::none();
+            }
+            _ => {}
+        }
     }
-    if key == "MediaStop"
-        && let Some(ref sender) = state.video_sender
-    {
-        let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
-        return Task::none();
-    }
-    if key == "AudioVolumeUp"
-        && let Some(ref sender) = state.video_sender
-    {
-        let new_vol = (state.video_volume + 5.0).min(100.0);
-        let _ = sender
-            .try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
-        return Task::none();
-    }
-    if key == "AudioVolumeDown"
-        && let Some(ref sender) = state.video_sender
-    {
-        let new_vol = (state.video_volume - 5.0).max(0.0);
-        let _ = sender
-            .try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol));
-        return Task::none();
-    }
-    if key == "AudioVolumeMute"
-        && let Some(ref sender) = state.video_sender
-    {
-        let _ = sender.try_send(
-            media_sort_backend::media::mpv_context::VideoCommand::SetMute(!state.video_muted),
-        );
-        return Task::none();
-    }
-    if key == "MediaTrackNext" {
-        return Task::done(Message::Media(MediaMessage::GoRight));
-    }
-    if key == "MediaTrackPrevious" {
-        return Task::done(Message::Media(MediaMessage::GoLeft));
+
+    match key {
+        Key::MediaTrackNext => {
+            return Task::done(Message::Media(MediaMessage::GoRight));
+        }
+        Key::MediaTrackPrevious => {
+            return Task::done(Message::Media(MediaMessage::GoLeft));
+        }
+        _ => {}
     }
 
     let bindings = keyboard::keybinding_list(state);
@@ -268,15 +282,12 @@ pub fn handle_key_captured(
         }
     }
 
-    if alt
-        && !ctrl
-        && !shift
-        && let Some(c) = key.chars().next()
-        && c.is_ascii_digit()
-        && c != '0'
-    {
-        let digit = c.to_digit(10).unwrap() as u8;
-        return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
+    match key {
+        Key::Character(c) if c.is_ascii_digit() && c != '0' && alt && !ctrl && !shift => {
+            let digit = c.to_digit(10).unwrap() as u8;
+            return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
+        }
+        _ => {}
     }
 
     Task::none()

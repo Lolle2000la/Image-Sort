@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use media_sort_core::settings::keybindings::Key;
 use media_sort_core::settings::store::SettingsStore;
 
 #[cfg_attr(feature = "demo", iced_automation::message)]
@@ -20,7 +21,7 @@ pub enum Message {
     OpenCredits,
     CloseCredits,
 
-    KeyCaptured(String, bool, bool, bool),
+    KeyCaptured(Key, bool, bool, bool),
 
     #[automation(dispatch)]
     Settings(SettingsMessage),

@@ -10,7 +10,7 @@ use media_sort_core::history::History;
 use media_sort_core::l10n::Localization;
 use media_sort_core::media_type::MediaType;
 use media_sort_core::path_utils;
-use media_sort_core::settings::keybindings::KeyBinding;
+use media_sort_core::settings::keybindings::{Key, KeyBinding};
 use media_sort_core::settings::metadata_panel::MetadataPanelSettings;
 use media_sort_core::settings::pinned_folders::PinnedFoldersSettings;
 use media_sort_core::settings::store::{SettingsError, SettingsStore};
@@ -586,32 +586,33 @@ fn test_settings_save_load_roundtrip() {
 fn test_settings_keybindings_defaults() {
     let kb = &SettingsStore::default().keybindings;
 
-    let names = [
-        &kb.move_to_folder.key[..],
-        &kb.delete.key[..],
-        &kb.rename.key[..],
-        &kb.go_left.key[..],
-        &kb.go_right.key[..],
-        &kb.create_folder.key[..],
-        &kb.folder_up.key[..],
-        &kb.folder_left.key[..],
-        &kb.folder_down.key[..],
-        &kb.folder_right.key[..],
-        &kb.undo.key[..],
-        &kb.redo.key[..],
-        &kb.open_folder.key[..],
-        &kb.open_selected_folder.key[..],
-        &kb.pin.key[..],
-        &kb.pin_selected.key[..],
-        &kb.unpin.key[..],
-        &kb.move_pinned_up.key[..],
-        &kb.move_pinned_down.key[..],
-        &kb.search_images.key[..],
-        &kb.toggle_metadata_panel.key[..],
+    let keys = [
+        &kb.move_to_folder.key,
+        &kb.delete.key,
+        &kb.rename.key,
+        &kb.go_left.key,
+        &kb.go_right.key,
+        &kb.create_folder.key,
+        &kb.folder_up.key,
+        &kb.folder_left.key,
+        &kb.folder_down.key,
+        &kb.folder_right.key,
+        &kb.undo.key,
+        &kb.redo.key,
+        &kb.open_folder.key,
+        &kb.open_selected_folder.key,
+        &kb.pin.key,
+        &kb.pin_selected.key,
+        &kb.unpin.key,
+        &kb.move_pinned_up.key,
+        &kb.move_pinned_down.key,
+        &kb.search_images.key,
+        &kb.toggle_metadata_panel.key,
     ];
 
-    assert_eq!(names.len(), 21);
-    for (i, name) in names.iter().enumerate() {
+    assert_eq!(keys.len(), 21);
+    for (i, key) in keys.iter().enumerate() {
+        let name = key.display_name();
         assert!(!name.is_empty(), "keybinding {} has empty key", i);
     }
 }
@@ -622,7 +623,14 @@ fn test_settings_empty_json_uses_defaults() {
     let settings: SettingsStore = serde_json::from_str(json).unwrap();
     assert_eq!(settings.general.theme, "Light");
     assert!(settings.general.check_for_updates_on_startup);
-    assert!(!settings.keybindings.move_to_folder.key.is_empty());
+    assert!(
+        !settings
+            .keybindings
+            .move_to_folder
+            .key
+            .display_name()
+            .is_empty()
+    );
 }
 
 // ============================================================================
@@ -715,8 +723,8 @@ fn test_action_error_from_io() {
 
 #[test]
 fn test_keybinding_new() {
-    let kb = KeyBinding::new("Enter");
-    assert_eq!(kb.key, "Enter");
+    let kb = KeyBinding::new(Key::Enter);
+    assert_eq!(kb.key, Key::Enter);
     assert!(!kb.ctrl);
     assert!(!kb.shift);
     assert!(!kb.alt);
@@ -725,8 +733,11 @@ fn test_keybinding_new() {
 
 #[test]
 fn test_keybinding_builders() {
-    let kb = KeyBinding::new("A").with_ctrl().with_shift().with_alt();
-    assert_eq!(kb.key, "A");
+    let kb = KeyBinding::new(Key::Character('A'))
+        .with_ctrl()
+        .with_shift()
+        .with_alt();
+    assert_eq!(kb.key, Key::Character('A'));
     assert!(kb.ctrl);
     assert!(kb.shift);
     assert!(kb.alt);
@@ -735,10 +746,10 @@ fn test_keybinding_builders() {
 
 #[test]
 fn test_keybinding_serde_roundtrip() {
-    let kb = KeyBinding::new("X").with_ctrl();
+    let kb = KeyBinding::new(Key::Character('X')).with_ctrl();
     let json = serde_json::to_string(&kb).unwrap();
     let kb2: KeyBinding = serde_json::from_str(&json).unwrap();
-    assert_eq!(kb2.key, "X");
+    assert_eq!(kb2.key, Key::Character('X'));
     assert!(kb2.ctrl);
     assert!(!kb2.shift);
     assert!(!kb2.alt);
@@ -1105,11 +1116,11 @@ fn test_wpf_settings_migration() {
     assert_eq!(store.window_position.screen_count, 2);
 
     // Assert KeyBindings
-    assert_eq!(store.keybindings.move_to_folder.key, "Up");
+    assert_eq!(store.keybindings.move_to_folder.key, Key::ArrowUp);
     assert!(!store.keybindings.move_to_folder.ctrl);
-    assert_eq!(store.keybindings.delete.key, "Down");
+    assert_eq!(store.keybindings.delete.key, Key::ArrowDown);
     assert!(store.keybindings.delete.ctrl); // 2 is Control
-    assert_eq!(store.keybindings.search_images.key, "I");
+    assert_eq!(store.keybindings.search_images.key, Key::Character('I'));
     assert!(store.keybindings.search_images.shift); // 4 is Shift
 }
 
@@ -1546,7 +1557,14 @@ fn test_settings_toml_roundtrip() {
     assert!(loaded.metadata_panel.is_expanded);
     assert_eq!(loaded.metadata_panel.panel_width, 400);
     // Keybindings should have defaults
-    assert!(!loaded.keybindings.move_to_folder.key.is_empty());
+    assert!(
+        !loaded
+            .keybindings
+            .move_to_folder
+            .key
+            .display_name()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -1577,7 +1595,7 @@ fn test_settings_error_toml_display() {
 #[test]
 fn test_keybindings_copy_to_folder_default() {
     let kb = &SettingsStore::default().keybindings.copy_to_folder;
-    assert_eq!(kb.key, "Up");
+    assert_eq!(kb.key, Key::ArrowUp);
     assert!(kb.shift);
     assert!(!kb.ctrl);
 }
@@ -1585,7 +1603,7 @@ fn test_keybindings_copy_to_folder_default() {
 #[test]
 fn test_keybindings_reveal_in_file_manager_default() {
     let kb = &SettingsStore::default().keybindings.reveal_in_file_manager;
-    assert_eq!(kb.key, "L");
+    assert_eq!(kb.key, Key::Character('L'));
     assert!(!kb.ctrl);
     assert!(!kb.shift);
     assert!(!kb.alt);
