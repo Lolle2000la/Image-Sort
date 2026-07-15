@@ -460,3 +460,111 @@ fn test_extract_video_metadata_webm() {
     assert!(result.is_ok());
     std::fs::remove_dir_all(&dir).ok();
 }
+
+// ============================================================
+// Thumbnail aspect ratio edge cases
+// ============================================================
+
+#[test]
+fn test_thumbnail_extreme_landscape() {
+    let img = image::RgbImage::from_pixel(1000, 10, image::Rgb([255, 0, 0]));
+    let tmp_path =
+        std::env::temp_dir().join(format!("test_thumb_landscape_{}.jpg", std::process::id()));
+    img.save_with_format(&tmp_path, image::ImageFormat::Jpeg)
+        .unwrap();
+
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 100, 100).unwrap();
+    assert_eq!(w, 100, "extreme landscape width should be 100");
+    assert_eq!(h, 1, "extreme landscape height should be 1");
+
+    std::fs::remove_file(&tmp_path).ok();
+}
+
+#[test]
+fn test_thumbnail_extreme_portrait() {
+    let img = image::RgbImage::from_pixel(10, 1000, image::Rgb([255, 0, 0]));
+    let tmp_path =
+        std::env::temp_dir().join(format!("test_thumb_portrait_{}.jpg", std::process::id()));
+    img.save_with_format(&tmp_path, image::ImageFormat::Jpeg)
+        .unwrap();
+
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 100, 100).unwrap();
+    assert_eq!(w, 1, "extreme portrait width should be 1");
+    assert_eq!(h, 100, "extreme portrait height should be 100");
+
+    std::fs::remove_file(&tmp_path).ok();
+}
+
+// ============================================================
+// is_animated_gif tests
+// ============================================================
+
+#[test]
+fn test_is_animated_gif_non_gif_file_returns_none() {
+    let path = fixtures_dir().join("test_image.jpg");
+    let result = image_decoder::is_animated_gif(&path);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_is_animated_gif_nonexistent_returns_none() {
+    let result = image_decoder::is_animated_gif(Path::new("/nonexistent/file_xyz.gif"));
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_is_animated_gif_static_returns_false() {
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_test_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("static_test.gif");
+
+    let img = image::RgbaImage::from_pixel(4, 4, image::Rgba([255, 0, 0, 255]));
+    let file = std::fs::File::create(&path).unwrap();
+    {
+        let mut encoder = image::codecs::gif::GifEncoder::new(file);
+        encoder
+            .encode(&img, 4, 4, image::ExtendedColorType::Rgba8)
+            .unwrap();
+    }
+
+    let result = image_decoder::is_animated_gif(&path);
+    assert_eq!(
+        result,
+        Some(false),
+        "single-frame GIF should not be animated"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_is_animated_gif_multi_frame_returns_true() {
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_test2_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("animated_test.gif");
+
+    let img1 = image::RgbaImage::from_pixel(4, 4, image::Rgba([255, 0, 0, 255]));
+    let img2 = image::RgbaImage::from_pixel(4, 4, image::Rgba([0, 255, 0, 255]));
+    let file = std::fs::File::create(&path).unwrap();
+    {
+        let mut encoder = image::codecs::gif::GifEncoder::new(file);
+        encoder
+            .encode(&img1, 4, 4, image::ExtendedColorType::Rgba8)
+            .unwrap();
+        encoder
+            .encode(&img2, 4, 4, image::ExtendedColorType::Rgba8)
+            .unwrap();
+    }
+
+    let result = image_decoder::is_animated_gif(&path);
+    assert_eq!(result, Some(true), "two-frame GIF should be animated");
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_is_animated_gif_fixture_does_not_panic() {
+    let path = fixtures_dir().join("test_image.gif");
+    let result = image_decoder::is_animated_gif(&path);
+    assert!(result.is_some(), "fixture GIF should be identified as GIF");
+}

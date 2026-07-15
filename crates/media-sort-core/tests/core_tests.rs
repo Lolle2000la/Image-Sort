@@ -1112,3 +1112,481 @@ fn test_wpf_settings_migration() {
     assert_eq!(store.keybindings.search_images.key, "I");
     assert!(store.keybindings.search_images.shift); // 4 is Shift
 }
+
+// ============================================================================
+// CopyAction tests
+// ============================================================================
+
+#[test]
+fn test_copy_execute() {
+    let src_dir = temp_subdir();
+    let dst_dir = temp_subdir();
+    let src_file = src_dir.join("test_copy_file.txt");
+    std::fs::write(&src_file, b"hello copy").unwrap();
+
+    use media_sort_core::actions::copy_action::CopyAction;
+    let mut action = CopyAction::new(&src_file, &dst_dir).unwrap();
+    action.execute().unwrap();
+
+    assert!(src_file.exists(), "source should still exist after copy");
+    assert!(dst_dir.join("test_copy_file.txt").exists());
+}
+
+#[test]
+fn test_copy_rollback() {
+    let src_dir = temp_subdir();
+    let dst_dir = temp_subdir();
+    let src_file = src_dir.join("test_copy_rollback.txt");
+    std::fs::write(&src_file, b"rollback copy").unwrap();
+
+    use media_sort_core::actions::copy_action::CopyAction;
+    let mut action = CopyAction::new(&src_file, &dst_dir).unwrap();
+    action.execute().unwrap();
+    assert!(dst_dir.join("test_copy_rollback.txt").exists());
+
+    action.rollback().unwrap();
+    assert!(src_file.exists(), "source should survive rollback");
+    assert!(!dst_dir.join("test_copy_rollback.txt").exists());
+
+    let contents = std::fs::read_to_string(&src_file).unwrap();
+    assert_eq!(contents, "rollback copy");
+}
+
+#[test]
+fn test_copy_source_not_found() {
+    let dst_dir = temp_subdir();
+    let missing = PathBuf::from("/nonexistent/copy_source_12345.txt");
+    use media_sort_core::actions::copy_action::CopyAction;
+    let result = CopyAction::new(&missing, &dst_dir);
+    assert!(result.is_err());
+    assert!(matches!(&result, Err(ActionError::SourceNotFound(_))));
+}
+
+#[test]
+fn test_copy_directory_not_found() {
+    let src_dir = temp_subdir();
+    let src_file = src_dir.join("exists_for_copy.txt");
+    std::fs::write(&src_file, b"data").unwrap();
+    let missing_dir = PathBuf::from("/nonexistent/copy_dst_xyz_12345");
+    use media_sort_core::actions::copy_action::CopyAction;
+    let result = CopyAction::new(&src_file, &missing_dir);
+    assert!(result.is_err());
+    assert!(matches!(&result, Err(ActionError::DirectoryNotFound(_))));
+}
+
+#[test]
+fn test_copy_target_exists() {
+    let src_dir = temp_subdir();
+    let dst_dir = temp_subdir();
+    let src_file = src_dir.join("copy_target_file.txt");
+    std::fs::write(&src_file, b"source content").unwrap();
+    // create the target in the destination before constructing the action
+    std::fs::write(dst_dir.join("copy_target_file.txt"), b"existing").unwrap();
+
+    use media_sort_core::actions::copy_action::CopyAction;
+    let result = CopyAction::new(&src_file, &dst_dir);
+    assert!(result.is_err());
+    assert!(matches!(&result, Err(ActionError::TargetExists(_))));
+}
+
+#[test]
+fn test_copy_display_name() {
+    let src_dir = temp_subdir();
+    let dst_dir = temp_subdir();
+    let src_file = src_dir.join("display_copy_test.txt");
+    std::fs::write(&src_file, b"data").unwrap();
+
+    use media_sort_core::actions::copy_action::CopyAction;
+    let action = CopyAction::new(&src_file, &dst_dir).unwrap();
+    let name = action.display_name();
+    assert!(!name.is_empty());
+    assert!(name.contains("display_copy_test.txt"));
+}
+
+#[test]
+fn test_copy_accessors() {
+    let src_dir = temp_subdir();
+    let dst_dir = temp_subdir();
+    let src_file = src_dir.join("accessor_copy.txt");
+    std::fs::write(&src_file, b"data").unwrap();
+
+    use media_sort_core::actions::copy_action::CopyAction;
+    let action = CopyAction::new(&src_file, &dst_dir).unwrap();
+    assert_eq!(action.source(), src_file.canonicalize().unwrap());
+    assert_eq!(
+        action.destination().parent().unwrap(),
+        dst_dir.canonicalize().unwrap()
+    );
+}
+
+// ============================================================================
+// History failing rollback test
+// ============================================================================
+
+struct FailingMockAction {
+    name: String,
+    execute_should_fail: bool,
+    rollback_should_fail: bool,
+}
+
+impl FailingMockAction {
+    fn new(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            execute_should_fail: false,
+            rollback_should_fail: false,
+        }
+    }
+
+    fn with_failing_rollback(mut self) -> Self {
+        self.rollback_should_fail = true;
+        self
+    }
+
+    fn with_failing_execute(mut self) -> Self {
+        self.execute_should_fail = true;
+        self
+    }
+}
+
+impl ReversibleAction for FailingMockAction {
+    fn display_name(&self) -> &str {
+        &self.name
+    }
+
+    fn execute(&mut self) -> Result<(), ActionError> {
+        if self.execute_should_fail {
+            Err(ActionError::RestorationFailed("mock execute failed".into()))
+        } else {
+            Ok(())
+        }
+    }
+
+    fn rollback(&mut self) -> Result<(), ActionError> {
+        if self.rollback_should_fail {
+            Err(ActionError::RestorationFailed(
+                "mock rollback failed".into(),
+            ))
+        } else {
+            Ok(())
+        }
+    }
+}
+
+#[test]
+fn test_history_undo_failing_rollback() {
+    let mut history = History::new();
+    let action = FailingMockAction::new("fail_rollback").with_failing_rollback();
+    history.push_executed(Box::new(action));
+
+    assert!(history.can_undo());
+    let result = history.undo();
+    assert!(result.is_err());
+    // The action was popped from done, rollback failed, so it was NOT pushed to undone
+    assert!(!history.can_undo());
+    assert!(!history.can_redo());
+    assert_eq!(history.done_len(), 0);
+    assert_eq!(history.undone_len(), 0);
+}
+
+#[test]
+fn test_history_redo_failing_execute() {
+    let mut history = History::new();
+    // Push two actions: one good, one whose execute will fail on redo
+    history.push_executed(Box::new(MockAction::new("good")));
+    history.push_executed(Box::new(
+        FailingMockAction::new("fail_execute").with_failing_execute(),
+    ));
+    // Undo the failing-execute action (rollback succeeds)
+    history.undo().unwrap();
+    assert!(history.can_redo());
+
+    let result = history.redo();
+    // redo pops from undone, calls execute which fails
+    assert!(result.is_err());
+    // The action was popped from undone, execute failed, not pushed to done
+    assert!(!history.can_redo());
+    assert_eq!(history.undone_len(), 0);
+    assert_eq!(history.done_len(), 1); // "good" is still in done
+}
+
+// ============================================================================
+// MediaRegistry init tests
+// ============================================================================
+
+#[test]
+fn test_media_registry_init_and_determine_type() {
+    use media_sort_core::media_type::{MediaRegistry, SYSTEM_REGISTRY};
+    use std::collections::HashSet;
+
+    // SYSTEM_REGISTRY is a global OnceLock shared by all tests in this binary.
+    // We call init() which is a no-op if already set, so native types always work:
+    let mpv_exts: HashSet<String> = ["mkv".into(), "webm".into()].into_iter().collect();
+    MediaRegistry::init(mpv_exts);
+
+    // Native image/audio always win regardless of init ordering
+    assert_eq!(MediaRegistry::determine_type("jpg"), Some(MediaType::Image));
+    assert_eq!(MediaRegistry::determine_type("png"), Some(MediaType::Image));
+    assert_eq!(MediaRegistry::determine_type("mp3"), Some(MediaType::Audio));
+    assert_eq!(
+        MediaRegistry::determine_type("flac"),
+        Some(MediaType::Audio)
+    );
+
+    // Unknown extension returns None
+    assert_eq!(MediaRegistry::determine_type("xyz"), None);
+
+    // If init succeeded (OnceLock was empty), mpv extensions are Video.
+    // If another test already called init, mpv extensions may be None or Video.
+    let was_init_by_us = SYSTEM_REGISTRY
+        .get()
+        .is_some_and(|r| r.mpv_extensions.contains("mkv"));
+    if was_init_by_us {
+        assert_eq!(MediaRegistry::determine_type("mkv"), Some(MediaType::Video));
+        assert_eq!(
+            MediaRegistry::determine_type("webm"),
+            Some(MediaType::Video)
+        );
+    }
+
+    // Idempotency: subsequent init() calls don't panic
+    let novel: HashSet<String> = ["novel_init_idempotent".into()].into_iter().collect();
+    MediaRegistry::init(novel);
+    // No panic = the OnceLock idempotency works
+    // If we were the ones who set it, novel ext won't be registered
+    if was_init_by_us {
+        assert_eq!(MediaRegistry::determine_type("novel_init_idempotent"), None);
+    }
+}
+
+// ============================================================================
+// detect_locale tests
+// ============================================================================
+
+use std::sync::Mutex as StdMutex;
+
+static LOCALE_TEST_MUTEX: StdMutex<()> = StdMutex::new(());
+
+#[test]
+fn test_detect_locale_exact_match() {
+    let _guard = LOCALE_TEST_MUTEX.lock().unwrap();
+    let old_lang = std::env::var("LANG").ok();
+    let old_lc_all = std::env::var("LC_ALL").ok();
+    unsafe {
+        std::env::remove_var("LC_ALL");
+        std::env::set_var("LANG", "en_US.UTF-8");
+    }
+    let locale = media_sort_core::l10n::detect_locale();
+    assert_eq!(locale, "en");
+    if let Some(ref val) = old_lang {
+        unsafe {
+            std::env::set_var("LANG", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LANG");
+        }
+    }
+    if let Some(ref val) = old_lc_all {
+        unsafe {
+            std::env::set_var("LC_ALL", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LC_ALL");
+        }
+    }
+}
+
+#[test]
+fn test_detect_locale_prefix_match() {
+    let _guard = LOCALE_TEST_MUTEX.lock().unwrap();
+    let old_lang = std::env::var("LANG").ok();
+    let old_lc_all = std::env::var("LC_ALL").ok();
+    unsafe {
+        std::env::remove_var("LC_ALL");
+        std::env::set_var("LANG", "de_AT.UTF-8");
+    }
+    let locale = media_sort_core::l10n::detect_locale();
+    assert_eq!(locale, "de");
+    if let Some(ref val) = old_lang {
+        unsafe {
+            std::env::set_var("LANG", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LANG");
+        }
+    }
+    if let Some(ref val) = old_lc_all {
+        unsafe {
+            std::env::set_var("LC_ALL", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LC_ALL");
+        }
+    }
+}
+
+#[test]
+fn test_detect_locale_ja_exact() {
+    let _guard = LOCALE_TEST_MUTEX.lock().unwrap();
+    let old_lang = std::env::var("LANG").ok();
+    let old_lc_all = std::env::var("LC_ALL").ok();
+    unsafe {
+        std::env::remove_var("LC_ALL");
+        std::env::set_var("LANG", "ja_JP.UTF-8");
+    }
+    let locale = media_sort_core::l10n::detect_locale();
+    assert_eq!(locale, "ja");
+    if let Some(ref val) = old_lang {
+        unsafe {
+            std::env::set_var("LANG", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LANG");
+        }
+    }
+    if let Some(ref val) = old_lc_all {
+        unsafe {
+            std::env::set_var("LC_ALL", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LC_ALL");
+        }
+    }
+}
+
+#[test]
+fn test_detect_locale_no_match_fallback() {
+    let _guard = LOCALE_TEST_MUTEX.lock().unwrap();
+    let old_lang = std::env::var("LANG").ok();
+    let old_lc_all = std::env::var("LC_ALL").ok();
+    unsafe {
+        std::env::remove_var("LC_ALL");
+        std::env::set_var("LANG", "fr_FR.UTF-8");
+    }
+    let locale = media_sort_core::l10n::detect_locale();
+    assert_eq!(locale, "en");
+    if let Some(ref val) = old_lang {
+        unsafe {
+            std::env::set_var("LANG", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LANG");
+        }
+    }
+    if let Some(ref val) = old_lc_all {
+        unsafe {
+            std::env::set_var("LC_ALL", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LC_ALL");
+        }
+    }
+}
+
+#[test]
+fn test_detect_locale_lc_all_priority() {
+    let _guard = LOCALE_TEST_MUTEX.lock().unwrap();
+    let old_lc_all = std::env::var("LC_ALL").ok();
+    let old_lang = std::env::var("LANG").ok();
+    unsafe {
+        std::env::set_var("LC_ALL", "de_DE.UTF-8");
+        std::env::set_var("LANG", "en_US.UTF-8");
+    }
+    let locale = media_sort_core::l10n::detect_locale();
+    assert_eq!(locale, "de");
+    if let Some(ref val) = old_lc_all {
+        unsafe {
+            std::env::set_var("LC_ALL", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LC_ALL");
+        }
+    }
+    if let Some(ref val) = old_lang {
+        unsafe {
+            std::env::set_var("LANG", val);
+        }
+    } else {
+        unsafe {
+            std::env::remove_var("LANG");
+        }
+    }
+}
+
+// ============================================================================
+// Settings TOML roundtrip tests
+// ============================================================================
+
+#[test]
+fn test_settings_toml_roundtrip() {
+    let mut settings = SettingsStore::default();
+    settings.general.theme = "Dark".to_string();
+    settings.general.animate_gifs = false;
+    settings.window_position.left = 42;
+    settings.window_position.top = 73;
+    settings.metadata_panel.is_expanded = true;
+    settings.metadata_panel.panel_width = 400;
+
+    let toml_str = toml::to_string_pretty(&settings).unwrap();
+    let loaded: SettingsStore = toml::from_str(&toml_str).unwrap();
+
+    assert_eq!(loaded.general.theme, "Dark");
+    assert!(!loaded.general.animate_gifs);
+    assert_eq!(loaded.window_position.left, 42);
+    assert_eq!(loaded.window_position.top, 73);
+    assert!(loaded.metadata_panel.is_expanded);
+    assert_eq!(loaded.metadata_panel.panel_width, 400);
+    // Keybindings should have defaults
+    assert!(!loaded.keybindings.move_to_folder.key.is_empty());
+}
+
+#[test]
+fn test_settings_load_corrupted_toml() {
+    let toml_data = "this is not valid toml [[[";
+    let result: Result<SettingsStore, _> = toml::from_str(toml_data);
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_settings_error_toml_display() {
+    let toml_err = toml::from_str::<String>("[[[").unwrap_err();
+    let se = SettingsError::TomlDe(toml_err);
+    let s = se.to_string();
+    assert!(s.contains("TOML deserialization"));
+
+    let bad_val = f64::NAN;
+    let toml_ser_err = toml::to_string(&bad_val).unwrap_err();
+    let se2 = SettingsError::TomlSer(toml_ser_err);
+    let s2 = se2.to_string();
+    assert!(s2.contains("TOML serialization"));
+}
+
+// ============================================================================
+// KeyBindings completeness test
+// ============================================================================
+
+#[test]
+fn test_keybindings_copy_to_folder_default() {
+    let kb = &SettingsStore::default().keybindings.copy_to_folder;
+    assert_eq!(kb.key, "Up");
+    assert!(kb.shift);
+    assert!(!kb.ctrl);
+}
+
+#[test]
+fn test_keybindings_reveal_in_file_manager_default() {
+    let kb = &SettingsStore::default().keybindings.reveal_in_file_manager;
+    assert_eq!(kb.key, "L");
+    assert!(!kb.ctrl);
+    assert!(!kb.shift);
+    assert!(!kb.alt);
+}

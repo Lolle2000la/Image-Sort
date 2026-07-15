@@ -81,3 +81,38 @@ fn format_time(secs: f64) -> String {
     let seconds = total_secs % 60;
     format!("{:02}:{:02}", minutes, seconds)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_time_zero() {
+        assert_eq!(format_time(0.0), "00:00");
+    }
+
+    #[test]
+    fn test_format_time_whole_minutes() {
+        assert_eq!(format_time(60.0), "01:00");
+        assert_eq!(format_time(120.0), "02:00");
+    }
+
+    #[test]
+    fn test_format_time_with_seconds() {
+        assert_eq!(format_time(90.0), "01:30");
+        assert_eq!(format_time(3661.0), "61:01");
+    }
+
+    #[test]
+    fn test_format_time_nan_and_infinite() {
+        assert_eq!(format_time(f64::NAN), "00:00");
+        assert_eq!(format_time(f64::INFINITY), "00:00");
+        assert_eq!(format_time(f64::NEG_INFINITY), "00:00");
+    }
+
+    #[test]
+    fn test_format_time_negative() {
+        assert_eq!(format_time(-1.0), "00:00");
+        assert_eq!(format_time(-100.0), "00:00");
+    }
+}

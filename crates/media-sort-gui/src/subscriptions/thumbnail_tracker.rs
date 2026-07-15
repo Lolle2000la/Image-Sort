@@ -99,3 +99,60 @@ impl ThumbnailVisibilityTracker {
         load_queue
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tick_returns_false_before_deadline() {
+        let mut tracker = ThumbnailVisibilityTracker::new(Duration::from_millis(500));
+        tracker.handle_scroll();
+        assert!(!tracker.tick(), "tick should be false before deadline");
+    }
+
+    #[test]
+    fn test_tick_returns_true_after_deadline() {
+        let mut tracker = ThumbnailVisibilityTracker::new(Duration::ZERO);
+        tracker.handle_scroll();
+        assert!(tracker.tick(), "tick should be true after deadline");
+        assert!(!tracker.tick(), "second tick should be false");
+    }
+
+    #[test]
+    fn test_cancel_debounce_prevents_tick() {
+        let mut tracker = ThumbnailVisibilityTracker::new(Duration::ZERO);
+        tracker.handle_scroll();
+        tracker.cancel_debounce();
+        assert!(!tracker.tick(), "tick should be false after cancel");
+    }
+
+    #[test]
+    fn test_retain_paths_adds_entries() {
+        let mut tracker = ThumbnailVisibilityTracker::new(Duration::from_secs(1));
+        tracker.retain_paths([PathBuf::from("/a.jpg"), PathBuf::from("/b.jpg")]);
+
+        let checker = tracker.clone_checker();
+        let guard = checker.read().unwrap();
+        assert!(guard.contains(&PathBuf::from("/a.jpg")));
+        assert!(guard.contains(&PathBuf::from("/b.jpg")));
+        assert_eq!(guard.len(), 2);
+    }
+
+    #[test]
+    fn test_update_viewport_empty_entries_clears_set() {
+        let mut tracker = ThumbnailVisibilityTracker::new(Duration::from_secs(1));
+        let scroll = MediaGridScrollState {
+            offset_x: 0.0,
+            viewport_width: 200.0,
+            content_width: 2000.0,
+        };
+
+        let load_queue = tracker.update_viewport(&scroll, &[], 800);
+        assert!(load_queue.is_empty());
+
+        let checker = tracker.clone_checker();
+        let guard = checker.read().unwrap();
+        assert!(guard.is_empty());
+    }
+}
