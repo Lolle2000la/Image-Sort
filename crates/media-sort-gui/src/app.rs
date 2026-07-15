@@ -2569,6 +2569,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "spawns dbus-send/xdg-open which opens a file manager window"]
     fn test_reveal_in_explorer_message() {
         let mut state = AppState::new(SettingsStore::default());
         let test_path = PathBuf::from("nonexistent_test_file_reveal.jpg");
