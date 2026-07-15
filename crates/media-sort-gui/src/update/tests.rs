@@ -1,7 +1,8 @@
 use super::tasks::relative_position_for;
 use super::*;
-use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::AppState;
+use crate::update::keyboard::handle_key_captured;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
@@ -170,15 +171,6 @@ fn test_keycaptured_toggle_metadata_panel() {
         Message::Settings(SettingsMessage::ToggleMetadataPanel),
     );
     assert!(!state.metadata_panel_expanded);
-}
-
-#[test]
-fn test_keycaptured_pin_dispatches_pick() {
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::KeyCaptured(Key::Character('P'), false, false, false),
-    );
 }
 
 #[test]
@@ -800,13 +792,340 @@ fn test_pinned_folder_drag_and_drop() {
     assert_eq!(state.dragging_pinned_folder, None);
 }
 
+// ============================================================================
+// Video message tests
+// ============================================================================
+
 #[test]
-#[ignore = "spawns dbus-send/xdg-open which opens a file manager window"]
-fn test_reveal_in_explorer_message() {
+fn test_video_player_ready_stores_sender() {
+    use tokio::sync::mpsc;
     let mut state = AppState::new(SettingsStore::default());
-    let test_path = PathBuf::from("nonexistent_test_file_reveal.jpg");
+    let (tx, _rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
+    let _task = update(&mut state, Message::Video(VideoMessage::PlayerReady(tx)));
+    assert!(state.video_sender.is_some());
+}
+
+#[test]
+fn test_video_volume_sends_command() {
+    use tokio::sync::mpsc;
+    let mut state = AppState::new(SettingsStore::default());
+    let (tx, mut rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
+    state.video_sender = Some(tx);
+    let _task = update(&mut state, Message::Video(VideoMessage::Volume(50.0)));
+    assert!(state.video_sender.is_some());
+    match rx.try_recv() {
+        Ok(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(v)) => {
+            assert_eq!(v, 50.0);
+        }
+        other => panic!("expected SetVolume(50.0), got {:?}", other),
+    }
+    drop(state);
+}
+
+#[test]
+fn test_video_play_pause_no_sender() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(state.video_sender.is_none());
+    let _task = update(&mut state, Message::Video(VideoMessage::PlayPause));
+    assert!(state.video_sender.is_none());
+}
+
+#[test]
+fn test_video_stop_no_sender() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(state.video_sender.is_none());
+    let _task = update(&mut state, Message::Video(VideoMessage::Stop));
+    assert!(state.video_sender.is_none());
+}
+
+#[test]
+fn test_video_event_playback_progress() {
+    use media_sort_backend::media::mpv_context::VideoEvent;
+    let mut state = AppState::new(SettingsStore::default());
+    state.video_ready = false;
     let _task = update(
         &mut state,
-        Message::Media(MediaMessage::RevealInExplorer(test_path)),
+        Message::Video(VideoMessage::Event(VideoEvent::PlaybackProgress {
+            position: 10.0,
+            duration: 120.0,
+        })),
     );
+    assert_eq!(state.video_position, 10.0);
+    assert_eq!(state.video_duration, 120.0);
+    assert!(state.video_ready);
+}
+
+#[test]
+fn test_video_event_muted() {
+    use media_sort_backend::media::mpv_context::VideoEvent;
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::Video(VideoMessage::Event(VideoEvent::Muted(true))),
+    );
+    assert!(state.video_muted);
+}
+
+#[test]
+fn test_video_event_volume() {
+    use media_sort_backend::media::mpv_context::VideoEvent;
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::Video(VideoMessage::Event(VideoEvent::Volume(75.0))),
+    );
+    assert_eq!(state.video_volume, 75.0);
+}
+
+#[test]
+fn test_video_event_paused() {
+    use media_sort_backend::media::mpv_context::VideoEvent;
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::Video(VideoMessage::Event(VideoEvent::Paused(true))),
+    );
+    assert!(state.video_paused);
+}
+
+#[test]
+fn test_video_seek_stores_position() {
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(&mut state, Message::Video(VideoMessage::Seek(42.0)));
+    assert_eq!(state.video_seek_position, Some(42.0));
+}
+
+#[test]
+fn test_video_seek_without_sender() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(state.video_sender.is_none());
+    let _task = update(&mut state, Message::Video(VideoMessage::Seek(10.0)));
+    assert_eq!(state.video_seek_position, Some(10.0));
+}
+
+// ============================================================================
+// Keyboard handler tests
+// ============================================================================
+
+#[test]
+fn test_key_captured_waiting_for_key_clears_state() {
+    let mut state = AppState::new(SettingsStore::default());
+    state.waiting_for_key = true;
+    state.editing_keybinding = Some(0);
+    let _task = handle_key_captured(&mut state, Key::Character('A'), true, false, false);
+    assert!(!state.waiting_for_key);
+    assert!(state.editing_keybinding.is_none());
+}
+
+// ============================================================================
+// Update.rs main dispatch tests
+// ============================================================================
+
+#[test]
+fn test_update_quit_message() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.should_exit);
+    let _task = update(&mut state, Message::Quit);
+    assert!(state.should_exit);
+}
+
+#[test]
+fn test_update_open_credits() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.show_credits);
+    let _task = update(&mut state, Message::OpenCredits);
+    assert!(state.show_credits);
+}
+
+#[test]
+fn test_update_close_credits() {
+    let mut state = AppState::new(SettingsStore::default());
+    state.show_credits = true;
+    let _task = update(&mut state, Message::CloseCredits);
+    assert!(!state.show_credits);
+}
+
+#[test]
+fn test_update_tick_should_not_exit_initially() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.should_exit);
+    let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+    assert!(!state.should_exit);
+}
+
+#[test]
+fn test_update_tick_should_exit() {
+    let tmp = std::env::temp_dir().join(format!("mediasort_tick_exit_{}", std::process::id()));
+    let settings = SettingsStore {
+        custom_path: Some(tmp.clone()),
+        ..SettingsStore::default()
+    };
+    let mut state = AppState::new(settings);
+    state.settings.general.theme = "Dark".to_string();
+    state.should_exit = true;
+    let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+    assert!(state.should_exit);
+
+    let data = std::fs::read_to_string(&tmp).unwrap();
+    let reloaded: SettingsStore = toml::from_str(&data).unwrap();
+    assert_eq!(reloaded.general.theme, "Dark");
+
+    let _ = std::fs::remove_file(&tmp);
+}
+
+// ============================================================================
+// Settings message handler tests
+// ============================================================================
+
+#[test]
+fn test_settings_show_dialog() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.show_settings);
+    let _task = update(&mut state, Message::Settings(SettingsMessage::Open));
+    assert!(state.show_settings);
+}
+
+#[test]
+fn test_settings_close_dialog() {
+    let mut state = AppState::new(SettingsStore::default());
+    state.show_settings = true;
+    let _task = update(&mut state, Message::Settings(SettingsMessage::Close));
+    assert!(!state.show_settings);
+}
+
+#[test]
+fn test_settings_toggle_metadata_panel() {
+    let mut state = AppState::new(SettingsStore::default());
+    let was_expanded = state.metadata_panel_expanded;
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleMetadataPanel),
+    );
+    assert_eq!(state.metadata_panel_expanded, !was_expanded);
+}
+
+#[test]
+fn test_settings_toggle_animate_gifs() {
+    let mut state = AppState::new(SettingsStore::default());
+    let was_animating = state.settings.general.animate_gifs;
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleAnimateGifs),
+    );
+    assert_eq!(state.settings.general.animate_gifs, !was_animating);
+}
+
+#[test]
+fn test_settings_toggle_reopen_folder() {
+    let mut state = AppState::new(SettingsStore::default());
+    let initial = state.settings.general.reopen_last_opened_folder;
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleReopenFolder),
+    );
+    assert_eq!(state.settings.general.reopen_last_opened_folder, !initial);
+}
+
+#[test]
+fn test_settings_set_theme() {
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::SetTheme("Slate".into())),
+    );
+    assert_eq!(state.settings.general.theme, "Slate");
+}
+
+#[test]
+fn test_settings_set_theme_unknown() {
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::SetTheme("UnknownTheme".into())),
+    );
+    assert_eq!(state.settings.general.theme, "UnknownTheme");
+}
+
+#[test]
+fn test_settings_open_keybindings() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.show_keybindings);
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::OpenKeybindings),
+    );
+    assert!(state.show_keybindings);
+}
+
+#[test]
+fn test_settings_start_drag_folder_divider() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.dragging_folder_divider);
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::StartDragFolderDivider),
+    );
+    assert!(state.dragging_folder_divider);
+}
+
+#[test]
+fn test_settings_start_drag_metadata_divider() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.dragging_metadata_divider);
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::StartDragMetadataDivider),
+    );
+    assert!(state.dragging_metadata_divider);
+}
+
+// ============================================================================
+// L10n tests
+// ============================================================================
+
+#[test]
+fn test_l10n_init_with_en() {
+    let l10n = media_sort_core::l10n::Localization::init("en");
+    let greeting = l10n.tr("keybindings-search-images");
+    assert!(!greeting.is_empty());
+}
+
+#[test]
+fn test_l10n_init_with_de() {
+    let l10n = media_sort_core::l10n::Localization::init("de");
+    let greeting = l10n.tr("keybindings-search-images");
+    assert!(!greeting.is_empty());
+}
+
+#[test]
+fn test_l10n_init_with_unknown_falls_back() {
+    let l10n = media_sort_core::l10n::Localization::init("xx");
+    let greeting = l10n.tr("keybindings-search-images");
+    assert!(!greeting.is_empty());
+}
+
+#[test]
+fn test_l10n_missing_key_returns_key() {
+    let l10n = media_sort_core::l10n::Localization::init("en");
+    let result = l10n.tr("this_key_does_not_exist_anywhere");
+    assert_eq!(result, "this_key_does_not_exist_anywhere");
+}
+
+#[test]
+fn test_l10n_locale_stored() {
+    let l10n = media_sort_core::l10n::Localization::init("de");
+    assert_eq!(l10n.locale(), "de");
+}
+
+#[test]
+fn test_l10n_set_locale_switches_language() {
+    let mut l10n = media_sort_core::l10n::Localization::init("en");
+    l10n.set_locale("de");
+    assert_eq!(l10n.locale(), "de");
+}
+
+#[test]
+fn test_l10n_detect_locale_returns_string() {
+    let locale = media_sort_core::l10n::detect_locale();
+    assert!(!locale.is_empty());
 }

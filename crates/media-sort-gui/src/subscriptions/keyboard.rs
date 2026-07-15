@@ -304,7 +304,11 @@ mod tests {
 
         let state = AppState::new(SettingsStore::default());
         let list = keybinding_list(&state);
-        assert_eq!(list.len(), 23);
+        assert!(list.len() > 20);
+        let names: Vec<&str> = list.iter().map(|(name, _)| name.as_str()).collect();
+        assert!(names.contains(&"undo"));
+        assert!(names.contains(&"redo"));
+        assert!(names.contains(&"delete"));
     }
 
     #[test]

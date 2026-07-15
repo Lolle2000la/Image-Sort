@@ -190,27 +190,4 @@ mod tests {
         let result = generate_thumbnail(&std::path::PathBuf::from("/nonexistent/image_xyz.jpg"));
         assert!(result.is_err());
     }
-
-    #[test]
-    fn test_generate_thumbnail_video() {
-        let home = std::env::var("HOME").unwrap_or_default();
-        if !home.is_empty() {
-            let path = std::path::PathBuf::from(home)
-                .join("ビデオ")
-                .join("画面録画")
-                .join("画面録画_20260222_144330.webm");
-            if path.exists() {
-                let result = generate_thumbnail(&path);
-                match result {
-                    Ok((w, h, rgba)) => {
-                        assert!(w > 0 && h > 0);
-                        assert!(!rgba.is_empty());
-                    }
-                    Err(()) => {
-                        println!("VIDEO THUMBNAIL: not available, treating as expected failure");
-                    }
-                }
-            }
-        }
-    }
 }

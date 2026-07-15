@@ -152,4 +152,143 @@ mod tests {
             assert!(fallback.contains(*ext), "missing native audio ext {ext}");
         }
     }
+
+    #[test]
+    fn test_image_extensions() {
+        let exts = MediaType::Image.extensions();
+        assert!(exts.contains(&"png"));
+        assert!(exts.contains(&"jpg"));
+        assert!(exts.contains(&"jpeg"));
+        assert!(exts.contains(&"bmp"));
+        assert!(exts.contains(&"webp"));
+    }
+
+    #[test]
+    fn test_video_extensions() {
+        let exts = MediaType::Video.extensions();
+        assert!(exts.contains(&"mp4"));
+        assert!(exts.contains(&"mkv"));
+        assert!(exts.contains(&"webm"));
+        assert!(exts.contains(&"avi"));
+        assert!(exts.contains(&"mov"));
+        assert!(exts.contains(&"gif"));
+    }
+
+    #[test]
+    fn test_audio_extensions() {
+        let exts = MediaType::Audio.extensions();
+        assert!(exts.contains(&"mp3"));
+        assert!(exts.contains(&"flac"));
+        assert!(exts.contains(&"wav"));
+        assert!(exts.contains(&"ogg"));
+        assert!(exts.contains(&"aac"));
+        assert!(exts.contains(&"opus"));
+    }
+
+    #[test]
+    fn test_all_extensions_no_duplicates() {
+        let all = MediaType::all_extensions();
+        let mut sorted = all.clone();
+        sorted.sort();
+        sorted.dedup();
+        assert_eq!(all.len(), sorted.len(), "duplicate extensions found");
+    }
+
+    #[test]
+    fn test_all_extensions_covers_each_type() {
+        let all = MediaType::all_extensions();
+        let image_exts = MediaType::Image.extensions();
+        let video_exts = MediaType::Video.extensions();
+        let audio_exts = MediaType::Audio.extensions();
+
+        for ext in image_exts {
+            assert!(all.contains(ext), "image ext {} not in all_extensions", ext);
+        }
+        for ext in video_exts {
+            assert!(all.contains(ext), "video ext {} not in all_extensions", ext);
+        }
+        for ext in audio_exts {
+            assert!(all.contains(ext), "audio ext {} not in all_extensions", ext);
+        }
+
+        assert_eq!(
+            all.len(),
+            image_exts.len() + video_exts.len() + audio_exts.len(),
+            "all_extensions count mismatch"
+        );
+    }
+
+    #[test]
+    fn test_gif_not_in_image_extensions() {
+        let image_exts = MediaType::Image.extensions();
+        assert!(
+            !image_exts.contains(&"gif"),
+            "GIF should not be in image extensions"
+        );
+    }
+
+    #[test]
+    fn test_gif_in_video_extensions() {
+        let video_exts = MediaType::Video.extensions();
+        assert!(
+            video_exts.contains(&"gif"),
+            "GIF should be in video extensions"
+        );
+    }
+
+    #[test]
+    fn test_determine_type_empty_extension() {
+        let result = MediaRegistry::determine_type("");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_determine_type_no_extension() {
+        let result = MediaRegistry::determine_type("noextension");
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_determine_type_mixed_case() {
+        assert_eq!(MediaRegistry::determine_type("JpG"), Some(MediaType::Image));
+        assert_eq!(
+            MediaRegistry::determine_type("FlAc"),
+            Some(MediaType::Audio)
+        );
+    }
+
+    #[test]
+    fn test_media_registry_init_and_determine_type() {
+        use std::collections::HashSet;
+
+        let mpv_exts: HashSet<String> = ["mkv".into(), "webm".into()].into_iter().collect();
+        MediaRegistry::init(mpv_exts);
+
+        assert_eq!(MediaRegistry::determine_type("jpg"), Some(MediaType::Image));
+        assert_eq!(MediaRegistry::determine_type("png"), Some(MediaType::Image));
+        assert_eq!(MediaRegistry::determine_type("mp3"), Some(MediaType::Audio));
+        assert_eq!(
+            MediaRegistry::determine_type("flac"),
+            Some(MediaType::Audio)
+        );
+
+        assert_eq!(MediaRegistry::determine_type("xyz"), None);
+
+        let was_init_by_us = SYSTEM_REGISTRY
+            .get()
+            .is_some_and(|r| r.mpv_extensions.contains("mkv"));
+        if was_init_by_us {
+            assert_eq!(MediaRegistry::determine_type("mkv"), Some(MediaType::Video));
+            assert_eq!(
+                MediaRegistry::determine_type("webm"),
+                Some(MediaType::Video)
+            );
+        }
+
+        let novel: HashSet<String> = ["novel_init_idempotent".into()].into_iter().collect();
+        MediaRegistry::init(novel);
+        if was_init_by_us {
+            assert_eq!(MediaRegistry::determine_type("novel_init_idempotent"), None);
+        }
+    }
 }

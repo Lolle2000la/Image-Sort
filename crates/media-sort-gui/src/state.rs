@@ -1847,4 +1847,36 @@ mod tests {
             "Pin selection action decoupled layout tracking index references!"
         );
     }
+
+    #[test]
+    fn test_detect_media_type_animate_gifs_false() {
+        assert_eq!(
+            detect_media_type(Path::new("test.gif"), false),
+            MediaType::Image
+        );
+    }
+
+    #[test]
+    fn test_detect_media_type_empty_extension() {
+        assert_eq!(
+            detect_media_type(Path::new("test."), true),
+            MediaType::Image
+        );
+    }
+
+    #[test]
+    fn test_select_folder_above_at_zero() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert_eq!(state.selected_folder_idx, None);
+        state.select_folder_above();
+        assert_eq!(state.selected_folder_idx, None);
+    }
+
+    #[test]
+    fn test_select_folder_below_at_end() {
+        let mut state = AppState::new(SettingsStore::default());
+        assert_eq!(state.selected_folder_idx, None);
+        state.select_folder_below();
+        assert_eq!(state.selected_folder_idx, None);
+    }
 }

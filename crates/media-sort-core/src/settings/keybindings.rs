@@ -241,3 +241,145 @@ impl Default for KeyBindings {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::settings::keybindings::{Key, KeyBinding};
+
+    #[test]
+    fn test_keybinding_new() {
+        let kb = KeyBinding::new(Key::Enter);
+        assert_eq!(kb.key, Key::Enter);
+        assert!(!kb.ctrl);
+        assert!(!kb.shift);
+        assert!(!kb.alt);
+        assert!(!kb.meta);
+    }
+
+    #[test]
+    fn test_keybinding_builders() {
+        let kb = KeyBinding::new(Key::Character('A'))
+            .with_ctrl()
+            .with_shift()
+            .with_alt();
+        assert_eq!(kb.key, Key::Character('A'));
+        assert!(kb.ctrl);
+        assert!(kb.shift);
+        assert!(kb.alt);
+        assert!(!kb.meta);
+    }
+
+    #[test]
+    fn test_keybinding_serde_roundtrip() {
+        let kb = KeyBinding::new(Key::Character('X')).with_ctrl();
+        let json = serde_json::to_string(&kb).unwrap();
+        let kb2: KeyBinding = serde_json::from_str(&json).unwrap();
+        assert_eq!(kb2.key, Key::Character('X'));
+        assert!(kb2.ctrl);
+        assert!(!kb2.shift);
+        assert!(!kb2.alt);
+
+        let kb = KeyBinding::new(Key::Character(';')).with_ctrl();
+        let json = serde_json::to_string(&kb).unwrap();
+        let kb2: KeyBinding = serde_json::from_str(&json).unwrap();
+        assert_eq!(kb2.key, Key::Character(';'));
+        assert!(kb2.ctrl);
+    }
+
+    #[test]
+    fn test_key_parse_special_chars() {
+        assert_eq!(Key::parse(";"), Some(Key::Character(';')));
+        assert_eq!(Key::parse("."), Some(Key::Character('.')));
+        assert_eq!(Key::parse(","), Some(Key::Character(',')));
+        assert_eq!(Key::parse("+"), Some(Key::Character('+')));
+        assert_eq!(Key::parse("-"), Some(Key::Character('-')));
+        assert_eq!(Key::parse("="), Some(Key::Character('=')));
+        assert_eq!(Key::parse("/"), Some(Key::Character('/')));
+        assert_eq!(Key::parse("\\"), Some(Key::Character('\\')));
+        assert_eq!(Key::parse("?"), Some(Key::Character('?')));
+        assert_eq!(Key::parse("!"), Some(Key::Character('!')));
+        assert_eq!(Key::parse("<"), Some(Key::Character('<')));
+    }
+
+    #[test]
+    fn test_key_display_special_chars() {
+        assert_eq!(Key::Character(';').display_name(), ";");
+        assert_eq!(Key::Character('.').display_name(), ".");
+        assert_eq!(Key::Character('+').display_name(), "+");
+        assert_eq!(Key::Character('-').display_name(), "-");
+        assert_eq!(Key::Character('ä').display_name(), "ä");
+        assert_eq!(Key::Character('ö').display_name(), "ö");
+        assert_eq!(Key::Character('ß').display_name(), "ß");
+    }
+
+    #[test]
+    fn test_key_parse_utf8_chars() {
+        assert_eq!(Key::parse("ö"), Some(Key::Character('ö')));
+        assert_eq!(Key::parse("€"), Some(Key::Character('€')));
+
+        assert_eq!(Key::Character('ö').display_name(), "ö");
+        assert_eq!(Key::Character('€').display_name(), "€");
+    }
+
+    #[test]
+    fn test_key_parse_multi_char_unknown_returns_none() {
+        assert_eq!(Key::parse("Shift+Up"), None);
+        assert_eq!(Key::parse("ab"), None);
+        assert_eq!(Key::parse(";;"), None);
+        assert_eq!(Key::parse(""), None);
+    }
+
+    #[test]
+    fn test_key_parse_whitespace() {
+        assert!(Key::parse("  ").is_none());
+        assert!(Key::parse(" Enter ").is_none());
+    }
+
+    #[test]
+    fn test_key_parse_case_sensitivity() {
+        assert!(Key::parse("Esc").is_some());
+        assert!(
+            Key::parse("esc").is_none(),
+            "\"esc\" (lowercase) is not a known key name"
+        );
+    }
+
+    #[test]
+    fn test_key_display_name_non_empty() {
+        let keys = vec![
+            Key::Enter,
+            Key::Escape,
+            Key::Space,
+            Key::Tab,
+            Key::F1,
+            Key::F12,
+            Key::MediaPlayPause,
+            Key::Character('A'),
+        ];
+        for key in &keys {
+            let name = key.display_name();
+            assert!(
+                !name.is_empty(),
+                "display_name should not be empty for {:?}",
+                key
+            );
+        }
+    }
+
+    #[test]
+    fn test_keybindings_copy_to_folder_default() {
+        let kb = &crate::settings::keybindings::KeyBindings::default().copy_to_folder;
+        assert_eq!(kb.key, Key::ArrowUp);
+        assert!(kb.shift);
+        assert!(!kb.ctrl);
+    }
+
+    #[test]
+    fn test_keybindings_reveal_in_file_manager_default() {
+        let kb = &crate::settings::keybindings::KeyBindings::default().reveal_in_file_manager;
+        assert_eq!(kb.key, Key::Character('L'));
+        assert!(!kb.ctrl);
+        assert!(!kb.shift);
+        assert!(!kb.alt);
+    }
+}

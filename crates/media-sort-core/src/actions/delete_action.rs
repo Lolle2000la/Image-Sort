@@ -41,3 +41,89 @@ impl ReversibleAction for DeleteAction {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{DeleteAction, TrashRestoreHandle};
+    use crate::actions::reversible::{ActionError, ReversibleAction};
+    use std::fmt;
+    use std::path::Path;
+    use std::sync::{Arc, Mutex};
+
+    struct MockRestoreHandle {
+        restore_called: Arc<Mutex<bool>>,
+        trash_called: Arc<Mutex<bool>>,
+        restore_should_fail: bool,
+    }
+
+    impl fmt::Debug for MockRestoreHandle {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_struct("MockRestoreHandle").finish()
+        }
+    }
+
+    impl MockRestoreHandle {
+        fn new() -> Self {
+            Self {
+                restore_called: Arc::new(Mutex::new(false)),
+                trash_called: Arc::new(Mutex::new(false)),
+                restore_should_fail: false,
+            }
+        }
+
+        fn failing(mut self) -> Self {
+            self.restore_should_fail = true;
+            self
+        }
+    }
+
+    impl TrashRestoreHandle for MockRestoreHandle {
+        fn restore(&mut self) -> Result<(), ActionError> {
+            *self.restore_called.lock().unwrap() = true;
+            if self.restore_should_fail {
+                Err(ActionError::RestorationFailed("mock restore failed".into()))
+            } else {
+                Ok(())
+            }
+        }
+
+        fn flush_to_native_trash(&mut self) -> Result<(), ActionError> {
+            *self.trash_called.lock().unwrap() = true;
+            Ok(())
+        }
+    }
+
+    #[test]
+    fn test_delete_rollback() {
+        let handle = MockRestoreHandle::new();
+        let restore_was_called = Arc::clone(&handle.restore_called);
+        let mut action = DeleteAction::new(Path::new("some/file.txt"), Box::new(handle));
+
+        action.rollback().unwrap();
+        assert!(*restore_was_called.lock().unwrap());
+    }
+
+    #[test]
+    fn test_delete_double_rollback() {
+        let handle = Box::new(MockRestoreHandle::new());
+        let mut action = DeleteAction::new(Path::new("some/file.txt"), handle);
+
+        action.rollback().unwrap();
+
+        let result = action.rollback();
+        assert!(
+            result.is_ok(),
+            "second rollback is a no-op after handle consumed"
+        );
+    }
+
+    #[test]
+    fn test_delete_failing_restore() {
+        let handle = Box::new(MockRestoreHandle::new().failing());
+        let mut action = DeleteAction::new(Path::new("some/file.txt"), handle);
+
+        let result = action.rollback();
+        assert!(result.is_err(), "rollback should propagate restore failure");
+        assert!(matches!(&result, Err(ActionError::RestorationFailed(_))));
+    }
+}

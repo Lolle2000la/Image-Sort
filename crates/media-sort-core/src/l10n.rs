@@ -112,3 +112,86 @@ impl Localization {
         self.current_lang.to_string()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::l10n::Localization;
+
+    #[test]
+    fn test_l10n_init() {
+        let loc = Localization::init("en");
+        assert!(
+            !loc.get(
+                "move-action-message",
+                &[("file_name", "test.jpg"), ("directory", "/home")]
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn test_l10n_get_known_key() {
+        let loc = Localization::init("en");
+        let msg = loc.get(
+            "move-action-message",
+            &[("file_name", "photo.png"), ("directory", "/pics")],
+        );
+        assert!(!msg.is_empty());
+        assert!(msg.contains("photo.png") || msg.contains("/pics"));
+    }
+
+    #[test]
+    fn test_l10n_unknown_key_fallback() {
+        let loc = Localization::init("en");
+        let result = loc.get("nonexistent_key", &[]);
+        assert_eq!(result, "nonexistent_key");
+    }
+
+    #[test]
+    fn test_l10n_delete_message() {
+        let loc = Localization::init("en");
+        let msg = loc.get("delete-action-message", &[("file_name", "old_file.dat")]);
+        assert!(!msg.is_empty());
+        assert!(msg.contains("old_file.dat"));
+    }
+
+    #[test]
+    fn test_l10n_rename_message() {
+        let loc = Localization::init("en");
+        let msg = loc.get(
+            "rename-action-message",
+            &[("old_file_name", "a.jpg"), ("new_file_name", "b.jpg")],
+        );
+        assert!(!msg.is_empty());
+        assert!(msg.contains("a.jpg") || msg.contains("b.jpg"));
+    }
+
+    #[test]
+    fn test_l10n_invalid_language_fallback() {
+        let loc = Localization::init("invalid-lang-tag-!!!");
+        let msg = loc.get(
+            "move-action-message",
+            &[("file_name", "test.txt"), ("directory", "/tmp")],
+        );
+        assert!(!msg.is_empty());
+        assert!(msg.contains("Move"));
+    }
+
+    #[test]
+    fn test_l10n_get_with_extra_args() {
+        let loc = Localization::init("en");
+        let msg = loc.get(
+            "delete-action-message",
+            &[("file_name", "test.txt"), ("extra_unused", "ignored")],
+        );
+        assert!(!msg.is_empty());
+        assert!(msg.contains("test.txt"));
+    }
+
+    #[test]
+    fn test_l10n_get_missing_args() {
+        let loc = Localization::init("en");
+        let msg = loc.get("move-action-message", &[]);
+        assert!(!msg.is_empty());
+    }
+}

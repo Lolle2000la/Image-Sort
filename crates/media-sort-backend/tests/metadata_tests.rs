@@ -295,8 +295,8 @@ fn test_extract_audio_metadata_m4a() {
     let data = minimal_mp4_container();
     std::fs::write(&path, &data).unwrap();
     let result = extract_audio_metadata(&path);
-    // Routing test: .m4a routes to mp4ameta reader, doesn't panic
-    assert!(result.is_ok() || result.is_err());
+    assert!(result.is_ok(), "m4a metadata extraction should succeed");
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -324,8 +324,11 @@ fn test_extract_video_metadata_mp4() {
     let data = minimal_mp4_container();
     std::fs::write(&path, &data).unwrap();
     let result = extract_video_metadata(&path);
-    // Routing test: .mp4 routes to mp4ameta reader, doesn't panic
-    assert!(result.is_ok() || result.is_err());
+    assert!(
+        result.is_ok(),
+        "mp4 video metadata extraction should succeed"
+    );
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -337,7 +340,11 @@ fn test_extract_video_metadata_m4v() {
     let data = minimal_mp4_container();
     std::fs::write(&path, &data).unwrap();
     let result = extract_video_metadata(&path);
-    assert!(result.is_ok() || result.is_err());
+    assert!(
+        result.is_ok(),
+        "m4v video metadata extraction should succeed"
+    );
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -349,7 +356,11 @@ fn test_extract_video_metadata_mov() {
     let data = minimal_mp4_container();
     std::fs::write(&path, &data).unwrap();
     let result = extract_video_metadata(&path);
-    assert!(result.is_ok() || result.is_err());
+    assert!(
+        result.is_ok(),
+        "mov video metadata extraction should succeed"
+    );
+    assert!(result.unwrap().contains_key("File"));
     std::fs::remove_dir_all(&dir).ok();
 }
 
@@ -567,4 +578,62 @@ fn test_is_animated_gif_fixture_does_not_panic() {
     let path = fixtures_dir().join("test_image.gif");
     let result = image_decoder::is_animated_gif(&path);
     assert!(result.is_some(), "fixture GIF should be identified as GIF");
+}
+
+// ============================================================
+// Content assertion tests for metadata extraction
+// ============================================================
+
+#[test]
+fn test_image_metadata_content_jpeg() {
+    let fixture = fixtures_dir().join("test_image.jpg");
+    let result = extract_image_metadata(&fixture);
+    assert!(result.is_ok(), "should extract metadata from JPEG");
+    let metadata = result.unwrap();
+    assert!(metadata.contains_key("File"));
+    let file_section = metadata.get("File").unwrap();
+    assert!(file_section.contains_key("Name"));
+    assert!(file_section.contains_key("Size"));
+    assert!(!file_section.get("Name").unwrap().is_empty());
+}
+
+#[test]
+fn test_image_metadata_content_png() {
+    let fixture = fixtures_dir().join("test_image.png");
+    let result = extract_image_metadata(&fixture);
+    assert!(result.is_ok(), "should extract metadata from PNG");
+    let metadata = result.unwrap();
+    assert!(metadata.contains_key("File"));
+}
+
+#[test]
+fn test_audio_metadata_content_mp3() {
+    let fixture = fixtures_dir().join("test_audio.mp3");
+    let result = extract_audio_metadata(&fixture);
+    assert!(result.is_ok(), "should extract metadata from MP3");
+    let metadata = result.unwrap();
+    assert!(metadata.contains_key("File"));
+    let file_section = metadata.get("File").unwrap();
+    assert!(!file_section.get("Name").unwrap().is_empty());
+}
+
+#[test]
+fn test_audio_metadata_content_flac() {
+    let fixture = fixtures_dir().join("test_audio.flac");
+    let result = extract_audio_metadata(&fixture);
+    assert!(result.is_ok(), "should extract metadata from FLAC");
+    let metadata = result.unwrap();
+    assert!(metadata.contains_key("File"));
+}
+
+#[test]
+fn test_image_metadata_nonexistent_file() {
+    let result = extract_image_metadata(Path::new("/nonexistent/image_meta_test_12345.jpg"));
+    assert!(result.is_err());
+}
+
+#[test]
+fn test_audio_metadata_nonexistent_file() {
+    let result = extract_audio_metadata(Path::new("/nonexistent/audio_meta_test_12345.mp3"));
+    assert!(result.is_err());
 }
