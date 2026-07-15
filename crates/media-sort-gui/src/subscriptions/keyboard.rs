@@ -322,4 +322,32 @@ mod tests {
         assert!(names.contains(&"move_to_folder"));
         assert!(names.contains(&"reveal_in_file_manager"));
     }
+
+    #[test]
+    fn test_format_keybinding_special_char() {
+        let kb = KeyBinding::new(Key::Character(';'));
+        assert_eq!(format_keybinding(&kb), ";");
+
+        let kb = KeyBinding::new(Key::Character(';')).with_ctrl();
+        assert_eq!(format_keybinding(&kb), "Ctrl+;");
+
+        let kb = KeyBinding::new(Key::Character('ö')).with_shift();
+        assert_eq!(format_keybinding(&kb), "Shift+ö");
+    }
+
+    #[test]
+    fn test_key_to_enum_special_char() {
+        assert_eq!(
+            key_to_enum(iced::keyboard::Key::Character(";".into())),
+            Some(Key::Character(';'))
+        );
+        assert_eq!(
+            key_to_enum(iced::keyboard::Key::Character("+".into())),
+            Some(Key::Character('+'))
+        );
+        assert_eq!(
+            key_to_enum(iced::keyboard::Key::Character("ö".into())),
+            Some(Key::Character('Ö'))
+        );
+    }
 }

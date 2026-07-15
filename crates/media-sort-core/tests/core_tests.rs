@@ -789,6 +789,69 @@ fn test_settings_error_from_serde() {
 }
 
 // ============================================================================
+// Key parse / display / serde for special characters
+// ============================================================================
+
+#[test]
+fn test_key_parse_special_chars() {
+    assert_eq!(Key::parse(";"), Some(Key::Character(';')));
+    assert_eq!(Key::parse("."), Some(Key::Character('.')));
+    assert_eq!(Key::parse(","), Some(Key::Character(',')));
+    assert_eq!(Key::parse("+"), Some(Key::Character('+')));
+    assert_eq!(Key::parse("-"), Some(Key::Character('-')));
+    assert_eq!(Key::parse("="), Some(Key::Character('=')));
+    assert_eq!(Key::parse("/"), Some(Key::Character('/')));
+    assert_eq!(Key::parse("\\"), Some(Key::Character('\\')));
+}
+
+#[test]
+fn test_key_display_special_chars() {
+    assert_eq!(Key::Character(';').display_name(), ";");
+    assert_eq!(Key::Character('.').display_name(), ".");
+    assert_eq!(Key::Character('+').display_name(), "+");
+    assert_eq!(Key::Character('-').display_name(), "-");
+    assert_eq!(Key::Character('ä').display_name(), "ä");
+    assert_eq!(Key::Character('ö').display_name(), "ö");
+    assert_eq!(Key::Character('ß').display_name(), "ß");
+}
+
+#[test]
+fn test_key_serde_special_char_roundtrip() {
+    let kb = KeyBinding::new(Key::Character(';')).with_ctrl();
+    let json = serde_json::to_string(&kb).unwrap();
+    let kb2: KeyBinding = serde_json::from_str(&json).unwrap();
+    assert_eq!(kb2.key, Key::Character(';'));
+    assert!(kb2.ctrl);
+}
+
+#[test]
+fn test_key_parse_utf8_chars() {
+    // Multi-byte UTF-8 single-char entries
+    assert_eq!(Key::parse("ö"), Some(Key::Character('ö')));
+    assert_eq!(Key::parse("€"), Some(Key::Character('€')));
+
+    // Display round-trips
+    assert_eq!(Key::Character('ö').display_name(), "ö");
+    assert_eq!(Key::Character('€').display_name(), "€");
+}
+
+#[test]
+fn test_key_parse_single_char_fallback_for_unknown() {
+    // Any single character not matched as a named key becomes Character
+    assert_eq!(Key::parse("?"), Some(Key::Character('?')));
+    assert_eq!(Key::parse("!"), Some(Key::Character('!')));
+    assert_eq!(Key::parse("<"), Some(Key::Character('<')));
+}
+
+#[test]
+fn test_key_parse_multi_char_unknown_returns_none() {
+    assert_eq!(Key::parse("Shift+Up"), None);
+    assert_eq!(Key::parse("ab"), None);
+    assert_eq!(Key::parse(";;"), None);
+    assert_eq!(Key::parse(""), None);
+}
+
+// ============================================================================
 // Sub-settings defaults tests
 // ============================================================================
 
