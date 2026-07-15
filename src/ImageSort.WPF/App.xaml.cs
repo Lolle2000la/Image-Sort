@@ -176,7 +176,7 @@ public partial class App : System.Windows.Application
 
                 if (AdonisUI.Controls.MessageBox.Show(messageBox) == AdonisUI.Controls.MessageBoxResult.Yes && updateFetcher.TryGetInstallerFromRelease(release, out var installerAsset))
                 {
-                    var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(false);
+                    var installer = await updateFetcher.GetStreamFromAssetAsync(installerAsset).ConfigureAwait(true);
 
                     if (installer != null)
                     {
