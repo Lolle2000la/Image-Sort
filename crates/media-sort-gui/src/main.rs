@@ -220,7 +220,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut ps = window::settings::PlatformSpecific::default();
             #[cfg(target_os = "linux")]
             {
-                ps.application_id = String::from("MediaSort");
+                let mut app_id = String::from("MediaSort");
+                if let Ok(appimage_path_str) = std::env::var("APPIMAGE") {
+                    let path = std::path::Path::new(&appimage_path_str);
+                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                        if let Some(local_apps_dir) =
+                            dirs::data_local_dir().map(|d| d.join("applications"))
+                        {
+                            let with_prefix = format!("appimagekit-{}", stem);
+                            if local_apps_dir
+                                .join(format!("{}.desktop", with_prefix))
+                                .exists()
+                            {
+                                app_id = with_prefix;
+                            } else if local_apps_dir.join(format!("{}.desktop", stem)).exists() {
+                                app_id = stem.to_string();
+                            } else {
+                                app_id = stem.to_string();
+                            }
+                        } else {
+                            app_id = stem.to_string();
+                        }
+                    }
+                }
+                ps.application_id = app_id;
             }
             ps
         },
