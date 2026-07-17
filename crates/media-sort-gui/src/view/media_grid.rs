@@ -62,21 +62,63 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     for (i, entry) in filtered.iter().enumerate() {
         let is_selected = state.selected_index == Some(i);
 
-        let thumbnail_content: Element<'_, Message> =
-            if let Some(handle) = state.thumbnail_cache.peek(&entry.path) {
-                iced::widget::image(handle.clone())
+        let thumbnail_content: Element<'_, Message> = if let Some(handle) =
+            state.thumbnail_cache.peek(&entry.path)
+        {
+            let img = iced::widget::image(handle.clone())
+                .width(Length::Fill)
+                .height(Length::Fill);
+
+            let maybe_icon = match entry.media_type {
+                media_sort_core::media_type::MediaType::Video => Some(lucide_icons::Icon::Film),
+                media_sort_core::media_type::MediaType::Audio => Some(lucide_icons::Icon::Music),
+                _ => None,
+            };
+
+            if let Some(icon) = maybe_icon {
+                let icon_overlay = container(
+                    text(char::from(icon))
+                        .font(iced::Font::with_name("lucide"))
+                        .size(16)
+                        .color(Color::from_rgb(0.95, 0.95, 0.95)),
+                )
+                .padding([2, 4])
+                .style(|_theme| iced::widget::container::Style {
+                    background: Some(iced::Background::Color(Color::from_rgba(
+                        0.0, 0.0, 0.0, 0.8,
+                    ))),
+                    border: iced::Border {
+                        radius: 2.0.into(),
+                        width: 0.0,
+                        color: Color::TRANSPARENT,
+                    },
+                    ..iced::widget::container::Style::default()
+                });
+
+                let overlay = container(icon_overlay)
                     .width(Length::Fill)
                     .height(Length::Fill)
-                    .into()
-            } else if entry.media_type == media_sort_core::media_type::MediaType::Audio {
-                text(char::from(lucide_icons::Icon::Music))
-                    .font(iced::Font::with_name("lucide"))
-                    .size(24)
-                    .color(Color::from_rgb(0.5, 0.5, 0.6))
-                    .into()
+                    .align_x(Alignment::End)
+                    .align_y(Alignment::Start)
+                    .padding(2);
+
+                iced::widget::stack![img, overlay].into()
             } else {
-                text("[IMG]").size(12).into()
+                img.into()
+            }
+        } else {
+            let fallback_icon = match entry.media_type {
+                media_sort_core::media_type::MediaType::Audio => lucide_icons::Icon::Music,
+                media_sort_core::media_type::MediaType::Video => lucide_icons::Icon::Film,
+                media_sort_core::media_type::MediaType::Image => lucide_icons::Icon::Image,
             };
+
+            text(char::from(fallback_icon))
+                .font(iced::Font::with_name("lucide"))
+                .size(24)
+                .color(Color::from_rgb(0.5, 0.5, 0.6))
+                .into()
+        };
 
         let thumbnail = container(thumbnail_content)
             .center_x(MEDIA_GRID_CARD_WIDTH)
