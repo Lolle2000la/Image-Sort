@@ -46,6 +46,7 @@ pub enum SettingsMessage {
     #[automation(keycap = "Ctrl+D\nChange Theme")]
     SetTheme(String),
     ToggleReopenFolder,
+    ToggleReopenMedia,
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
     ToggleCheckForUpdates,

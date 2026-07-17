@@ -272,6 +272,15 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenFolder))
             .size(16);
 
+        let mut reopen_media_cb = checkbox(state.settings.general.reopen_last_selected_media)
+            .label(state.l10n.tr("settings-reopen-media"))
+            .size(16);
+
+        if state.settings.general.reopen_last_opened_folder {
+            reopen_media_cb = reopen_media_cb
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenMedia));
+        }
+
         let current_theme = THEME_OPTIONS
             .iter()
             .find(|opt| opt.key == state.settings.general.theme)
@@ -297,6 +306,7 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                     .size(14),
                 theme_picklist,
                 reopen_folder_cb,
+                reopen_media_cb,
             ]
             .spacing(8),
             column![

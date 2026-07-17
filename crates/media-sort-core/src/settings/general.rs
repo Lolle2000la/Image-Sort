@@ -23,6 +23,12 @@ pub struct GeneralSettings {
     #[serde(default)]
     pub last_opened_folder: Option<String>,
 
+    #[serde(default = "default_true")]
+    pub reopen_last_selected_media: bool,
+
+    #[serde(default)]
+    pub last_selected_media: Option<String>,
+
     #[serde(default)]
     pub locale: Option<String>,
 
@@ -40,6 +46,8 @@ impl Default for GeneralSettings {
             integration_with_windows: false,
             reopen_last_opened_folder: true,
             last_opened_folder: None,
+            reopen_last_selected_media: true,
+            last_selected_media: None,
             locale: None,
             folder_tree_width: default_folder_tree_width(),
         }

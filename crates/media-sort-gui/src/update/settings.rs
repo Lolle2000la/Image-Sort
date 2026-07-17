@@ -48,6 +48,12 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             let _ = state.settings.save();
             Task::none()
         }
+        SettingsMessage::ToggleReopenMedia => {
+            state.settings.general.reopen_last_selected_media =
+                !state.settings.general.reopen_last_selected_media;
+            let _ = state.settings.save();
+            Task::none()
+        }
         SettingsMessage::StartDragFolderDivider => {
             state.dragging_folder_divider = true;
             Task::none()

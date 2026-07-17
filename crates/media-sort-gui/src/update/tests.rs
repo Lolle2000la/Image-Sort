@@ -1046,6 +1046,72 @@ fn test_settings_toggle_reopen_folder() {
 }
 
 #[test]
+fn test_settings_toggle_reopen_media() {
+    let mut state = AppState::new(SettingsStore::default());
+    let initial = state.settings.general.reopen_last_selected_media;
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleReopenMedia),
+    );
+    assert_eq!(state.settings.general.reopen_last_selected_media, !initial);
+}
+
+#[test]
+fn test_reopen_last_selected_media_behavior() {
+    use std::sync::mpsc::channel;
+
+    let mut state = AppState::new(SettingsStore::default());
+    state.settings.general.reopen_last_opened_folder = true;
+    state.settings.general.reopen_last_selected_media = true;
+
+    let file1 = std::path::PathBuf::from("a.jpg");
+    let file2 = std::path::PathBuf::from("b.jpg");
+    state.settings.general.last_selected_media = Some(file2.to_string_lossy().to_string());
+
+    // Setup mock scan channel
+    let (tx, rx) = channel();
+    tx.send(file1.clone()).unwrap();
+    tx.send(file2.clone()).unwrap();
+    drop(tx);
+    state.scan_receiver = Some(rx);
+    state.pending_select_index = Some(0);
+
+    // Run poll_background_channels (which processes scan completions)
+    let _task = poll_background_channels(&mut state);
+
+    // Verify b.jpg (index 1) is selected because both settings are true
+    assert_eq!(state.selected_index, Some(1));
+
+    // Test case 2: reopen_last_opened_folder is false
+    state.settings.general.reopen_last_opened_folder = false;
+    state.settings.general.reopen_last_selected_media = true;
+    state.selected_index = None;
+    let (tx, rx) = channel();
+    tx.send(file1.clone()).unwrap();
+    tx.send(file2.clone()).unwrap();
+    drop(tx);
+    state.scan_receiver = Some(rx);
+    state.pending_select_index = Some(0);
+    let _task = poll_background_channels(&mut state);
+    // Should fall back to index 0
+    assert_eq!(state.selected_index, Some(0));
+
+    // Test case 3: reopen_last_selected_media is false
+    state.settings.general.reopen_last_opened_folder = true;
+    state.settings.general.reopen_last_selected_media = false;
+    state.selected_index = None;
+    let (tx, rx) = channel();
+    tx.send(file1.clone()).unwrap();
+    tx.send(file2.clone()).unwrap();
+    drop(tx);
+    state.scan_receiver = Some(rx);
+    state.pending_select_index = Some(0);
+    let _task = poll_background_channels(&mut state);
+    // Should fall back to index 0
+    assert_eq!(state.selected_index, Some(0));
+}
+
+#[test]
 fn test_settings_set_theme() {
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(

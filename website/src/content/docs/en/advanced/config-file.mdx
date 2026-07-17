@@ -31,6 +31,8 @@ Exposes appearance, locale, automatic update properties, and startup folder conf
 - **`locale`** (string/null): Toggles language locale code manually. Set to `null` to use system auto-detection, or specify a language code like `"en"`, `"de"`, or `"ja"`. (Default: `null`)
 - **`reopen_last_opened_folder`** (boolean): Automatically re-open the last active directory. (Default: `true`)
 - **`last_opened_folder`** (string/null): Keeps track of the folder path to reopen.
+- **`reopen_last_selected_media`** (boolean): Automatically select the last active media item in the reopened directory on startup. (Default: `true`)
+- **`last_selected_media`** (string/null): Keeps track of the absolute path of the media item to select.
 - **`animate_gifs`** (boolean): Controls whether GIF images animate in both the preview and grid thumbnails. (Default: `true`)
 - **`folder_tree_width`** (number): Width of the left navigation panel in pixels. (Default: `240`)
 - **`check_for_updates_on_startup`** (boolean, Windows/macOS bundles only): Toggles update checks at launch. (Default: `true`)

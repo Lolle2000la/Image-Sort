@@ -233,8 +233,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 .exists()
                             {
                                 app_id = with_prefix;
-                            } else if local_apps_dir.join(format!("{}.desktop", stem)).exists() {
-                                app_id = stem.to_string();
                             } else {
                                 app_id = stem.to_string();
                             }

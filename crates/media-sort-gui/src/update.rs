@@ -134,7 +134,20 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
         state
             .media_entries
             .sort_by(|a, b| a.file_name.cmp(&b.file_name));
-        let select_idx = state.pending_select_index.take().unwrap_or(0);
+        let mut select_idx = state.pending_select_index.take().unwrap_or(0);
+        if state.settings.general.reopen_last_opened_folder
+            && state.settings.general.reopen_last_selected_media
+            && let Some(ref last_media_path_str) = state.settings.general.last_selected_media
+        {
+            let last_media_path = std::path::PathBuf::from(last_media_path_str);
+            if let Some(pos) = state
+                .media_entries
+                .iter()
+                .position(|entry| entry.path == last_media_path)
+            {
+                select_idx = pos;
+            }
+        }
         state.thumbnail_tracker.cancel_debounce();
         bg_tasks.push(tasks::load_visible_thumbnails(state));
         bg_tasks.push(tasks::select_and_load_entry(state, select_idx));

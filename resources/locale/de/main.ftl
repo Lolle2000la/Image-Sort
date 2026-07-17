@@ -16,6 +16,7 @@ settings-close = Schließen
 settings-appearance = Darstellung
 settings-theme = Thema
 settings-reopen-folder = Letzten geöffneten Ordner beim Start erneut öffnen
+settings-reopen-media = Letztes ausgewähltes Medium beim Start erneut öffnen
 settings-animated-gifs = Animierte GIFs
 settings-play-gifs = Animierte GIFs abspielen
 settings-updates = Updates

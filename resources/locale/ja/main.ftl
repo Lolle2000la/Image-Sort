@@ -16,6 +16,7 @@ settings-close = 閉じる
 settings-appearance = 外観
 settings-theme = テーマ
 settings-reopen-folder = 起動時に最後に開いたフォルダを再度開く
+settings-reopen-media = 起動時に最後に選択したメディアを再度開く
 settings-animated-gifs = アニメーションGIF
 settings-play-gifs = アニメーションGIFを再生
 settings-updates = アップデート

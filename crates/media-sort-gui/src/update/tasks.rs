@@ -53,6 +53,9 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.selected_index = Some(index);
         state.current_metadata = None;
 
+        state.settings.general.last_selected_media = Some(path.to_string_lossy().to_string());
+        let _ = state.settings.save();
+
         if media_type == media_sort_core::media_type::MediaType::Video {
             if let Some(ref sender) = state.video_sender {
                 let _ = sender.try_send(
@@ -152,6 +155,9 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.selected_index = None;
         state.current_metadata = None;
         state.selected_image = None;
+
+        state.settings.general.last_selected_media = None;
+        let _ = state.settings.save();
         if let Some(ref sender) = state.video_sender {
             let _ =
                 sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
