@@ -83,66 +83,63 @@ fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), 
 }
 
 pub fn pre_startup_verify_packages() {
-    #[cfg(target_os = "linux")]
-    {
-        let context = velopack::locator::LocationContext::Unknown;
-        let Ok(locator) = velopack::locator::auto_locate_app_manifest(context) else {
-            return;
-        };
-        let packages_dir = locator.get_packages_dir();
-        if !packages_dir.exists() {
-            return;
-        }
+    let context = velopack::locator::LocationContext::Unknown;
+    let Ok(locator) = velopack::locator::auto_locate_app_manifest(context) else {
+        return;
+    };
+    let packages_dir = locator.get_packages_dir();
+    if !packages_dir.exists() {
+        return;
+    }
 
-        let mut invalid = false;
-        match fs::read_dir(&packages_dir) {
-            Ok(entries) => {
-                for entry_res in entries {
-                    let entry = match entry_res {
-                        Ok(e) => e,
-                        Err(e) => {
-                            tracing::error!("Failed to read packages directory entry: {}", e);
-                            invalid = true;
-                            break;
-                        }
-                    };
-                    let path = entry.path();
-                    if path.is_file() && path.extension().is_some_and(|ext| ext == "nupkg") {
-                        let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
-                        sig_file_name.push(".sig");
-                        let sig_path = path.with_file_name(sig_file_name);
-                        if !sig_path.exists() {
-                            tracing::warn!(
-                                "Found unverified update package without signature: {:?}",
-                                path
-                            );
-                            invalid = true;
-                            break;
-                        }
+    let mut invalid = false;
+    match fs::read_dir(&packages_dir) {
+        Ok(entries) => {
+            for entry_res in entries {
+                let entry = match entry_res {
+                    Ok(e) => e,
+                    Err(e) => {
+                        tracing::error!("Failed to read packages directory entry: {}", e);
+                        invalid = true;
+                        break;
+                    }
+                };
+                let path = entry.path();
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "nupkg") {
+                    let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
+                    sig_file_name.push(".sig");
+                    let sig_path = path.with_file_name(sig_file_name);
+                    if !sig_path.exists() {
+                        tracing::warn!(
+                            "Found unverified update package without signature: {:?}",
+                            path
+                        );
+                        invalid = true;
+                        break;
+                    }
 
-                        if let Err(e) = verify_package_signature(&path, &sig_path) {
-                            tracing::error!("GPG verification failed for pending update: {}", e);
-                            invalid = true;
-                            break;
-                        }
+                    if let Err(e) = verify_package_signature(&path, &sig_path) {
+                        tracing::error!("GPG verification failed for pending update: {}", e);
+                        invalid = true;
+                        break;
                     }
                 }
             }
-            Err(e) => {
-                tracing::error!(
-                    "Failed to read packages directory '{:?}': {}. Purging directory for security.",
-                    packages_dir,
-                    e
-                );
-                invalid = true;
-            }
         }
+        Err(e) => {
+            tracing::error!(
+                "Failed to read packages directory '{:?}': {}. Purging directory for security.",
+                packages_dir,
+                e
+            );
+            invalid = true;
+        }
+    }
 
-        if invalid {
-            tracing::warn!("Purging packages directory due to signature verification failure.");
-            let _ = fs::remove_dir_all(&packages_dir);
-            let _ = fs::create_dir_all(&packages_dir);
-        }
+    if invalid {
+        tracing::warn!("Purging packages directory due to signature verification failure.");
+        let _ = fs::remove_dir_all(&packages_dir);
+        let _ = fs::create_dir_all(&packages_dir);
     }
 }
 
