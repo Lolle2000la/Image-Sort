@@ -3620,6 +3620,7 @@ dependencies = [
  "lucide-icons",
  "media-sort-backend",
  "media-sort-core",
+ "memmap2",
  "once_cell",
  "pgp",
  "pollster",

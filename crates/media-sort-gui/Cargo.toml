@@ -5,7 +5,7 @@ edition.workspace = true
 
 [features]
 default = []
-velopack = ["dep:velopack", "dep:reqwest", "dep:pgp"]
+velopack = ["dep:velopack", "dep:reqwest", "dep:pgp", "dep:memmap2"]
 demo = [
     "iced/canvas",
     "dep:pollster",
@@ -41,6 +41,7 @@ clap = { version = "4.5", features = ["derive"] }
 velopack = { version = "1.2", optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"], optional = true }
 pgp = { version = "0.20", optional = true }
+memmap2 = { version = "0.9", optional = true }
 pollster = { version = "0.4", optional = true }
 serde_json = { workspace = true, optional = true }
 iced_runtime = { version = "0.14", optional = true }

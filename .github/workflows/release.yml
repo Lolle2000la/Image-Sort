@@ -200,16 +200,30 @@ jobs:
                 "$file"
           done
 
-      - name: Upload Velopack Packages to GitHub Release
+      - name: Upload Velopack Packages to GitHub Draft Release
         if: success()
         shell: bash
         run: |
           RAW_VERSION="${{ github.ref_name }}"
-          vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload GPG signatures to GitHub Release
+      - name: Upload GPG signatures to GitHub Draft Release
         if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload "${{ github.ref_name }}" Releases/*.sig --clobber
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v7
+
+      - name: Publish Release Atomically
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "All platforms compiled, signed, and merged. Publishing release..."
+          gh release edit "${{ github.ref_name }}" --draft=false

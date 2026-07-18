@@ -30,12 +30,14 @@ fn verify_signature(
     let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
         .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    // Load the package file data
-    let package_bytes =
-        fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
+    // Open file handle and memory-map the payload to ensure zero-copy validation
+    let file =
+        fs::File::open(package_path).map_err(|e| format!("Failed to open package file: {}", e))?;
+    let mmap = unsafe { memmap2::Mmap::map(&file) }
+        .map_err(|e| format!("Failed to memory-map package file: {}", e))?;
 
     // Verify signature against key and data
-    sig.verify(public_key, &package_bytes)
+    sig.verify(public_key, &mmap)
         .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
 
     Ok(())
