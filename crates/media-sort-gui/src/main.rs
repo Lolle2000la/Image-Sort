@@ -91,6 +91,15 @@ pub struct Cli {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    initialize_panic_hook();
+
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::from_default_env()
+                .add_directive("info".parse().unwrap()),
+        )
+        .init();
+
     #[cfg(feature = "velopack")]
     {
         updater::pre_startup_verify_packages();
@@ -111,15 +120,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     {
         let _ = &cli;
     }
-
-    initialize_panic_hook();
-
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            tracing_subscriber::EnvFilter::from_default_env()
-                .add_directive("info".parse().unwrap()),
-        )
-        .init();
 
     let discovered =
         media_sort_backend::media::mpv_context::MpvContext::query_supported_extensions();

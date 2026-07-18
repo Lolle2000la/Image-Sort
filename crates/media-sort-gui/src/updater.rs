@@ -7,36 +7,55 @@ use velopack::{UpdateCheck, UpdateInfo, UpdateManager};
 
 const PUBKEY_ASC_BYTES: &[u8] = include_bytes!("../../../packaging/linux/pubkey.asc");
 
-fn verify_signature_bytes(
-    pubkey_bytes: &[u8],
+fn verify_signature(
+    public_key: &SignedPublicKey,
     package_path: &Path,
     sig_path: &Path,
 ) -> Result<(), String> {
-    // 1. Load public key from the embedded bytes
-    let pubkey_str = std::str::from_utf8(pubkey_bytes)
-        .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
-    let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
-        .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
-
-    // 2. Load the detached signature
+    // 1. Load the detached signature
     let sig_bytes =
         fs::read(sig_path).map_err(|e| format!("Failed to read signature file: {}", e))?;
     let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
         .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    // 3. Load the package file data
+    // 2. Load the package file data
     let package_bytes =
         fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
 
-    // 4. Verify signature against key and data
-    sig.verify(&public_key, &package_bytes)
+    // 3. Verify signature against key and data
+    sig.verify(public_key, &package_bytes)
         .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
 
     Ok(())
 }
 
+#[cfg(test)]
+fn verify_signature_bytes(
+    pubkey_bytes: &[u8],
+    package_path: &Path,
+    sig_path: &Path,
+) -> Result<(), String> {
+    let pubkey_str = std::str::from_utf8(pubkey_bytes)
+        .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
+    let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
+        .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
+    verify_signature(&public_key, package_path, sig_path)
+}
+
 fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), String> {
-    verify_signature_bytes(PUBKEY_ASC_BYTES, package_path, sig_path)
+    use std::sync::OnceLock;
+    static PUBLIC_KEY: OnceLock<SignedPublicKey> = OnceLock::new();
+
+    if PUBLIC_KEY.get().is_none() {
+        let pubkey_str = std::str::from_utf8(PUBKEY_ASC_BYTES)
+            .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
+        let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
+            .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
+        let _ = PUBLIC_KEY.set(public_key);
+    }
+    let public_key = PUBLIC_KEY.get().ok_or("Public key not initialized")?;
+
+    verify_signature(public_key, package_path, sig_path)
 }
 
 pub fn pre_startup_verify_packages() {
@@ -50,34 +69,45 @@ pub fn pre_startup_verify_packages() {
     }
 
     let mut invalid = false;
-    if let Ok(entries) = fs::read_dir(&packages_dir) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            if path.extension().is_some_and(|ext| ext == "nupkg") {
-                let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
-                sig_file_name.push(".sig");
-                let sig_path = path.with_file_name(sig_file_name);
-                if !sig_path.exists() {
-                    tracing::warn!(
-                        "Found unverified update package without signature: {:?}",
-                        path
-                    );
-                    invalid = true;
-                    break;
-                }
+    match fs::read_dir(&packages_dir) {
+        Ok(entries) => {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().is_some_and(|ext| ext == "nupkg") {
+                    let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
+                    sig_file_name.push(".sig");
+                    let sig_path = path.with_file_name(sig_file_name);
+                    if !sig_path.exists() {
+                        tracing::warn!(
+                            "Found unverified update package without signature: {:?}",
+                            path
+                        );
+                        invalid = true;
+                        break;
+                    }
 
-                if let Err(e) = verify_package_signature(&path, &sig_path) {
-                    tracing::error!("GPG verification failed for pending update: {}", e);
-                    invalid = true;
-                    break;
+                    if let Err(e) = verify_package_signature(&path, &sig_path) {
+                        tracing::error!("GPG verification failed for pending update: {}", e);
+                        invalid = true;
+                        break;
+                    }
                 }
             }
+        }
+        Err(e) => {
+            tracing::error!(
+                "Failed to read packages directory '{:?}': {}. Purging directory for security.",
+                packages_dir,
+                e
+            );
+            invalid = true;
         }
     }
 
     if invalid {
         tracing::warn!("Purging packages directory due to signature verification failure.");
         let _ = fs::remove_dir_all(&packages_dir);
+        let _ = fs::create_dir_all(&packages_dir);
     }
 }
 
