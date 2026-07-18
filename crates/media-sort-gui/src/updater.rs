@@ -7,9 +7,13 @@ use velopack::{UpdateCheck, UpdateInfo, UpdateManager};
 
 const PUBKEY_ASC_BYTES: &[u8] = include_bytes!("../../../packaging/linux/pubkey.asc");
 
-fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), String> {
+fn verify_signature_bytes(
+    pubkey_bytes: &[u8],
+    package_path: &Path,
+    sig_path: &Path,
+) -> Result<(), String> {
     // 1. Load public key from the embedded bytes
-    let pubkey_str = std::str::from_utf8(PUBKEY_ASC_BYTES)
+    let pubkey_str = std::str::from_utf8(pubkey_bytes)
         .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
     let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
         .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
@@ -29,6 +33,10 @@ fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), 
         .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
 
     Ok(())
+}
+
+fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), String> {
+    verify_signature_bytes(PUBKEY_ASC_BYTES, package_path, sig_path)
 }
 
 pub fn pre_startup_verify_packages() {
@@ -201,4 +209,82 @@ pub async fn download_and_apply_async(
     .map_err(|e| e.to_string())??;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TEST_PUBKEY: &[u8] = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\n\nmDMEalvSuBYJKwYBBAHaRw8BAQdA6gzplEurqkbHUPq+ZbI0EpiWTL+qIEVZGaeu\nO1yw/Vi0F1Rlc3QgPHRlc3RAZXhhbXBsZS5jb20+iJAEExYKADgWIQQXiJEkcn0T\nuXxHoSsXvW6a5c13bQUCalvSuAIbAwULCQgHAgYVCgkICwIEFgIDAQIeAQIXgAAK\nCRAXvW6a5c13bfNwAQCo7crYPuLSCWedK4Jv3Ex9kr5x1rG5FaeAmRr2ugr/eQD+\nO6375lNxCnBthV30GKBNf92X1/qRWOIukvq8csBkVgS4OARqW9K4EgorBgEEAZdV\nAQUBAQdAQIq23WWVowtxaxyRNFAyq3jsQI8ZS15oG89Q9QA4nAwDAQgHiHgEGBYK\nACAWIQQXiJEkcn0TuXxHoSsXvW6a5c13bQUCalvSuAIbDAAKCRAXvW6a5c13bV4e\nAP9BlI/vwGvWJajIU8MXI444b70wuYEZ1SGnaK83NLwiOgEA0d6fEi/qkm9XMTdn\nikCNDWMSOJLbaMTpzz0Kzp/TTwc=\n=7Qpu\n-----END PGP PUBLIC KEY BLOCK-----";
+
+    const TEST_SIG: &[u8] = &[
+        0x88, 0x75, 0x04, 0x00, 0x16, 0x0a, 0x00, 0x1d, 0x16, 0x21, 0x04, 0x17, 0x88, 0x91, 0x24,
+        0x72, 0x7d, 0x13, 0xb9, 0x7c, 0x47, 0xa1, 0x2b, 0x17, 0xbd, 0x6e, 0x9a, 0xe5, 0xcd, 0x77,
+        0x6d, 0x05, 0x02, 0x6a, 0x5b, 0xd2, 0xbb, 0x00, 0x0a, 0x09, 0x10, 0x17, 0xbd, 0x6e, 0x9a,
+        0xe5, 0xcd, 0x77, 0x6d, 0x5b, 0x6f, 0x00, 0xfe, 0x2b, 0xe8, 0xff, 0x23, 0x00, 0xd4, 0x38,
+        0x9d, 0x7a, 0x84, 0x1b, 0xab, 0x0b, 0xb4, 0xc0, 0x59, 0x38, 0xdb, 0xec, 0x1b, 0x8c, 0x24,
+        0x5d, 0x34, 0xec, 0x57, 0x28, 0x32, 0x29, 0x96, 0x84, 0x63, 0x01, 0x00, 0xd2, 0x73, 0xc6,
+        0xd5, 0x2b, 0x22, 0xaf, 0x67, 0x81, 0x7b, 0x68, 0x2b, 0x0c, 0x5b, 0xe6, 0x5f, 0xd2, 0x53,
+        0x85, 0xf2, 0x47, 0x36, 0x93, 0x57, 0x99, 0x64, 0xd6, 0x6d, 0x4f, 0xcf, 0xad, 0x00,
+    ];
+
+    const TEST_DATA: &[u8] = b"hello world";
+
+    #[test]
+    fn test_signature_verification_success() {
+        let temp_dir = std::env::temp_dir();
+        let data_path = temp_dir.join("media_sort_test_data_success.nupkg");
+        let sig_path = temp_dir.join("media_sort_test_data_success.nupkg.sig");
+
+        fs::write(&data_path, TEST_DATA).unwrap();
+        fs::write(&sig_path, TEST_SIG).unwrap();
+
+        let result = verify_signature_bytes(TEST_PUBKEY, &data_path, &sig_path);
+
+        let _ = fs::remove_file(&data_path);
+        let _ = fs::remove_file(&sig_path);
+
+        assert!(result.is_ok(), "Verification failed: {:?}", result);
+    }
+
+    #[test]
+    fn test_signature_verification_tampered_payload() {
+        let temp_dir = std::env::temp_dir();
+        let data_path = temp_dir.join("media_sort_test_data_tampered.nupkg");
+        let sig_path = temp_dir.join("media_sort_test_data_tampered.nupkg.sig");
+
+        fs::write(&data_path, b"tampered content").unwrap();
+        fs::write(&sig_path, TEST_SIG).unwrap();
+
+        let result = verify_signature_bytes(TEST_PUBKEY, &data_path, &sig_path);
+
+        let _ = fs::remove_file(&data_path);
+        let _ = fs::remove_file(&sig_path);
+
+        assert!(
+            result.is_err(),
+            "Verification should have failed for tampered content"
+        );
+        assert!(result.unwrap_err().contains("verification failed"));
+    }
+
+    #[test]
+    fn test_signature_verification_invalid_sig() {
+        let temp_dir = std::env::temp_dir();
+        let data_path = temp_dir.join("media_sort_test_data_invalid.nupkg");
+        let sig_path = temp_dir.join("media_sort_test_data_invalid.nupkg.sig");
+
+        fs::write(&data_path, TEST_DATA).unwrap();
+        fs::write(&sig_path, b"not a valid pgp signature").unwrap();
+
+        let result = verify_signature_bytes(TEST_PUBKEY, &data_path, &sig_path);
+
+        let _ = fs::remove_file(&data_path);
+        let _ = fs::remove_file(&sig_path);
+
+        assert!(
+            result.is_err(),
+            "Verification should have failed for invalid signature"
+        );
+    }
 }

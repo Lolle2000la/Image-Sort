@@ -163,6 +163,23 @@ jobs:
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/MediaSort.AppDir" -e media-sort-gui --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           fi
 
+      - name: Ensure GnuPG is installed
+        if: success()
+        shell: bash
+        run: |
+          if ! command -v gpg &> /dev/null; then
+            echo "gpg not found. Installing..."
+            if [ "${{ matrix.os }}" = "macos-latest" ]; then
+              brew install gnupg
+            elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
+              choco install gnupg
+            else
+              sudo apt-get update && sudo apt-get install -y gnupg
+            fi
+          else
+            echo "gpg is already installed: $(gpg --version | head -n 1)"
+          fi
+
       - name: Import GPG Key
         if: success()
         uses: crazy-max/ghaction-import-gpg@v6
