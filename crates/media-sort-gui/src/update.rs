@@ -228,7 +228,7 @@ fn handle_update_message(
         UpdateMessage::CheckForUpdates => {
             let settings = state.settings.general.clone();
             Task::perform(
-                async move { crate::check_for_update_async(&settings).await },
+                async move { crate::updater::check_for_update_async(&settings).await },
                 |result| match result {
                     Ok(Some(info)) => {
                         Message::Update(UpdateMessage::UpdateAvailable(Box::new(info)))
@@ -253,7 +253,7 @@ fn handle_update_message(
             let allow_prerelease = state.settings.general.install_prerelease_builds
                 || env!("CARGO_PKG_VERSION").contains('-');
             Task::perform(
-                crate::download_and_apply_async(*info, allow_prerelease),
+                crate::updater::download_and_apply_async(*info, allow_prerelease),
                 |result| match result {
                     Ok(()) => Message::Update(UpdateMessage::UpdateFailed(
                         "Update applied, restarting...".into(),

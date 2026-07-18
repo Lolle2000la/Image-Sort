@@ -1,0 +1,72 @@
+[changelog]
+header = """
+"""
+body = """
+{%- set user_facing_groups = ["Features", "Bug Fixes", "Performance Improvements"] -%}
+{%- set dev_facing_groups = ["Refactoring", "Testing", "Code Style & Quality", "Maintenance"] -%}
+
+{%- set has_user = false -%}
+{%- set has_dev = false -%}
+
+{%- for group, commits in commits | group_by(attribute="group") -%}
+  {%- if group in user_facing_groups -%}
+    {%- set_global has_user = true -%}
+  {%- elif group in dev_facing_groups -%}
+    {%- set_global has_dev = true -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{% if has_user %}
+{%- for group_name in user_facing_groups %}
+  {%- for group, commits in commits | group_by(attribute="group") %}
+    {%- if group == group_name %}
+
+### {{ group }}
+
+{% for commit in commits %}
+* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
+{%- endfor %}
+    {%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{%- endif %}
+
+{% if has_dev %}
+{%- if has_user %}
+
+---
+{%- endif %}
+
+### Developer Changes
+{%- for group_name in dev_facing_groups %}
+  {%- for group, commits in commits | group_by(attribute="group") %}
+    {%- if group == group_name %}
+
+#### {{ group }}
+
+{% for commit in commits %}
+* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
+{%- endfor %}
+    {%- endif %}
+  {%- endfor %}
+{%- endfor %}
+{%- endif %}
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_parsers = [
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^perf", group = "Performance Improvements" },
+    { message = "^refactor", group = "Refactoring" },
+    { message = "^test", group = "Testing" },
+    { message = "^style", group = "Code Style & Quality" },
+    { message = "^chore", group = "Maintenance" },
+    { message = ".*", drop = true }
+]
+filter_commits = false
+tag_pattern = "v[0-9]*"
