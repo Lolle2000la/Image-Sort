@@ -2,14 +2,12 @@
 header = """
 """
 body = """
-{% if sections %}
-{% for group, commits in sections %}
+{% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group }}
 {% for commit in commits %}
 * {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))\
 {% endfor %}
 {% endfor %}
-{% endif %}
 """
 trim = true
 
