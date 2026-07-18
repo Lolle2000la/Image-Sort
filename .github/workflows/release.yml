@@ -234,10 +234,15 @@ jobs:
           fi
 
       - name: Generate Changelog from Commits
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header --prepend CHANGES.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Download and extract the git-cliff binary
+          curl -L -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
+          tar -xzf git-cliff.tar.gz --strip-components=1
+          
+          # Execute git-cliff directly
+          ./git-cliff --config cliff.toml --latest --strip header --prepend CHANGES.md
 
       - name: Publish Release Atomically
         env:
