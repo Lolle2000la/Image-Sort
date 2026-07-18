@@ -260,11 +260,24 @@ mod tests {
 
     const TEST_DATA: &[u8] = b"hello world";
 
+    static TEST_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+    fn get_temp_paths(prefix: &str) -> (std::path::PathBuf, std::path::PathBuf) {
+        use std::sync::atomic::Ordering;
+        let pid = std::process::id();
+        let id = TEST_COUNTER.fetch_add(1, Ordering::SeqCst);
+        let temp_dir = std::env::temp_dir();
+        let data_path = temp_dir.join(format!("media_sort_test_{}_{}_{}.nupkg", prefix, pid, id));
+        let sig_path = temp_dir.join(format!(
+            "media_sort_test_{}_{}_{}.nupkg.sig",
+            prefix, pid, id
+        ));
+        (data_path, sig_path)
+    }
+
     #[test]
     fn test_signature_verification_success() {
-        let temp_dir = std::env::temp_dir();
-        let data_path = temp_dir.join("media_sort_test_data_success.nupkg");
-        let sig_path = temp_dir.join("media_sort_test_data_success.nupkg.sig");
+        let (data_path, sig_path) = get_temp_paths("success");
 
         fs::write(&data_path, TEST_DATA).unwrap();
         fs::write(&sig_path, TEST_SIG).unwrap();
@@ -279,9 +292,7 @@ mod tests {
 
     #[test]
     fn test_signature_verification_tampered_payload() {
-        let temp_dir = std::env::temp_dir();
-        let data_path = temp_dir.join("media_sort_test_data_tampered.nupkg");
-        let sig_path = temp_dir.join("media_sort_test_data_tampered.nupkg.sig");
+        let (data_path, sig_path) = get_temp_paths("tampered");
 
         fs::write(&data_path, b"tampered content").unwrap();
         fs::write(&sig_path, TEST_SIG).unwrap();
@@ -300,9 +311,7 @@ mod tests {
 
     #[test]
     fn test_signature_verification_invalid_sig() {
-        let temp_dir = std::env::temp_dir();
-        let data_path = temp_dir.join("media_sort_test_data_invalid.nupkg");
-        let sig_path = temp_dir.join("media_sort_test_data_invalid.nupkg.sig");
+        let (data_path, sig_path) = get_temp_paths("invalid");
 
         fs::write(&data_path, TEST_DATA).unwrap();
         fs::write(&sig_path, b"not a valid pgp signature").unwrap();
