@@ -44,77 +44,93 @@ fn verify_signature_bytes(
 
 fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), String> {
     use std::sync::OnceLock;
-    static PUBLIC_KEY: OnceLock<SignedPublicKey> = OnceLock::new();
+    static PUBLIC_KEY: OnceLock<Option<SignedPublicKey>> = OnceLock::new();
 
-    let public_key = PUBLIC_KEY.get_or_init(|| {
-        let pubkey_str = std::str::from_utf8(PUBKEY_ASC_BYTES)
-            .expect("Failed to parse public key bytes as UTF-8");
-        let (public_key, _) =
-            SignedPublicKey::from_string(pubkey_str).expect("Failed to load PGP public key");
-        public_key
+    let public_key_opt = PUBLIC_KEY.get_or_init(|| {
+        let pubkey_str = match std::str::from_utf8(PUBKEY_ASC_BYTES) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!("Failed to parse public key bytes as UTF-8: {}", e);
+                return None;
+            }
+        };
+        match SignedPublicKey::from_string(pubkey_str) {
+            Ok((public_key, _)) => Some(public_key),
+            Err(e) => {
+                tracing::error!("Failed to load PGP public key: {:?}", e);
+                None
+            }
+        }
     });
+
+    let public_key = public_key_opt
+        .as_ref()
+        .ok_or_else(|| "GPG public key is invalid or failed to parse".to_string())?;
 
     verify_signature(public_key, package_path, sig_path)
 }
 
 pub fn pre_startup_verify_packages() {
-    let context = velopack::locator::LocationContext::Unknown;
-    let Ok(locator) = velopack::locator::auto_locate_app_manifest(context) else {
-        return;
-    };
-    let packages_dir = locator.get_packages_dir();
-    if !packages_dir.exists() {
-        return;
-    }
+    #[cfg(target_os = "linux")]
+    {
+        let context = velopack::locator::LocationContext::Unknown;
+        let Ok(locator) = velopack::locator::auto_locate_app_manifest(context) else {
+            return;
+        };
+        let packages_dir = locator.get_packages_dir();
+        if !packages_dir.exists() {
+            return;
+        }
 
-    let mut invalid = false;
-    match fs::read_dir(&packages_dir) {
-        Ok(entries) => {
-            for entry_res in entries {
-                let entry = match entry_res {
-                    Ok(e) => e,
-                    Err(e) => {
-                        tracing::error!("Failed to read packages directory entry: {}", e);
-                        invalid = true;
-                        break;
-                    }
-                };
-                let path = entry.path();
-                if path.extension().is_some_and(|ext| ext == "nupkg") {
-                    let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
-                    sig_file_name.push(".sig");
-                    let sig_path = path.with_file_name(sig_file_name);
-                    if !sig_path.exists() {
-                        tracing::warn!(
-                            "Found unverified update package without signature: {:?}",
-                            path
-                        );
-                        invalid = true;
-                        break;
-                    }
+        let mut invalid = false;
+        match fs::read_dir(&packages_dir) {
+            Ok(entries) => {
+                for entry_res in entries {
+                    let entry = match entry_res {
+                        Ok(e) => e,
+                        Err(e) => {
+                            tracing::error!("Failed to read packages directory entry: {}", e);
+                            invalid = true;
+                            break;
+                        }
+                    };
+                    let path = entry.path();
+                    if path.extension().is_some_and(|ext| ext == "nupkg") {
+                        let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
+                        sig_file_name.push(".sig");
+                        let sig_path = path.with_file_name(sig_file_name);
+                        if !sig_path.exists() {
+                            tracing::warn!(
+                                "Found unverified update package without signature: {:?}",
+                                path
+                            );
+                            invalid = true;
+                            break;
+                        }
 
-                    if let Err(e) = verify_package_signature(&path, &sig_path) {
-                        tracing::error!("GPG verification failed for pending update: {}", e);
-                        invalid = true;
-                        break;
+                        if let Err(e) = verify_package_signature(&path, &sig_path) {
+                            tracing::error!("GPG verification failed for pending update: {}", e);
+                            invalid = true;
+                            break;
+                        }
                     }
                 }
             }
+            Err(e) => {
+                tracing::error!(
+                    "Failed to read packages directory '{:?}': {}. Purging directory for security.",
+                    packages_dir,
+                    e
+                );
+                invalid = true;
+            }
         }
-        Err(e) => {
-            tracing::error!(
-                "Failed to read packages directory '{:?}': {}. Purging directory for security.",
-                packages_dir,
-                e
-            );
-            invalid = true;
-        }
-    }
 
-    if invalid {
-        tracing::warn!("Purging packages directory due to signature verification failure.");
-        let _ = fs::remove_dir_all(&packages_dir);
-        let _ = fs::create_dir_all(&packages_dir);
+        if invalid {
+            tracing::warn!("Purging packages directory due to signature verification failure.");
+            let _ = fs::remove_dir_all(&packages_dir);
+            let _ = fs::create_dir_all(&packages_dir);
+        }
     }
 }
 
@@ -218,8 +234,12 @@ pub async fn download_and_apply_async(
         };
 
         if !response.status().is_success() {
-            let _ = fs::remove_dir_all(&packages_dir);
-            let _ = fs::create_dir_all(&packages_dir);
+            let packages_dir_clone = packages_dir.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                let _ = fs::remove_dir_all(&packages_dir_clone);
+                let _ = fs::create_dir_all(&packages_dir_clone);
+            })
+            .await;
             return Err(format!(
                 "Failed to download signature file for verification: HTTP {}",
                 response.status()
@@ -227,12 +247,28 @@ pub async fn download_and_apply_async(
         }
 
         let sig_bytes = response.bytes().await.map_err(|e| e.to_string())?;
-        fs::write(&sig_path, sig_bytes)
+        let sig_path_clone = sig_path.clone();
+        let sig_bytes_clone = sig_bytes.clone();
+        tokio::task::spawn_blocking(move || fs::write(&sig_path_clone, sig_bytes_clone))
+            .await
+            .map_err(|e| format!("Task join error: {}", e))?
             .map_err(|e| format!("Failed to write signature file: {}", e))?;
 
-        if let Err(e) = verify_package_signature(&package_path, &sig_path) {
-            let _ = fs::remove_dir_all(&packages_dir);
-            let _ = fs::create_dir_all(&packages_dir);
+        let verify_res = tokio::task::spawn_blocking({
+            let package_path = package_path.clone();
+            let sig_path = sig_path.clone();
+            move || verify_package_signature(&package_path, &sig_path)
+        })
+        .await
+        .map_err(|e| format!("Task join error: {}", e))?;
+
+        if let Err(e) = verify_res {
+            let packages_dir_clone = packages_dir.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                let _ = fs::remove_dir_all(&packages_dir_clone);
+                let _ = fs::create_dir_all(&packages_dir_clone);
+            })
+            .await;
             return Err(format!("GPG signature verification failed: {}", e));
         }
     }
