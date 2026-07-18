@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           dotnet tool install -g vpk
-          export PATH="$PATH:$HOME/.dotnet/tools"
+          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
           RAW_VERSION="${{ github.ref_name }}"
           CLEAN_VERSION="${RAW_VERSION#v}"
@@ -163,14 +163,14 @@ jobs:
           fi
 
       - name: Import GPG Key
-        if: success() && startsWith(matrix.os, 'ubuntu')
+        if: success()
         uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Sign Velopack Packages (Linux Only)
-        if: success() && startsWith(matrix.os, 'ubuntu')
+      - name: Sign Velopack Packages
+        if: success()
         shell: bash
         run: |
           for file in Releases/*.nupkg; do
@@ -187,10 +187,10 @@ jobs:
         shell: bash
         run: |
           RAW_VERSION="${{ github.ref_name }}"
-          $HOME/.dotnet/tools/vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
+          vpk upload github --repoUrl https://github.com/${{ github.repository }} --channel ${{ matrix.platform }} --publish --merge --tag "$RAW_VERSION" --token ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload GPG signatures to GitHub Release (Linux Only)
-        if: success() && startsWith(matrix.os, 'ubuntu')
+      - name: Upload GPG signatures to GitHub Release
+        if: success()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

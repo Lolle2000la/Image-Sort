@@ -93,7 +93,6 @@ pub struct Cli {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
-        #[cfg(target_os = "linux")]
         updater::pre_startup_verify_packages();
 
         let mut app = velopack::VelopackApp::build();

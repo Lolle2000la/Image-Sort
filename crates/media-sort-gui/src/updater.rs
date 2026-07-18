@@ -1,67 +1,36 @@
+use pgp::composed::{Deserializable, DetachedSignature, SignedPublicKey};
 use std::fs;
+use std::io::Cursor;
 use std::path::Path;
 use velopack::sources::GithubSource;
 use velopack::{UpdateCheck, UpdateInfo, UpdateManager};
 
 const PUBKEY_ASC_BYTES: &[u8] = include_bytes!("../../../packaging/linux/pubkey.asc");
 
-#[cfg(target_os = "linux")]
-fn dearmor_gpg_key(asc_bytes: &[u8], dest_gpg_path: &Path) -> Result<(), String> {
-    use std::io::Write;
-    let mut child = std::process::Command::new("gpg")
-        .arg("--dearmor")
-        .arg("--output")
-        .arg(dest_gpg_path)
-        .stdin(std::process::Stdio::piped())
-        .spawn()
-        .map_err(|e| {
-            format!(
-                "Failed to spawn gpg --dearmor: {}. Please ensure GnuPG/GPG is installed.",
-                e
-            )
-        })?;
+fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), String> {
+    // 1. Load public key from the embedded bytes
+    let pubkey_str = std::str::from_utf8(PUBKEY_ASC_BYTES)
+        .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
+    let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
+        .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
 
-    {
-        let mut stdin = child
-            .stdin
-            .take()
-            .ok_or("Failed to open stdin of gpg command")?;
-        stdin.write_all(asc_bytes).map_err(|e| e.to_string())?;
-    }
+    // 2. Load the detached signature
+    let sig_bytes =
+        fs::read(sig_path).map_err(|e| format!("Failed to read signature file: {}", e))?;
+    let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
+        .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    let status = child.wait().map_err(|e| e.to_string())?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err("gpg --dearmor failed".to_string())
-    }
+    // 3. Load the package file data
+    let package_bytes =
+        fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
+
+    // 4. Verify signature against key and data
+    sig.verify(&public_key, &package_bytes)
+        .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
+
+    Ok(())
 }
 
-#[cfg(target_os = "linux")]
-fn verify_gpg_signature(
-    package_path: &Path,
-    sig_path: &Path,
-    pubkey_path: &Path,
-) -> Result<(), String> {
-    let output = std::process::Command::new("gpg")
-        .arg("--no-default-keyring")
-        .arg("--keyring")
-        .arg(pubkey_path)
-        .arg("--verify")
-        .arg(sig_path)
-        .arg(package_path)
-        .output()
-        .map_err(|e| format!("Failed to execute gpg verify: {}", e))?;
-
-    if output.status.success() {
-        Ok(())
-    } else {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        Err(format!("GPG verification failed:\n{}", stderr))
-    }
-}
-
-#[cfg(target_os = "linux")]
 pub fn pre_startup_verify_packages() {
     let context = velopack::locator::LocationContext::Unknown;
     let Ok(locator) = velopack::locator::auto_locate_app_manifest(context) else {
@@ -87,21 +56,11 @@ pub fn pre_startup_verify_packages() {
                     break;
                 }
 
-                let temp_dir = std::env::temp_dir();
-                let pubkey_path = temp_dir.join("media_sort_pubkey.gpg");
-                if let Err(e) = dearmor_gpg_key(PUBKEY_ASC_BYTES, &pubkey_path) {
-                    tracing::error!("Failed to dearmor embedded public key: {}", e);
-                    invalid = true;
-                    break;
-                }
-
-                if let Err(e) = verify_gpg_signature(&path, &sig_path, &pubkey_path) {
+                if let Err(e) = verify_package_signature(&path, &sig_path) {
                     tracing::error!("GPG verification failed for pending update: {}", e);
                     invalid = true;
-                    let _ = fs::remove_file(&pubkey_path);
                     break;
                 }
-                let _ = fs::remove_file(&pubkey_path);
             }
         }
     }
@@ -165,19 +124,14 @@ pub async fn download_and_apply_async(
         .await
         .map_err(|e| e.to_string())?;
 
-    #[cfg(target_os = "linux")]
-    let (packages_dir, file_name, package_path, sig_path, version) = {
-        let locator = velopack::locator::auto_locate_app_manifest(
-            velopack::locator::LocationContext::Unknown,
-        )
-        .map_err(|e| format!("Failed to locate app manifest: {}", e))?;
-        let packages_dir = locator.get_packages_dir();
-        let file_name = info.TargetFullRelease.FileName.clone();
-        let package_path = packages_dir.join(&file_name);
-        let sig_path = packages_dir.join(format!("{}.sig", file_name));
-        let version = info.TargetFullRelease.Version.clone();
-        (packages_dir, file_name, package_path, sig_path, version)
-    };
+    let locator =
+        velopack::locator::auto_locate_app_manifest(velopack::locator::LocationContext::Unknown)
+            .map_err(|e| format!("Failed to locate app manifest: {}", e))?;
+    let packages_dir = locator.get_packages_dir();
+    let file_name = info.TargetFullRelease.FileName.clone();
+    let package_path = packages_dir.join(&file_name);
+    let sig_path = packages_dir.join(format!("{}.sig", file_name));
+    let version = info.TargetFullRelease.Version.clone();
 
     let info_clone = info.clone();
     let repo_url_clone = repo_url.clone();
@@ -191,7 +145,6 @@ pub async fn download_and_apply_async(
     .await
     .map_err(|e| e.to_string())??;
 
-    #[cfg(target_os = "linux")]
     {
         let client = reqwest::Client::builder()
             .user_agent("media-sort-gui-updater")
@@ -229,21 +182,10 @@ pub async fn download_and_apply_async(
         fs::write(&sig_path, sig_bytes)
             .map_err(|e| format!("Failed to write signature file: {}", e))?;
 
-        let temp_dir = std::env::temp_dir();
-        let pubkey_path = temp_dir.join("media_sort_pubkey.gpg");
-        if let Err(e) = dearmor_gpg_key(PUBKEY_ASC_BYTES, &pubkey_path) {
+        if let Err(e) = verify_package_signature(&package_path, &sig_path) {
             let _ = fs::remove_dir_all(&packages_dir);
-            let _ = fs::remove_file(&pubkey_path);
-            return Err(format!("Failed to dearmor GPG key: {}", e));
-        }
-
-        if let Err(e) = verify_gpg_signature(&package_path, &sig_path, &pubkey_path) {
-            let _ = fs::remove_dir_all(&packages_dir);
-            let _ = fs::remove_file(&pubkey_path);
             return Err(format!("GPG signature verification failed: {}", e));
         }
-
-        let _ = fs::remove_file(&pubkey_path);
     }
 
     tokio::task::spawn_blocking(move || {
