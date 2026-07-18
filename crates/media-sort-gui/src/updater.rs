@@ -30,18 +30,6 @@ fn verify_signature(
     let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
         .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    // Enforce size limit on the package file
-    let package_metadata = fs::metadata(package_path)
-        .map_err(|e| format!("Failed to read package metadata: {}", e))?;
-    let package_size = package_metadata.len();
-    const MAX_PACKAGE_SIZE: u64 = 100 * 1024 * 1024; // 100 MB
-    if package_size > MAX_PACKAGE_SIZE {
-        return Err(format!(
-            "Package file size ({} bytes) exceeds the maximum allowed limit of {} bytes",
-            package_size, MAX_PACKAGE_SIZE
-        ));
-    }
-
     // Load the package file data
     let package_bytes =
         fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
