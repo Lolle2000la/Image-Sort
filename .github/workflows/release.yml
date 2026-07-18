@@ -95,6 +95,7 @@ jobs:
         shell: bash
         run: |
           dotnet tool install -g vpk
+          export PATH="$PATH:$HOME/.dotnet/tools"
           echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
           RAW_VERSION="${{ github.ref_name }}"
