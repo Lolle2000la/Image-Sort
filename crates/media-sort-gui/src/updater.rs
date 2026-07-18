@@ -143,6 +143,8 @@ struct GithubRepoMetadata {
 async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
     let client = reqwest::Client::builder()
         .user_agent("media-sort-gui-updater")
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(30))
         .build()?;
 
     let url = format!("https://api.github.com/repositories/{}", GITHUB_REPO_ID);
@@ -220,6 +222,8 @@ pub async fn download_and_apply_async(
     {
         let client = reqwest::Client::builder()
             .user_agent("media-sort-gui-updater")
+            .connect_timeout(std::time::Duration::from_secs(10))
+            .timeout(std::time::Duration::from_secs(30))
             .build()
             .map_err(|e| e.to_string())?;
 
