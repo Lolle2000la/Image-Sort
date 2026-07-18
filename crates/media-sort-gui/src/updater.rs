@@ -12,18 +12,6 @@ fn verify_signature(
     package_path: &Path,
     sig_path: &Path,
 ) -> Result<(), String> {
-    // Enforce size limit on the signature file
-    let sig_metadata =
-        fs::metadata(sig_path).map_err(|e| format!("Failed to read signature metadata: {}", e))?;
-    let sig_size = sig_metadata.len();
-    const MAX_SIG_SIZE: u64 = 10 * 1024; // 10 KB
-    if sig_size > MAX_SIG_SIZE {
-        return Err(format!(
-            "Signature file size ({} bytes) exceeds the maximum allowed limit of {} bytes",
-            sig_size, MAX_SIG_SIZE
-        ));
-    }
-
     // Load the detached signature
     let sig_bytes =
         fs::read(sig_path).map_err(|e| format!("Failed to read signature file: {}", e))?;
