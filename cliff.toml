@@ -2,12 +2,51 @@
 header = """
 """
 body = """
-{% for group, commits in commits | group_by(attribute="group") %}
+{%- set user_facing_groups = ["🚀 Features", "🐛 Bug Fixes", "⚡ Performance Improvements"] -%}
+{%- set dev_facing_groups = ["🚜 Refactoring", "🧪 Testing", "🎨 Code Style & Quality", "⚙️ Maintenance"] -%}
+
+{%- set has_user = false -%}
+{%- set has_dev = false -%}
+
+{%- for group, commits in commits | group_by(attribute="group") -%}
+  {%- if group in user_facing_groups -%}
+    {%- set_global has_user = true -%}
+  {%- elif group in dev_facing_groups -%}
+    {%- set_global has_dev = true -%}
+  {%- endif -%}
+{%- endfor -%}
+
+{% if has_user %}
+{%- for group, commits in commits | group_by(attribute="group") %}
+  {%- if group in user_facing_groups %}
+
 ### {{ group }}
+
 {% for commit in commits %}
-* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))\
-{% endfor %}
-{% endfor %}
+* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
+{%- endfor %}
+  {%- endif %}
+{%- endfor %}
+{%- endif %}
+
+{% if has_dev %}
+{%- if has_user %}
+
+---
+{%- endif %}
+
+### 🛠️ Developer Changes
+{%- for group, commits in commits | group_by(attribute="group") %}
+  {%- if group in dev_facing_groups %}
+
+#### {{ group }}
+
+{% for commit in commits %}
+* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
+{%- endfor %}
+  {%- endif %}
+{%- endfor %}
+{%- endif %}
 """
 trim = true
 
