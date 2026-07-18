@@ -12,17 +12,41 @@ fn verify_signature(
     package_path: &Path,
     sig_path: &Path,
 ) -> Result<(), String> {
-    // 1. Load the detached signature
+    // 1. Enforce size limit on the signature file
+    let sig_metadata =
+        fs::metadata(sig_path).map_err(|e| format!("Failed to read signature metadata: {}", e))?;
+    let sig_size = sig_metadata.len();
+    const MAX_SIG_SIZE: u64 = 10 * 1024; // 10 KB
+    if sig_size > MAX_SIG_SIZE {
+        return Err(format!(
+            "Signature file size ({} bytes) exceeds the maximum allowed limit of {} bytes",
+            sig_size, MAX_SIG_SIZE
+        ));
+    }
+
+    // 2. Load the detached signature
     let sig_bytes =
         fs::read(sig_path).map_err(|e| format!("Failed to read signature file: {}", e))?;
     let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
         .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    // 2. Load the package file data
+    // 3. Enforce size limit on the package file
+    let package_metadata = fs::metadata(package_path)
+        .map_err(|e| format!("Failed to read package metadata: {}", e))?;
+    let package_size = package_metadata.len();
+    const MAX_PACKAGE_SIZE: u64 = 100 * 1024 * 1024; // 100 MB
+    if package_size > MAX_PACKAGE_SIZE {
+        return Err(format!(
+            "Package file size ({} bytes) exceeds the maximum allowed limit of {} bytes",
+            package_size, MAX_PACKAGE_SIZE
+        ));
+    }
+
+    // 4. Load the package file data
     let package_bytes =
         fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
 
-    // 3. Verify signature against key and data
+    // 5. Verify signature against key and data
     sig.verify(public_key, &package_bytes)
         .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
 
@@ -192,6 +216,16 @@ pub async fn download_and_apply_async(
             .map_err(|e| format!("Failed to locate app manifest: {}", e))?;
     let packages_dir = locator.get_packages_dir();
     let file_name = info.TargetFullRelease.FileName.clone();
+
+    let path_check = Path::new(&file_name);
+    if path_check.is_absolute()
+        || path_check.components().count() != 1
+        || file_name.contains('/')
+        || file_name.contains('\\')
+    {
+        return Err("Invalid update package file name".to_string());
+    }
+
     let package_path = packages_dir.join(&file_name);
     let sig_path = packages_dir.join(format!("{}.sig", file_name));
     let version = info.TargetFullRelease.Version.clone();
