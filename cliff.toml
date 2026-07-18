@@ -2,8 +2,8 @@
 header = """
 """
 body = """
-{%- set user_facing_groups = ["🚀 Features", "🐛 Bug Fixes", "⚡ Performance Improvements"] -%}
-{%- set dev_facing_groups = ["🚜 Refactoring", "🧪 Testing", "🎨 Code Style & Quality", "⚙️ Maintenance"] -%}
+{%- set user_facing_groups = ["Features", "Bug Fixes", "Performance Improvements"] -%}
+{%- set dev_facing_groups = ["Refactoring", "Testing", "Code Style & Quality", "Maintenance"] -%}
 
 {%- set has_user = false -%}
 {%- set has_dev = false -%}
@@ -17,15 +17,17 @@ body = """
 {%- endfor -%}
 
 {% if has_user %}
-{%- for group, commits in commits | group_by(attribute="group") %}
-  {%- if group in user_facing_groups %}
+{%- for group_name in user_facing_groups %}
+  {%- for group, commits in commits | group_by(attribute="group") %}
+    {%- if group == group_name %}
 
 ### {{ group }}
 
 {% for commit in commits %}
 * {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
 {%- endfor %}
-  {%- endif %}
+    {%- endif %}
+  {%- endfor %}
 {%- endfor %}
 {%- endif %}
 
@@ -35,16 +37,18 @@ body = """
 ---
 {%- endif %}
 
-### 🛠️ Developer Changes
-{%- for group, commits in commits | group_by(attribute="group") %}
-  {%- if group in dev_facing_groups %}
+### Developer Changes
+{%- for group_name in dev_facing_groups %}
+  {%- for group, commits in commits | group_by(attribute="group") %}
+    {%- if group == group_name %}
 
 #### {{ group }}
 
 {% for commit in commits %}
 * {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/{{- remote.github.owner -}}/{{- remote.github.repo -}}/commit/{{ commit.id }}))
 {%- endfor %}
-  {%- endif %}
+    {%- endif %}
+  {%- endfor %}
 {%- endfor %}
 {%- endif %}
 """
@@ -55,13 +59,13 @@ conventional_commits = true
 filter_unconventional = true
 split_commits = false
 commit_parsers = [
-    { message = "^feat", group = "🚀 Features" },
-    { message = "^fix", group = "🐛 Bug Fixes" },
-    { message = "^perf", group = "⚡ Performance Improvements" },
-    { message = "^refactor", group = "🚜 Refactoring" },
-    { message = "^test", group = "🧪 Testing" },
-    { message = "^style", group = "🎨 Code Style & Quality" },
-    { message = "^chore", group = "⚙️ Maintenance" },
+    { message = "^feat", group = "Features" },
+    { message = "^fix", group = "Bug Fixes" },
+    { message = "^perf", group = "Performance Improvements" },
+    { message = "^refactor", group = "Refactoring" },
+    { message = "^test", group = "Testing" },
+    { message = "^style", group = "Code Style & Quality" },
+    { message = "^chore", group = "Maintenance" },
     { message = ".*", drop = true }
 ]
 filter_commits = false
