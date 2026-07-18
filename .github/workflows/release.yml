@@ -225,7 +225,7 @@ jobs:
 
       - name: Extract Tag Message
         run: |
-          TAG_TEXT=$(git tag -l --format='%(contents:body)' ${{ github.ref_name }})
+          TAG_TEXT=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
           if [ ! -z "$TAG_TEXT" ]; then
             echo "$TAG_TEXT" > CHANGES.md
             echo -e "\n\n## Changelog" >> CHANGES.md
@@ -242,7 +242,7 @@ jobs:
           tar -xzf git-cliff.tar.gz --strip-components=1
           
           # Execute git-cliff directly
-          ./git-cliff --config cliff.toml --latest --strip header --prepend CHANGES.md
+          ./git-cliff --config cliff.toml --current --strip header --prepend CHANGES.md
 
       - name: Publish Release Atomically
         env:
