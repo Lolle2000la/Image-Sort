@@ -12,7 +12,7 @@ fn verify_signature(
     package_path: &Path,
     sig_path: &Path,
 ) -> Result<(), String> {
-    // 1. Enforce size limit on the signature file
+    // Enforce size limit on the signature file
     let sig_metadata =
         fs::metadata(sig_path).map_err(|e| format!("Failed to read signature metadata: {}", e))?;
     let sig_size = sig_metadata.len();
@@ -24,13 +24,13 @@ fn verify_signature(
         ));
     }
 
-    // 2. Load the detached signature
+    // Load the detached signature
     let sig_bytes =
         fs::read(sig_path).map_err(|e| format!("Failed to read signature file: {}", e))?;
     let sig = DetachedSignature::from_bytes(Cursor::new(sig_bytes))
         .map_err(|e| format!("Failed to parse PGP signature: {:?}", e))?;
 
-    // 3. Enforce size limit on the package file
+    // Enforce size limit on the package file
     let package_metadata = fs::metadata(package_path)
         .map_err(|e| format!("Failed to read package metadata: {}", e))?;
     let package_size = package_metadata.len();
@@ -42,11 +42,11 @@ fn verify_signature(
         ));
     }
 
-    // 4. Load the package file data
+    // Load the package file data
     let package_bytes =
         fs::read(package_path).map_err(|e| format!("Failed to read package file: {}", e))?;
 
-    // 5. Verify signature against key and data
+    // Verify signature against key and data
     sig.verify(public_key, &package_bytes)
         .map_err(|e| format!("PGP signature verification failed: {:?}", e))?;
 
