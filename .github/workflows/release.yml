@@ -89,7 +89,7 @@ jobs:
           RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
         run: |
           rustup target add ${{ matrix.target }}
-          cargo build --release --target ${{ matrix.target }} --features velopack
+          cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features velopack
 
       - name: Install and Run Velopack Packager
         shell: bash
