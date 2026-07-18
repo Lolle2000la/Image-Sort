@@ -14,78 +14,7 @@ mod widgets;
 use iced::window;
 use media_sort_core::settings::store::SettingsStore;
 #[cfg(feature = "velopack")]
-use serde::Deserialize;
-
-#[cfg(feature = "velopack")]
-const GITHUB_REPO_ID: u64 = 119281525;
-
-#[cfg(feature = "velopack")]
-#[derive(Deserialize)]
-struct GithubRepoMetadata {
-    html_url: String,
-}
-
-#[cfg(feature = "velopack")]
-async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let client = reqwest::Client::builder()
-        .user_agent("media-sort-gui-updater")
-        .build()?;
-
-    let url = format!("https://api.github.com/repositories/{}", GITHUB_REPO_ID);
-    let metadata: GithubRepoMetadata = client
-        .get(&url)
-        .send()
-        .await?
-        .error_for_status()?
-        .json()
-        .await?;
-
-    Ok(metadata.html_url)
-}
-
-#[cfg(feature = "velopack")]
-pub async fn check_for_update_async(
-    settings: &media_sort_core::settings::general::GeneralSettings,
-) -> Result<Option<velopack::UpdateInfo>, String> {
-    let repo_url = fetch_canonical_repo_url()
-        .await
-        .map_err(|e| e.to_string())?;
-    let allow_prerelease =
-        settings.install_prerelease_builds || env!("CARGO_PKG_VERSION").contains('-');
-
-    tokio::task::spawn_blocking(move || {
-        let source = velopack::sources::GithubSource::new(&repo_url, None, allow_prerelease);
-        let um = velopack::UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
-        match um.check_for_updates().map_err(|e| e.to_string())? {
-            velopack::UpdateCheck::UpdateAvailable(update) => Ok(Some(*update)),
-            _ => Ok(None),
-        }
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
-
-#[cfg(feature = "velopack")]
-pub async fn download_and_apply_async(
-    info: velopack::UpdateInfo,
-    allow_prerelease: bool,
-) -> Result<(), String> {
-    let repo_url = fetch_canonical_repo_url()
-        .await
-        .map_err(|e| e.to_string())?;
-
-    tokio::task::spawn_blocking(move || {
-        let source = velopack::sources::GithubSource::new(&repo_url, None, allow_prerelease);
-        let um = velopack::UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
-        um.download_updates(&info, None)
-            .map_err(|e| e.to_string())?;
-        um.apply_updates_and_restart(&info)
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    })
-    .await
-    .map_err(|e| e.to_string())?
-}
+pub mod updater;
 
 fn initialize_panic_hook() {
     let default_hook = std::panic::take_hook();
@@ -164,6 +93,9 @@ pub struct Cli {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(feature = "velopack")]
     {
+        #[cfg(target_os = "linux")]
+        updater::pre_startup_verify_packages();
+
         let mut app = velopack::VelopackApp::build();
         #[cfg(target_os = "windows")]
         {
