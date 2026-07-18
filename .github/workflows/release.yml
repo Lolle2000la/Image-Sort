@@ -220,10 +220,28 @@ jobs:
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Extract Tag Message
+        run: |
+          TAG_TEXT=$(git tag -l --format='%(contents:body)' ${{ github.ref_name }})
+          if [ ! -z "$TAG_TEXT" ]; then
+            echo "$TAG_TEXT" > CHANGES.md
+            echo -e "\n\n## Changelog" >> CHANGES.md
+          else
+            touch CHANGES.md
+          fi
+
+      - name: Generate Changelog from Commits
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header --prepend CHANGES.md
 
       - name: Publish Release Atomically
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "All platforms compiled, signed, and merged. Publishing release..."
-          gh release edit "${{ github.ref_name }}" --draft=false
+          echo "All platforms compiled, signed, and merged. Publishing release with conventional changelog..."
+          gh release edit "${{ github.ref_name }}" --draft=false --notes-file CHANGES.md
