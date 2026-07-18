@@ -95,7 +95,7 @@ pub fn pre_startup_verify_packages() {
                         }
                     };
                     let path = entry.path();
-                    if path.extension().is_some_and(|ext| ext == "nupkg") {
+                    if path.is_file() && path.extension().is_some_and(|ext| ext == "nupkg") {
                         let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
                         sig_file_name.push(".sig");
                         let sig_path = path.with_file_name(sig_file_name);
