@@ -46,14 +46,13 @@ fn verify_package_signature(package_path: &Path, sig_path: &Path) -> Result<(), 
     use std::sync::OnceLock;
     static PUBLIC_KEY: OnceLock<SignedPublicKey> = OnceLock::new();
 
-    if PUBLIC_KEY.get().is_none() {
+    let public_key = PUBLIC_KEY.get_or_init(|| {
         let pubkey_str = std::str::from_utf8(PUBKEY_ASC_BYTES)
-            .map_err(|e| format!("Failed to parse public key bytes as UTF-8: {}", e))?;
-        let (public_key, _) = SignedPublicKey::from_string(pubkey_str)
-            .map_err(|e| format!("Failed to load PGP public key: {:?}", e))?;
-        let _ = PUBLIC_KEY.set(public_key);
-    }
-    let public_key = PUBLIC_KEY.get().ok_or("Public key not initialized")?;
+            .expect("Failed to parse public key bytes as UTF-8");
+        let (public_key, _) =
+            SignedPublicKey::from_string(pubkey_str).expect("Failed to load PGP public key");
+        public_key
+    });
 
     verify_signature(public_key, package_path, sig_path)
 }
@@ -71,7 +70,15 @@ pub fn pre_startup_verify_packages() {
     let mut invalid = false;
     match fs::read_dir(&packages_dir) {
         Ok(entries) => {
-            for entry in entries.flatten() {
+            for entry_res in entries {
+                let entry = match entry_res {
+                    Ok(e) => e,
+                    Err(e) => {
+                        tracing::error!("Failed to read packages directory entry: {}", e);
+                        invalid = true;
+                        break;
+                    }
+                };
                 let path = entry.path();
                 if path.extension().is_some_and(|ext| ext == "nupkg") {
                     let mut sig_file_name = path.file_name().unwrap_or_default().to_os_string();
@@ -212,6 +219,7 @@ pub async fn download_and_apply_async(
 
         if !response.status().is_success() {
             let _ = fs::remove_dir_all(&packages_dir);
+            let _ = fs::create_dir_all(&packages_dir);
             return Err(format!(
                 "Failed to download signature file for verification: HTTP {}",
                 response.status()
@@ -224,6 +232,7 @@ pub async fn download_and_apply_async(
 
         if let Err(e) = verify_package_signature(&package_path, &sig_path) {
             let _ = fs::remove_dir_all(&packages_dir);
+            let _ = fs::create_dir_all(&packages_dir);
             return Err(format!("GPG signature verification failed: {}", e));
         }
     }
