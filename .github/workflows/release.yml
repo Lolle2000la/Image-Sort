@@ -248,5 +248,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "All platforms compiled, signed, and merged. Publishing release with conventional changelog..."
-          gh release edit "${{ github.ref_name }}" --draft=false --notes-file CHANGES.md
+          echo "All platforms compiled, signed, and merged. Publishing release..."
+          RAW_VERSION="${{ github.ref_name }}"
+          if [[ "$RAW_VERSION" == *"-"* ]]; then
+            echo "Pre-release version detected. Publishing as pre-release..."
+            gh release edit "$RAW_VERSION" --draft=false --prerelease --notes-file CHANGES.md
+          else
+            echo "Stable version detected. Publishing as stable release..."
+            gh release edit "$RAW_VERSION" --draft=false --prerelease=false --latest --notes-file CHANGES.md
+          fi
