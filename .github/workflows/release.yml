@@ -225,7 +225,7 @@ jobs:
 
       - name: Extract Tag Message
         run: |
-          TAG_TEXT=$(git tag -l --format='%(contents)' ${{ github.ref_name }})
+          TAG_TEXT=$(git tag -l --format='%(contents)' ${{ github.ref_name }} | sed '/-----BEGIN/,/-----END/d')
           if [ ! -z "$TAG_TEXT" ]; then
             echo "$TAG_TEXT" > CHANGES.md
             echo -e "\n\n## Changelog" >> CHANGES.md
