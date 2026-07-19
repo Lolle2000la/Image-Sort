@@ -20,6 +20,7 @@ pub enum Message {
     EventOccurred(iced::Event),
     OpenCredits,
     CloseCredits,
+    OpenUrl(String),
 
     KeyCaptured(Key, bool, bool, bool),
 
@@ -35,6 +36,7 @@ pub enum Message {
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
     Update(UpdateMessage),
+    NoOp,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

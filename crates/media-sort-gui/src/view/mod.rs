@@ -6,6 +6,7 @@ pub mod main_layout;
 pub mod media_grid;
 pub mod media_preview;
 pub mod metadata_panel;
+pub mod overlay;
 pub mod search_bar;
 pub mod settings_dialog;
 #[cfg(feature = "velopack")]

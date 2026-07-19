@@ -1,7 +1,7 @@
 use iced::widget::{column, container, mouse_area, row, text};
 use iced::{Color, Element, Length};
 
-use crate::message::{MediaMessage, Message, SettingsMessage};
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::AppState;
 use crate::view::{
     control_panel, folder_panel, media_grid, media_preview, metadata_panel, search_bar,
@@ -160,49 +160,49 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     let result = container(main_content).padding(8);
 
-    let mut overlays = Vec::new();
+    let mut overlays: Vec<(Element<'_, Message>, Message)> = Vec::new();
 
     if state.show_settings {
-        overlays.push(crate::view::settings_dialog::settings_dialog_view(state));
+        overlays.push((
+            crate::view::settings_dialog::settings_dialog_view(state),
+            Message::Settings(SettingsMessage::Close),
+        ));
     }
 
     if state.show_credits {
-        overlays.push(crate::view::credits_dialog::credits_dialog_view(state));
+        overlays.push((
+            crate::view::credits_dialog::credits_dialog_view(state),
+            Message::CloseCredits,
+        ));
     }
 
     #[cfg(feature = "velopack")]
     if state.show_update_prompt {
-        overlays.push(crate::view::update_prompt::update_prompt_view(state));
+        overlays.push((
+            crate::view::update_prompt::update_prompt_view(state),
+            Message::NoOp,
+        ));
     }
 
     if let Some(ref path) = state.renaming_path {
-        overlays
-            .push(crate::widgets::rename_modal::rename_modal_view(state, path).map(Message::Media));
+        overlays.push((
+            crate::widgets::rename_modal::rename_modal_view(state, path).map(Message::Media),
+            Message::Media(MediaMessage::CancelRename),
+        ));
     }
 
     if let Some(ref parent) = state.creating_folder_parent {
-        overlays.push(
+        overlays.push((
             crate::widgets::create_folder_modal::create_folder_modal_view(state, parent)
                 .map(Message::Folder),
-        );
+            Message::Folder(FolderMessage::CancelCreate),
+        ));
     }
 
     if !overlays.is_empty() {
         let mut stack = iced::widget::stack![result];
-        for overlay in overlays {
-            stack = stack.push(
-                container(overlay)
-                    .center_x(Length::Fill)
-                    .center_y(Length::Fill)
-                    .width(Length::Fill)
-                    .height(Length::Fill)
-                    .style(|_theme| iced::widget::container::Style {
-                        background: Some(iced::Background::Color(Color::from_rgba(
-                            0.0, 0.0, 0.0, 0.6,
-                        ))),
-                        ..iced::widget::container::Style::default()
-                    }),
-            );
+        for (overlay, close_msg) in overlays {
+            stack = stack.push(crate::view::overlay::modal_overlay(overlay, close_msg));
         }
         return stack.into();
     }

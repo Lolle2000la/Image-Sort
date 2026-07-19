@@ -50,5 +50,9 @@ iced_test = { version = "0.14", optional = true }
 [target.'cfg(target_os = "windows")'.build-dependencies]
 embed-resource = "3.0.11"
 
+[build-dependencies]
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
 [dev-dependencies]
 toml.workspace = true

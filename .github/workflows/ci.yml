@@ -87,3 +87,20 @@ jobs:
           LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
         run: cargo test --workspace --all-targets
+
+  verify-contributors:
+    name: Verify Contributors List
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Verify PR Author in contributors.json
+        if: github.event_name == 'pull_request'
+        run: |
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          echo "Checking if contributor '$AUTHOR' is listed in contributors.json..."
+          if jq -e --arg user "$AUTHOR" '.[] | select(.github == $user)' contributors.json > /dev/null; then
+            echo "Success: '$AUTHOR' is listed in contributors.json."
+          else
+            echo "::error::PR author '$AUTHOR' is not listed in contributors.json! Please add yourself to the contributors.json file at the root of the repository."
+            exit 1
+          fi

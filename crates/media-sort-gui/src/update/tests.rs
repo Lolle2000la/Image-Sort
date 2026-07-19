@@ -965,6 +965,18 @@ fn test_update_close_credits() {
 }
 
 #[test]
+fn test_update_open_url() {
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(
+        &mut state,
+        Message::OpenUrl("https://example.com".to_string()),
+    );
+    // Verifies that it processes without errors and does not change show_credits or should_exit.
+    assert!(!state.show_credits);
+    assert!(!state.should_exit);
+}
+
+#[test]
 fn test_update_tick_should_not_exit_initially() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(!state.should_exit);

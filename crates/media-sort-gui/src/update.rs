@@ -49,6 +49,14 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             state.show_credits = false;
             Task::none()
         }
+        Message::OpenUrl(url) => {
+            #[cfg(not(test))]
+            tasks::open_externally(std::path::Path::new(&url));
+            #[cfg(test)]
+            let _ = url;
+            Task::none()
+        }
+        Message::NoOp => Task::none(),
         #[cfg(feature = "velopack")]
         Message::Update(update_msg) => handle_update_message(state, update_msg),
         #[cfg(feature = "demo")]
