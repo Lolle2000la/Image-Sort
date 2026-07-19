@@ -242,7 +242,7 @@ jobs:
           tar -xzf git-cliff.tar.gz --strip-components=1
           
           # Execute git-cliff directly
-          ./git-cliff --config cliff.toml --current --strip header --prepend CHANGES.md
+          ./git-cliff --config cliff.toml --current --strip header >> CHANGES.md
 
       - name: Publish Release Atomically
         env:
