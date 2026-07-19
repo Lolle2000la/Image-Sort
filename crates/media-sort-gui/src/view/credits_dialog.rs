@@ -108,18 +108,42 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
     let leading_text = text(state.l10n.tr("ui-credits-leading")).size(12);
 
     let libraries = vec![
+        ("bytemuck", "https://github.com/Lokathor/bytemuck"),
+        ("Chrono", "https://github.com/chronotope/chrono"),
+        ("Clap", "https://github.com/clap-rs/clap"),
         ("dirs", "https://github.com/dirs-dev/dirs-rs"),
+        (
+            "embed-resource",
+            "https://github.com/nabijaczleweli/rust-embed-resource",
+        ),
+        (
+            "fast_image_resize",
+            "https://github.com/cykooz/fast_image_resize",
+        ),
         ("Fluent", "https://github.com/projectfluent/fluent-rs"),
+        ("ico", "https://github.com/mdsteele/rust-ico"),
         ("Iced", "https://github.com/iced-rs/iced"),
+        ("iced_wgpu", "https://github.com/iced-rs/iced"),
         ("id3", "https://github.com/polyfloyd/rust-id3"),
         ("Image", "https://github.com/image-rs/image"),
         ("Kamadak EXIF", "https://github.com/kamadak/exif-rs"),
         ("libmpv", "https://github.com/mpv-player/mpv"),
         ("lru", "https://github.com/jeromefroe/lru-rs"),
+        (
+            "Lucide Icons",
+            "https://github.com/WhySoBad/lucide-icons-rs",
+        ),
         ("metaflac", "https://github.com/jameshurst/rust-metaflac"),
         ("mp4ameta", "https://github.com/Saecki/rust-mp4ameta"),
         ("Notify", "https://github.com/notify-rs/notify"),
-        ("once_cell", "https://github.com/matklad/once_cell"),
+        (
+            "notify-debouncer-mini",
+            "https://github.com/notify-rs/notify",
+        ),
+        ("objc2", "https://github.com/madsmtm/objc2"),
+        ("objc2-foundation", "https://github.com/madsmtm/objc2"),
+        ("proc-macro2", "https://github.com/dtolnay/proc-macro2"),
+        ("quote", "https://github.com/dtolnay/quote"),
         (
             "RFD (Rust File Dialogs)",
             "https://github.com/PolyMeilex/rfd",
@@ -128,14 +152,17 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
         ("Serde", "https://github.com/serde-rs/serde"),
         ("serde_json", "https://github.com/serde-rs/json"),
         ("strum", "https://github.com/Peternator7/strum"),
+        ("syn", "https://github.com/dtolnay/syn"),
         ("Symphonia", "https://github.com/pdeljanov/Symphonia"),
         ("thiserror", "https://github.com/dtolnay/thiserror"),
         ("Tokio", "https://github.com/tokio-rs/tokio"),
+        ("toml", "https://github.com/toml-rs/toml"),
         ("tracing", "https://github.com/tokio-rs/tracing"),
         ("tracing-subscriber", "https://github.com/tokio-rs/tracing"),
         ("Trash", "https://github.com/Byron/trash-rs"),
         ("unic-langid", "https://github.com/zbraniecki/unic-locale"),
         ("walkdir", "https://github.com/BurntSushi/walkdir"),
+        ("winreg", "https://github.com/gentoo90/winreg-rs"),
     ];
 
     let mut rows = Vec::with_capacity(libraries.len());
