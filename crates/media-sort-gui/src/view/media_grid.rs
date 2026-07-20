@@ -19,11 +19,11 @@ pub const MEDIA_GRID_CARD_SPACING: f32 = 8.0;
 const MEDIA_GRID_SCROLLBAR_CLEARANCE: f32 = 12.0;
 
 pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
-    let filtered = state.filtered_media_entries();
+    let filtered = state.media_grid.filtered_entries();
 
     if filtered.is_empty() {
         return container(
-            text(if state.search_query.is_empty() {
+            text(if state.media_grid.search.query.is_empty() {
                 state.l10n.tr("ui-no-images")
             } else {
                 state.l10n.tr("ui-no-results")
@@ -60,10 +60,10 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     let mut entries_row = row![].spacing(MEDIA_GRID_CARD_SPACING);
 
     for (i, entry) in filtered.iter().enumerate() {
-        let is_selected = state.selected_index == Some(i);
+        let is_selected = state.media_grid.selected_index == Some(i);
 
         let thumbnail_content: Element<'_, Message> = if let Some(handle) =
-            state.thumbnail_cache.peek(&entry.path)
+            state.cache.thumbnail_cache.peek(&entry.path)
         {
             let img = iced::widget::image(handle.clone())
                 .width(Length::Fill)

@@ -19,13 +19,13 @@ pub fn rename_modal_view<'a>(
         .color(Color::from_rgb(0.6, 0.6, 0.6))
         .shaping(iced::widget::text::Shaping::Advanced);
 
-    let input = text_input(&state.rename_placeholder, &state.rename_input_value)
+    let input = text_input(&state.rename.placeholder, &state.rename.input_value)
         .on_input(MediaMessage::RenameInputChanged)
         .on_submit(MediaMessage::SubmitRename)
         .padding(8)
         .size(14);
 
-    let can_submit = state.rename_error.is_none();
+    let can_submit = state.rename.error.is_none();
     let submit_btn = {
         let mut btn = button(text(state.l10n.tr("ui-rename")).size(14))
             .style(iced::widget::button::primary)
@@ -47,7 +47,7 @@ pub fn rename_modal_view<'a>(
         .spacing(12)
         .align_x(Alignment::Start);
 
-    if let Some(ref error) = state.rename_error
+    if let Some(ref error) = state.rename.error
         && !error.is_empty()
     {
         let error_text = text(error.as_str())

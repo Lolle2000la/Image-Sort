@@ -5,7 +5,7 @@ use crate::message::{Message, SettingsMessage};
 use crate::state::AppState;
 
 pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
-    if !state.metadata_panel_expanded {
+    if !state.metadata.panel_expanded {
         return iced::widget::Space::new()
             .width(Length::Fixed(0.0))
             .height(Length::Fixed(0.0))
@@ -22,7 +22,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
     .spacing(8)
     .align_y(iced::Alignment::Center);
 
-    let content: Element<'_, Message> = match &state.current_metadata {
+    let content: Element<'_, Message> = match &state.metadata.current {
         Some(metadata) => {
             let mut section_list = column![].spacing(8);
 
@@ -66,7 +66,7 @@ pub fn metadata_panel_view(state: &AppState) -> Element<'_, Message> {
             scrollable(section_list).height(Length::Fill).into()
         }
         None => {
-            if state.selected_index.is_some() {
+            if state.media_grid.selected_index.is_some() {
                 container(text(state.l10n.tr("ui-loading-metadata")).size(12))
                     .center_x(Length::Fill)
                     .center_y(Length::Fill)

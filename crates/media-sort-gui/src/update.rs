@@ -77,17 +77,17 @@ fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Messa
     let automation_task = Task::none();
 
     let bg_task = poll_background_channels(state);
-    let refresh_thumbnails = state.thumbnail_tracker.tick();
+    let refresh_thumbnails = state.cache.thumbnail_tracker.tick();
 
-    if let Some(ref player) = state.audio_player
-        && state.audio_playing
+    if let Some(ref player) = state.audio.player
+        && state.audio.playing
     {
         if player.empty() {
-            state.audio_playing = false;
-            state.audio_position = 0.0;
+            state.audio.playing = false;
+            state.audio.position = 0.0;
         } else {
-            state.audio_position = player.position();
-            state.audio_duration = player.duration();
+            state.audio.position = player.position();
+            state.audio.duration = player.duration();
         }
     }
 
@@ -105,15 +105,15 @@ fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Messa
 pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     let mut bg_tasks = Vec::new();
 
-    if let Some(ref rx) = state.folder_tree_receiver
+    if let Some(ref rx) = state.folder.folder_tree_receiver
         && let Ok(tree) = rx.try_recv()
     {
-        state.folder_tree_receiver = None;
-        state.folder_tree = tree;
-        state.sync_selected_folder_idx();
+        state.folder.folder_tree_receiver = None;
+        state.folder.folder_tree = tree;
+        state.folder.sync_selected_idx();
     }
 
-    let scan_finished = if let Some(ref rx) = state.scan_receiver {
+    let scan_finished = if let Some(ref rx) = state.media_grid.scan_receiver {
         for path in rx.try_iter() {
             let media_type =
                 crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
@@ -122,7 +122,8 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| path.display().to_string());
             state
-                .media_entries
+                .media_grid
+                .entries
                 .push(media_sort_core::models::MediaEntry {
                     path,
                     media_type,
@@ -138,25 +139,27 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     };
 
     if scan_finished {
-        state.scan_receiver = None;
+        state.media_grid.scan_receiver = None;
         state
-            .media_entries
+            .media_grid
+            .entries
             .sort_by(|a, b| a.file_name.cmp(&b.file_name));
-        let mut select_idx = state.pending_select_index.take().unwrap_or(0);
+        let mut select_idx = state.media_grid.pending_select_index.take().unwrap_or(0);
         if state.settings.general.reopen_last_opened_folder
             && state.settings.general.reopen_last_selected_media
             && let Some(ref last_media_path_str) = state.settings.general.last_selected_media
         {
             let last_media_path = std::path::PathBuf::from(last_media_path_str);
             if let Some(pos) = state
-                .media_entries
+                .media_grid
+                .entries
                 .iter()
                 .position(|entry| entry.path == last_media_path)
             {
                 select_idx = pos;
             }
         }
-        state.thumbnail_tracker.cancel_debounce();
+        state.cache.thumbnail_tracker.cancel_debounce();
         bg_tasks.push(tasks::load_visible_thumbnails(state));
         bg_tasks.push(tasks::select_and_load_entry(state, select_idx));
     }
@@ -185,7 +188,7 @@ fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Messa
                 automation.update_window_size(size.width, size.height);
             }
 
-            state.thumbnail_tracker.handle_scroll();
+            state.cache.thumbnail_tracker.handle_scroll();
             Task::none()
         }
         iced::Event::Window(iced::window::Event::Moved(point)) => {
@@ -194,11 +197,11 @@ fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Messa
             Task::none()
         }
         iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
-            if state.dragging_folder_divider {
+            if state.folder.dragging_folder_divider {
                 let new_width = position.x.round().clamp(100.0, 800.0) as u16;
                 state.settings.general.folder_tree_width = new_width;
             }
-            if state.dragging_metadata_divider {
+            if state.metadata.dragging_divider {
                 let window_width = state.settings.window_position.width as f32;
                 let raw_width = window_width - position.x;
                 let new_width = raw_width.round().clamp(100.0, 800.0) as u16;
@@ -208,14 +211,14 @@ fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Messa
         }
         iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
             let mut saved = false;
-            if state.dragging_folder_divider || state.dragging_metadata_divider {
-                state.dragging_folder_divider = false;
-                state.dragging_metadata_divider = false;
+            if state.folder.dragging_folder_divider || state.metadata.dragging_divider {
+                state.folder.dragging_folder_divider = false;
+                state.metadata.dragging_divider = false;
                 let _ = state.settings.save();
                 saved = true;
             }
-            if state.dragging_pinned_folder.is_some() {
-                state.dragging_pinned_folder = None;
+            if state.folder.dragging_pinned_folder.is_some() {
+                state.folder.dragging_pinned_folder = None;
                 if !saved {
                     let _ = state.settings.save();
                 }

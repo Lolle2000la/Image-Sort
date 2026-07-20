@@ -12,9 +12,9 @@ pub fn audio_controls_view(
     state: &AppState,
     thumb: Option<iced::widget::image::Handle>,
 ) -> Element<'_, Message> {
-    let playing = state.audio_playing && !state.audio_player.as_ref().is_none_or(|p| p.is_paused());
+    let playing = state.audio.playing && !state.audio.player.as_ref().is_none_or(|p| p.is_paused());
 
-    let cover = state.selected_audio_cover.clone().or(thumb);
+    let cover = state.audio.selected_cover.clone().or(thumb);
 
     let audio_content: Element<'_, Message> = if let Some(handle) = cover {
         iced::widget::image(handle)
@@ -36,10 +36,10 @@ pub fn audio_controls_view(
     };
 
     let controls = media_controls::media_controls_view(
-        state.audio_position,
-        state.audio_duration,
-        state.audio_volume,
-        state.audio_muted,
+        state.audio.position,
+        state.audio.duration,
+        state.audio.volume,
+        state.audio.muted,
         playing,
     )
     .map(|msg| match msg {

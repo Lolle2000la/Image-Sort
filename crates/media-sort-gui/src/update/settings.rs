@@ -1,40 +1,43 @@
 use iced::Task;
 
 use crate::message::{Message, SettingsMessage};
-use crate::state::AppState;
+use crate::state::{AppState, SettingsUiState};
 
 pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Task<Message> {
     match msg {
         SettingsMessage::ToggleMetadataPanel => {
-            state.metadata_panel_expanded = !state.metadata_panel_expanded;
-            state.settings.metadata_panel.is_expanded = state.metadata_panel_expanded;
+            state.metadata.panel_expanded = !state.metadata.panel_expanded;
+            state.settings.metadata_panel.is_expanded = state.metadata.panel_expanded;
             let _ = state.settings.save();
             Task::none()
         }
         SettingsMessage::EditKeyBinding(index) => {
-            state.editing_keybinding = Some(index);
-            state.waiting_for_key = true;
+            if let SettingsUiState::Keybindings {
+                editing_keybinding,
+                waiting_for_key,
+            } = &mut state.settings_ui
+            {
+                *editing_keybinding = Some(index);
+                *waiting_for_key = true;
+            }
             Task::none()
         }
         SettingsMessage::Open => {
-            state.show_settings = true;
-            state.show_keybindings = false;
+            state.settings_ui = SettingsUiState::Settings;
             Task::none()
         }
         SettingsMessage::Close => {
-            state.show_settings = false;
-            state.show_keybindings = false;
-            state.editing_keybinding = None;
-            state.waiting_for_key = false;
+            state.settings_ui = SettingsUiState::Hidden;
             Task::done(Message::Settings(SettingsMessage::Save))
         }
         SettingsMessage::ChangeLanguage(locale) => {
             state.l10n.set_locale(&locale);
             state.settings.general.locale = Some(locale);
             let _ = state.settings.save();
-            state.search_placeholder = state.l10n.tr("keybindings-search-images");
-            state.rename_placeholder = state.l10n.tr("ui-enter-new-name");
-            state.create_folder_placeholder = state.l10n.tr("ui-folder-name-placeholder");
+            state.media_grid.search.placeholder = state.l10n.tr("keybindings-search-images");
+            state.rename.placeholder = state.l10n.tr("ui-enter-new-name");
+            state.create_folder.create_folder_placeholder =
+                state.l10n.tr("ui-folder-name-placeholder");
             Task::none()
         }
         SettingsMessage::SetTheme(theme) => {
@@ -55,11 +58,11 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             Task::none()
         }
         SettingsMessage::StartDragFolderDivider => {
-            state.dragging_folder_divider = true;
+            state.folder.dragging_folder_divider = true;
             Task::none()
         }
         SettingsMessage::StartDragMetadataDivider => {
-            state.dragging_metadata_divider = true;
+            state.metadata.dragging_divider = true;
             Task::none()
         }
         SettingsMessage::ToggleAnimateGifs => {
@@ -72,8 +75,10 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             Task::none()
         }
         SettingsMessage::OpenKeybindings => {
-            state.show_settings = true;
-            state.show_keybindings = true;
+            state.settings_ui = SettingsUiState::Keybindings {
+                editing_keybinding: None,
+                waiting_for_key: false,
+            };
             Task::none()
         }
         SettingsMessage::RestoreDefaultKeyBindings => {

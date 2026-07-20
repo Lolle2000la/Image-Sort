@@ -19,11 +19,14 @@ pub fn create_folder_modal_view<'a>(
         .color(Color::from_rgb(0.6, 0.6, 0.6))
         .shaping(iced::widget::text::Shaping::Advanced);
 
-    let input = text_input(&state.create_folder_placeholder, &state.create_folder_input)
-        .on_input(FolderMessage::CreateInputChanged)
-        .on_submit(FolderMessage::SubmitCreate(parent.to_path_buf()))
-        .padding(8)
-        .size(14);
+    let input = text_input(
+        &state.create_folder.create_folder_placeholder,
+        &state.create_folder.create_folder_input,
+    )
+    .on_input(FolderMessage::CreateInputChanged)
+    .on_submit(FolderMessage::SubmitCreate(parent.to_path_buf()))
+    .padding(8)
+    .size(14);
 
     let submit_btn = button(text(state.l10n.tr("ui-create")).size(14))
         .on_press(FolderMessage::SubmitCreate(parent.to_path_buf()))

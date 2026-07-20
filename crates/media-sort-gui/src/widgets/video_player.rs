@@ -12,11 +12,11 @@ pub fn video_player<'a>(
     state: &AppState,
     thumb_handle: Option<iced::widget::image::Handle>,
 ) -> Element<'a, Message> {
-    let video_content: Element<'_, Message> = if state.video_rgba.is_some() {
+    let video_content: Element<'_, Message> = if state.video.rgba.is_some() {
         crate::widgets::video_shader::video_shader_view(
-            state.video_width,
-            state.video_height,
-            state.video_rgba.clone(),
+            state.video.width,
+            state.video.height,
+            state.video.rgba.clone(),
         )
     } else if let Some(handle) = thumb_handle {
         iced::widget::image(handle)
@@ -27,14 +27,14 @@ pub fn video_player<'a>(
         placeholder(path, &state.l10n)
     };
 
-    let display_position = state.video_seek_position.unwrap_or(state.video_position);
+    let display_position = state.video.seek_position.unwrap_or(state.video.position);
 
     let controls_row = media_controls::media_controls_view(
         display_position,
-        state.video_duration,
-        state.video_volume,
-        state.video_muted,
-        !state.video_paused,
+        state.video.duration,
+        state.video.volume,
+        state.video.muted,
+        !state.video.paused,
     )
     .map(|msg| match msg {
         media_controls::MediaControlMessage::PlayPause => Message::Video(VideoMessage::PlayPause),

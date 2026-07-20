@@ -5,7 +5,7 @@ use crate::state::AppState;
 use media_sort_core::media_type::MediaType;
 
 pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
-    let filtered = state.filtered_media_entries();
+    let filtered = state.media_grid.filtered_entries();
     let filtered_len = filtered.len();
     if filtered_len > 0 {
         let index = index.min(filtered_len - 1);
@@ -24,7 +24,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         if index + 1 < filtered_len {
             let next_entry = filtered[index + 1];
             if next_entry.media_type == media_sort_core::media_type::MediaType::Image
-                && !state.image_cache.contains(&next_entry.path)
+                && !state.cache.image_cache.contains(&next_entry.path)
             {
                 preload_tasks.push(load_full_image(
                     next_entry.path.clone(),
@@ -35,7 +35,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         if index > 0 {
             let prev_entry = filtered[index - 1];
             if prev_entry.media_type == media_sort_core::media_type::MediaType::Image
-                && !state.image_cache.contains(&prev_entry.path)
+                && !state.cache.image_cache.contains(&prev_entry.path)
             {
                 preload_tasks.push(load_full_image(
                     prev_entry.path.clone(),
@@ -47,72 +47,73 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         drop(filtered);
 
         state
+            .cache
             .thumbnail_tracker
             .retain_paths(thumbnail_paths.clone());
 
-        state.selected_index = Some(index);
-        state.current_metadata = None;
+        state.media_grid.selected_index = Some(index);
+        state.metadata.current = None;
 
         state.settings.general.last_selected_media = Some(path.to_string_lossy().to_string());
         let _ = state.settings.save();
 
         if media_type == media_sort_core::media_type::MediaType::Video {
-            if let Some(ref sender) = state.video_sender {
+            if let Some(ref sender) = state.video.sender {
                 let _ = sender.try_send(
                     media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()),
                 );
             }
-            state.video_frame = None;
-            state.video_rgba = None;
-            state.video_width = 0;
-            state.video_height = 0;
-            state.video_position = 0.0;
-            state.video_duration = 0.0;
-            state.video_ready = false;
-            state.video_seek_position = None;
-            state.video_last_seek_time = None;
-            if let Some(ref mut ap) = state.audio_player {
+            state.video.frame = None;
+            state.video.rgba = None;
+            state.video.width = 0;
+            state.video.height = 0;
+            state.video.position = 0.0;
+            state.video.duration = 0.0;
+            state.video.ready = false;
+            state.video.seek_position = None;
+            state.video.last_seek_time = None;
+            if let Some(ref mut ap) = state.audio.player {
                 ap.stop();
             }
-            state.audio_playing = false;
-            state.audio_position = 0.0;
+            state.audio.playing = false;
+            state.audio.position = 0.0;
         } else if media_type == media_sort_core::media_type::MediaType::Audio {
-            if let Some(ref sender) = state.video_sender {
+            if let Some(ref sender) = state.video.sender {
                 let _ = sender
                     .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
             }
-            state.video_frame = None;
-            state.video_rgba = None;
-            state.video_width = 0;
-            state.video_height = 0;
-            state.video_ready = false;
-            if state.audio_playing
-                && let Some(ref player) = state.audio_player
+            state.video.frame = None;
+            state.video.rgba = None;
+            state.video.width = 0;
+            state.video.height = 0;
+            state.video.ready = false;
+            if state.audio.playing
+                && let Some(ref player) = state.audio.player
             {
                 player.stop();
                 if let Err(e) = player.play(&path) {
                     tracing::error!("Audio play failed: {e}");
-                    state.audio_playing = false;
+                    state.audio.playing = false;
                 } else {
-                    state.audio_duration = player.duration();
+                    state.audio.duration = player.duration();
                 }
             }
         } else {
-            if let Some(ref sender) = state.video_sender {
+            if let Some(ref sender) = state.video.sender {
                 let _ = sender
                     .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
             }
-            state.video_frame = None;
-            state.video_rgba = None;
-            state.video_width = 0;
-            state.video_height = 0;
-            state.video_ready = false;
-            if state.audio_playing {
-                if let Some(ref player) = state.audio_player {
+            state.video.frame = None;
+            state.video.rgba = None;
+            state.video.width = 0;
+            state.video.height = 0;
+            state.video.ready = false;
+            if state.audio.playing {
+                if let Some(ref player) = state.audio.player {
                     player.stop();
                 }
-                state.audio_playing = false;
-                state.audio_position = 0.0;
+                state.audio.playing = false;
+                state.audio.position = 0.0;
             }
         }
 
@@ -120,24 +121,24 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         tasks.push(scroll_to_selected_entry(state, index));
 
-        state.selected_audio_cover = None;
+        state.audio.selected_cover = None;
         if media_type == media_sort_core::media_type::MediaType::Audio
             && let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path)
             && let Ok(img) = image::load_from_memory(&bytes)
         {
             let rgba = img.to_rgba8();
             let (w, h) = rgba.dimensions();
-            state.selected_audio_cover = Some(iced::widget::image::Handle::from_rgba(
+            state.audio.selected_cover = Some(iced::widget::image::Handle::from_rgba(
                 w,
                 h,
                 rgba.into_raw(),
             ));
         }
 
-        if let Some(handle) = state.image_cache.get(&path) {
-            state.selected_image = Some((path, handle.clone()));
+        if let Some(handle) = state.cache.image_cache.get(&path) {
+            state.cache.selected_image = Some((path, handle.clone()));
         } else {
-            state.selected_image = None;
+            state.cache.selected_image = None;
             tasks.push(load_full_image(path, media_type));
         }
 
@@ -146,34 +147,37 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         }
 
         for p in thumbnail_paths {
-            if !state.thumbnail_cache.contains(&p) {
-                tasks.push(load_thumbnail(p, state.thumbnail_tracker.clone_checker()));
+            if !state.cache.thumbnail_cache.contains(&p) {
+                tasks.push(load_thumbnail(
+                    p,
+                    state.cache.thumbnail_tracker.clone_checker(),
+                ));
             }
         }
         Task::batch(tasks)
     } else {
-        state.selected_index = None;
-        state.current_metadata = None;
-        state.selected_image = None;
+        state.media_grid.selected_index = None;
+        state.metadata.current = None;
+        state.cache.selected_image = None;
 
         state.settings.general.last_selected_media = None;
         let _ = state.settings.save();
-        if let Some(ref sender) = state.video_sender {
+        if let Some(ref sender) = state.video.sender {
             let _ =
                 sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
-        state.video_frame = None;
-        state.video_rgba = None;
-        state.video_width = 0;
-        state.video_height = 0;
-        state.video_ready = false;
+        state.video.frame = None;
+        state.video.rgba = None;
+        state.video.width = 0;
+        state.video.height = 0;
+        state.video.ready = false;
         Task::none()
     }
 }
 
 /// Build a [`Task`] that scrolls the media grid so that the entry at
 /// `index` is clearly visible. We use a *relative* scroll position so we
-/// don't have to depend on `state.media_grid_scroll.viewport_width` being
+/// don't have to depend on `state.media_grid.scroll.viewport_width` being
 /// up to date — that snapshot can briefly lag behind the actual layout
 /// (e.g. when the user has just resized the window, or the very first
 /// `on_scroll` after opening a folder hasn't fired yet). If we used an
@@ -188,7 +192,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message> {
     use crate::view::media_grid::MEDIA_GRID_SCROLLABLE_ID;
 
-    let n = state.filtered_media_entries().len();
+    let n = state.media_grid.filtered_entries().len();
     let Some(relative_x) = relative_position_for(index, n) else {
         return Task::none();
     };
@@ -217,8 +221,12 @@ pub fn relative_position_for(index: usize, total: usize) -> Option<f32> {
 pub fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
     use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
 
-    let visible = state.collect_visible_folders();
-    let Some(idx) = state.selected_folder_idx.filter(|i| *i < visible.len()) else {
+    let visible = state.folder.collect_visible_folders();
+    let Some(idx) = state
+        .folder
+        .selected_folder_idx
+        .filter(|i| *i < visible.len())
+    else {
         return Task::none();
     };
     let Some(relative_y) = relative_position_for(idx, visible.len()) else {
@@ -236,12 +244,13 @@ pub fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
 
 pub fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
     let entry_paths: Vec<std::path::PathBuf> = state
-        .filtered_media_entries()
+        .media_grid
+        .filtered_entries()
         .iter()
         .map(|e| e.path.clone())
         .collect();
-    let load_queue = state.thumbnail_tracker.update_viewport(
-        &state.media_grid_scroll,
+    let load_queue = state.cache.thumbnail_tracker.update_viewport(
+        &state.media_grid.scroll,
         &entry_paths,
         state.settings.window_position.width,
     );
@@ -250,9 +259,10 @@ pub fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
         load_queue
             .into_iter()
             .filter(|path| {
-                !state.thumbnail_cache.contains(path) && !state.unsupported_files.contains(path)
+                !state.cache.thumbnail_cache.contains(path)
+                    && !state.cache.unsupported_files.contains(path)
             })
-            .map(|path| load_thumbnail(path, state.thumbnail_tracker.clone_checker())),
+            .map(|path| load_thumbnail(path, state.cache.thumbnail_tracker.clone_checker())),
     )
 }
 
@@ -391,7 +401,7 @@ pub fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<
 }
 
 pub fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
-    let entries = state.filtered_media_entries();
+    let entries = state.media_grid.filtered_entries();
     let Some(entry) = entries.get(index) else {
         return Task::none();
     };

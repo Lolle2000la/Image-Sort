@@ -11,17 +11,21 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     let folder_panel = folder_panel::folder_panel_view(state);
     let control_panel = control_panel::control_panel_view(state);
 
-    let search_bar = search_bar::search_bar_view(&state.search_query, &state.search_placeholder);
+    let search_bar = search_bar::search_bar_view(
+        &state.media_grid.search.query,
+        &state.media_grid.search.placeholder,
+    );
     let grid = media_grid::media_grid_view(state);
     let preview = media_preview::media_preview_view(state);
     let metadata = metadata_panel::metadata_panel_view(state);
 
-    let can_move_or_copy = state.selected_index.is_some()
-        && state.selected_folder.is_some()
+    let can_move_or_copy = state.media_grid.selected_index.is_some()
+        && state.folder.selected_folder.is_some()
         && state
+            .folder
             .selected_folder
             .as_ref()
-            .zip(state.current_folder.as_ref())
+            .zip(state.folder.current_folder.as_ref())
             .is_none_or(|(sf, cf)| !media_sort_core::path_utils::paths_equal(sf, cf));
 
     let move_btn = {
@@ -67,7 +71,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
     // Rename (R) button next to search bar:
     let rename_btn = {
         let btn = iced::widget::button(text(state.l10n.tr("ui-rename")).size(13));
-        if state.selected_index.is_some() {
+        if state.media_grid.selected_index.is_some() {
             btn.on_press(Message::Media(MediaMessage::TriggerRename))
         } else {
             btn
@@ -87,8 +91,8 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         let btn = iced::widget::button(btn_content)
             .width(Length::Fill)
             .style(iced::widget::button::danger);
-        let inner = if let Some(index) = state.selected_index {
-            let filtered = state.filtered_media_entries();
+        let inner = if let Some(index) = state.media_grid.selected_index {
+            let filtered = state.media_grid.filtered_entries();
             if let Some(entry) = filtered.get(index) {
                 btn.on_press(Message::Media(MediaMessage::DeleteEntry(
                     entry.path.clone(),
@@ -126,7 +130,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     let divider = divider_view(Message::Settings(SettingsMessage::StartDragFolderDivider));
 
-    let media_metadata_row = if state.metadata_panel_expanded {
+    let media_metadata_row = if state.metadata.panel_expanded {
         row![
             container(media_column)
                 .width(Length::Fill)
@@ -162,7 +166,7 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
 
     let mut overlays: Vec<(Element<'_, Message>, Message)> = Vec::new();
 
-    if state.show_settings {
+    if !matches!(state.settings_ui, crate::state::SettingsUiState::Hidden) {
         overlays.push((
             crate::view::settings_dialog::settings_dialog_view(state),
             Message::Settings(SettingsMessage::Close),
@@ -184,14 +188,14 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ));
     }
 
-    if let Some(ref path) = state.renaming_path {
+    if let Some(ref path) = state.rename.path {
         overlays.push((
             crate::widgets::rename_modal::rename_modal_view(state, path).map(Message::Media),
             Message::Media(MediaMessage::CancelRename),
         ));
     }
 
-    if let Some(ref parent) = state.creating_folder_parent {
+    if let Some(ref parent) = state.create_folder.creating_folder_parent {
         overlays.push((
             crate::widgets::create_folder_modal::create_folder_modal_view(state, parent)
                 .map(Message::Folder),

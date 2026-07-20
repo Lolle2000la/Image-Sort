@@ -170,7 +170,13 @@ fn get_keybinding(
 
 fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element<'a, Message> {
     let binding = get_keybinding(state, idx);
-    let is_editing = state.editing_keybinding == Some(idx);
+    let is_editing = matches!(
+        &state.settings_ui,
+        crate::state::SettingsUiState::Keybindings {
+            editing_keybinding: Some(i),
+            ..
+        } if *i == idx
+    );
     let shortcut_text = if is_editing {
         state.l10n.tr("keybindings-press-key")
     } else {
@@ -228,268 +234,278 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         container(
             button(text(state.l10n.tr("settings-tab-general")).size(13))
                 .on_press(Message::Settings(SettingsMessage::Open))
-                .style(if !state.show_keybindings {
-                    iced::widget::button::primary
-                } else {
-                    iced::widget::button::secondary
-                }),
+                .style(
+                    if matches!(state.settings_ui, crate::state::SettingsUiState::Settings) {
+                        iced::widget::button::primary
+                    } else {
+                        iced::widget::button::secondary
+                    }
+                ),
         )
         .id(iced::widget::Id::new("settings_tab_general")),
         container(
             button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
                 .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
-                .style(if state.show_keybindings {
-                    iced::widget::button::primary
-                } else {
-                    iced::widget::button::secondary
-                }),
+                .style(
+                    if matches!(
+                        state.settings_ui,
+                        crate::state::SettingsUiState::Keybindings { .. }
+                    ) {
+                        iced::widget::button::primary
+                    } else {
+                        iced::widget::button::secondary
+                    }
+                ),
         )
         .id(iced::widget::Id::new("settings_tab_keybindings")),
     ]
     .spacing(10);
 
-    let tab_content: Element<'_, Message> = if !state.show_keybindings {
-        // General settings tab
-        let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
-            .label(state.l10n.tr("settings-play-gifs"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
-            .size(16);
+    let tab_content: Element<'_, Message> =
+        if matches!(state.settings_ui, crate::state::SettingsUiState::Settings) {
+            // General settings tab
+            let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
+                .label(state.l10n.tr("settings-play-gifs"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
+                .size(16);
 
-        #[cfg(feature = "velopack")]
-        let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
-            .label(state.l10n.tr("settings-check-updates"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleCheckForUpdates))
-            .size(16);
+            #[cfg(feature = "velopack")]
+            let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
+                .label(state.l10n.tr("settings-check-updates"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleCheckForUpdates))
+                .size(16);
 
-        #[cfg(feature = "velopack")]
-        let install_prerelease_cb = checkbox(state.settings.general.install_prerelease_builds)
-            .label(state.l10n.tr("settings-install-prerelease"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleInstallPrerelease))
-            .size(16);
+            #[cfg(feature = "velopack")]
+            let install_prerelease_cb = checkbox(state.settings.general.install_prerelease_builds)
+                .label(state.l10n.tr("settings-install-prerelease"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleInstallPrerelease))
+                .size(16);
 
-        let reopen_folder_cb = checkbox(state.settings.general.reopen_last_opened_folder)
-            .label(state.l10n.tr("settings-reopen-folder"))
-            .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenFolder))
-            .size(16);
+            let reopen_folder_cb = checkbox(state.settings.general.reopen_last_opened_folder)
+                .label(state.l10n.tr("settings-reopen-folder"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenFolder))
+                .size(16);
 
-        let mut reopen_media_cb = checkbox(state.settings.general.reopen_last_selected_media)
-            .label(state.l10n.tr("settings-reopen-media"))
-            .size(16);
+            let mut reopen_media_cb = checkbox(state.settings.general.reopen_last_selected_media)
+                .label(state.l10n.tr("settings-reopen-media"))
+                .size(16);
 
-        if state.settings.general.reopen_last_opened_folder {
-            reopen_media_cb = reopen_media_cb
-                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenMedia));
-        }
+            if state.settings.general.reopen_last_opened_folder {
+                reopen_media_cb = reopen_media_cb
+                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleReopenMedia));
+            }
 
-        let current_theme = THEME_OPTIONS
-            .iter()
-            .find(|opt| opt.key == state.settings.general.theme)
-            .cloned();
+            let current_theme = THEME_OPTIONS
+                .iter()
+                .find(|opt| opt.key == state.settings.general.theme)
+                .cloned();
 
-        let theme_picklist = column![
-            text(state.l10n.tr("settings-theme")).size(12),
-            container(
-                pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
-                    Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
-                },)
-                .width(Length::Fixed(200.0))
-            )
-            .id(iced::widget::Id::new("theme_pick_list")),
-        ]
-        .spacing(4);
-
-        #[allow(unused_mut)]
-        let mut settings_col = column![
-            column![
-                text(state.l10n.tr("settings-appearance"))
-                    .font(BOLD_FONT)
-                    .size(14),
-                theme_picklist,
-                reopen_folder_cb,
-                reopen_media_cb,
-            ]
-            .spacing(8),
-            column![
-                text(state.l10n.tr("settings-animated-gifs"))
-                    .font(BOLD_FONT)
-                    .size(14),
-                animate_gifs_cb,
-            ]
-            .spacing(8),
-        ];
-
-        #[cfg(feature = "velopack")]
-        {
-            settings_col = settings_col.push(
-                column![
-                    text(state.l10n.tr("settings-updates"))
-                        .font(BOLD_FONT)
-                        .size(14),
-                    check_updates_cb,
-                    install_prerelease_cb,
-                ]
-                .spacing(8),
-            );
-        }
-
-        settings_col = settings_col.push(
-            column![
-                text(state.l10n.tr("settings-language"))
-                    .font(BOLD_FONT)
-                    .size(14),
-                pick_list(
-                    locale_options(),
-                    Some(LocaleOption {
-                        code: state.l10n.locale(),
-                        display: media_sort_core::l10n::locale_display_name(&state.l10n.locale())
-                            .to_string(),
-                    }),
-                    |opt: LocaleOption| Message::Settings(SettingsMessage::ChangeLanguage(
-                        opt.code
-                    )),
+            let theme_picklist = column![
+                text(state.l10n.tr("settings-theme")).size(12),
+                container(
+                    pick_list(THEME_OPTIONS, current_theme, |opt: ThemeOption| {
+                        Message::Settings(SettingsMessage::SetTheme(opt.key.to_string()))
+                    },)
+                    .width(Length::Fixed(200.0))
                 )
-                .width(Length::Fixed(200.0)),
+                .id(iced::widget::Id::new("theme_pick_list")),
             ]
-            .spacing(8),
-        );
+            .spacing(4);
 
-        #[cfg(target_os = "windows")]
-        {
-            let integration_with_windows_cb =
-                checkbox(state.settings.general.integration_with_windows)
-                    .label(state.l10n.tr("settings-windows-context-menu"))
-                    .on_toggle(toggle_integration_with_windows)
-                    .size(16);
+            #[allow(unused_mut)]
+            let mut settings_col = column![
+                column![
+                    text(state.l10n.tr("settings-appearance"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    theme_picklist,
+                    reopen_folder_cb,
+                    reopen_media_cb,
+                ]
+                .spacing(8),
+                column![
+                    text(state.l10n.tr("settings-animated-gifs"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    animate_gifs_cb,
+                ]
+                .spacing(8),
+            ];
+
+            #[cfg(feature = "velopack")]
+            {
+                settings_col = settings_col.push(
+                    column![
+                        text(state.l10n.tr("settings-updates"))
+                            .font(BOLD_FONT)
+                            .size(14),
+                        check_updates_cb,
+                        install_prerelease_cb,
+                    ]
+                    .spacing(8),
+                );
+            }
 
             settings_col = settings_col.push(
                 column![
-                    text(state.l10n.tr("settings-windows-integration"))
+                    text(state.l10n.tr("settings-language"))
                         .font(BOLD_FONT)
                         .size(14),
-                    integration_with_windows_cb,
+                    pick_list(
+                        locale_options(),
+                        Some(LocaleOption {
+                            code: state.l10n.locale(),
+                            display: media_sort_core::l10n::locale_display_name(
+                                &state.l10n.locale()
+                            )
+                            .to_string(),
+                        }),
+                        |opt: LocaleOption| Message::Settings(SettingsMessage::ChangeLanguage(
+                            opt.code
+                        )),
+                    )
+                    .width(Length::Fixed(200.0)),
                 ]
                 .spacing(8),
             );
-        }
 
-        scrollable(settings_col).height(Length::Fill).into()
-    } else {
-        // Key bindings tab
-        let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
-            .on_press(Message::Settings(
-                SettingsMessage::RestoreDefaultKeyBindings,
-            ))
-            .style(iced::widget::button::secondary);
+            #[cfg(target_os = "windows")]
+            {
+                let integration_with_windows_cb =
+                    checkbox(state.settings.general.integration_with_windows)
+                        .label(state.l10n.tr("settings-windows-context-menu"))
+                        .on_toggle(toggle_integration_with_windows)
+                        .size(16);
 
-        // Images Section
-        let images_management = keybinding_subsection(
-            state.l10n.tr("keybindings-management"),
-            vec![
-                keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
-                keybinding_row(state, 1, state.l10n.tr("keybindings-copy")),
-                keybinding_row(state, 2, state.l10n.tr("keybindings-delete")),
-                keybinding_row(state, 3, state.l10n.tr("keybindings-rename")),
-                keybinding_row(
+                settings_col = settings_col.push(
+                    column![
+                        text(state.l10n.tr("settings-windows-integration"))
+                            .font(BOLD_FONT)
+                            .size(14),
+                        integration_with_windows_cb,
+                    ]
+                    .spacing(8),
+                );
+            }
+
+            scrollable(settings_col).height(Length::Fill).into()
+        } else {
+            // Key bindings tab
+            let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
+                .on_press(Message::Settings(
+                    SettingsMessage::RestoreDefaultKeyBindings,
+                ))
+                .style(iced::widget::button::secondary);
+
+            // Images Section
+            let images_management = keybinding_subsection(
+                state.l10n.tr("keybindings-management"),
+                vec![
+                    keybinding_row(state, 0, state.l10n.tr("keybindings-move")),
+                    keybinding_row(state, 1, state.l10n.tr("keybindings-copy")),
+                    keybinding_row(state, 2, state.l10n.tr("keybindings-delete")),
+                    keybinding_row(state, 3, state.l10n.tr("keybindings-rename")),
+                    keybinding_row(
+                        state,
+                        22,
+                        state.l10n.tr("keybindings-reveal-in-file-manager"),
+                    ),
+                ],
+            );
+            let images_selection = keybinding_subsection(
+                state.l10n.tr("keybindings-selection"),
+                vec![
+                    keybinding_row(state, 4, state.l10n.tr("keybindings-select-left")),
+                    keybinding_row(state, 5, state.l10n.tr("keybindings-select-right")),
+                ],
+            );
+            let images_search = keybinding_subsection(
+                state.l10n.tr("keybindings-search"),
+                vec![keybinding_row(
                     state,
-                    22,
-                    state.l10n.tr("keybindings-reveal-in-file-manager"),
-                ),
-            ],
-        );
-        let images_selection = keybinding_subsection(
-            state.l10n.tr("keybindings-selection"),
-            vec![
-                keybinding_row(state, 4, state.l10n.tr("keybindings-select-left")),
-                keybinding_row(state, 5, state.l10n.tr("keybindings-select-right")),
-            ],
-        );
-        let images_search = keybinding_subsection(
-            state.l10n.tr("keybindings-search"),
-            vec![keybinding_row(
-                state,
-                20,
-                state.l10n.tr("keybindings-search-images"),
-            )],
-        );
-        let images_metadata = keybinding_subsection(
-            state.l10n.tr("keybindings-metadata"),
-            vec![keybinding_row(
-                state,
-                21,
-                state.l10n.tr("keybindings-toggle-metadata"),
-            )],
-        );
-        let images_section = keybinding_section(
-            state.l10n.tr("keybindings-images"),
-            vec![
-                images_management,
-                images_selection,
-                images_search,
-                images_metadata,
-            ],
-        );
+                    20,
+                    state.l10n.tr("keybindings-search-images"),
+                )],
+            );
+            let images_metadata = keybinding_subsection(
+                state.l10n.tr("keybindings-metadata"),
+                vec![keybinding_row(
+                    state,
+                    21,
+                    state.l10n.tr("keybindings-toggle-metadata"),
+                )],
+            );
+            let images_section = keybinding_section(
+                state.l10n.tr("keybindings-images"),
+                vec![
+                    images_management,
+                    images_selection,
+                    images_search,
+                    images_metadata,
+                ],
+            );
 
-        // Folders Section
-        let folders_management = keybinding_subsection(
-            state.l10n.tr("keybindings-management"),
-            vec![keybinding_row(
-                state,
-                6,
-                state.l10n.tr("keybindings-create-folder"),
-            )],
-        );
-        let folders_selection = keybinding_subsection(
-            state.l10n.tr("keybindings-selection"),
-            vec![
-                keybinding_row(state, 7, state.l10n.tr("keybindings-select-above")),
-                keybinding_row(state, 8, state.l10n.tr("keybindings-collapse")),
-                keybinding_row(state, 9, state.l10n.tr("keybindings-select-below")),
-                keybinding_row(state, 10, state.l10n.tr("keybindings-expand")),
-            ],
-        );
-        let folders_open = keybinding_subsection(
-            state.l10n.tr("keybindings-open"),
-            vec![
-                keybinding_row(state, 13, state.l10n.tr("keybindings-open-folder")),
-                keybinding_row(state, 14, state.l10n.tr("keybindings-open-selected")),
-            ],
-        );
-        let folders_pinned = keybinding_subsection(
-            state.l10n.tr("keybindings-pinned"),
-            vec![
-                keybinding_row(state, 15, state.l10n.tr("keybindings-pin")),
-                keybinding_row(state, 16, state.l10n.tr("keybindings-pin-selected")),
-                keybinding_row(state, 17, state.l10n.tr("keybindings-unpin")),
-                keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-up")),
-                keybinding_row(state, 19, state.l10n.tr("keybindings-move-pinned-down")),
-            ],
-        );
-        let folders_section = keybinding_section(
-            state.l10n.tr("keybindings-folders"),
-            vec![
-                folders_management,
-                folders_selection,
-                folders_open,
-                folders_pinned,
-            ],
-        );
+            // Folders Section
+            let folders_management = keybinding_subsection(
+                state.l10n.tr("keybindings-management"),
+                vec![keybinding_row(
+                    state,
+                    6,
+                    state.l10n.tr("keybindings-create-folder"),
+                )],
+            );
+            let folders_selection = keybinding_subsection(
+                state.l10n.tr("keybindings-selection"),
+                vec![
+                    keybinding_row(state, 7, state.l10n.tr("keybindings-select-above")),
+                    keybinding_row(state, 8, state.l10n.tr("keybindings-collapse")),
+                    keybinding_row(state, 9, state.l10n.tr("keybindings-select-below")),
+                    keybinding_row(state, 10, state.l10n.tr("keybindings-expand")),
+                ],
+            );
+            let folders_open = keybinding_subsection(
+                state.l10n.tr("keybindings-open"),
+                vec![
+                    keybinding_row(state, 13, state.l10n.tr("keybindings-open-folder")),
+                    keybinding_row(state, 14, state.l10n.tr("keybindings-open-selected")),
+                ],
+            );
+            let folders_pinned = keybinding_subsection(
+                state.l10n.tr("keybindings-pinned"),
+                vec![
+                    keybinding_row(state, 15, state.l10n.tr("keybindings-pin")),
+                    keybinding_row(state, 16, state.l10n.tr("keybindings-pin-selected")),
+                    keybinding_row(state, 17, state.l10n.tr("keybindings-unpin")),
+                    keybinding_row(state, 18, state.l10n.tr("keybindings-move-pinned-up")),
+                    keybinding_row(state, 19, state.l10n.tr("keybindings-move-pinned-down")),
+                ],
+            );
+            let folders_section = keybinding_section(
+                state.l10n.tr("keybindings-folders"),
+                vec![
+                    folders_management,
+                    folders_selection,
+                    folders_open,
+                    folders_pinned,
+                ],
+            );
 
-        // Other Section
-        let other_history = keybinding_subsection(
-            state.l10n.tr("keybindings-history"),
-            vec![
-                keybinding_row(state, 11, state.l10n.tr("keybindings-undo")),
-                keybinding_row(state, 12, state.l10n.tr("keybindings-redo")),
-            ],
-        );
-        let other_section =
-            keybinding_section(state.l10n.tr("keybindings-other"), vec![other_history]);
+            // Other Section
+            let other_history = keybinding_subsection(
+                state.l10n.tr("keybindings-history"),
+                vec![
+                    keybinding_row(state, 11, state.l10n.tr("keybindings-undo")),
+                    keybinding_row(state, 12, state.l10n.tr("keybindings-redo")),
+                ],
+            );
+            let other_section =
+                keybinding_section(state.l10n.tr("keybindings-other"), vec![other_history]);
 
-        let bindings_column =
-            column![restore_btn, images_section, folders_section, other_section,].spacing(16);
+            let bindings_column =
+                column![restore_btn, images_section, folders_section, other_section,].spacing(16);
 
-        scrollable(bindings_column).height(Length::Fill).into()
-    };
+            scrollable(bindings_column).height(Length::Fill).into()
+        };
 
     let close_btn = container(
         button(text(state.l10n.tr("settings-close")))

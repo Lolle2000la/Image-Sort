@@ -11,7 +11,7 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
         .on_press(Message::Folder(FolderMessage::Pick))
         .width(Length::Fill);
 
-    let open_sel_btn = if let Some(ref selected) = state.selected_folder {
+    let open_sel_btn = if let Some(ref selected) = state.folder.selected_folder {
         button(text(state.l10n.tr("ui-open-selected-folder")).size(12))
             .on_press(Message::Folder(FolderMessage::Open(selected.clone())))
             .width(Length::Fill)

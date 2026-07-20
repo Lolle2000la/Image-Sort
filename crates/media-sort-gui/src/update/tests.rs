@@ -1,7 +1,7 @@
 use super::tasks::relative_position_for;
 use super::*;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
-use crate::state::AppState;
+use crate::state::{AppState, SettingsUiState};
 use crate::update::keyboard::handle_key_captured;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
@@ -14,21 +14,21 @@ use std::path::PathBuf;
 #[test]
 fn test_select_entry_in_bounds() {
     let mut state = AppState::new(SettingsStore::default());
-    state.media_entries = vec![MediaEntry {
+    state.media_grid.entries = vec![MediaEntry {
         path: PathBuf::from("/test/a.jpg"),
         media_type: MediaType::Image,
         file_name: "a.jpg".into(),
     }];
-    state.search_query = String::new();
+    state.media_grid.search.query = String::new();
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
-    assert_eq!(state.selected_index, Some(0));
-    assert!(state.current_metadata.is_none());
+    assert_eq!(state.media_grid.selected_index, Some(0));
+    assert!(state.metadata.current.is_none());
 }
 
 #[test]
 fn test_select_entry_out_of_bounds() {
     let mut state = AppState::new(SettingsStore::default());
-    state.media_entries = vec![
+    state.media_grid.entries = vec![
         MediaEntry {
             path: PathBuf::from("/test/a.jpg"),
             media_type: MediaType::Image,
@@ -40,24 +40,24 @@ fn test_select_entry_out_of_bounds() {
             file_name: "b.jpg".into(),
         },
     ];
-    state.search_query = String::new();
-    state.selected_index = None;
+    state.media_grid.search.query = String::new();
+    state.media_grid.selected_index = None;
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(99)));
-    assert_eq!(state.selected_index, Some(1));
+    assert_eq!(state.media_grid.selected_index, Some(1));
 }
 
 #[test]
 fn test_select_entry_filtered_empty() {
     let mut state = AppState::new(SettingsStore::default());
-    state.media_entries = vec![MediaEntry {
+    state.media_grid.entries = vec![MediaEntry {
         path: PathBuf::from("/test/a.jpg"),
         media_type: MediaType::Image,
         file_name: "a.jpg".into(),
     }];
-    state.search_query = "nomatch".into();
-    state.selected_index = Some(0);
+    state.media_grid.search.query = "nomatch".into();
+    state.media_grid.selected_index = Some(0);
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
-    assert_eq!(state.selected_index, None);
+    assert_eq!(state.media_grid.selected_index, None);
 }
 
 fn setup_temp_rename_action(dir_prefix: &str) -> (std::path::PathBuf, RenameAction) {
@@ -126,16 +126,23 @@ fn test_keycaptured_redo_when_history_has_undone() {
 #[test]
 fn test_keycaptured_capture_mode_updates_binding() {
     let mut state = AppState::new(SettingsStore::default());
-    state.waiting_for_key = true;
-    state.editing_keybinding = Some(0);
+    state.settings_ui = SettingsUiState::Keybindings {
+        editing_keybinding: Some(0),
+        waiting_for_key: true,
+    };
 
     let _task = update(
         &mut state,
         Message::KeyCaptured(Key::Character('X'), true, false, false),
     );
 
-    assert!(!state.waiting_for_key);
-    assert_eq!(state.editing_keybinding, None);
+    assert!(matches!(
+        state.settings_ui,
+        SettingsUiState::Keybindings {
+            editing_keybinding: None,
+            waiting_for_key: false,
+        }
+    ));
     let kb = &state.settings.keybindings;
     assert_eq!(kb.move_to_folder.key, Key::Character('X'));
     assert!(kb.move_to_folder.ctrl);
@@ -146,22 +153,29 @@ fn test_keycaptured_capture_mode_updates_binding() {
 #[test]
 fn test_keycaptured_capture_mode_clears_editing_state() {
     let mut state = AppState::new(SettingsStore::default());
-    state.waiting_for_key = true;
-    state.editing_keybinding = Some(3);
+    state.settings_ui = SettingsUiState::Keybindings {
+        editing_keybinding: Some(3),
+        waiting_for_key: true,
+    };
 
     let _task = update(
         &mut state,
         Message::KeyCaptured(Key::ArrowLeft, false, false, false),
     );
 
-    assert!(!state.waiting_for_key);
-    assert_eq!(state.editing_keybinding, None);
+    assert!(matches!(
+        state.settings_ui,
+        SettingsUiState::Keybindings {
+            editing_keybinding: None,
+            waiting_for_key: false,
+        }
+    ));
 }
 
 #[test]
 fn test_keycaptured_toggle_metadata_panel() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.metadata_panel_expanded);
+    assert!(!state.metadata.panel_expanded);
 
     let _ = update(
         &mut state,
@@ -171,7 +185,7 @@ fn test_keycaptured_toggle_metadata_panel() {
         &mut state,
         Message::Settings(SettingsMessage::ToggleMetadataPanel),
     );
-    assert!(state.metadata_panel_expanded);
+    assert!(state.metadata.panel_expanded);
 
     let _ = update(
         &mut state,
@@ -181,16 +195,16 @@ fn test_keycaptured_toggle_metadata_panel() {
         &mut state,
         Message::Settings(SettingsMessage::ToggleMetadataPanel),
     );
-    assert!(!state.metadata_panel_expanded);
+    assert!(!state.metadata.panel_expanded);
 }
 
 #[test]
 fn test_keycaptured_unpin_triggers_unpin() {
     let mut state = AppState::new(SettingsStore::default());
     let folder = PathBuf::from("/test/unpin_dir");
-    state.current_folder = Some(folder.clone());
+    state.folder.current_folder = Some(folder.clone());
     state.pin_current_folder();
-    assert_eq!(state.pinned_folders.len(), 1);
+    assert_eq!(state.folder.pinned_folders.len(), 1);
 
     let _ = update(
         &mut state,
@@ -200,20 +214,20 @@ fn test_keycaptured_unpin_triggers_unpin() {
         &mut state,
         Message::Folder(FolderMessage::UnpinCurrent(folder.clone())),
     );
-    assert!(state.pinned_folders.is_empty());
+    assert!(state.folder.pinned_folders.is_empty());
 }
 
 #[test]
 fn test_keycaptured_pin_without_folder_is_noop() {
     let mut state = AppState::new(SettingsStore::default());
-    state.current_folder = None;
-    assert!(state.pinned_folders.is_empty());
+    state.folder.current_folder = None;
+    assert!(state.folder.pinned_folders.is_empty());
 
     let _task = update(
         &mut state,
         Message::KeyCaptured(Key::Character('P'), false, false, false),
     );
-    assert!(state.pinned_folders.is_empty());
+    assert!(state.folder.pinned_folders.is_empty());
 }
 
 #[test]
@@ -225,7 +239,7 @@ fn test_keycaptured_unknown_binding_is_noop() {
         Message::KeyCaptured(Key::F9, false, false, false),
     );
     assert_eq!(state.history.can_undo(), saved_undo);
-    assert!(!state.metadata_panel_expanded);
+    assert!(!state.metadata.panel_expanded);
 }
 
 fn setup_temp_dir_with_files(
@@ -263,7 +277,7 @@ fn test_move_to_folder_success() {
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
     state.scan_media();
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     assert!(file.exists());
     let dest_file = dest.join("test_image.jpg");
@@ -278,8 +292,8 @@ fn test_move_to_folder_success() {
     assert!(dest_file.exists());
     assert!(state.history.can_undo());
     assert_eq!(state.history.done_len(), 1);
-    assert_eq!(state.selected_index, None);
-    assert!(state.media_entries.is_empty());
+    assert_eq!(state.media_grid.selected_index, None);
+    assert!(state.media_grid.entries.is_empty());
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -290,7 +304,7 @@ fn test_move_to_folder_no_selection_is_noop() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.selected_index = None;
+    state.media_grid.selected_index = None;
 
     let _task = update(
         &mut state,
@@ -298,7 +312,7 @@ fn test_move_to_folder_no_selection_is_noop() {
     );
 
     assert!(!state.history.can_undo());
-    assert!(state.selected_index.is_none());
+    assert!(state.media_grid.selected_index.is_none());
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -309,7 +323,7 @@ fn test_move_to_folder_index_out_of_bounds() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.selected_index = Some(999);
+    state.media_grid.selected_index = Some(999);
 
     let _task = update(
         &mut state,
@@ -327,7 +341,7 @@ fn test_move_to_folder_nonexistent_target() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     let nonexistent = root.join("does_not_exist");
 
@@ -359,8 +373,8 @@ fn test_delete_entry_success() {
     assert!(!file.exists());
     assert!(state.history.can_undo());
     assert_eq!(state.history.done_len(), 1);
-    assert_eq!(state.selected_index, None);
-    assert!(state.media_entries.is_empty());
+    assert_eq!(state.media_grid.selected_index, None);
+    assert!(state.media_grid.entries.is_empty());
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -391,7 +405,7 @@ fn test_undo_after_move() {
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
     state.scan_media();
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     let _ = update(
         &mut state,
@@ -408,7 +422,7 @@ fn test_undo_after_move() {
     assert!(!dest_file.exists());
     assert!(!state.history.can_undo());
     assert!(state.history.can_redo());
-    assert_eq!(state.selected_index, Some(0));
+    assert_eq!(state.media_grid.selected_index, Some(0));
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -443,7 +457,7 @@ fn test_redo_after_undo_move() {
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
     state.scan_media();
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     let _ = update(
         &mut state,
@@ -460,8 +474,8 @@ fn test_redo_after_undo_move() {
     assert!(dest_file.exists());
     assert!(state.history.can_undo());
     assert!(!state.history.can_redo());
-    assert!(state.media_entries.is_empty());
-    assert_eq!(state.selected_index, None);
+    assert!(state.media_grid.entries.is_empty());
+    assert_eq!(state.media_grid.selected_index, None);
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -491,7 +505,7 @@ fn test_rename_entry_success() {
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
     state.scan_media();
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     assert!(file.exists());
 
@@ -509,9 +523,9 @@ fn test_rename_entry_success() {
     assert!(state.history.can_undo());
     assert_eq!(state.history.done_len(), 1);
     assert!(state.history.last_done_name(&state.l10n).is_some());
-    assert_eq!(state.media_entries.len(), 1);
-    assert_eq!(state.media_entries[0].path, renamed);
-    assert_eq!(state.media_entries[0].file_name, "renamed_image.jpg");
+    assert_eq!(state.media_grid.entries.len(), 1);
+    assert_eq!(state.media_grid.entries[0].path, renamed);
+    assert_eq!(state.media_grid.entries[0].file_name, "renamed_image.jpg");
 
     std::fs::remove_dir_all(&root).ok();
 }
@@ -556,7 +570,7 @@ fn test_move_across_filesystems() {
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
     state.scan_media();
-    state.selected_index = Some(0);
+    state.media_grid.selected_index = Some(0);
 
     let _task = update(
         &mut state,
@@ -646,7 +660,7 @@ fn test_delete_undo_cross_filesystem() {
 #[test]
 fn test_thumbnail_ready_empty_data() {
     let mut state = AppState::new(SettingsStore::default());
-    let cache_size_before = state.thumbnail_cache.len();
+    let cache_size_before = state.cache.thumbnail_cache.len();
 
     let _task = update(
         &mut state,
@@ -657,7 +671,7 @@ fn test_thumbnail_ready_empty_data() {
             Vec::new(),
         )),
     );
-    assert_eq!(state.thumbnail_cache.len(), cache_size_before);
+    assert_eq!(state.cache.thumbnail_cache.len(), cache_size_before);
 }
 
 #[test]
@@ -674,8 +688,8 @@ fn test_thumbnail_ready_valid_data() {
             vec![255, 0, 0, 255],
         )),
     );
-    assert_eq!(state.thumbnail_cache.len(), 1);
-    assert!(state.thumbnail_cache.contains(&path));
+    assert_eq!(state.cache.thumbnail_cache.len(), 1);
+    assert!(state.cache.thumbnail_cache.contains(&path));
 }
 
 #[test]
@@ -685,13 +699,13 @@ fn test_metadata_loaded_error_clears_metadata() {
     let mut inner = std::collections::BTreeMap::new();
     inner.insert("Width".to_string(), "1920".to_string());
     existing.insert("EXIF".to_string(), inner);
-    state.current_metadata = Some(existing);
+    state.metadata.current = Some(existing);
 
     let _task = update(
         &mut state,
         Message::Media(MediaMessage::MetadataLoaded(Err("load failed".to_string()))),
     );
-    assert!(state.current_metadata.is_none());
+    assert!(state.metadata.current.is_none());
 }
 
 #[test]
@@ -706,15 +720,15 @@ fn test_metadata_loaded_success() {
         &mut state,
         Message::Media(MediaMessage::MetadataLoaded(Ok(metadata))),
     );
-    assert!(state.current_metadata.is_some());
-    let m = state.current_metadata.as_ref().unwrap();
+    assert!(state.metadata.current.is_some());
+    let m = state.metadata.current.as_ref().unwrap();
     assert_eq!(m.get("EXIF").unwrap().get("Width").unwrap(), "1920");
 }
 
 #[test]
 fn test_grid_scrolled_updates_viewport_state() {
     let mut state = AppState::new(SettingsStore::default());
-    assert_eq!(state.media_grid_scroll.viewport_width, 0.0);
+    assert_eq!(state.media_grid.scroll.viewport_width, 0.0);
 
     let _ = update(
         &mut state,
@@ -724,9 +738,9 @@ fn test_grid_scrolled_updates_viewport_state() {
             1200.0,
         )),
     );
-    assert_eq!(state.media_grid_scroll.offset_x, 120.0);
-    assert_eq!(state.media_grid_scroll.viewport_width, 400.0);
-    assert_eq!(state.media_grid_scroll.content_width, 1200.0);
+    assert_eq!(state.media_grid.scroll.offset_x, 120.0);
+    assert_eq!(state.media_grid.scroll.viewport_width, 400.0);
+    assert_eq!(state.media_grid.scroll.content_width, 1200.0);
 }
 
 #[test]
@@ -765,7 +779,7 @@ fn test_pinned_folder_drag_and_drop() {
     let path1 = PathBuf::from("/pinned1");
     let path2 = PathBuf::from("/pinned2");
 
-    state.pinned_folders = vec![
+    state.folder.pinned_folders = vec![
         media_sort_core::models::PinnedFolder {
             path: path1.clone(),
             name: "p1".into(),
@@ -777,38 +791,38 @@ fn test_pinned_folder_drag_and_drop() {
             numeric_shortcut: None,
         },
     ];
-    state.current_folder = Some(PathBuf::from("/current"));
+    state.folder.current_folder = Some(PathBuf::from("/current"));
     state.build_folder_tree();
 
     let _ = update(
         &mut state,
         Message::Folder(FolderMessage::HoverPinned(path1.clone())),
     );
-    assert_eq!(state.hovered_pinned_folder, Some(path1.clone()));
+    assert_eq!(state.folder.hovered_pinned_folder, Some(path1.clone()));
 
     let _ = update(&mut state, Message::Folder(FolderMessage::HoverPinnedNone));
-    assert_eq!(state.hovered_pinned_folder, None);
+    assert_eq!(state.folder.hovered_pinned_folder, None);
 
     let _ = update(
         &mut state,
         Message::Folder(FolderMessage::SelectedPinned(path1.clone(), 1)),
     );
-    assert_eq!(state.selected_folder, Some(path1.clone()));
-    assert_eq!(state.dragging_pinned_folder, Some(path1.clone()));
+    assert_eq!(state.folder.selected_folder, Some(path1.clone()));
+    assert_eq!(state.folder.dragging_pinned_folder, Some(path1.clone()));
 
     let _ = update(
         &mut state,
         Message::Folder(FolderMessage::DragPinnedOver(path2.clone())),
     );
-    assert_eq!(state.pinned_folders[0].path, path2);
-    assert_eq!(state.pinned_folders[1].path, path1);
-    assert_eq!(state.dragging_pinned_folder, Some(path1.clone()));
+    assert_eq!(state.folder.pinned_folders[0].path, path2);
+    assert_eq!(state.folder.pinned_folders[1].path, path1);
+    assert_eq!(state.folder.dragging_pinned_folder, Some(path1.clone()));
 
     let _ = update(
         &mut state,
         Message::Folder(FolderMessage::DragPinnedReleased),
     );
-    assert_eq!(state.dragging_pinned_folder, None);
+    assert_eq!(state.folder.dragging_pinned_folder, None);
 }
 
 // ============================================================================
@@ -821,7 +835,7 @@ fn test_video_player_ready_stores_sender() {
     let mut state = AppState::new(SettingsStore::default());
     let (tx, _rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
     let _task = update(&mut state, Message::Video(VideoMessage::PlayerReady(tx)));
-    assert!(state.video_sender.is_some());
+    assert!(state.video.sender.is_some());
 }
 
 #[test]
@@ -829,9 +843,9 @@ fn test_video_volume_sends_command() {
     use tokio::sync::mpsc;
     let mut state = AppState::new(SettingsStore::default());
     let (tx, mut rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
-    state.video_sender = Some(tx);
+    state.video.sender = Some(tx);
     let _task = update(&mut state, Message::Video(VideoMessage::Volume(50.0)));
-    assert!(state.video_sender.is_some());
+    assert!(state.video.sender.is_some());
     match rx.try_recv() {
         Ok(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(v)) => {
             assert_eq!(v, 50.0);
@@ -844,24 +858,24 @@ fn test_video_volume_sends_command() {
 #[test]
 fn test_video_play_pause_no_sender() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video_sender.is_none());
+    assert!(state.video.sender.is_none());
     let _task = update(&mut state, Message::Video(VideoMessage::PlayPause));
-    assert!(state.video_sender.is_none());
+    assert!(state.video.sender.is_none());
 }
 
 #[test]
 fn test_video_stop_no_sender() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video_sender.is_none());
+    assert!(state.video.sender.is_none());
     let _task = update(&mut state, Message::Video(VideoMessage::Stop));
-    assert!(state.video_sender.is_none());
+    assert!(state.video.sender.is_none());
 }
 
 #[test]
 fn test_video_event_playback_progress() {
     use media_sort_backend::media::mpv_context::VideoEvent;
     let mut state = AppState::new(SettingsStore::default());
-    state.video_ready = false;
+    state.video.ready = false;
     let _task = update(
         &mut state,
         Message::Video(VideoMessage::Event(VideoEvent::PlaybackProgress {
@@ -869,9 +883,9 @@ fn test_video_event_playback_progress() {
             duration: 120.0,
         })),
     );
-    assert_eq!(state.video_position, 10.0);
-    assert_eq!(state.video_duration, 120.0);
-    assert!(state.video_ready);
+    assert_eq!(state.video.position, 10.0);
+    assert_eq!(state.video.duration, 120.0);
+    assert!(state.video.ready);
 }
 
 #[test]
@@ -882,7 +896,7 @@ fn test_video_event_muted() {
         &mut state,
         Message::Video(VideoMessage::Event(VideoEvent::Muted(true))),
     );
-    assert!(state.video_muted);
+    assert!(state.video.muted);
 }
 
 #[test]
@@ -893,7 +907,7 @@ fn test_video_event_volume() {
         &mut state,
         Message::Video(VideoMessage::Event(VideoEvent::Volume(75.0))),
     );
-    assert_eq!(state.video_volume, 75.0);
+    assert_eq!(state.video.volume, 75.0);
 }
 
 #[test]
@@ -904,22 +918,22 @@ fn test_video_event_paused() {
         &mut state,
         Message::Video(VideoMessage::Event(VideoEvent::Paused(true))),
     );
-    assert!(state.video_paused);
+    assert!(state.video.paused);
 }
 
 #[test]
 fn test_video_seek_stores_position() {
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(&mut state, Message::Video(VideoMessage::Seek(42.0)));
-    assert_eq!(state.video_seek_position, Some(42.0));
+    assert_eq!(state.video.seek_position, Some(42.0));
 }
 
 #[test]
 fn test_video_seek_without_sender() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video_sender.is_none());
+    assert!(state.video.sender.is_none());
     let _task = update(&mut state, Message::Video(VideoMessage::Seek(10.0)));
-    assert_eq!(state.video_seek_position, Some(10.0));
+    assert_eq!(state.video.seek_position, Some(10.0));
 }
 
 // ============================================================================
@@ -929,11 +943,18 @@ fn test_video_seek_without_sender() {
 #[test]
 fn test_key_captured_waiting_for_key_clears_state() {
     let mut state = AppState::new(SettingsStore::default());
-    state.waiting_for_key = true;
-    state.editing_keybinding = Some(0);
+    state.settings_ui = SettingsUiState::Keybindings {
+        editing_keybinding: Some(0),
+        waiting_for_key: true,
+    };
     let _task = handle_key_captured(&mut state, Key::Character('A'), true, false, false);
-    assert!(!state.waiting_for_key);
-    assert!(state.editing_keybinding.is_none());
+    assert!(matches!(
+        state.settings_ui,
+        SettingsUiState::Keybindings {
+            editing_keybinding: None,
+            waiting_for_key: false,
+        }
+    ));
 }
 
 // ============================================================================
@@ -1011,28 +1032,28 @@ fn test_update_tick_should_exit() {
 #[test]
 fn test_settings_show_dialog() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.show_settings);
+    assert!(matches!(state.settings_ui, SettingsUiState::Hidden));
     let _task = update(&mut state, Message::Settings(SettingsMessage::Open));
-    assert!(state.show_settings);
+    assert!(!matches!(state.settings_ui, SettingsUiState::Hidden));
 }
 
 #[test]
 fn test_settings_close_dialog() {
     let mut state = AppState::new(SettingsStore::default());
-    state.show_settings = true;
+    state.settings_ui = SettingsUiState::Settings;
     let _task = update(&mut state, Message::Settings(SettingsMessage::Close));
-    assert!(!state.show_settings);
+    assert!(matches!(state.settings_ui, SettingsUiState::Hidden));
 }
 
 #[test]
 fn test_settings_toggle_metadata_panel() {
     let mut state = AppState::new(SettingsStore::default());
-    let was_expanded = state.metadata_panel_expanded;
+    let was_expanded = state.metadata.panel_expanded;
     let _task = update(
         &mut state,
         Message::Settings(SettingsMessage::ToggleMetadataPanel),
     );
-    assert_eq!(state.metadata_panel_expanded, !was_expanded);
+    assert_eq!(state.metadata.panel_expanded, !was_expanded);
 }
 
 #[test]
@@ -1085,42 +1106,42 @@ fn test_reopen_last_selected_media_behavior() {
     tx.send(file1.clone()).unwrap();
     tx.send(file2.clone()).unwrap();
     drop(tx);
-    state.scan_receiver = Some(rx);
-    state.pending_select_index = Some(0);
+    state.media_grid.scan_receiver = Some(rx);
+    state.media_grid.pending_select_index = Some(0);
 
     // Run poll_background_channels (which processes scan completions)
     let _task = poll_background_channels(&mut state);
 
     // Verify b.jpg (index 1) is selected because both settings are true
-    assert_eq!(state.selected_index, Some(1));
+    assert_eq!(state.media_grid.selected_index, Some(1));
 
     // Test case 2: reopen_last_opened_folder is false
     state.settings.general.reopen_last_opened_folder = false;
     state.settings.general.reopen_last_selected_media = true;
-    state.selected_index = None;
+    state.media_grid.selected_index = None;
     let (tx, rx) = channel();
     tx.send(file1.clone()).unwrap();
     tx.send(file2.clone()).unwrap();
     drop(tx);
-    state.scan_receiver = Some(rx);
-    state.pending_select_index = Some(0);
+    state.media_grid.scan_receiver = Some(rx);
+    state.media_grid.pending_select_index = Some(0);
     let _task = poll_background_channels(&mut state);
     // Should fall back to index 0
-    assert_eq!(state.selected_index, Some(0));
+    assert_eq!(state.media_grid.selected_index, Some(0));
 
     // Test case 3: reopen_last_selected_media is false
     state.settings.general.reopen_last_opened_folder = true;
     state.settings.general.reopen_last_selected_media = false;
-    state.selected_index = None;
+    state.media_grid.selected_index = None;
     let (tx, rx) = channel();
     tx.send(file1.clone()).unwrap();
     tx.send(file2.clone()).unwrap();
     drop(tx);
-    state.scan_receiver = Some(rx);
-    state.pending_select_index = Some(0);
+    state.media_grid.scan_receiver = Some(rx);
+    state.media_grid.pending_select_index = Some(0);
     let _task = poll_background_channels(&mut state);
     // Should fall back to index 0
-    assert_eq!(state.selected_index, Some(0));
+    assert_eq!(state.media_grid.selected_index, Some(0));
 }
 
 #[test]
@@ -1146,34 +1167,37 @@ fn test_settings_set_theme_unknown() {
 #[test]
 fn test_settings_open_keybindings() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.show_keybindings);
+    assert!(matches!(state.settings_ui, SettingsUiState::Hidden));
     let _task = update(
         &mut state,
         Message::Settings(SettingsMessage::OpenKeybindings),
     );
-    assert!(state.show_keybindings);
+    assert!(matches!(
+        state.settings_ui,
+        SettingsUiState::Keybindings { .. }
+    ));
 }
 
 #[test]
 fn test_settings_start_drag_folder_divider() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.dragging_folder_divider);
+    assert!(!state.folder.dragging_folder_divider);
     let _task = update(
         &mut state,
         Message::Settings(SettingsMessage::StartDragFolderDivider),
     );
-    assert!(state.dragging_folder_divider);
+    assert!(state.folder.dragging_folder_divider);
 }
 
 #[test]
 fn test_settings_start_drag_metadata_divider() {
     let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.dragging_metadata_divider);
+    assert!(!state.metadata.dragging_divider);
     let _task = update(
         &mut state,
         Message::Settings(SettingsMessage::StartDragMetadataDivider),
     );
-    assert!(state.dragging_metadata_divider);
+    assert!(state.metadata.dragging_divider);
 }
 
 // ============================================================================

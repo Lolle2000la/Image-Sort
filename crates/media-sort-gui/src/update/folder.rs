@@ -40,18 +40,20 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         }
         FolderMessage::PickPinResult(None) => Task::none(),
         FolderMessage::SelectedPinned(path, idx) => {
-            state.set_selected_folder(path.clone(), idx);
-            state.dragging_pinned_folder = Some(path);
+            state.folder.set_selected(path.clone(), idx);
+            state.folder.dragging_pinned_folder = Some(path);
             Task::none()
         }
         FolderMessage::DragPinnedOver(target_path) => {
-            if let Some(source_path) = state.dragging_pinned_folder.clone()
+            if let Some(source_path) = state.folder.dragging_pinned_folder.clone()
                 && source_path != target_path
                 && let Some(pos_source) = state
+                    .folder
                     .pinned_folders
                     .iter()
                     .position(|p| p.path == source_path)
                 && let Some(pos_target) = state
+                    .folder
                     .pinned_folders
                     .iter()
                     .position(|p| p.path == target_path)
@@ -61,22 +63,22 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
             Task::none()
         }
         FolderMessage::DragPinnedReleased => {
-            if state.dragging_pinned_folder.is_some() {
-                state.dragging_pinned_folder = None;
+            if state.folder.dragging_pinned_folder.is_some() {
+                state.folder.dragging_pinned_folder = None;
                 let _ = state.settings.save();
             }
             Task::none()
         }
         FolderMessage::HoverPinned(path) => {
-            state.hovered_pinned_folder = Some(path);
+            state.folder.hovered_pinned_folder = Some(path);
             Task::none()
         }
         FolderMessage::HoverPinnedNone => {
-            state.hovered_pinned_folder = None;
+            state.folder.hovered_pinned_folder = None;
             Task::none()
         }
         FolderMessage::Selected(path, idx) => {
-            state.set_selected_folder(path, idx);
+            state.folder.set_selected(path, idx);
             Task::none()
         }
         FolderMessage::ToggleExpand(path) => {
@@ -85,9 +87,10 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         }
         FolderMessage::PinSelected => {
             let path_to_pin = state
+                .folder
                 .selected_folder
                 .clone()
-                .or(state.current_folder.clone());
+                .or(state.folder.current_folder.clone());
             if let Some(path) = path_to_pin {
                 state.pin_folder(&path);
                 let _ = state.settings.save();
@@ -111,45 +114,46 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         }
         FolderMessage::TriggerCreate => {
             if let Some(p) = state
+                .folder
                 .selected_folder
                 .as_ref()
-                .or(state.current_folder.as_ref())
+                .or(state.folder.current_folder.as_ref())
             {
-                state.creating_folder_parent = Some(p.clone());
-                state.create_folder_input = String::new();
+                state.create_folder.creating_folder_parent = Some(p.clone());
+                state.create_folder.create_folder_input = String::new();
             }
             Task::none()
         }
         FolderMessage::CreateInputChanged(val) => {
-            state.create_folder_input = val;
+            state.create_folder.create_folder_input = val;
             Task::none()
         }
         FolderMessage::SubmitCreate(_parent) => {
-            if let Some(parent) = state.creating_folder_parent.take() {
-                let folder_name = state.create_folder_input.trim().to_string();
+            if let Some(parent) = state.create_folder.creating_folder_parent.take() {
+                let folder_name = state.create_folder.create_folder_input.trim().to_string();
                 if !folder_name.is_empty() {
                     let new_dir = parent.join(&folder_name);
                     if let Err(e) = std::fs::create_dir_all(&new_dir) {
                         tracing::error!("Failed to create folder: {e}");
-                    } else if state.current_folder.is_some() {
+                    } else if state.folder.current_folder.is_some() {
                         state.build_folder_tree();
                     }
                 }
-                state.create_folder_input.clear();
+                state.create_folder.create_folder_input.clear();
             }
             Task::none()
         }
         FolderMessage::CancelCreate => {
-            state.creating_folder_parent = None;
-            state.create_folder_input.clear();
+            state.create_folder.creating_folder_parent = None;
+            state.create_folder.create_folder_input.clear();
             Task::none()
         }
         FolderMessage::PinShortcut(n) => {
             let pinned_idx = (n.saturating_sub(1)) as usize;
-            if let Some(pinned) = state.pinned_folders.get(pinned_idx) {
+            if let Some(pinned) = state.folder.pinned_folders.get(pinned_idx) {
                 let target_folder = pinned.path.clone();
-                if let Some(index) = state.selected_index {
-                    let filtered = state.filtered_media_entries();
+                if let Some(index) = state.media_grid.selected_index {
+                    let filtered = state.media_grid.filtered_entries();
                     if let Some(entry) = filtered.get(index) {
                         let entry_path = entry.path.clone();
                         match MoveAction::new(&entry_path, &target_folder) {
@@ -158,7 +162,7 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
                                     tracing::error!("Move failed: {e}");
                                 } else {
                                     state.history.push_executed(Box::new(action));
-                                    state.media_entries.retain(|e| e.path != entry_path);
+                                    state.media_grid.entries.retain(|e| e.path != entry_path);
                                     return super::tasks::select_and_load_entry(state, index);
                                 }
                             }

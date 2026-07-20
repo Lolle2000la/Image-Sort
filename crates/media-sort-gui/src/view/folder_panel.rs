@@ -14,9 +14,10 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
 
     let pin_sel_btn = {
         let path_to_pin = state
+            .folder
             .selected_folder
             .clone()
-            .or(state.current_folder.clone());
+            .or(state.folder.current_folder.clone());
         if path_to_pin.is_some() {
             button(text(state.l10n.tr("ui-pin-selected")).size(12))
                 .on_press(Message::Folder(FolderMessage::PinSelected))
@@ -27,9 +28,10 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
 
     let unpin_btn = {
         let path_to_unpin = state
+            .folder
             .selected_folder
             .clone()
-            .or(state.current_folder.clone());
+            .or(state.folder.current_folder.clone());
         if let Some(path) = path_to_unpin {
             button(text(state.l10n.tr("ui-unpin")).size(12))
                 .on_press(Message::Folder(FolderMessage::UnpinCurrent(path)))
@@ -38,7 +40,8 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
         }
     };
 
-    let has_parent = state.selected_folder.is_some() || state.current_folder.is_some();
+    let has_parent =
+        state.folder.selected_folder.is_some() || state.folder.current_folder.is_some();
     let create_folder_btn = if has_parent {
         button(text(state.l10n.tr("ui-create-folder")).size(12))
             .on_press(Message::Folder(FolderMessage::TriggerCreate))
@@ -51,10 +54,10 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
         .wrap();
 
     let tree_content = folder_tree::folder_tree_view(
-        &state.folder_tree,
-        state.selected_folder_idx,
-        state.dragging_pinned_folder.as_deref(),
-        state.hovered_pinned_folder.as_deref(),
+        &state.folder.folder_tree,
+        state.folder.selected_folder_idx,
+        state.folder.dragging_pinned_folder.as_deref(),
+        state.folder.hovered_pinned_folder.as_deref(),
     );
     let scrollable_tree = scrollable(tree_content)
         .id(FOLDER_TREE_SCROLLABLE_ID.clone())

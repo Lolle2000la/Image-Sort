@@ -1,129 +1,58 @@
-use std::collections::BTreeMap;
-use std::collections::HashSet;
+mod audio;
+mod cache;
+mod create_folder_modal;
+mod folder;
+mod media_grid;
+mod metadata;
+mod rename_modal;
+mod settings_ui;
+mod video;
+
+pub use audio::AudioPlaybackState;
+pub use cache::CacheState;
+pub use create_folder_modal::CreateFolderModalState;
+pub use folder::FolderState;
+pub use media_grid::{MediaGridScrollState, MediaGridState, SearchState};
+pub use metadata::MetadataPanelState;
+pub use rename_modal::RenameModalState;
+pub use settings_ui::SettingsUiState;
+pub use video::VideoPlaybackState;
+
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
-use lru::LruCache;
-use std::num::NonZeroUsize;
-
-use crate::subscriptions::thumbnail_tracker::ThumbnailVisibilityTracker;
-use media_sort_backend::media::audio_decoder::AudioPlayer;
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
-use media_sort_core::models::{FolderNode, MediaEntry, PinnedFolder};
+use media_sort_core::models::{FolderNode, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
 #[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
 pub struct AppState {
     pub history: History,
     pub settings: SettingsStore,
-    pub current_folder: Option<PathBuf>,
     pub should_exit: bool,
-
-    pub folder_tree: Vec<FolderNode>,
-    pub media_entries: Vec<MediaEntry>,
-    pub selected_index: Option<usize>,
-    pub search_query: String,
-    pub pinned_folders: Vec<PinnedFolder>,
-
-    pub editing_keybinding: Option<usize>,
-    pub waiting_for_key: bool,
-
-    pub metadata_panel_expanded: bool,
-    pub current_metadata: Option<BTreeMap<String, BTreeMap<String, String>>>,
-
-    pub show_settings: bool,
-    pub show_keybindings: bool,
-
-    pub audio_player: Option<AudioPlayer>,
-
-    pub audio_playing: bool,
-    pub audio_position: f64,
-    pub audio_duration: f64,
-    pub audio_volume: f64,
-    pub audio_muted: bool,
-
-    pub selected_audio_cover: Option<iced::widget::image::Handle>,
-
-    pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
-    pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
-
-    pub thumbnail_tracker: ThumbnailVisibilityTracker,
-
-    pub selected_folder: Option<PathBuf>,
-    pub(crate) selected_folder_idx: Option<usize>,
-    pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
-    pub renaming_path: Option<PathBuf>,
-    pub rename_input_value: String,
-    /// Transient error to display in the rename modal (e.g. illegal character).
-    /// Cleared when the modal is dismissed or a valid rename is submitted.
-    pub rename_error: Option<String>,
-    pub creating_folder_parent: Option<PathBuf>,
-    pub create_folder_input: String,
-    pub search_focused: bool,
-    pub show_credits: bool,
     pub l10n: media_sort_core::l10n::Localization,
-    pub search_placeholder: String,
-    pub rename_placeholder: String,
-    pub create_folder_placeholder: String,
-    pub dragging_folder_divider: bool,
-    pub dragging_metadata_divider: bool,
-    pub dragging_pinned_folder: Option<PathBuf>,
-    pub hovered_pinned_folder: Option<PathBuf>,
-    pub video_sender:
-        Option<tokio::sync::mpsc::Sender<media_sort_backend::media::mpv_context::VideoCommand>>,
-    pub video_frame: Option<iced::widget::image::Handle>,
-    pub video_position: f64,
-    pub video_duration: f64,
-    pub video_volume: f64,
-    pub video_muted: bool,
-    pub video_paused: bool,
-    pub video_rgba: Option<std::sync::Arc<Vec<u8>>>,
-    pub video_ready: bool,
-    pub video_seek_position: Option<f64>,
-    pub video_last_seek_time: Option<std::time::Instant>,
-    pub video_width: u32,
-    pub video_height: u32,
-    pub unsupported_files: HashSet<PathBuf>,
+    pub show_credits: bool,
+
+    pub folder: FolderState,
+    pub media_grid: MediaGridState,
+    pub rename: RenameModalState,
+    pub create_folder: CreateFolderModalState,
+    pub video: VideoPlaybackState,
+    pub audio: AudioPlaybackState,
+    pub cache: CacheState,
+    pub metadata: MetadataPanelState,
+    pub settings_ui: SettingsUiState,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
     #[cfg(feature = "velopack")]
     pub show_update_prompt: bool,
-
-    /// Last known viewport of the media grid's horizontal scrollable, used
-    /// to auto-scroll the currently selected entry into view when the
-    /// selection changes (e.g. via keyboard shortcuts).
-    pub media_grid_scroll: MediaGridScrollState,
-
-    /// Active background scan receiver. When `Some`, the tick handler
-    /// streams incoming paths into `media_entries`.
-    pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
-    /// Index to select after the background scan completes.
-    pub pending_select_index: Option<usize>,
-
-    /// Active background folder-tree build receiver.
-    pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
-}
-
-/// Snapshot of the media grid's scrollable viewport. Updated whenever the
-/// scrollable reports a new viewport via its `on_scroll` callback.
-///
-/// Kept in sync for diagnostic / debug purposes only; auto-scroll now uses
-/// relative positions so it doesn't depend on this snapshot being current.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct MediaGridScrollState {
-    /// Current horizontal scroll offset in pixels.
-    pub offset_x: f32,
-    /// Width of the visible viewport in pixels.
-    pub viewport_width: f32,
-    /// Width of the scrollable content in pixels.
-    pub content_width: f32,
 }
 
 impl AppState {
     pub fn new(settings: SettingsStore) -> Self {
-        let pinned_folders = settings
+        let pinned_folders: Vec<PinnedFolder> = settings
             .pinned_folders
             .paths
             .iter()
@@ -141,12 +70,7 @@ impl AppState {
             })
             .collect();
 
-        let metadata_panel_expanded = settings.metadata_panel.is_expanded;
-        let _theme = &settings.general.theme;
-
-        let cache_size = NonZeroUsize::new(200).unwrap();
-
-        let audio_player = AudioPlayer::new().ok();
+        let panel_expanded = settings.metadata_panel.is_expanded;
 
         let detected_locale = match &settings.general.locale {
             Some(locale) => locale.as_str(),
@@ -157,180 +81,137 @@ impl AppState {
         let rename_placeholder = l10n.tr("ui-enter-new-name");
         let create_folder_placeholder = l10n.tr("ui-folder-name-placeholder");
 
+        let folder = FolderState {
+            pinned_folders,
+            ..Default::default()
+        };
+
+        let media_grid = MediaGridState {
+            search: SearchState {
+                placeholder: search_placeholder,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let rename = RenameModalState {
+            placeholder: rename_placeholder,
+            ..Default::default()
+        };
+
+        let create_folder = CreateFolderModalState {
+            create_folder_placeholder,
+            ..Default::default()
+        };
+
+        let metadata = MetadataPanelState {
+            panel_expanded,
+            ..Default::default()
+        };
+
         Self {
             history: History::new(),
             settings,
-            current_folder: None,
             should_exit: false,
-            folder_tree: Vec::new(),
-            media_entries: Vec::new(),
-            selected_index: None,
-            search_query: String::new(),
-            pinned_folders,
-            editing_keybinding: None,
-            waiting_for_key: false,
-            metadata_panel_expanded,
-            current_metadata: None,
-            show_settings: false,
-            show_keybindings: false,
-            audio_player,
-            audio_playing: false,
-            audio_position: 0.0,
-            audio_duration: 0.0,
-            audio_volume: 100.0,
-            audio_muted: false,
-            selected_audio_cover: None,
-            thumbnail_cache: LruCache::new(cache_size),
-            image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
-            thumbnail_tracker: ThumbnailVisibilityTracker::new(std::time::Duration::from_millis(
-                150,
-            )),
-            selected_folder: None,
-            selected_folder_idx: None,
-            selected_image: None,
-            renaming_path: None,
-            rename_input_value: String::new(),
-            rename_error: None,
-            creating_folder_parent: None,
-            create_folder_input: String::new(),
-            search_focused: false,
-            show_credits: false,
             l10n,
-            search_placeholder,
-            rename_placeholder,
-            create_folder_placeholder,
-            dragging_folder_divider: false,
-            dragging_metadata_divider: false,
-            dragging_pinned_folder: None,
-            hovered_pinned_folder: None,
-            video_sender: None,
-            video_frame: None,
-            video_position: 0.0,
-            video_duration: 0.0,
-            video_volume: 100.0,
-            video_muted: false,
-            video_paused: false,
-            video_ready: false,
-            video_seek_position: None,
-            video_last_seek_time: None,
-            video_rgba: None,
-            video_width: 0,
-            video_height: 0,
-            unsupported_files: HashSet::new(),
+            show_credits: false,
+            folder,
+            media_grid,
+            rename,
+            create_folder,
+            video: VideoPlaybackState::default(),
+            audio: AudioPlaybackState::new(),
+            cache: CacheState::new(),
+            metadata,
+            settings_ui: SettingsUiState::default(),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
-            media_grid_scroll: MediaGridScrollState::default(),
-            #[cfg(feature = "demo")]
-            automation: None,
-            scan_receiver: None,
-            pending_select_index: None,
-            folder_tree_receiver: None,
         }
     }
 
     pub fn open_folder(&mut self, path: &Path) {
-        self.current_folder = Some(path.to_path_buf());
+        self.folder.current_folder = Some(path.to_path_buf());
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         let _ = self.settings.save();
         self.history.clear();
-        self.media_entries.clear();
+        self.media_grid.entries.clear();
         self.build_folder_tree();
-        self.selected_index = None;
-        self.current_metadata = None;
-        self.selected_folder = None;
-        self.selected_folder_idx = None;
-        self.selected_image = None;
-        self.image_cache.clear();
-        if let Some(ref sender) = self.video_sender {
+        self.media_grid.selected_index = None;
+        self.metadata.current = None;
+        self.folder.selected_folder = None;
+        self.folder.selected_folder_idx = None;
+        self.cache.selected_image = None;
+        self.cache.image_cache.clear();
+        if let Some(ref sender) = self.video.sender {
             let _ =
                 sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
-        self.video_frame = None;
-        self.video_position = 0.0;
-        self.video_duration = 0.0;
-        self.unsupported_files.clear();
-        if let Some(ref player) = self.audio_player {
+        self.video.frame = None;
+        self.video.position = 0.0;
+        self.video.duration = 0.0;
+        self.cache.unsupported_files.clear();
+        if let Some(ref player) = self.audio.player {
             player.stop();
         }
-        self.audio_playing = false;
-        self.audio_position = 0.0;
+        self.audio.playing = false;
+        self.audio.position = 0.0;
 
         self.start_async_folder_tree();
 
-        self.scan_receiver = Some(media_sort_backend::filesystem::scanner::scan_media_files(
-            path,
-        ));
-        self.pending_select_index = Some(0);
+        self.media_grid.scan_receiver = Some(
+            media_sort_backend::filesystem::scanner::scan_media_files(path),
+        );
+        self.media_grid.pending_select_index = Some(0);
     }
 
     pub fn scan_media(&mut self) {
-        self.scan_receiver = None;
-        self.media_entries.clear();
-        if let Some(ref folder) = self.current_folder {
-            for p in media_sort_backend::filesystem::scanner::scan_media_files(folder) {
-                let media_type = detect_media_type(&p, self.settings.general.animate_gifs);
-                let file_name = p
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| p.display().to_string());
-                self.media_entries.push(MediaEntry {
-                    path: p,
-                    media_type,
-                    file_name,
-                });
-            }
-        }
-    }
-
-    pub fn filtered_media_entries(&self) -> Vec<&MediaEntry> {
-        if self.search_query.is_empty() {
-            self.media_entries.iter().collect()
-        } else {
-            let query_lower = self.search_query.to_lowercase();
-            self.media_entries
-                .iter()
-                .filter(|e| e.file_name.to_lowercase().contains(&query_lower))
-                .collect()
-        }
+        let animate_gifs = self.settings.general.animate_gifs;
+        let folder = self.folder.current_folder.as_deref();
+        self.media_grid.scan_media(folder, animate_gifs);
     }
 
     pub fn build_folder_tree(&mut self) {
-        if self.current_folder.is_none() {
+        if self.folder.current_folder.is_none() {
             return;
         }
-        self.folder_tree_receiver = None;
-        let expanded_paths = collect_expanded_paths(&self.folder_tree);
-        let root = self.current_folder.clone().unwrap();
-        self.folder_tree = build_tree_nodes_data(&root, &self.pinned_folders, &expanded_paths);
-        self.sync_selected_folder_idx();
+        self.folder.folder_tree_receiver = None;
+        let expanded_paths = collect_expanded_paths(&self.folder.folder_tree);
+        let root = self.folder.current_folder.clone().unwrap();
+        self.folder.folder_tree =
+            build_tree_nodes_data(&root, &self.folder.pinned_folders, &expanded_paths);
+        self.folder.sync_selected_idx();
     }
 
     pub fn start_async_folder_tree(&mut self) {
-        let Some(ref current) = self.current_folder else {
+        let Some(ref current) = self.folder.current_folder else {
             return;
         };
         let root = current.clone();
-        let pinned = self.pinned_folders.clone();
-        let expanded_paths = collect_expanded_paths(&self.folder_tree);
+        let pinned = self.folder.pinned_folders.clone();
+        let expanded_paths = collect_expanded_paths(&self.folder.folder_tree);
 
         let (tx, rx) = mpsc::channel();
         std::thread::spawn(move || {
             let tree = build_tree_nodes_data(&root, &pinned, &expanded_paths);
             let _ = tx.send(tree);
         });
-        self.folder_tree_receiver = Some(rx);
+        self.folder.folder_tree_receiver = Some(rx);
     }
 
     pub fn toggle_folder_expand(&mut self, path: &Path) {
-        toggle_expand_recursive(&mut self.folder_tree, path, self.current_folder.as_deref());
-        self.sync_selected_folder_idx();
+        toggle_expand_recursive(
+            &mut self.folder.folder_tree,
+            path,
+            self.folder.current_folder.as_deref(),
+        );
+        self.folder.sync_selected_idx();
     }
 
     #[allow(dead_code)]
     pub fn pin_current_folder(&mut self) {
-        if let Some(ref folder) = self.current_folder {
+        if let Some(ref folder) = self.folder.current_folder {
             let name = folder
                 .file_name()
                 .map(|n| n.to_string_lossy().to_string())
@@ -340,9 +221,15 @@ impl AppState {
                 name,
                 numeric_shortcut: None,
             };
-            if !self.pinned_folders.iter().any(|p| p.path == pinned.path) {
-                self.pinned_folders.push(pinned);
+            if !self
+                .folder
+                .pinned_folders
+                .iter()
+                .any(|p| p.path == pinned.path)
+            {
+                self.folder.pinned_folders.push(pinned);
                 self.settings.pinned_folders.paths = self
+                    .folder
                     .pinned_folders
                     .iter()
                     .map(|p| p.path.display().to_string())
@@ -353,8 +240,9 @@ impl AppState {
     }
 
     pub fn unpin_folder(&mut self, path: &Path) {
-        self.pinned_folders.retain(|p| p.path != path);
+        self.folder.pinned_folders.retain(|p| p.path != path);
         self.settings.pinned_folders.paths = self
+            .folder
             .pinned_folders
             .iter()
             .map(|p| p.path.display().to_string())
@@ -372,9 +260,15 @@ impl AppState {
             name,
             numeric_shortcut: None,
         };
-        if !self.pinned_folders.iter().any(|p| p.path == pinned.path) {
-            self.pinned_folders.push(pinned);
+        if !self
+            .folder
+            .pinned_folders
+            .iter()
+            .any(|p| p.path == pinned.path)
+        {
+            self.folder.pinned_folders.push(pinned);
             self.settings.pinned_folders.paths = self
+                .folder
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
@@ -384,15 +278,20 @@ impl AppState {
     }
 
     pub fn move_pinned_folder_up(&mut self, path: &Path) {
-        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path)
+        if let Some(pos) = self
+            .folder
+            .pinned_folders
+            .iter()
+            .position(|p| p.path == path)
             && pos > 0
         {
-            self.pinned_folders.swap(pos, pos - 1);
+            self.folder.pinned_folders.swap(pos, pos - 1);
             // Index 0 is the current-folder root; pinned folders start at 1.
-            if pos + 1 < self.folder_tree.len() {
-                self.folder_tree.swap(pos + 1, pos);
+            if pos + 1 < self.folder.folder_tree.len() {
+                self.folder.folder_tree.swap(pos + 1, pos);
             }
             self.settings.pinned_folders.paths = self
+                .folder
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
@@ -402,15 +301,20 @@ impl AppState {
     }
 
     pub fn move_pinned_folder_down(&mut self, path: &Path) {
-        if let Some(pos) = self.pinned_folders.iter().position(|p| p.path == path)
-            && pos < self.pinned_folders.len() - 1
+        if let Some(pos) = self
+            .folder
+            .pinned_folders
+            .iter()
+            .position(|p| p.path == path)
+            && pos < self.folder.pinned_folders.len() - 1
         {
-            self.pinned_folders.swap(pos, pos + 1);
+            self.folder.pinned_folders.swap(pos, pos + 1);
             // Index 0 is the current-folder root; pinned folders start at 1.
-            if pos + 2 < self.folder_tree.len() {
-                self.folder_tree.swap(pos + 1, pos + 2);
+            if pos + 2 < self.folder.folder_tree.len() {
+                self.folder.folder_tree.swap(pos + 1, pos + 2);
             }
             self.settings.pinned_folders.paths = self
+                .folder
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
@@ -420,162 +324,16 @@ impl AppState {
     }
 
     pub fn swap_pinned_folders(&mut self, pos_a: usize, pos_b: usize) {
-        self.pinned_folders.swap(pos_a, pos_b);
-        if pos_a + 1 < self.folder_tree.len() && pos_b + 1 < self.folder_tree.len() {
-            self.folder_tree.swap(pos_a + 1, pos_b + 1);
+        self.folder.pinned_folders.swap(pos_a, pos_b);
+        if pos_a + 1 < self.folder.folder_tree.len() && pos_b + 1 < self.folder.folder_tree.len() {
+            self.folder.folder_tree.swap(pos_a + 1, pos_b + 1);
         }
         self.settings.pinned_folders.paths = self
+            .folder
             .pinned_folders
             .iter()
             .map(|p| p.path.display().to_string())
             .collect();
-    }
-
-    pub fn set_selected_folder(&mut self, path: PathBuf, idx: usize) {
-        self.selected_folder = Some(path.clone());
-        let visible = self.collect_visible_folders();
-        if let Some(pos) = visible.iter().position(|p| p == &path) {
-            self.selected_folder_idx = Some(pos);
-        } else {
-            self.selected_folder_idx = Some(idx);
-        }
-    }
-
-    pub(crate) fn sync_selected_folder_idx(&mut self) {
-        if let Some(ref path) = self.selected_folder.clone() {
-            let visible = self.collect_visible_folders();
-            if let Some(old_idx) = self.selected_folder_idx {
-                let mut best_idx = None;
-                let mut min_diff = usize::MAX;
-                for (i, p) in visible.iter().enumerate() {
-                    if p == path {
-                        let diff = i.abs_diff(old_idx);
-                        if diff < min_diff {
-                            min_diff = diff;
-                            best_idx = Some(i);
-                        }
-                    }
-                }
-                self.selected_folder_idx = best_idx;
-            } else {
-                self.selected_folder_idx = visible.iter().position(|p| p == path);
-            }
-        }
-        if self.selected_folder.is_none() || self.selected_folder_idx.is_none() {
-            let visible = self.collect_visible_folders();
-            if let Some(first) = visible.into_iter().next() {
-                self.selected_folder = Some(first);
-                self.selected_folder_idx = Some(0);
-            }
-        }
-    }
-
-    pub fn select_folder_below(&mut self) {
-        let visible = self.collect_visible_folders();
-        if visible.is_empty() {
-            return;
-        }
-        let current_idx = self.selected_folder_idx.or_else(|| {
-            self.selected_folder
-                .as_ref()
-                .and_then(|f| visible.iter().position(|p| p == f))
-        });
-        let next = current_idx.map(|i| i + 1).unwrap_or(0);
-        if next < visible.len() {
-            self.selected_folder = Some(visible[next].clone());
-            self.selected_folder_idx = Some(next);
-        }
-    }
-
-    pub fn select_folder_above(&mut self) {
-        let visible = self.collect_visible_folders();
-        if visible.is_empty() {
-            return;
-        }
-        let current_idx = self.selected_folder_idx.or_else(|| {
-            self.selected_folder
-                .as_ref()
-                .and_then(|f| visible.iter().position(|p| p == f))
-        });
-        if let Some(idx) = current_idx
-            && idx > 0
-        {
-            self.selected_folder = Some(visible[idx - 1].clone());
-            self.selected_folder_idx = Some(idx - 1);
-        }
-    }
-
-    pub fn expand_selected_folder(&mut self) {
-        let Some(selected) = self.selected_folder.clone() else {
-            return;
-        };
-        if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
-            if expanded {
-                if let Some(first_child_path) = first_visible_child(&self.folder_tree, &selected) {
-                    let visible = self.collect_visible_folders();
-                    let idx = self.selected_folder_idx.unwrap_or(0);
-                    if let Some(child_idx) = visible
-                        .iter()
-                        .enumerate()
-                        .skip(idx + 1)
-                        .find(|(_, p)| *p == &first_child_path)
-                        .map(|(i, _)| i)
-                    {
-                        self.selected_folder = Some(first_child_path);
-                        self.selected_folder_idx = Some(child_idx);
-                        return;
-                    }
-                }
-            } else {
-                set_expand_recursive(
-                    &mut self.folder_tree,
-                    &selected,
-                    true,
-                    self.current_folder.as_deref(),
-                );
-            }
-        }
-        self.sync_selected_folder_idx();
-    }
-
-    pub fn collapse_selected_folder(&mut self) {
-        let Some(selected) = self.selected_folder.clone() else {
-            return;
-        };
-        if let Some(expanded) = find_node_expanded(&self.folder_tree, &selected) {
-            if expanded {
-                set_expand_recursive(
-                    &mut self.folder_tree,
-                    &selected,
-                    false,
-                    self.current_folder.as_deref(),
-                );
-            } else if let Some(parent) = selected.parent()
-                && find_node_expanded(&self.folder_tree, parent).is_some()
-            {
-                let visible = self.collect_visible_folders();
-                if let Some(old_idx) = self.selected_folder_idx {
-                    for i in (0..old_idx.min(visible.len())).rev() {
-                        if visible[i] == parent {
-                            self.selected_folder = Some(parent.to_path_buf());
-                            self.selected_folder_idx = Some(i);
-                            return;
-                        }
-                    }
-                }
-                if let Some(pos) = visible.iter().position(|p| *p == parent) {
-                    self.selected_folder = Some(parent.to_path_buf());
-                    self.selected_folder_idx = Some(pos);
-                }
-            }
-        }
-        self.sync_selected_folder_idx();
-    }
-
-    pub(crate) fn collect_visible_folders(&self) -> Vec<PathBuf> {
-        let mut list = Vec::new();
-        collect_visible_folders_recursive(&self.folder_tree, &mut list);
-        list
     }
 }
 
@@ -812,7 +570,7 @@ fn toggle_expand_recursive(
     false
 }
 
-fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBuf>) {
+pub(crate) fn collect_visible_folders_recursive(nodes: &[FolderNode], list: &mut Vec<PathBuf>) {
     for node in nodes {
         if node.path.as_os_str().is_empty() {
             continue;
@@ -1037,7 +795,7 @@ mod tests {
     #[test]
     fn test_filtered_media_entries_empty_query() {
         let mut state = AppState::new(SettingsStore::default());
-        state.media_entries = vec![
+        state.media_grid.entries = vec![
             MediaEntry {
                 path: "/a.jpg".into(),
                 media_type: MediaType::Image,
@@ -1049,15 +807,15 @@ mod tests {
                 file_name: "b.png".into(),
             },
         ];
-        state.search_query = String::new();
-        let results = state.filtered_media_entries();
+        state.media_grid.search.query = String::new();
+        let results = state.media_grid.filtered_entries();
         assert_eq!(results.len(), 2);
     }
 
     #[test]
     fn test_filtered_media_entries_with_query() {
         let mut state = AppState::new(SettingsStore::default());
-        state.media_entries = vec![
+        state.media_grid.entries = vec![
             MediaEntry {
                 path: "/sunset.jpg".into(),
                 media_type: MediaType::Image,
@@ -1069,8 +827,8 @@ mod tests {
                 file_name: "mountain.png".into(),
             },
         ];
-        state.search_query = "sun".into();
-        let results = state.filtered_media_entries();
+        state.media_grid.search.query = "sun".into();
+        let results = state.media_grid.filtered_entries();
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].file_name, "sunset.jpg");
     }
@@ -1078,40 +836,39 @@ mod tests {
     #[test]
     fn test_filtered_media_entries_case_insensitive() {
         let mut state = AppState::new(SettingsStore::default());
-        state.media_entries = vec![MediaEntry {
+        state.media_grid.entries = vec![MediaEntry {
             path: "/SUNSET.jpg".into(),
             media_type: MediaType::Image,
             file_name: "SUNSET.jpg".into(),
         }];
-        state.search_query = "sun".into();
-        let results = state.filtered_media_entries();
+        state.media_grid.search.query = "sun".into();
+        let results = state.media_grid.filtered_entries();
         assert_eq!(results.len(), 1);
     }
 
     #[test]
     fn test_filtered_media_entries_no_match() {
         let mut state = AppState::new(SettingsStore::default());
-        state.media_entries = vec![MediaEntry {
+        state.media_grid.entries = vec![MediaEntry {
             path: "/test.jpg".into(),
             media_type: MediaType::Image,
             file_name: "test.jpg".into(),
         }];
-        state.search_query = "nonexistent".into();
-        let results = state.filtered_media_entries();
+        state.media_grid.search.query = "nonexistent".into();
+        let results = state.media_grid.filtered_entries();
         assert_eq!(results.len(), 0);
     }
 
     #[test]
     fn test_app_state_new() {
         let state = AppState::new(SettingsStore::default());
-        assert!(state.media_entries.is_empty());
-        assert!(state.search_query.is_empty());
-        assert!(state.selected_index.is_none());
+        assert!(state.media_grid.entries.is_empty());
+        assert!(state.media_grid.search.query.is_empty());
+        assert!(state.media_grid.selected_index.is_none());
         assert!(!state.should_exit);
-        assert!(!state.show_settings);
-        assert!(!state.metadata_panel_expanded);
-        assert!(!state.waiting_for_key);
-        assert!(state.editing_keybinding.is_none());
+        assert!(matches!(state.settings_ui, SettingsUiState::Hidden));
+        assert!(!state.metadata.panel_expanded);
+        assert!(matches!(state.settings_ui, SettingsUiState::Hidden));
         assert_eq!(state.history.done_len(), 0);
     }
 
@@ -1119,20 +876,20 @@ mod tests {
     fn test_pin_current_folder() {
         let mut state = AppState::new(SettingsStore::default());
         let folder = PathBuf::from("/test/folder");
-        state.current_folder = Some(folder.clone());
+        state.folder.current_folder = Some(folder.clone());
         state.pin_current_folder();
-        assert_eq!(state.pinned_folders.len(), 1);
-        assert_eq!(state.pinned_folders[0].path, folder);
+        assert_eq!(state.folder.pinned_folders.len(), 1);
+        assert_eq!(state.folder.pinned_folders[0].path, folder);
     }
 
     #[test]
     fn test_unpin_folder() {
         let mut state = AppState::new(SettingsStore::default());
         let folder = PathBuf::from("/test/folder");
-        state.current_folder = Some(folder.clone());
+        state.folder.current_folder = Some(folder.clone());
         state.pin_current_folder();
         state.unpin_folder(&folder);
-        assert!(state.pinned_folders.is_empty());
+        assert!(state.folder.pinned_folders.is_empty());
     }
 
     #[test]
@@ -1322,18 +1079,18 @@ mod tests {
     fn test_pin_current_folder_no_duplicate() {
         let mut state = AppState::new(SettingsStore::default());
         let folder = std::path::PathBuf::from("/test/folder");
-        state.current_folder = Some(folder.clone());
+        state.folder.current_folder = Some(folder.clone());
         state.pin_current_folder();
-        assert_eq!(state.pinned_folders.len(), 1);
+        assert_eq!(state.folder.pinned_folders.len(), 1);
         state.pin_current_folder();
-        assert_eq!(state.pinned_folders.len(), 1);
+        assert_eq!(state.folder.pinned_folders.len(), 1);
     }
 
     #[test]
     fn test_pin_current_folder_syncs_settings() {
         let mut state = AppState::new(SettingsStore::default());
         let folder = std::path::PathBuf::from("/test/folder");
-        state.current_folder = Some(folder.clone());
+        state.folder.current_folder = Some(folder.clone());
         state.pin_current_folder();
         assert_eq!(state.settings.pinned_folders.paths.len(), 1);
         assert_eq!(state.settings.pinned_folders.paths[0], "/test/folder");
@@ -1342,9 +1099,9 @@ mod tests {
     #[test]
     fn test_pin_current_folder_no_current() {
         let mut state = AppState::new(SettingsStore::default());
-        state.current_folder = None;
+        state.folder.current_folder = None;
         state.pin_current_folder();
-        assert!(state.pinned_folders.is_empty());
+        assert!(state.folder.pinned_folders.is_empty());
     }
 
     #[test]
@@ -1517,32 +1274,32 @@ mod tests {
             is_parent_nav: false,
         };
 
-        state.folder_tree = vec![node_root1, node_root2];
+        state.folder.folder_tree = vec![node_root1, node_root2];
 
-        state.select_folder_below();
-        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder, Some(p_root1.clone()));
 
-        state.select_folder_below();
-        assert_eq!(state.selected_folder, Some(p_root2.clone()));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder, Some(p_root2.clone()));
 
-        state.select_folder_above();
-        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+        state.folder.select_above();
+        assert_eq!(state.folder.selected_folder, Some(p_root1.clone()));
 
-        state.expand_selected_folder();
-        assert!(state.folder_tree[0].is_expanded);
+        state.folder.expand_selected();
+        assert!(state.folder.folder_tree[0].is_expanded);
 
-        state.select_folder_below();
-        assert_eq!(state.selected_folder, Some(p_sub1.clone()));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder, Some(p_sub1.clone()));
 
-        state.select_folder_below();
-        assert_eq!(state.selected_folder, Some(p_sub2.clone()));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder, Some(p_sub2.clone()));
 
-        state.collapse_selected_folder();
-        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+        state.folder.collapse_selected();
+        assert_eq!(state.folder.selected_folder, Some(p_root1.clone()));
 
-        state.collapse_selected_folder();
-        assert!(!state.folder_tree[0].is_expanded);
-        assert_eq!(state.selected_folder, Some(p_root1.clone()));
+        state.folder.collapse_selected();
+        assert!(!state.folder.folder_tree[0].is_expanded);
+        assert_eq!(state.folder.selected_folder, Some(p_root1.clone()));
     }
 
     #[test]
@@ -1566,15 +1323,15 @@ mod tests {
             is_expanded: false,
             is_parent_nav: false,
         };
-        state.folder_tree = vec![node];
+        state.folder.folder_tree = vec![node];
 
-        state.set_selected_folder(p_root.clone(), 0);
-        assert_eq!(state.selected_folder, Some(p_root.clone()));
+        state.folder.set_selected(p_root.clone(), 0);
+        assert_eq!(state.folder.selected_folder, Some(p_root.clone()));
 
-        state.folder_tree[0].is_expanded = true;
+        state.folder.folder_tree[0].is_expanded = true;
 
-        state.select_folder_below();
-        assert_eq!(state.selected_folder, Some(p_sub));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder, Some(p_sub));
     }
 
     #[test]
@@ -1599,16 +1356,16 @@ mod tests {
             is_expanded: true,
             is_parent_nav: false,
         };
-        state.folder_tree = vec![node_root];
+        state.folder.folder_tree = vec![node_root];
 
-        state.set_selected_folder(p_sub.clone(), 1);
-        state.collapse_selected_folder();
+        state.folder.set_selected(p_sub.clone(), 1);
+        state.folder.collapse_selected();
         assert_eq!(
-            state.selected_folder,
+            state.folder.selected_folder,
             Some(p_root.clone()),
             "collapsing an already-collapsed child should navigate to its visible parent"
         );
-        assert_eq!(state.selected_folder_idx, Some(0));
+        assert_eq!(state.folder.selected_folder_idx, Some(0));
     }
 
     #[test]
@@ -1642,19 +1399,19 @@ mod tests {
             is_expanded: false,
             is_parent_nav: false,
         };
-        state.folder_tree = vec![node_root];
+        state.folder.folder_tree = vec![node_root];
 
-        state.set_selected_folder(p_sub.clone(), 2);
-        state.collapse_selected_folder();
+        state.folder.set_selected(p_sub.clone(), 2);
+        state.folder.collapse_selected();
         assert_eq!(
-            state.selected_folder,
+            state.folder.selected_folder,
             Some(p_root.clone()),
             "collapsing an already-collapsed child whose parent is hidden \
              should fall back to the first visible item (the root)"
         );
-        assert_eq!(state.selected_folder_idx, Some(0));
-        assert_ne!(state.selected_folder, Some(p_mid.clone()));
-        assert_ne!(state.selected_folder, Some(p_sub.clone()));
+        assert_eq!(state.folder.selected_folder_idx, Some(0));
+        assert_ne!(state.folder.selected_folder, Some(p_mid.clone()));
+        assert_ne!(state.folder.selected_folder, Some(p_sub.clone()));
     }
 
     #[test]
@@ -1688,16 +1445,16 @@ mod tests {
             is_expanded: true,
             is_parent_nav: false,
         };
-        state.folder_tree = vec![node_root];
+        state.folder.folder_tree = vec![node_root];
 
-        state.set_selected_folder(p_root.clone(), 0);
-        state.expand_selected_folder();
+        state.folder.set_selected(p_root.clone(), 0);
+        state.folder.expand_selected();
         assert_eq!(
-            state.selected_folder,
+            state.folder.selected_folder,
             Some(p_sub1.clone()),
             "expanding an already-expanded folder should navigate to its first child"
         );
-        assert_eq!(state.selected_folder_idx, Some(1));
+        assert_eq!(state.folder.selected_folder_idx, Some(1));
     }
 
     #[test]
@@ -1706,7 +1463,7 @@ mod tests {
         let path_a = PathBuf::from("/duplicate_path");
         let path_b = PathBuf::from("/other_path");
 
-        state.folder_tree = vec![
+        state.folder.folder_tree = vec![
             FolderNode {
                 path: path_a.clone(),
                 name: "Instance 1".into(),
@@ -1733,21 +1490,21 @@ mod tests {
             },
         ];
 
-        state.selected_folder = Some(path_a.clone());
-        state.selected_folder_idx = Some(2);
+        state.folder.selected_folder = Some(path_a.clone());
+        state.folder.selected_folder_idx = Some(2);
 
-        state.select_folder_above();
+        state.folder.select_above();
 
-        assert_eq!(state.selected_folder_idx, Some(1));
-        assert_eq!(state.selected_folder, Some(path_b));
+        assert_eq!(state.folder.selected_folder_idx, Some(1));
+        assert_eq!(state.folder.selected_folder, Some(path_b));
     }
 
     #[test]
     fn test_pinned_folder_reordering_tree_integrity() {
         let mut state = AppState::new(SettingsStore::default());
-        state.current_folder = Some(PathBuf::from("/current"));
+        state.folder.current_folder = Some(PathBuf::from("/current"));
 
-        state.pinned_folders = vec![
+        state.folder.pinned_folders = vec![
             PinnedFolder {
                 path: PathBuf::from("/pinned1"),
                 name: "p1".into(),
@@ -1761,21 +1518,21 @@ mod tests {
         ];
 
         state.build_folder_tree();
-        assert_eq!(state.folder_tree.len(), 3);
+        assert_eq!(state.folder.folder_tree.len(), 3);
 
-        state.pinned_folders.swap(0, 1);
+        state.folder.pinned_folders.swap(0, 1);
         state.build_folder_tree();
 
-        assert_eq!(state.folder_tree.len(), 3);
-        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
-        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
+        assert_eq!(state.folder.folder_tree.len(), 3);
+        assert_eq!(state.folder.folder_tree[1].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder.folder_tree[2].path, PathBuf::from("/pinned1"));
     }
 
     #[test]
     fn test_swap_pinned_folders() {
         let mut state = AppState::new(SettingsStore::default());
-        state.current_folder = Some(PathBuf::from("/current"));
-        state.pinned_folders = vec![
+        state.folder.current_folder = Some(PathBuf::from("/current"));
+        state.folder.pinned_folders = vec![
             PinnedFolder {
                 path: PathBuf::from("/pinned1"),
                 name: "p1".into(),
@@ -1788,26 +1545,32 @@ mod tests {
             },
         ];
         state.build_folder_tree();
-        assert_eq!(state.folder_tree.len(), 3);
-        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned1"));
-        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder.folder_tree.len(), 3);
+        assert_eq!(state.folder.folder_tree[1].path, PathBuf::from("/pinned1"));
+        assert_eq!(state.folder.folder_tree[2].path, PathBuf::from("/pinned2"));
 
         state.swap_pinned_folders(0, 1);
 
-        assert_eq!(state.pinned_folders[0].path, PathBuf::from("/pinned2"));
-        assert_eq!(state.pinned_folders[1].path, PathBuf::from("/pinned1"));
-        assert_eq!(state.folder_tree[1].path, PathBuf::from("/pinned2"));
-        assert_eq!(state.folder_tree[2].path, PathBuf::from("/pinned1"));
+        assert_eq!(
+            state.folder.pinned_folders[0].path,
+            PathBuf::from("/pinned2")
+        );
+        assert_eq!(
+            state.folder.pinned_folders[1].path,
+            PathBuf::from("/pinned1")
+        );
+        assert_eq!(state.folder.folder_tree[1].path, PathBuf::from("/pinned2"));
+        assert_eq!(state.folder.folder_tree[2].path, PathBuf::from("/pinned1"));
     }
 
     #[test]
     fn test_build_folder_tree_preserves_parent_nav_expansion() {
         let mut state = AppState::new(SettingsStore::default());
         let root = PathBuf::from("/a/b/c");
-        state.current_folder = Some(root);
+        state.folder.current_folder = Some(root);
 
         let parent_nav_path = PathBuf::from("/a/b");
-        state.folder_tree = vec![FolderNode {
+        state.folder.folder_tree = vec![FolderNode {
             path: PathBuf::from("/a/b/c"),
             name: "c".into(),
             children: vec![FolderNode {
@@ -1825,7 +1588,7 @@ mod tests {
 
         state.build_folder_tree();
 
-        let children = &state.folder_tree[0].children;
+        let children = &state.folder.folder_tree[0].children;
         let b_node = children.iter().find(|c| c.path == parent_nav_path).unwrap();
         assert!(
             b_node.is_expanded,
@@ -1837,10 +1600,10 @@ mod tests {
     fn test_pin_selected_folder_updates_index_alignment() {
         let mut state = AppState::new(SettingsStore::default());
         let root = PathBuf::from("/workspace");
-        state.current_folder = Some(root.clone());
+        state.folder.current_folder = Some(root.clone());
 
         let target_pin = PathBuf::from("/target_pin");
-        state.folder_tree = vec![
+        state.folder.folder_tree = vec![
             FolderNode {
                 path: root,
                 name: "workspace".into(),
@@ -1859,13 +1622,13 @@ mod tests {
             },
         ];
 
-        state.set_selected_folder(target_pin.clone(), 1);
+        state.folder.set_selected(target_pin.clone(), 1);
         state.pin_folder(&target_pin);
 
-        assert_eq!(state.pinned_folders.len(), 1);
-        assert_eq!(state.selected_folder, Some(target_pin));
+        assert_eq!(state.folder.pinned_folders.len(), 1);
+        assert_eq!(state.folder.selected_folder, Some(target_pin));
         assert!(
-            state.selected_folder_idx.is_some(),
+            state.folder.selected_folder_idx.is_some(),
             "Pin selection action decoupled layout tracking index references!"
         );
     }
@@ -1891,7 +1654,7 @@ mod tests {
         let mut state = AppState::new(SettingsStore::default());
         let p_a = PathBuf::from("/a");
         let p_b = PathBuf::from("/b");
-        state.folder_tree = vec![
+        state.folder.folder_tree = vec![
             FolderNode {
                 path: p_a.clone(),
                 name: "a".into(),
@@ -1909,10 +1672,10 @@ mod tests {
                 is_parent_nav: false,
             },
         ];
-        state.set_selected_folder(p_a.clone(), 0);
-        assert_eq!(state.selected_folder_idx, Some(0));
-        state.select_folder_above();
-        assert_eq!(state.selected_folder_idx, Some(0));
+        state.folder.set_selected(p_a.clone(), 0);
+        assert_eq!(state.folder.selected_folder_idx, Some(0));
+        state.folder.select_above();
+        assert_eq!(state.folder.selected_folder_idx, Some(0));
     }
 
     #[test]
@@ -1920,7 +1683,7 @@ mod tests {
         let mut state = AppState::new(SettingsStore::default());
         let p_a = PathBuf::from("/a");
         let p_b = PathBuf::from("/b");
-        state.folder_tree = vec![
+        state.folder.folder_tree = vec![
             FolderNode {
                 path: p_a.clone(),
                 name: "a".into(),
@@ -1938,9 +1701,9 @@ mod tests {
                 is_parent_nav: false,
             },
         ];
-        state.set_selected_folder(p_b.clone(), 1);
-        assert_eq!(state.selected_folder_idx, Some(1));
-        state.select_folder_below();
-        assert_eq!(state.selected_folder_idx, Some(1));
+        state.folder.set_selected(p_b.clone(), 1);
+        assert_eq!(state.folder.selected_folder_idx, Some(1));
+        state.folder.select_below();
+        assert_eq!(state.folder.selected_folder_idx, Some(1));
     }
 }
