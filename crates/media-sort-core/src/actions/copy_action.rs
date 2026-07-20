@@ -7,7 +7,6 @@ pub struct CopyAction {
     source: PathBuf,
     destination: PathBuf,
     executed: bool,
-    display_name: String,
 }
 
 impl CopyAction {
@@ -28,17 +27,10 @@ impl CopyAction {
             return Err(ActionError::TargetExists(destination));
         }
 
-        let display_name = format!(
-            "Copy {} to {}",
-            file_name.to_string_lossy(),
-            to_folder.display()
-        );
-
         Ok(Self {
             source: file,
             destination,
             executed: false,
-            display_name,
         })
     }
 
@@ -52,8 +44,21 @@ impl CopyAction {
 }
 
 impl ReversibleAction for CopyAction {
-    fn display_name(&self) -> &str {
-        &self.display_name
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String {
+        let file_name = self
+            .source
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        let directory = self
+            .destination
+            .parent()
+            .map(|p| p.to_string_lossy())
+            .unwrap_or_default();
+        l10n.get(
+            "copy-action-message",
+            &[("file_name", file_name), ("directory", &directory)],
+        )
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
@@ -168,13 +173,14 @@ mod tests {
 
     #[test]
     fn test_copy_display_name() {
+        let l10n = crate::l10n::Localization::init("en");
         let src_dir = temp_subdir();
         let dst_dir = temp_subdir();
         let src_file = src_dir.join("display_copy_test.txt");
         std::fs::write(&src_file, b"data").unwrap();
 
         let action = CopyAction::new(&src_file, &dst_dir).unwrap();
-        let name = action.display_name();
+        let name = action.display_name(&l10n);
         assert!(!name.is_empty());
         assert!(name.contains("display_copy_test.txt"));
     }

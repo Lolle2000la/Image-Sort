@@ -508,7 +508,7 @@ fn test_rename_entry_success() {
     assert!(renamed.exists());
     assert!(state.history.can_undo());
     assert_eq!(state.history.done_len(), 1);
-    assert!(state.history.last_done_name().is_some());
+    assert!(state.history.last_done_name(&state.l10n).is_some());
     assert_eq!(state.media_entries.len(), 1);
     assert_eq!(state.media_entries[0].path, renamed);
     assert_eq!(state.media_entries[0].file_name, "renamed_image.jpg");

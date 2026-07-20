@@ -6,7 +6,6 @@ pub struct MoveAction {
     old_path: PathBuf,
     new_path: PathBuf,
     executed: bool,
-    display_name: String,
 }
 
 impl MoveAction {
@@ -22,17 +21,11 @@ impl MoveAction {
             .file_name()
             .ok_or_else(|| ActionError::SourceNotFound(file.clone()))?;
         let new_path = to_folder.join(file_name);
-        let display_name = format!(
-            "Move {} to {}",
-            file_name.to_string_lossy(),
-            to_folder.display()
-        );
 
         Ok(Self {
             old_path: file,
             new_path,
             executed: false,
-            display_name,
         })
     }
 
@@ -46,8 +39,21 @@ impl MoveAction {
 }
 
 impl ReversibleAction for MoveAction {
-    fn display_name(&self) -> &str {
-        &self.display_name
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String {
+        let file_name = self
+            .old_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        let directory = self
+            .new_path
+            .parent()
+            .map(|p| p.to_string_lossy())
+            .unwrap_or_default();
+        l10n.get(
+            "move-action-message",
+            &[("file_name", file_name), ("directory", &directory)],
+        )
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
@@ -145,13 +151,14 @@ mod tests {
 
     #[test]
     fn test_move_display_name() {
+        let l10n = crate::l10n::Localization::init("en");
         let src_dir = temp_subdir();
         let dst_dir = temp_subdir();
         let src_file = src_dir.join("display_name_test.txt");
         std::fs::write(&src_file, b"data").unwrap();
 
         let action = MoveAction::new(&src_file, &dst_dir).unwrap();
-        let name = action.display_name();
+        let name = action.display_name(&l10n);
         assert!(!name.is_empty());
         assert!(name.contains("display_name_test.txt") && name.contains("Move"));
     }

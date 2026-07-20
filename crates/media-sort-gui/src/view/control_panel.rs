@@ -1,4 +1,4 @@
-use iced::widget::{button, column, container, row, text};
+use iced::widget::{button, column, container, row, text, tooltip};
 use iced::{Color, Element, Length};
 
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
@@ -48,7 +48,33 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
         } else {
             button(text(state.l10n.tr("ui-undo")).size(12)).width(Length::Fill)
         };
-        container(btn)
+
+        let content: Element<'_, Message> =
+            if let Some(action_name) = state.history.last_done_name(&state.l10n) {
+                let tooltip_content = container(text(action_name).size(11)).padding(6).style(
+                    |theme: &iced::Theme| {
+                        let palette = theme.palette();
+                        let border_color = Color {
+                            a: 0.15,
+                            ..palette.text
+                        };
+                        iced::widget::container::Style {
+                            background: Some(iced::Background::Color(palette.background)),
+                            border: iced::Border {
+                                radius: 4.0.into(),
+                                width: 1.0,
+                                color: border_color,
+                            },
+                            ..iced::widget::container::Style::default()
+                        }
+                    },
+                );
+                tooltip(btn, tooltip_content, tooltip::Position::Bottom).into()
+            } else {
+                btn.into()
+            };
+
+        container(content)
             .id(iced::widget::Id::new("undo_btn"))
             .width(Length::Fill)
     };
@@ -61,7 +87,33 @@ pub fn control_panel_view(state: &AppState) -> Element<'_, Message> {
         } else {
             button(text(state.l10n.tr("ui-redo")).size(12)).width(Length::Fill)
         };
-        container(btn)
+
+        let content: Element<'_, Message> =
+            if let Some(action_name) = state.history.last_undone_name(&state.l10n) {
+                let tooltip_content = container(text(action_name).size(11)).padding(6).style(
+                    |theme: &iced::Theme| {
+                        let palette = theme.palette();
+                        let border_color = Color {
+                            a: 0.15,
+                            ..palette.text
+                        };
+                        iced::widget::container::Style {
+                            background: Some(iced::Background::Color(palette.background)),
+                            border: iced::Border {
+                                radius: 4.0.into(),
+                                width: 1.0,
+                                color: border_color,
+                            },
+                            ..iced::widget::container::Style::default()
+                        }
+                    },
+                );
+                tooltip(btn, tooltip_content, tooltip::Position::Bottom).into()
+            } else {
+                btn.into()
+            };
+
+        container(content)
             .id(iced::widget::Id::new("redo_btn"))
             .width(Length::Fill)
     };

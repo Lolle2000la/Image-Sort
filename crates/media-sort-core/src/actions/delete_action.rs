@@ -7,27 +7,25 @@ pub trait TrashRestoreHandle: Send + Sync {
 
 pub struct DeleteAction {
     restore_handle: Option<Box<dyn TrashRestoreHandle>>,
-    display_name: String,
+    file_name: String,
 }
 
 impl DeleteAction {
     pub fn new(path: &std::path::Path, handle: Box<dyn TrashRestoreHandle>) -> Self {
-        let display_name = format!(
-            "Delete {}",
-            path.file_name()
-                .map(|f| f.to_string_lossy())
-                .unwrap_or_default(),
-        );
+        let file_name = path
+            .file_name()
+            .map(|f| f.to_string_lossy().into_owned())
+            .unwrap_or_default();
         Self {
             restore_handle: Some(handle),
-            display_name,
+            file_name,
         }
     }
 }
 
 impl ReversibleAction for DeleteAction {
-    fn display_name(&self) -> &str {
-        &self.display_name
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String {
+        l10n.get("delete-action-message", &[("file_name", &self.file_name)])
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {

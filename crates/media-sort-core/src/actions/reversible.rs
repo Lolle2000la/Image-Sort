@@ -4,7 +4,7 @@ use thiserror::Error;
 
 /// A reversible mutation on the file system.
 pub trait ReversibleAction: Send + Sync {
-    fn display_name(&self) -> &str;
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String;
     fn execute(&mut self) -> Result<(), ActionError>;
     fn rollback(&mut self) -> Result<(), ActionError>;
 }

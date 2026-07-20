@@ -54,12 +54,12 @@ impl History {
         self.undone.clear();
     }
 
-    pub fn last_done_name(&self) -> Option<&str> {
-        self.done.last().map(|a| a.display_name())
+    pub fn last_done_name(&self, l10n: &crate::l10n::Localization) -> Option<String> {
+        self.done.last().map(|a| a.display_name(l10n))
     }
 
-    pub fn last_undone_name(&self) -> Option<&str> {
-        self.undone.last().map(|a| a.display_name())
+    pub fn last_undone_name(&self, l10n: &crate::l10n::Localization) -> Option<String> {
+        self.undone.last().map(|a| a.display_name(l10n))
     }
 
     pub fn can_undo(&self) -> bool {
@@ -94,8 +94,8 @@ mod tests {
     }
 
     impl ReversibleAction for MockAction {
-        fn display_name(&self) -> &str {
-            &self.name
+        fn display_name(&self, _l10n: &crate::l10n::Localization) -> String {
+            self.name.clone()
         }
 
         fn execute(&mut self) -> Result<(), ActionError> {
@@ -134,8 +134,8 @@ mod tests {
     }
 
     impl ReversibleAction for FailingMockAction {
-        fn display_name(&self) -> &str {
-            &self.name
+        fn display_name(&self, _l10n: &crate::l10n::Localization) -> String {
+            self.name.clone()
         }
 
         fn execute(&mut self) -> Result<(), ActionError> {
@@ -159,6 +159,7 @@ mod tests {
 
     #[test]
     fn test_push_and_query() {
+        let l10n = crate::l10n::Localization::init("en");
         let mut history = History::new();
         assert!(!history.can_undo());
         assert!(!history.can_redo());
@@ -169,12 +170,16 @@ mod tests {
         assert!(history.can_undo());
         assert!(!history.can_redo());
         assert_eq!(history.done_len(), 1);
-        assert_eq!(history.last_done_name(), Some("test_action"));
-        assert_eq!(history.last_undone_name(), None);
+        assert_eq!(
+            history.last_done_name(&l10n).as_deref(),
+            Some("test_action")
+        );
+        assert_eq!(history.last_undone_name(&l10n), None);
     }
 
     #[test]
     fn test_undo_redo() {
+        let l10n = crate::l10n::Localization::init("en");
         let mut history = History::new();
         history.push_executed(Box::new(MockAction::new("action1")));
         history.push_executed(Box::new(MockAction::new("action2")));
@@ -182,15 +187,15 @@ mod tests {
         history.undo().unwrap();
         assert_eq!(history.done_len(), 1);
         assert_eq!(history.undone_len(), 1);
-        assert_eq!(history.last_done_name(), Some("action1"));
-        assert_eq!(history.last_undone_name(), Some("action2"));
+        assert_eq!(history.last_done_name(&l10n).as_deref(), Some("action1"));
+        assert_eq!(history.last_undone_name(&l10n).as_deref(), Some("action2"));
         assert!(history.can_undo());
         assert!(history.can_redo());
 
         history.redo().unwrap();
         assert_eq!(history.done_len(), 2);
         assert_eq!(history.undone_len(), 0);
-        assert_eq!(history.last_done_name(), Some("action2"));
+        assert_eq!(history.last_done_name(&l10n).as_deref(), Some("action2"));
         assert!(history.can_undo());
         assert!(!history.can_redo());
     }
@@ -211,6 +216,7 @@ mod tests {
 
     #[test]
     fn test_overflow() {
+        let l10n = crate::l10n::Localization::init("en");
         let mut history = History::new();
         for i in 0..260 {
             history.push_executed(Box::new(MockAction::new(&format!("action{}", i))));
@@ -218,7 +224,7 @@ mod tests {
 
         assert_eq!(history.done_len(), 256);
         assert_eq!(history.undone_len(), 0);
-        assert_eq!(history.last_done_name(), Some("action259"));
+        assert_eq!(history.last_done_name(&l10n).as_deref(), Some("action259"));
     }
 
     #[test]
@@ -245,29 +251,31 @@ mod tests {
 
     #[test]
     fn test_redo_clears_on_push() {
+        let l10n = crate::l10n::Localization::init("en");
         let mut history = History::new();
         history.push_executed(Box::new(MockAction::new("action1")));
         history.push_executed(Box::new(MockAction::new("action2")));
 
         history.undo().unwrap();
         assert_eq!(history.undone_len(), 1);
-        assert_eq!(history.last_undone_name(), Some("action2"));
+        assert_eq!(history.last_undone_name(&l10n).as_deref(), Some("action2"));
 
         history.push_executed(Box::new(MockAction::new("action3")));
         assert_eq!(history.undone_len(), 0);
-        assert_eq!(history.last_undone_name(), None);
+        assert_eq!(history.last_undone_name(&l10n), None);
         assert!(!history.can_redo());
         assert_eq!(history.done_len(), 2);
     }
 
     #[test]
     fn test_history_max_boundary_exact() {
+        let l10n = crate::l10n::Localization::init("en");
         let mut history = History::new();
         for i in 0..256 {
             history.push_executed(Box::new(MockAction::new(&format!("action{}", i))));
         }
         assert_eq!(history.done_len(), 256);
-        assert_eq!(history.last_done_name(), Some("action255"));
+        assert_eq!(history.last_done_name(&l10n).as_deref(), Some("action255"));
 
         // Undo one, push another - should be at 256, not 257
         history.undo().unwrap();
@@ -278,7 +286,10 @@ mod tests {
         // Push one more to trigger overflow trimming - oldest entry should be dropped
         history.push_executed(Box::new(MockAction::new("overflow_action")));
         assert_eq!(history.done_len(), 256);
-        assert_eq!(history.last_done_name(), Some("overflow_action"));
+        assert_eq!(
+            history.last_done_name(&l10n).as_deref(),
+            Some("overflow_action")
+        );
     }
 
     #[test]
@@ -315,8 +326,9 @@ mod tests {
 
     #[test]
     fn test_history_last_done_name_empty() {
+        let l10n = crate::l10n::Localization::init("en");
         let history = History::new();
-        assert_eq!(history.last_done_name(), None);
+        assert_eq!(history.last_done_name(&l10n), None);
     }
 
     #[test]

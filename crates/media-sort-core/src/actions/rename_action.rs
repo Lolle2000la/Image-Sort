@@ -6,7 +6,6 @@ pub struct RenameAction {
     old_path: PathBuf,
     new_path: PathBuf,
     executed: bool,
-    display_name: String,
 }
 
 impl RenameAction {
@@ -40,22 +39,10 @@ impl RenameAction {
             return Err(ActionError::TargetExists(new_path));
         }
 
-        let display_name = format!(
-            "Rename {} to {}",
-            path.file_name()
-                .map(|f| f.to_string_lossy())
-                .unwrap_or_default(),
-            new_path
-                .file_name()
-                .map(|f| f.to_string_lossy())
-                .unwrap_or_default(),
-        );
-
         Ok(Self {
             old_path: path,
             new_path,
             executed: false,
-            display_name,
         })
     }
 
@@ -65,8 +52,24 @@ impl RenameAction {
 }
 
 impl ReversibleAction for RenameAction {
-    fn display_name(&self) -> &str {
-        &self.display_name
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String {
+        let old_file_name = self
+            .old_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        let new_file_name = self
+            .new_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        l10n.get(
+            "rename-action-message",
+            &[
+                ("old_file_name", old_file_name),
+                ("new_file_name", new_file_name),
+            ],
+        )
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
@@ -181,8 +184,9 @@ mod tests {
         let file = dir.join("noext");
         std::fs::write(&file, b"content").unwrap();
 
+        let l10n = crate::l10n::Localization::init("en");
         let mut action = RenameAction::new(&file, "newname").unwrap();
-        assert!(action.display_name().contains("newname"));
+        assert!(action.display_name(&l10n).contains("newname"));
 
         action.execute().unwrap();
         let new_file = dir.join("newname");
