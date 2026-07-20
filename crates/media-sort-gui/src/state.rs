@@ -882,6 +882,18 @@ fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bool> {
     None
 }
 
+/// Detects the media type for a file path using a two-tier resolution:
+///
+/// 1. **Fast first pass** — checks the compile-time baseline extensions from
+///    [`MediaType::extensions`]. This covers all native formats plus the
+///    hardcoded video subset without touching the global registry.
+/// 2. **Registry fallback** — if the extension didn't match the baseline,
+///    queries [`MediaRegistry::determine_type`] which accounts for
+///    mpv-discovered formats that may not be in the hardcoded list.
+/// 3. **Default** — unknown extensions fall back to `MediaType::Image`.
+///
+/// After classification, GIF files get special handling: static GIFs and
+/// GIFs with animation disabled are reclassified as `Image`.
 pub(crate) fn detect_media_type(path: &std::path::Path, animate_gifs: bool) -> MediaType {
     let ext = path
         .extension()

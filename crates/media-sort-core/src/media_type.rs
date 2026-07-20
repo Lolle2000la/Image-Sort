@@ -27,6 +27,25 @@ pub enum MediaType {
 }
 
 impl MediaType {
+    /// Returns the **compile-time baseline** extensions for this media type.
+    ///
+    /// For images and audio, this is the definitive list — those formats are
+    /// handled natively and do not depend on any external runtime.
+    ///
+    /// For video, the returned list is a **hardcoded fallback subset**. The
+    /// actual set of playable video formats depends on the libmpv build
+    /// installed on the user's system and is discovered at startup via
+    /// [`MediaRegistry::init`]. Use [`MediaRegistry::determine_type`] for
+    /// the authoritative type check that accounts for mpv-discovered formats.
+    /// This method's video list exists so that:
+    ///
+    /// - [`MediaRegistry::fallback_allowed_extensions`] can provide sensible
+    ///   defaults when mpv initialization fails.
+    /// - The GUI's `detect_media_type` has a fast first-pass match before
+    ///   falling back to the registry.
+    ///
+    /// In short: this is the "what we know without mpv" list, not the "what
+    /// we support" list.
     pub fn extensions(self) -> &'static [&'static str] {
         match self {
             MediaType::Image => native_image_extensions(),
@@ -77,8 +96,13 @@ impl MediaRegistry {
     }
 
     /// Returns the set of extensions that would be allowed even when the global
-    /// registry has not been initialized yet. Used as a safety net for the filesystem
-    /// scanner and tests so behavior remains sensible if `init` was never called.
+    /// registry has not been initialized yet.
+    ///
+    /// Used as a safety net for the filesystem scanner and tests so behavior
+    /// remains sensible if [`MediaRegistry::init`] was never called (e.g. mpv
+    /// failed to load). The video extensions come from the compile-time
+    /// baseline in [`MediaType::extensions`] — mpv-discovered formats that
+    /// aren't in that hardcoded list are NOT included here.
     pub fn fallback_allowed_extensions() -> HashSet<String> {
         let mut set = HashSet::new();
         for ext in native_image_extensions()
@@ -99,6 +123,12 @@ impl MediaRegistry {
     /// 2. Native audio formats
     /// 3. Anything supported by the discovered `libmpv` build is treated as `Video`
     /// 4. Returns `None` when the extension does not match any known handler.
+    ///
+    /// This is the **authoritative** type check — it accounts for the full
+    /// set of formats that mpv reported at startup, which may be broader than
+    /// the compile-time baseline returned by [`MediaType::extensions`].
+    /// Prefer this over `MediaType::extensions().contains(...)` when you need
+    /// to know whether a file can actually be played.
     pub fn determine_type(ext: &str) -> Option<MediaType> {
         let ext_lower = ext.to_lowercase();
 
