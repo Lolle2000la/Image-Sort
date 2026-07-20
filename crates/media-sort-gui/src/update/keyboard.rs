@@ -293,7 +293,7 @@ pub fn handle_key_captured(
 
     match key {
         Key::Character(c) if c.is_ascii_digit() && c != '0' && alt && !ctrl && !shift => {
-            let digit = c.to_digit(10).unwrap() as u8;
+            let digit = c.to_digit(10).expect("c is checked to be an ascii digit") as u8;
             return Task::done(Message::Folder(FolderMessage::PinShortcut(digit)));
         }
         _ => {}

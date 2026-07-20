@@ -29,7 +29,7 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
 
         if !success || resulting_url.is_null() {
             let err_msg = if !error.is_null() {
-                let err = Retained::retain(error).unwrap();
+                let err = Retained::retain(error).expect("error pointer is checked to be non-null");
                 err.localizedDescription().to_string()
             } else {
                 "Cocoa trashItemAtURL failed".to_string()
@@ -37,8 +37,11 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
             return Err(ActionError::Io(std::io::Error::other(err_msg)));
         }
 
-        let res_id = Retained::retain(resulting_url).unwrap();
-        let path_nsstring = res_id.path().unwrap();
+        let res_id =
+            Retained::retain(resulting_url).expect("resulting_url is checked to be non-null");
+        let path_nsstring = res_id
+            .path()
+            .expect("resulting trash URL must have a valid path");
         Ok(PathBuf::from(path_nsstring.to_string()))
     }
 }

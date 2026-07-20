@@ -178,7 +178,11 @@ impl AppState {
         }
         self.folder.folder_tree_receiver = None;
         let expanded_paths = collect_expanded_paths(&self.folder.folder_tree);
-        let root = self.folder.current_folder.clone().unwrap();
+        let root = self
+            .folder
+            .current_folder
+            .clone()
+            .expect("current_folder must be Some since we checked it is not None above");
         self.folder.folder_tree =
             build_tree_nodes_data(&root, &self.folder.pinned_folders, &expanded_paths);
         self.folder.sync_selected_idx();

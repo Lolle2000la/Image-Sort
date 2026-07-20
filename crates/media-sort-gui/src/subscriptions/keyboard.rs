@@ -72,7 +72,10 @@ pub(crate) fn key_to_enum(key: IcedKey) -> Option<Key> {
         }
         IcedKey::Character(c) if !c.is_empty() => {
             let upper = c.to_uppercase();
-            let ch = upper.chars().next().unwrap();
+            let ch = upper
+                .chars()
+                .next()
+                .expect("character string is not empty because c was checked to be non-empty");
             Some(Key::Character(ch))
         }
         _ => None,

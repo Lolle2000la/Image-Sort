@@ -24,16 +24,16 @@ impl MpvContext {
             }
 
             // Set some default options
-            let vo_name = CString::new("libmpv").unwrap();
+            let vo_name = CString::new("libmpv").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"vo".as_ptr(), vo_name.as_ptr());
-            let keep_open = CString::new("yes").unwrap();
+            let keep_open = CString::new("yes").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
-            let loop_file = CString::new("inf").unwrap();
+            let loop_file = CString::new("inf").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
-            let hwdec = CString::new("auto").unwrap();
+            let hwdec = CString::new("auto").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
 
-            let no = CString::new("no").unwrap();
+            let no = CString::new("no").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
@@ -42,9 +42,11 @@ impl MpvContext {
 
             mpv_set_option_string(handle, c"vsync".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"framedrop".as_ptr(), no.as_ptr());
-            let video_sync = CString::new("display-resample").unwrap();
+            let video_sync =
+                CString::new("display-resample").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"video-sync".as_ptr(), video_sync.as_ptr());
-            let video_timing_offset = CString::new("0").unwrap();
+            let video_timing_offset =
+                CString::new("0").expect("static string contains no null bytes");
             mpv_set_option_string(
                 handle,
                 c"video-timing-offset".as_ptr(),
@@ -60,7 +62,7 @@ impl MpvContext {
             }
 
             // Create software render context
-            let api_type = CString::new("sw").unwrap();
+            let api_type = CString::new("sw").expect("static string contains no null bytes");
             let mut params = [
                 mpv_render_param {
                     type_: mpv_render_param_type_MPV_RENDER_PARAM_API_TYPE,
@@ -217,7 +219,7 @@ impl MpvContext {
             ));
         }
         unsafe {
-            let format = CString::new("rgba").unwrap();
+            let format = CString::new("rgba").expect("static string contains no null bytes");
             let mut size: [c_int; 2] = [width, height];
             let mut stride = (width * 4) as usize;
 
@@ -286,7 +288,8 @@ impl MpvContext {
 
     pub fn seek(&mut self, seconds: f64) {
         unsafe {
-            let sec_str = CString::new(seconds.to_string()).unwrap();
+            let sec_str = CString::new(seconds.to_string())
+                .expect("floating point number string contains no null bytes");
             let mut cmd: [*const c_char; 4] = [
                 c"seek".as_ptr(),
                 sec_str.as_ptr(),
@@ -299,7 +302,8 @@ impl MpvContext {
 
     pub fn seek_absolute(&mut self, seconds: f64) {
         unsafe {
-            let sec_str = CString::new(seconds.to_string()).unwrap();
+            let sec_str = CString::new(seconds.to_string())
+                .expect("floating point number string contains no null bytes");
             let mut cmd: [*const c_char; 5] = [
                 c"seek".as_ptr(),
                 sec_str.as_ptr(),

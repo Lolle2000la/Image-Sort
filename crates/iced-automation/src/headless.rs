@@ -189,7 +189,10 @@ where
         ])
         .stdin(std::process::Stdio::piped())
         .spawn()?;
-    let mut ffmpeg_stdin = ffmpeg.stdin.take().unwrap();
+    let mut ffmpeg_stdin = ffmpeg
+        .stdin
+        .take()
+        .expect("stdin was piped when spawning ffmpeg");
 
     let mut frame_count = 0u64;
     if let Some(cell) = crate::automation::VIRTUAL_CURSOR.get()

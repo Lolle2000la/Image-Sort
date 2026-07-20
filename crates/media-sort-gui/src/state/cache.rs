@@ -33,8 +33,10 @@ impl CacheState {
     pub fn new() -> Self {
         Self {
             selected_image: None,
-            thumbnail_cache: LruCache::new(NonZeroUsize::new(200).unwrap()),
-            image_cache: LruCache::new(NonZeroUsize::new(20).unwrap()),
+            thumbnail_cache: LruCache::new(
+                NonZeroUsize::new(200).expect("200 is a non-zero constant"),
+            ),
+            image_cache: LruCache::new(NonZeroUsize::new(20).expect("20 is a non-zero constant")),
             thumbnail_tracker: ThumbnailVisibilityTracker::new(std::time::Duration::from_millis(
                 150,
             )),

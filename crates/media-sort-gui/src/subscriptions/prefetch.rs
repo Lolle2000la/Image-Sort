@@ -93,7 +93,10 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
 
     if media_type == MediaType::Video {
         let (response_tx, response_rx) = std::sync::mpsc::channel();
-        let sender = VIDEO_THUMBNAIL_WORKER.lock().unwrap().clone();
+        let sender = VIDEO_THUMBNAIL_WORKER
+            .lock()
+            .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
+            .clone();
         sender.send((path.clone(), response_tx)).map_err(|_| ())?;
         return response_rx.recv().map_err(|_| ())?;
     }

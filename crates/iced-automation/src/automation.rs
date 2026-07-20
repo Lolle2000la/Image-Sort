@@ -552,7 +552,7 @@ fn static_widget_id(s: String) -> iced::advanced::widget::Id {
     let mut cache = CACHE
         .get_or_init(|| Mutex::new(HashMap::new()))
         .lock()
-        .unwrap();
+        .expect("Mutex lock should not be poisoned");
     let id: &'static str = match cache.get(&s) {
         Some(existing) => existing,
         None => {

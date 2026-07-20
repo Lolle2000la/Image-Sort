@@ -123,7 +123,10 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
 
             // Render each flow × locale combination: <stem>_<locale>.mp4
             for path in &flow_paths {
-                let file_stem = path.file_stem().unwrap().to_string_lossy();
+                let file_stem = path
+                    .file_stem()
+                    .expect("path is filtered to JSON files, so it must have a file stem")
+                    .to_string_lossy();
                 for &locale in &locales {
                     let output_video_path =
                         export_path.join(format!("{}_{}.mp4", file_stem, locale));
