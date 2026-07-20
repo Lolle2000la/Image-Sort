@@ -201,9 +201,10 @@ pub fn export_demo_video_with_locale(
     // Override locale environment for this render.
     // AppState::new calls detect_locale() which reads LC_ALL / LANG, so setting
     // these env vars is sufficient to drive the rendered app's language.
-    // Safety: single-threaded export path; no other threads are mutating env vars.
     let prev_lang = std::env::var("LANG").ok();
     let prev_lc_all = std::env::var("LC_ALL").ok();
+    // SAFETY: This is a single-threaded demo export runner, so no other threads
+    // will concurrently access or mutate the environment variables.
     unsafe {
         std::env::set_var("LANG", format!("{}.UTF-8", locale.replace('-', "_")));
         std::env::set_var("LC_ALL", format!("{}.UTF-8", locale.replace('-', "_")));
@@ -247,7 +248,8 @@ pub fn export_demo_video_with_locale(
     let result = iced_automation::export_video(&headless_app, completed, &video_config);
 
     // Restore locale environment
-    // Safety: single-threaded export path; no other threads are mutating env vars.
+    // SAFETY: This is a single-threaded demo export runner, so no other threads
+    // will concurrently access or mutate the environment variables.
     unsafe {
         match prev_lc_all {
             Some(v) => std::env::set_var("LC_ALL", v),

@@ -21,6 +21,9 @@ fn verify_signature(
     // Open file handle and memory-map the payload to ensure zero-copy validation
     let file =
         fs::File::open(package_path).map_err(|e| format!("Failed to open package file: {}", e))?;
+
+    // SAFETY: We assume that the update package file is not concurrently modified or truncated
+    // by another process in the system's temporary directory during signature verification.
     let mmap = unsafe { memmap2::Mmap::map(&file) }
         .map_err(|e| format!("Failed to memory-map package file: {}", e))?;
 

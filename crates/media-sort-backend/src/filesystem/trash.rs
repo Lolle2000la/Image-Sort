@@ -12,6 +12,10 @@ fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
         .to_str()
         .ok_or_else(|| ActionError::Io(std::io::Error::other("Invalid path encoding")))?;
 
+    // SAFETY: We are calling Objective-C FFI methods through the `objc2` and
+    // `objc2_foundation` runtimes. All pointers are checked for nullability
+    // before dereferencing or retaining them, and the runtime handles the
+    // reference counting correctly once retained.
     unsafe {
         let file_manager = NSFileManager::defaultManager();
         let ns_str = NSString::from_str(path_str);

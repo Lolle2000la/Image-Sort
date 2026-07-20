@@ -454,7 +454,13 @@ pub enum VideoEvent {
     Paused(bool),
 }
 
+// SAFETY: MpvContext owns pointers to `mpv_handle` and `mpv_render_context`.
+// libmpv is thread-safe, and we can safely send the handle and render context
+// to other threads as long as we properly manage callbacks and lifetimes.
 unsafe impl Send for MpvContext {}
+
+// SAFETY: Synchronization of libmpv functions is handled internally by
+// the C library, allowing concurrent read/write calls from different threads.
 unsafe impl Sync for MpvContext {}
 
 pub fn start_video_worker(
@@ -477,6 +483,8 @@ pub async fn run_video_worker(
     };
 
     let (wakeup_tx, mut wakeup_rx) = tokio::sync::mpsc::channel(64);
+    // SAFETY: player is a newly created, valid MpvContext instance, and the
+    // callback context is dropped when player is dropped at the end of this loop/worker.
     unsafe {
         player.register_callback(wakeup_tx);
     }
