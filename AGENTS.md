@@ -36,6 +36,10 @@ website/             (Astro, Starlight docs template, React components)
 
 `media-sort-core` must never depend on `media-sort-backend`, `iced-automation` or `media-sort-gui`.
 
+## Code style
+
+**No `mod.rs` files.** Prefer `parent.rs` + `parent/` directory over `parent/mod.rs`. Example: `state.rs` + `state/audio.rs` instead of `state/mod.rs` + `state/audio.rs`. This avoids the ambiguity of two possible locations for the module root and keeps filenames meaningful in editor tabs.
+
 ## libmpv
 
 The GUI binary links libmpv at build time and loads it at runtime. The system must have `libmpv-dev` (or equivalent) installed to compile. Without it `cargo build` fails on the `libmpv-sys` crate.
