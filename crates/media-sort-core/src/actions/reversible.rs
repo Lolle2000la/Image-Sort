@@ -17,6 +17,9 @@ pub enum ActionError {
     #[error("target already exists: {0}")]
     TargetExists(PathBuf),
 
+    #[error("illegal character {character:?} in filename stem \"{stem}\"")]
+    IllegalCharacters { stem: String, character: char },
+
     #[error("directory not found: {0}")]
     DirectoryNotFound(PathBuf),
 

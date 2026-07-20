@@ -5,7 +5,7 @@ use crate::state::AppState;
 use media_sort_core::actions::copy_action::CopyAction;
 use media_sort_core::actions::move_action::MoveAction;
 use media_sort_core::actions::rename_action::RenameAction;
-use media_sort_core::actions::reversible::ReversibleAction;
+use media_sort_core::actions::reversible::{ActionError, ReversibleAction};
 
 pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Message> {
     match msg {
@@ -84,6 +84,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                         .unwrap_or_default();
                     state.renaming_path = Some(entry.path.clone());
                     state.rename_input_value = stem;
+                    state.rename_error = None;
                 }
             }
             Task::none()
@@ -116,6 +117,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                     if let Err(e) = action.execute() {
                         tracing::error!("Rename failed: {e}");
                     } else {
+                        state.rename_error = None;
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
                         if let Some(pos) = state.media_entries.iter().position(|e| e.path == path) {
@@ -124,33 +126,59 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                                 .file_name()
                                 .map(|n| n.to_string_lossy().to_string())
                                 .unwrap_or_else(|| new_path.display().to_string());
+                            state.renaming_path = None;
+                            state.rename_input_value.clear();
                             return super::tasks::select_and_load_entry(state, pos);
                         }
                     }
                 }
                 Err(e) => {
+                    if let ActionError::IllegalCharacters { character, .. } = &e {
+                        state.rename_error = Some(state.l10n.get(
+                            "ui-rename-illegal-char",
+                            &[("char", &character.to_string())],
+                        ));
+                    }
                     tracing::error!("Cannot create rename action: {e}");
                 }
             }
             Task::none()
         }
         MediaMessage::RenameInputChanged(val) => {
+            let trimmed = val.trim().to_string();
+            let error = RenameAction::validate_stem(&trimmed).err().map(|e| {
+                match &e {
+                    ActionError::IllegalCharacters { character, .. } if *character == '\0' => {
+                        // Empty stem — no message, just disable submit button
+                        String::new()
+                    }
+                    ActionError::IllegalCharacters { character, .. } => state.l10n.get(
+                        "ui-rename-illegal-char",
+                        &[("char", &character.to_string())],
+                    ),
+                    _ => e.to_string(),
+                }
+            });
             state.rename_input_value = val;
+            state.rename_error = error;
             Task::none()
         }
         MediaMessage::SubmitRename => {
+            let new_name = state.rename_input_value.trim().to_string();
+            // Guard: don't submit empty or invalid stems
+            if new_name.is_empty() || RenameAction::validate_stem(&new_name).is_err() {
+                return Task::none();
+            }
             if let Some(path) = state.renaming_path.take() {
-                let new_name = state.rename_input_value.trim().to_string();
-                if !new_name.is_empty() {
-                    state.rename_input_value.clear();
-                    return Task::done(Message::Media(MediaMessage::RenameEntry(path, new_name)));
-                }
+                state.rename_input_value.clear();
+                return Task::done(Message::Media(MediaMessage::RenameEntry(path, new_name)));
             }
             Task::none()
         }
         MediaMessage::CancelRename => {
             state.renaming_path = None;
             state.rename_input_value.clear();
+            state.rename_error = None;
             Task::none()
         }
         MediaMessage::Undo => {

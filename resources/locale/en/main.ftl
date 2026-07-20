@@ -89,6 +89,7 @@ ui-create = Create
 ui-close = Close
 ui-rename-file = Rename File
 ui-original = Original: {$name}
+ui-rename-illegal-char = The character { $char } is not allowed in file names
 ui-create-folder-title = Create Folder
 ui-parent = Parent: {$name}
 ui-select-file = Select a file to preview

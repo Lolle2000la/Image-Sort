@@ -89,6 +89,7 @@ ui-create = Erstellen
 ui-close = Schließen
 ui-rename-file = Datei umbenennen
 ui-original = Original: {$name}
+ui-rename-illegal-char = Das Zeichen { $char } ist in Dateinamen nicht erlaubt
 ui-create-folder-title = Ordner erstellen
 ui-parent = Übergeordnet: {$name}
 ui-select-file = Datei zum Anzeigen auswählen

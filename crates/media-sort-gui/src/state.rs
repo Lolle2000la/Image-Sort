@@ -55,6 +55,9 @@ pub struct AppState {
     pub selected_image: Option<(PathBuf, iced::widget::image::Handle)>,
     pub renaming_path: Option<PathBuf>,
     pub rename_input_value: String,
+    /// Transient error to display in the rename modal (e.g. illegal character).
+    /// Cleared when the modal is dismissed or a valid rename is submitted.
+    pub rename_error: Option<String>,
     pub creating_folder_parent: Option<PathBuf>,
     pub create_folder_input: String,
     pub search_focused: bool,
@@ -187,6 +190,7 @@ impl AppState {
             selected_image: None,
             renaming_path: None,
             rename_input_value: String::new(),
+            rename_error: None,
             creating_folder_parent: None,
             create_folder_input: String::new(),
             search_focused: false,

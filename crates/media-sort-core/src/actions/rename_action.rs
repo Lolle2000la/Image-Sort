@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::actions::reversible::{ActionError, ReversibleAction};
 
+#[derive(Debug)]
 pub struct RenameAction {
     old_path: PathBuf,
     new_path: PathBuf,
@@ -9,23 +10,37 @@ pub struct RenameAction {
 }
 
 impl RenameAction {
+    /// Characters that are forbidden in file names on all major platforms.
+    const ILLEGAL_CHARS: &'static [char] = &['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+
+    /// Validates a filename stem without touching the filesystem.
+    ///
+    /// Returns `Ok(())` if the stem is non-empty and contains no illegal
+    /// characters. This is cheap enough to call on every keystroke in the
+    /// rename modal.
+    pub fn validate_stem(stem: &str) -> Result<(), ActionError> {
+        let trimmed = stem.trim();
+        if trimmed.is_empty() {
+            return Err(ActionError::IllegalCharacters {
+                stem: stem.to_string(),
+                character: '\0', // sentinel: empty stem
+            });
+        }
+        if let Some(c) = trimmed.chars().find(|c| Self::ILLEGAL_CHARS.contains(c)) {
+            return Err(ActionError::IllegalCharacters {
+                stem: trimmed.to_string(),
+                character: c,
+            });
+        }
+        Ok(())
+    }
+
     pub fn new(path: &Path, new_stem: &str) -> Result<Self, ActionError> {
         let path = path
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(path.to_path_buf()))?;
 
-        if new_stem.contains('\\')
-            || new_stem.contains('/')
-            || new_stem.contains(':')
-            || new_stem.contains('*')
-            || new_stem.contains('?')
-            || new_stem.contains('"')
-            || new_stem.contains('<')
-            || new_stem.contains('>')
-            || new_stem.contains('|')
-        {
-            return Err(ActionError::TargetExists(PathBuf::from(new_stem)));
-        }
+        Self::validate_stem(new_stem)?;
 
         let parent = path.parent().unwrap_or_else(|| Path::new("."));
         let ext = path.extension().unwrap_or_default();
@@ -149,7 +164,7 @@ mod tests {
         std::fs::write(&file, b"data").unwrap();
 
         let result = RenameAction::new(&file, "bad/name");
-        assert!(result.is_err());
+        assert!(matches!(result, Err(ActionError::IllegalCharacters { .. })));
     }
 
     #[test]
@@ -204,9 +219,55 @@ mod tests {
         let file = dir.join("test.txt");
         std::fs::write(&file, b"content").unwrap();
 
-        for c in &["/", "\\", ":", "*", "?", "\"", "<", ">", "|"] {
+        for c in &['/', '\\', ':', '*', '?', '"', '<', '>', '|'] {
             let result = RenameAction::new(&file, &format!("bad{}name", c));
-            assert!(result.is_err(), "Expected error for character: {}", c);
+            assert!(
+                matches!(result, Err(ActionError::IllegalCharacters { character: found, .. }) if found == *c),
+                "Expected IllegalCharacters({c:?}), got {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_validate_stem_valid() {
+        assert!(RenameAction::validate_stem("hello").is_ok());
+        assert!(RenameAction::validate_stem("my file (1)").is_ok());
+        assert!(RenameAction::validate_stem("café").is_ok());
+        assert!(RenameAction::validate_stem("report_2024-01-01").is_ok());
+    }
+
+    #[test]
+    fn test_validate_stem_empty() {
+        let err = RenameAction::validate_stem("").unwrap_err();
+        assert!(matches!(
+            err,
+            ActionError::IllegalCharacters {
+                character: '\0',
+                ..
+            }
+        ));
+        let err = RenameAction::validate_stem("   ").unwrap_err();
+        assert!(matches!(
+            err,
+            ActionError::IllegalCharacters {
+                character: '\0',
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn test_validate_stem_illegal_chars() {
+        for &c in RenameAction::ILLEGAL_CHARS {
+            if c == '\0' {
+                continue;
+            }
+            let stem = format!("bad{c}name");
+            let err = RenameAction::validate_stem(&stem).unwrap_err();
+            assert!(
+                matches!(&err, ActionError::IllegalCharacters { character: found, .. } if *found == c),
+                "Expected IllegalCharacters({c:?}), got {err:?}"
+            );
         }
     }
 }

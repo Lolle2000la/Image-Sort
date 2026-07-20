@@ -89,6 +89,7 @@ ui-create = 作成
 ui-close = 閉じる
 ui-rename-file = ファイル名を変更
 ui-original = 元のファイル名: {$name}
+ui-rename-illegal-char = ファイル名に { $char } は使用できません
 ui-create-folder-title = フォルダを作成
 ui-parent = 親フォルダ: {$name}
 ui-select-file = プレビューするファイルを選択
