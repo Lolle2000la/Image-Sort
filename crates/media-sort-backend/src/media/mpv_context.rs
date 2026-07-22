@@ -30,7 +30,7 @@ impl MpvContext {
             mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
             let loop_file = CString::new("inf").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
-            let hwdec = CString::new("auto").expect("static string contains no null bytes");
+            let hwdec = CString::new("auto-safe").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
 
             let no = CString::new("no").expect("static string contains no null bytes");
@@ -40,10 +40,9 @@ impl MpvContext {
 
             mpv_set_option_string(handle, c"video-rotate".as_ptr(), no.as_ptr());
 
-            mpv_set_option_string(handle, c"vsync".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"framedrop".as_ptr(), no.as_ptr());
-            let video_sync =
-                CString::new("display-resample").expect("static string contains no null bytes");
+            let vo_framedrop = CString::new("vo").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"framedrop".as_ptr(), vo_framedrop.as_ptr());
+            let video_sync = CString::new("audio").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"video-sync".as_ptr(), video_sync.as_ptr());
             let video_timing_offset =
                 CString::new("0").expect("static string contains no null bytes");
@@ -204,6 +203,84 @@ impl MpvContext {
                 &mut height as *mut _ as *mut c_void,
             );
             (width, height)
+        }
+    }
+
+    pub fn get_video_rotation(&self) -> i64 {
+        unsafe {
+            let mut rotate: i64 = 0;
+            // 1. Check video-params/rotate
+            let mut err = mpv_get_property(
+                self.handle,
+                c"video-params/rotate".as_ptr(),
+                mpv_format_MPV_FORMAT_INT64,
+                &mut rotate as *mut _ as *mut c_void,
+            );
+            if err >= 0 && rotate != 0 {
+                return rotate.rem_euclid(360);
+            }
+
+            // 2. Check video-out-params/rotate
+            err = mpv_get_property(
+                self.handle,
+                c"video-out-params/rotate".as_ptr(),
+                mpv_format_MPV_FORMAT_INT64,
+                &mut rotate as *mut _ as *mut c_void,
+            );
+            if err >= 0 && rotate != 0 {
+                return rotate.rem_euclid(360);
+            }
+
+            // 3. Check track-list/0/demux-rotation
+            err = mpv_get_property(
+                self.handle,
+                c"track-list/0/demux-rotation".as_ptr(),
+                mpv_format_MPV_FORMAT_INT64,
+                &mut rotate as *mut _ as *mut c_void,
+            );
+            if err >= 0 && rotate != 0 {
+                return rotate.rem_euclid(360);
+            }
+
+            // 4. Check track-list/0/user-rotation
+            err = mpv_get_property(
+                self.handle,
+                c"track-list/0/user-rotation".as_ptr(),
+                mpv_format_MPV_FORMAT_INT64,
+                &mut rotate as *mut _ as *mut c_void,
+            );
+            if err >= 0 && rotate != 0 {
+                return rotate.rem_euclid(360);
+            }
+
+            // 5. Check metadata string tags
+            let meta_keys = [
+                c"metadata/by-key/rotate".as_ptr(),
+                c"metadata/by-key/ROTATE".as_ptr(),
+                c"metadata/by-key/orientation".as_ptr(),
+                c"metadata/by-key/ORIENTATION".as_ptr(),
+                c"metadata/by-key/com.apple.quicktime.orientation".as_ptr(),
+            ];
+
+            for key in meta_keys {
+                let mut str_ptr: *mut c_char = ptr::null_mut();
+                err = mpv_get_property(
+                    self.handle,
+                    key,
+                    mpv_format_MPV_FORMAT_STRING,
+                    &mut str_ptr as *mut _ as *mut c_void,
+                );
+                if err >= 0 && !str_ptr.is_null() {
+                    let s = CStr::from_ptr(str_ptr).to_string_lossy();
+                    let parsed = s.trim().parse::<i64>().unwrap_or(0);
+                    mpv_free(str_ptr as *mut c_void);
+                    if parsed != 0 {
+                        return parsed.rem_euclid(360);
+                    }
+                }
+            }
+
+            0
         }
     }
 
@@ -396,6 +473,85 @@ impl MpvContext {
     }
 }
 
+/// Rotates raw RGBA byte buffer by specified degrees (0, 90, 180, 270).
+/// Returns `(new_width, new_height, new_rgba_bytes)`.
+pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotate: i64) -> (u32, u32, Vec<u8>) {
+    use rayon::prelude::*;
+    let norm_rotate = rotate.rem_euclid(360);
+    match norm_rotate {
+        90 => {
+            let dst_w = src_h;
+            let dst_h = src_w;
+            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
+            let dst_stride = (dst_w * 4) as usize;
+
+            dst.par_chunks_exact_mut(dst_stride)
+                .enumerate()
+                .for_each(|(dst_y, row)| {
+                    let src_x = dst_y as u32;
+                    row.chunks_exact_mut(4)
+                        .enumerate()
+                        .for_each(|(dst_x, pixel)| {
+                            let src_y = src_h - 1 - dst_x as u32;
+                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
+                            if src_idx + 4 <= src.len() {
+                                pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
+                            }
+                        });
+                });
+
+            (dst_w, dst_h, dst)
+        }
+        180 => {
+            let dst_w = src_w;
+            let dst_h = src_h;
+            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
+            let dst_stride = (dst_w * 4) as usize;
+
+            dst.par_chunks_exact_mut(dst_stride)
+                .enumerate()
+                .for_each(|(dst_y, row)| {
+                    let src_y = src_h - 1 - dst_y as u32;
+                    row.chunks_exact_mut(4)
+                        .enumerate()
+                        .for_each(|(dst_x, pixel)| {
+                            let src_x = src_w - 1 - dst_x as u32;
+                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
+                            if src_idx + 4 <= src.len() {
+                                pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
+                            }
+                        });
+                });
+
+            (dst_w, dst_h, dst)
+        }
+        270 => {
+            let dst_w = src_h;
+            let dst_h = src_w;
+            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
+            let dst_stride = (dst_w * 4) as usize;
+
+            dst.par_chunks_exact_mut(dst_stride)
+                .enumerate()
+                .for_each(|(dst_y, row)| {
+                    let src_x = src_w - 1 - dst_y as u32;
+                    row.chunks_exact_mut(4)
+                        .enumerate()
+                        .for_each(|(dst_x, pixel)| {
+                            let src_y = dst_x as u32;
+                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
+                            if src_idx + 4 <= src.len() {
+                                pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
+                            }
+                        });
+                });
+
+            (dst_w, dst_h, dst)
+        }
+        _ => (src_w, src_h, src.to_vec()),
+    }
+}
+
 impl Drop for MpvContext {
     fn drop(&mut self) {
         unsafe {
@@ -443,6 +599,7 @@ pub enum VideoEvent {
         path: std::path::PathBuf,
         width: u32,
         height: u32,
+        rotation: i64,
         rgba: std::sync::Arc<Vec<u8>>,
     },
     PlaybackProgress {
@@ -501,6 +658,8 @@ pub async fn run_video_worker(
     ];
 
     let mut current_video_path = std::path::PathBuf::new();
+    let mut canonical_video_path: Option<std::path::PathBuf> = None;
+    let mut cached_video_params: Option<(i32, i32, i64)> = None;
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -521,7 +680,9 @@ pub async fn run_video_worker(
                                 player.set_paused(false);
                                 player.drain_render_context();
                                 is_active = true;
+                                canonical_video_path = path.canonicalize().ok();
                                 current_video_path = path;
+                                cached_video_params = None;
                             }
                             Err(err) => {
                                 let _ = event_tx
@@ -557,9 +718,11 @@ pub async fn run_video_worker(
                     VideoCommand::Stop => {
                         player.set_paused(true);
                         player.seek_absolute(0.0);
+                        cached_video_params = None;
                     }
                     VideoCommand::Deactivate => {
                         player.set_paused(true);
+                        cached_video_params = None;
                         // SAFETY: send "stop" command to release the current file handle and
                         // flush internal mpv caches, preventing file locks that would block
                         // rename/move/delete operations on the last-played video.
@@ -574,61 +737,109 @@ pub async fn run_video_worker(
             }
 
             _ = wakeup_rx.recv() => {
-                // Drain all pending wakeups to ensure we are at the latest possible state
+                // Drain any extra wakeup notifications in the channel for this tick
                 while wakeup_rx.try_recv().is_ok() {}
 
                 if is_active {
-                    // 1. ALWAYS update the render context immediately to drain
-                    //    the wakeup flag and unblock libmpv's background decoder threads.
-                    let flags = unsafe {
-                        mpv_render_context_update(player.render_ctx)
-                    };
+                    loop {
+                        let flags = unsafe {
+                            mpv_render_context_update(player.render_ctx)
+                        };
 
-                    // 2. Only check guards if libmpv explicitly indicates a new frame is ready
-                    if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0 {
-                        // 3. Drop-frame protection: only parse paths and extract pixels if the channel is clear
-                        if event_tx.capacity() > 0
-                            && let Some(current_p_str) = player.get_current_path() {
-                                let current_p = std::path::PathBuf::from(current_p_str);
-                                let paths_match = current_p == current_video_path
-                                    || current_p.canonicalize().ok() == current_video_path.canonicalize().ok();
+                        if (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) == 0 {
+                            break;
+                        }
 
-                                if paths_match && player.is_video_ready() {
-                                    let (w, h) = player.get_video_size();
-                                    if w > 0 && h > 0 {
-                                        let max_w = 960.0;
-                                        let max_h = 540.0;
-                                        let scale = (max_w / w as f64).min(max_h / h as f64).min(1.0);
-                                        let render_w = ((w as f64 * scale) as i32) & !1;
-                                        let render_h = ((h as f64 * scale) as i32) & !1;
+                        if cached_video_params.is_none()
+                            && let Some(current_p_str) = player.get_current_path()
+                        {
+                            let current_p = std::path::PathBuf::from(current_p_str);
+                            let paths_match = current_p == current_video_path
+                                || canonical_video_path.as_ref().is_some_and(|cp| current_p == *cp || current_p.canonicalize().ok().as_ref() == Some(cp));
 
-                                        let size = (render_w * render_h * 4) as usize;
+                            if paths_match && player.is_video_ready() {
+                                let (w, h) = player.get_video_size();
+                                if w > 0 && h > 0 {
+                                    let rotate = player.get_video_rotation();
+                                    let norm_rotate = rotate.rem_euclid(360);
+                                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+                                        (h, w)
+                                    } else {
+                                        (w, h)
+                                    };
 
-                                        // Find a free buffer in the pool (where we are the sole owner)
-                                        let mut free_buffer = None;
-                                        for buf in &mut pool {
-                                            if std::sync::Arc::strong_count(buf) == 1 {
-                                                free_buffer = Some(buf);
-                                                break;
-                                            }
-                                        }
+                                    let max_w = 960.0;
+                                    let max_h = 540.0;
+                                    let scale = (max_w / eff_w as f64).min(max_h / eff_h as f64).min(1.0);
+                                    let render_unrot_w = ((w as f64 * scale) as i32) & !1;
+                                    let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
-                                        if let Some(arc_buf) = free_buffer
-                                            && let Some(target_vec) = std::sync::Arc::get_mut(arc_buf) {
-                                                target_vec.resize(size, 0);
-
-                                                if player.render_frame(render_w, render_h, target_vec).is_ok() {
-                                                    let _ = event_tx.try_send(VideoEvent::FrameReady {
-                                                        path: current_video_path.clone(),
-                                                        width: render_w as u32,
-                                                        height: render_h as u32,
-                                                        rgba: arc_buf.clone(),
-                                                    });
-                                                }
-                                            }
+                                    if render_unrot_w > 0 && render_unrot_h > 0 {
+                                        cached_video_params = Some((render_unrot_w, render_unrot_h, rotate));
                                     }
                                 }
                             }
+                        }
+
+                        if let Some((_, _, cached_rot)) = cached_video_params {
+                            let current_rot = player.get_video_rotation();
+                            if current_rot != cached_rot {
+                                let (w, h) = player.get_video_size();
+                                if w > 0 && h > 0 {
+                                    let norm_rotate = current_rot.rem_euclid(360);
+                                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+                                        (h, w)
+                                    } else {
+                                        (w, h)
+                                    };
+
+                                    let max_w = 960.0;
+                                    let max_h = 540.0;
+                                    let scale = (max_w / eff_w as f64).min(max_h / eff_h as f64).min(1.0);
+                                    let render_unrot_w = ((w as f64 * scale) as i32) & !1;
+                                    let render_unrot_h = ((h as f64 * scale) as i32) & !1;
+
+                                    if render_unrot_w > 0 && render_unrot_h > 0 {
+                                        cached_video_params = Some((render_unrot_w, render_unrot_h, current_rot));
+                                    }
+                                }
+                            }
+                        }
+
+                        if let Some((render_unrot_w, render_unrot_h, rotate)) = cached_video_params {
+                            let unrot_size = (render_unrot_w * render_unrot_h * 4) as usize;
+
+                            // Find a free buffer in the pool (where we are the sole owner)
+                            let mut free_buffer = None;
+                            for buf in &mut pool {
+                                if std::sync::Arc::strong_count(buf) == 1 {
+                                    free_buffer = Some(buf);
+                                    break;
+                                }
+                            }
+
+                            if let Some(arc_buf) = free_buffer
+                                && let Some(target_vec) = std::sync::Arc::get_mut(arc_buf)
+                            {
+                                target_vec.resize(unrot_size, 0);
+                                if player.render_frame(render_unrot_w, render_unrot_h, target_vec).is_ok() {
+                                    let _ = event_tx.try_send(VideoEvent::FrameReady {
+                                        path: current_video_path.clone(),
+                                        width: render_unrot_w as u32,
+                                        height: render_unrot_h as u32,
+                                        rotation: rotate,
+                                        rgba: arc_buf.clone(),
+                                    });
+                                }
+                            } else {
+                                // If buffer pool is currently fully occupied by iced view,
+                                // we render into a temporary scratch buffer to advance mpv's state machine.
+                                let mut dummy = vec![0u8; unrot_size];
+                                let _ = player.render_frame(render_unrot_w, render_unrot_h, &mut dummy);
+                            }
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
@@ -677,5 +888,48 @@ pub async fn run_video_worker(
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_rotate_rgba_0() {
+        let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
+        let (w, h, dst) = rotate_rgba(2, 1, &src, 0);
+        assert_eq!((w, h), (2, 1));
+        assert_eq!(dst, src);
+    }
+
+    #[test]
+    fn test_rotate_rgba_90() {
+        let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
+        let (w, h, dst) = rotate_rgba(2, 1, &src, 90);
+        assert_eq!((w, h), (1, 2));
+        // 90 deg CW: (0,0) Red -> (0,0); (1,0) Green -> (0,1)
+        assert_eq!(&dst[0..4], &[255, 0, 0, 255]);
+        assert_eq!(&dst[4..8], &[0, 255, 0, 255]);
+    }
+
+    #[test]
+    fn test_rotate_rgba_180() {
+        let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
+        let (w, h, dst) = rotate_rgba(2, 1, &src, 180);
+        assert_eq!((w, h), (2, 1));
+        // 180 deg: Green, Red
+        assert_eq!(&dst[0..4], &[0, 255, 0, 255]);
+        assert_eq!(&dst[4..8], &[255, 0, 0, 255]);
+    }
+
+    #[test]
+    fn test_rotate_rgba_270() {
+        let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
+        let (w, h, dst) = rotate_rgba(2, 1, &src, 270);
+        assert_eq!((w, h), (1, 2));
+        // 270 deg CW: (0,0) Red -> (0,1); (1,0) Green -> (0,0)
+        assert_eq!(&dst[0..4], &[0, 255, 0, 255]);
+        assert_eq!(&dst[4..8], &[255, 0, 0, 255]);
     }
 }

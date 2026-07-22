@@ -69,6 +69,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
             state.video.rgba = None;
             state.video.width = 0;
             state.video.height = 0;
+            state.video.rotation = 0;
             state.video.position = 0.0;
             state.video.duration = 0.0;
             state.video.ready = false;
@@ -88,6 +89,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
             state.video.rgba = None;
             state.video.width = 0;
             state.video.height = 0;
+            state.video.rotation = 0;
             state.video.ready = false;
             if state.audio.playing
                 && let Some(ref player) = state.audio.player
@@ -109,6 +111,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
             state.video.rgba = None;
             state.video.width = 0;
             state.video.height = 0;
+            state.video.rotation = 0;
             state.video.ready = false;
             if state.audio.playing {
                 if let Some(ref player) = state.audio.player {

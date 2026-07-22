@@ -71,6 +71,7 @@ lru = "0.18"
 rfd = "0.17"
 ico = "0.5"
 fast_image_resize = { version = "6.0", features = ["image", "rayon"] }
+rayon = "1.12"
 
 [profile.dev.package."*"]
 opt-level = 3

@@ -16,6 +16,7 @@ pub fn video_player<'a>(
         crate::widgets::video_shader::video_shader_view(
             state.video.width,
             state.video.height,
+            state.video.rotation,
             state.video.rgba.clone(),
         )
     } else if let Some(handle) = thumb_handle {

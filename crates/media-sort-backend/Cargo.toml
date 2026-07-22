@@ -24,6 +24,7 @@ tokio.workspace = true
 libmpv-sys = "3.1.0"
 chrono = "0.4"
 fast_image_resize.workspace = true
+rayon.workspace = true
 
 [target.'cfg(target_os = "windows")'.dependencies]
 winreg.workspace = true

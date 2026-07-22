@@ -10,10 +10,10 @@ pub fn video_player_subscription() -> Subscription<Message> {
 
 fn video_stream() -> impl iced::futures::Stream<Item = Message> {
     iced::stream::channel(
-        4,
+        32,
         |mut output: iced::futures::channel::mpsc::Sender<Message>| async move {
             let (cmd_tx, cmd_rx) = mpsc::channel(64);
-            let (event_tx, mut event_rx) = mpsc::channel(4);
+            let (event_tx, mut event_rx) = mpsc::channel(32);
 
             start_video_worker(cmd_rx, event_tx);
 

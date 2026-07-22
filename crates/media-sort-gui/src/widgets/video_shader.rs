@@ -183,6 +183,7 @@ impl Pipeline for VideoPipeline {
 pub struct VideoPrimitive {
     pub width: u32,
     pub height: u32,
+    pub rotation: i64,
     pub rgba: Option<std::sync::Arc<Vec<u8>>>,
 }
 
@@ -201,11 +202,18 @@ impl Primitive for VideoPrimitive {
             return;
         }
 
+        let norm_rotate = self.rotation.rem_euclid(360);
+        let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+            (self.height, self.width)
+        } else {
+            (self.width, self.height)
+        };
+
         // Calculate aspect ratios and fit-shrink scales
         let mut sx = 1.0f32;
         let mut sy = 1.0f32;
         if bounds.width > 0.0 && bounds.height > 0.0 {
-            let r_video = self.width as f32 / self.height as f32;
+            let r_video = eff_w as f32 / eff_h as f32;
             let r_bounds = bounds.width / bounds.height;
             if r_video > r_bounds {
                 sx = 1.0;
@@ -216,22 +224,29 @@ impl Primitive for VideoPrimitive {
             }
         }
 
+        let (t_bl, t_br, t_tl, t_tr) = match norm_rotate {
+            90 => ([1.0, 1.0], [1.0, 0.0], [0.0, 1.0], [0.0, 0.0]),
+            180 => ([1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 1.0]),
+            270 => ([0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]),
+            _ => ([0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]),
+        };
+
         let vertices = [
             Vertex {
                 position: [-sx, -sy],
-                tex_coords: [0.0, 1.0],
+                tex_coords: t_bl,
             },
             Vertex {
                 position: [sx, -sy],
-                tex_coords: [1.0, 1.0],
+                tex_coords: t_br,
             },
             Vertex {
                 position: [-sx, sy],
-                tex_coords: [0.0, 0.0],
+                tex_coords: t_tl,
             },
             Vertex {
                 position: [sx, sy],
-                tex_coords: [1.0, 0.0],
+                tex_coords: t_tr,
             },
         ];
 
@@ -321,6 +336,7 @@ impl Primitive for VideoPrimitive {
 pub struct VideoProgram {
     pub width: u32,
     pub height: u32,
+    pub rotation: i64,
     pub rgba: Option<std::sync::Arc<Vec<u8>>>,
 }
 
@@ -337,6 +353,7 @@ impl<Message> iced::widget::shader::Program<Message> for VideoProgram {
         VideoPrimitive {
             width: self.width,
             height: self.height,
+            rotation: self.rotation,
             rgba: self.rgba.clone(),
         }
     }
@@ -345,6 +362,7 @@ impl<Message> iced::widget::shader::Program<Message> for VideoProgram {
 pub fn video_shader_view<'a, Message: 'a, Theme: 'a, Renderer>(
     width: u32,
     height: u32,
+    rotation: i64,
     rgba: Option<std::sync::Arc<Vec<u8>>>,
 ) -> Element<'a, Message, Theme, Renderer>
 where
@@ -353,6 +371,7 @@ where
     iced::widget::Shader::new(VideoProgram {
         width,
         height,
+        rotation,
         rgba,
     })
     .width(Length::Fill)

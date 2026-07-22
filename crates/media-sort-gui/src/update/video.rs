@@ -15,6 +15,7 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                     path,
                     width,
                     height,
+                    rotation,
                     rgba,
                 } => {
                     state.cache.media_errors.remove(&path);
@@ -29,6 +30,7 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                         state.video.rgba = Some(rgba);
                         state.video.width = width;
                         state.video.height = height;
+                        state.video.rotation = rotation;
                         state.video.frame =
                             Some(iced::widget::image::Handle::from_rgba(1, 1, vec![0]));
                     }
