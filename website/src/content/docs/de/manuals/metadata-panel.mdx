@@ -4,8 +4,16 @@ description: Anzeige von EXIF-Daten, Audio-Tags und Container-Metadaten für Med
 ---
 
 import Kbd from '../../../../components/Kbd.astro';
+import DemoVideo from '../../../../components/DemoVideo.astro';
 
-Das Metadaten-Panel ist eine einklappbare Seitenleiste auf der rechten Seite des Fensters, die detaillierte Informationen zur aktuell ausgewählten Mediendatei anzeigt. Es unterstützt Bilder, Audiodateien und Videos und extrahiert so viele Metadaten, wie das jeweilige Format bereitstellt.
+Das Metadaten-Panel ist eine ausklappbare Seitenleiste auf der rechten Seite des Fensters, die detaillierte Informationen über die aktuell ausgewählte Mediendatei anzeigt. Es unterstützt Bilder, Audiodateien und Videos und extrahiert so viele Metadaten, wie das jeweilige Format bereitstellt.
+
+<DemoVideo
+    videoUrl="/demos/metadata_inspection_de.mp4"
+    zoomLabel="Klicken zum Vergrößern"
+    caption="Dynamische Anzeige von EXIF- und Container-Metadaten in der Seitenleiste"
+    fallbackText="Ihr Browser unterstützt das Video-Tag nicht."
+/>
 
 ## Öffnen und Schließen
 

@@ -4,8 +4,16 @@ description: How the action history and system trash integration work in Media S
 ---
 
 import Kbd from '../../../../components/Kbd.astro';
+import DemoVideo from '../../../../components/DemoVideo.astro';
 
 Media Sort records every sorting action (moves, copies, renames, and deletions) in a history stack, allowing you to undo mistakes instantly and redo actions you change your mind about.
+
+<DemoVideo
+    videoUrl="/demos/undo_redo_en.mp4"
+    zoomLabel="Click to expand video"
+    caption="Undoing and re-doing file move operations safely"
+    fallbackText="Your browser does not support the video tag."
+/>
 
 ## Keyboard Shortcuts
 

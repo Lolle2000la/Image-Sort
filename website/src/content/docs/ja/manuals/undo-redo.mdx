@@ -4,8 +4,16 @@ description: Media Sortのアクション履歴とシステムのゴミ箱統合
 ---
 
 import Kbd from '../../../../components/Kbd.astro';
+import DemoVideo from '../../../../components/DemoVideo.astro';
 
-Media Sortは、移動、コピー、名前変更、削除といったすべての仕分け操作を履歴スタックに記録し、ミスを即座に取り消したり、気が変わった操作をやり直したりすることができます。
+Media Sortはすべての整理操作（移動、コピー、名前変更、削除）を履歴スタックに記録します。これにより、誤操作を即座に取り消すことができます。
+
+<DemoVideo
+    videoUrl="/demos/undo_redo_ja.mp4"
+    zoomLabel="クリックして拡大"
+    caption="ファイル操作の安全な取り消し（元に戻す）とやり直し"
+    fallbackText="お使いのブラウザは動画タグをサポートしていません。"
+/>
 
 ## キーボードショートカット
 

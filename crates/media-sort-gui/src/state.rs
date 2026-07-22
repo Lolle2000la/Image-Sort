@@ -128,6 +128,8 @@ impl AppState {
             pending_update: None,
             #[cfg(feature = "velopack")]
             show_update_prompt: false,
+            #[cfg(feature = "demo")]
+            automation: Default::default(),
         }
     }
 

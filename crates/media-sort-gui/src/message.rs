@@ -105,7 +105,7 @@ pub enum MediaMessage {
     SelectEntry(usize),
     #[automation(keycap = "Type Query\nFilter Results")]
     SearchQueryChanged(String),
-    #[automation(keycap = "Ctrl+F\nFocus Search")]
+    #[automation(keycap = "I\nFocus Search")]
     SearchFocused,
     SearchBlurred,
     #[automation(keycap = "F2\nRename")]

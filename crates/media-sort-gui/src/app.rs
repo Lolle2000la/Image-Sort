@@ -4,6 +4,9 @@ use crate::message::Message;
 use crate::state::AppState;
 use crate::view;
 
+#[cfg(feature = "demo")]
+use iced_automation::AutomationStateTrait;
+
 pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
     crate::update::update(state, message)
 }

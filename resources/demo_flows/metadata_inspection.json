@@ -1,0 +1,30 @@
+{
+  "flow_name": "Metadata Inspection Workflow",
+  "steps": [
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": { "Media": { "SelectEntry": 0 } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": { "Settings": "ToggleMetadataPanel" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_1" } },
+      "message": { "Media": { "SelectEntry": 1 } }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_2" } },
+      "message": { "Media": { "SelectEntry": 2 } }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": "Quit"
+    }
+  ]
+}
