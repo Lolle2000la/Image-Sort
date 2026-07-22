@@ -95,6 +95,7 @@ ui-parent = Übergeordnet: {$name}
 ui-select-file = Datei zum Anzeigen auswählen
 ui-file-not-found = Datei nicht gefunden
 ui-file-not-supported = Diese Datei wird leider noch nicht unterstützt!
+ui-file-error-details = Fehlerdetails: {$error}
 ui-open-externally = Extern öffnen
 ui-loading-image = Bild wird geladen...
 ui-no-images = Keine Bilder vorhanden. Öffnen Sie einen Ordner, um zu beginnen.

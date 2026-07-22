@@ -452,6 +452,10 @@ pub enum VideoEvent {
     Muted(bool),
     Volume(f64),
     Paused(bool),
+    LoadFailed {
+        path: std::path::PathBuf,
+        error: String,
+    },
 }
 
 // SAFETY: MpvContext owns pointers to `mpv_handle` and `mpv_render_context`.
@@ -512,11 +516,21 @@ pub async fn run_video_worker(
                 match cmd {
                     VideoCommand::Load(path) => {
                         player.stop();
-                        if let Ok(()) = player.load_file(&path) {
-                            player.set_paused(false);
-                            player.drain_render_context();
-                            is_active = true;
-                            current_video_path = path;
+                        match player.load_file(&path) {
+                            Ok(()) => {
+                                player.set_paused(false);
+                                player.drain_render_context();
+                                is_active = true;
+                                current_video_path = path;
+                            }
+                            Err(err) => {
+                                let _ = event_tx
+                                    .send(VideoEvent::LoadFailed {
+                                        path: path.clone(),
+                                        error: err,
+                                    })
+                                    .await;
+                            }
                         }
                     }
                     VideoCommand::Play => {

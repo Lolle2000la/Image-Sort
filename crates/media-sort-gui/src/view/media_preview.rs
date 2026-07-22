@@ -21,12 +21,30 @@ pub fn media_preview_view(state: &AppState) -> Element<'_, Message> {
             .into();
     };
 
-    if entry.media_type == media_sort_core::media_type::MediaType::Image
-        && state.cache.unsupported_files.contains(&entry.path)
-    {
+    if let Some(err_msg) = state.cache.media_errors.get_error(&entry.path) {
+        let details_text = state
+            .l10n
+            .get("ui-file-error-details", &[("error", err_msg)]);
         return container(
             column![
                 text(state.l10n.tr("ui-file-not-supported")).size(14),
+                container(
+                    text(details_text)
+                        .size(11)
+                        .style(|theme: &iced::Theme| text::Style {
+                            color: Some(theme.palette().danger),
+                        })
+                )
+                .padding([8, 12])
+                .style(|theme: &iced::Theme| container::Style {
+                    background: Some(theme.palette().background.into()),
+                    border: iced::Border {
+                        color: theme.palette().danger,
+                        width: 1.0,
+                        radius: 4.0.into(),
+                    },
+                    ..Default::default()
+                }),
                 button(text(state.l10n.tr("ui-open-externally"))).on_press(Message::Media(
                     MediaMessage::OpenExternal(entry.path.clone())
                 )),

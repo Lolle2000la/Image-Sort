@@ -13,6 +13,8 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         let path = entry.path.clone();
         let media_type = entry.media_type;
 
+        state.cache.media_errors.remove(&path);
+
         let start = index.saturating_sub(5);
         let end = (index + 6).min(filtered_len);
         let mut thumbnail_paths = Vec::new();
@@ -260,7 +262,7 @@ pub fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
             .into_iter()
             .filter(|path| {
                 !state.cache.thumbnail_cache.contains(path)
-                    && !state.cache.unsupported_files.contains(path)
+                    && !state.cache.media_errors.has_error(path)
             })
             .map(|path| load_thumbnail(path, state.cache.thumbnail_tracker.clone_checker())),
     )
@@ -284,7 +286,7 @@ pub fn load_thumbnail(
                 }
                 match crate::subscriptions::prefetch::generate_thumbnail(&path_clone) {
                     Ok((w, h, rgba)) => Ok(Some((w, h, rgba))),
-                    Err(()) => Err(()),
+                    Err(e) => Err(e),
                 }
             })
             .await
@@ -295,7 +297,7 @@ pub fn load_thumbnail(
             Message::Media(match result {
                 Ok(Some((w, h, rgba))) => MediaMessage::ThumbnailReady(path, w, h, rgba),
                 Ok(None) => MediaMessage::ThumbnailCancelled(path),
-                Err(()) => MediaMessage::ThumbnailFailed(path),
+                Err(err) => MediaMessage::ThumbnailFailed(path, err),
             })
         },
     )

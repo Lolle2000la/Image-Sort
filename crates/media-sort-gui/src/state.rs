@@ -2,6 +2,7 @@ mod audio;
 mod cache;
 mod create_folder_modal;
 mod folder;
+pub mod media_errors;
 mod media_grid;
 mod metadata;
 mod rename_modal;
@@ -153,7 +154,7 @@ impl AppState {
         self.video.frame = None;
         self.video.position = 0.0;
         self.video.duration = 0.0;
-        self.cache.unsupported_files.clear();
+        self.cache.media_errors.clear();
         if let Some(ref player) = self.audio.player {
             player.stop();
         }

@@ -225,7 +225,7 @@ The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches i
 |-------|------|----------|---------|
 | `thumbnail_cache` | `LruCache<PathBuf, Handle>` | 200 | Grid thumbnails |
 | `image_cache` | `LruCache<PathBuf, Handle>` | 20 | Full-resolution preview images |
-| `unsupported_files` | `HashSet<PathBuf>` | unbounded | Files that failed thumbnail generation; prevents retry spam |
+| `media_errors` | `MediaErrorTracker` | unbounded | Tracks media files that failed to read or decode along with error details; prevents retry spam |
 
 When selection changes, next/previous images are preloaded into `image_cache`.
 

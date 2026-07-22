@@ -131,7 +131,7 @@ pub enum MediaMessage {
     #[serde(skip_deserializing)]
     ThumbnailReady(PathBuf, u32, u32, Vec<u8>),
     #[serde(skip_deserializing)]
-    ThumbnailFailed(PathBuf),
+    ThumbnailFailed(PathBuf, String),
     #[serde(skip_deserializing)]
     ThumbnailCancelled(PathBuf),
     #[serde(skip_deserializing)]

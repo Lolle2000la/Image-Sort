@@ -95,6 +95,7 @@ ui-parent = 親フォルダ: {$name}
 ui-select-file = プレビューするファイルを選択
 ui-file-not-found = ファイルが見つかりません
 ui-file-not-supported = このファイルは残念ながらまだサポートされていません！
+ui-file-error-details = エラーの詳細: {$error}
 ui-open-externally = 外部アプリで開く
 ui-loading-image = 画像を読み込み中...
 ui-no-images = 表示する画像がありません。フォルダを開いて始めましょう。

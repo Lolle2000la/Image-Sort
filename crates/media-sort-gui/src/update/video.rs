@@ -17,6 +17,7 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                     height,
                     rgba,
                 } => {
+                    state.cache.media_errors.remove(&path);
                     let current_path = state.media_grid.selected_index.and_then(|idx| {
                         state
                             .media_grid
@@ -48,6 +49,10 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                 }
                 media_sort_backend::media::mpv_context::VideoEvent::Paused(paused) => {
                     state.video.paused = paused;
+                }
+                media_sort_backend::media::mpv_context::VideoEvent::LoadFailed { path, error } => {
+                    tracing::error!("Video load failed for {}: {}", path.display(), error);
+                    state.cache.media_errors.record(path, error);
                 }
             }
             Task::none()

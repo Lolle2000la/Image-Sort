@@ -1,10 +1,10 @@
-use std::collections::HashSet;
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 
 use lru::LruCache;
 
+use super::media_errors::MediaErrorTracker;
 use crate::subscriptions::thumbnail_tracker::ThumbnailVisibilityTracker;
 
 pub struct CacheState {
@@ -12,7 +12,7 @@ pub struct CacheState {
     pub thumbnail_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub image_cache: LruCache<PathBuf, iced::widget::image::Handle>,
     pub thumbnail_tracker: ThumbnailVisibilityTracker,
-    pub unsupported_files: HashSet<PathBuf>,
+    pub media_errors: MediaErrorTracker,
 }
 
 impl fmt::Debug for CacheState {
@@ -24,7 +24,7 @@ impl fmt::Debug for CacheState {
             )
             .field("thumbnail_cache_len", &self.thumbnail_cache.len())
             .field("image_cache_len", &self.image_cache.len())
-            .field("unsupported_files", &self.unsupported_files.len())
+            .field("media_errors_len", &self.media_errors.len())
             .finish()
     }
 }
@@ -40,7 +40,7 @@ impl CacheState {
             thumbnail_tracker: ThumbnailVisibilityTracker::new(std::time::Duration::from_millis(
                 150,
             )),
-            unsupported_files: HashSet::new(),
+            media_errors: MediaErrorTracker::new(),
         }
     }
 }

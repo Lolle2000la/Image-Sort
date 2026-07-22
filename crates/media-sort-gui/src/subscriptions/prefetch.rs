@@ -4,7 +4,7 @@ use std::sync::LazyLock;
 
 use tracing;
 
-type ThumbnailResult = Result<(u32, u32, Vec<u8>), ()>;
+type ThumbnailResult = Result<(u32, u32, Vec<u8>), String>;
 type ThumbnailRequest = (PathBuf, std::sync::mpsc::Sender<ThumbnailResult>);
 
 static VIDEO_THUMBNAIL_WORKER: LazyLock<
@@ -17,7 +17,7 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
             Err(e) => {
                 tracing::error!("Video thumbnail worker: failed to create MpvContext: {e}");
                 while let Ok((_path, response)) = rx.recv() {
-                    let _ = response.send(Err(()));
+                    let _ = response.send(Err(format!("MpvContext initialization failed: {e}")));
                 }
                 return;
             }
@@ -37,12 +37,15 @@ fn generate_video_thumbnail_frame(
 ) -> ThumbnailResult {
     player.stop();
 
-    if player.load_file(path).is_err() {
-        return Err(());
+    if let Err(e) = player.load_file(path) {
+        return Err(format!("Failed to load video in mpv player: {e}"));
     }
     player.set_paused(true);
 
-    let mut result = Err(());
+    let mut result = Err(format!(
+        "Timed out generating video frame thumbnail for {}",
+        path.display()
+    ));
     let start = std::time::Instant::now();
 
     while start.elapsed() < std::time::Duration::from_millis(1000) {
@@ -88,7 +91,7 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
 
     if media_type == MediaType::Audio {
         return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
-            .map_err(|_| ());
+            .map_err(|e| format!("Audio cover thumbnail error: {e}"));
     }
 
     if media_type == MediaType::Video {
@@ -97,20 +100,26 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
             .lock()
             .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
             .clone();
-        sender.send((path.clone(), response_tx)).map_err(|_| ())?;
-        return response_rx.recv().map_err(|_| ())?;
+        sender
+            .send((path.clone(), response_tx))
+            .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
+        return response_rx
+            .recv()
+            .map_err(|e| format!("Failed to receive video thumbnail result: {e}"))?;
     }
 
     if path.extension().and_then(|e| e.to_str()) == Some("ico") {
         return generate_ico_thumbnail(path);
     }
 
-    let file = std::fs::File::open(path).map_err(|_| ())?;
+    let file = std::fs::File::open(path).map_err(|e| format!("Failed to open file: {e}"))?;
     let buf_reader = std::io::BufReader::new(file);
     let reader = image::ImageReader::new(buf_reader)
         .with_guessed_format()
-        .map_err(|_| ())?;
-    let img = reader.decode().map_err(|_| ())?;
+        .map_err(|e| format!("Could not guess image format: {e}"))?;
+    let img = reader
+        .decode()
+        .map_err(|e| format!("Image decoding failed: {e}"))?;
 
     let thumbnail = img.thumbnail(128, 128).to_rgba8();
     let (w, h) = thumbnail.dimensions();
@@ -118,8 +127,9 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
 }
 
 fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
-    let file = std::fs::File::open(path).map_err(|_| ())?;
-    let icon_dir = ico::IconDir::read(file).map_err(|_| ())?;
+    let file = std::fs::File::open(path).map_err(|e| format!("Failed to open ICO file: {e}"))?;
+    let icon_dir =
+        ico::IconDir::read(file).map_err(|e| format!("Failed to parse ICO structure: {e}"))?;
 
     let entry = icon_dir
         .entries()
@@ -127,9 +137,11 @@ fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         .filter(|e| e.width() <= 128 && e.height() <= 128)
         .max_by_key(|e| e.width())
         .or_else(|| icon_dir.entries().iter().max_by_key(|e| e.width()))
-        .ok_or(())?;
+        .ok_or_else(|| "No valid image entries found in ICO file".to_string())?;
 
-    let decoded = entry.decode().map_err(|_| ())?;
+    let decoded = entry
+        .decode()
+        .map_err(|e| format!("Failed to decode ICO entry: {e}"))?;
     let width = decoded.width();
     let height = decoded.height();
     let rgba = decoded.rgba_data().to_vec();

@@ -95,6 +95,7 @@ ui-parent = Parent: {$name}
 ui-select-file = Select a file to preview
 ui-file-not-found = File not found
 ui-file-not-supported = Sorry, this file doesn't seem to be supported yet!
+ui-file-error-details = Error details: {$error}
 ui-open-externally = Open Externally
 ui-loading-image = Loading image...
 ui-no-images = No images to display. Open a folder to get started.

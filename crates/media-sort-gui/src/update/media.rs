@@ -217,13 +217,14 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
         },
         MediaMessage::ThumbnailReady(path, w, h, data) => {
             if !data.is_empty() && w > 0 && h > 0 {
+                state.cache.media_errors.remove(&path);
                 let handle = iced::widget::image::Handle::from_rgba(w, h, data);
                 state.cache.thumbnail_cache.push(path, handle);
             }
             Task::none()
         }
-        MediaMessage::ThumbnailFailed(path) => {
-            state.cache.unsupported_files.insert(path);
+        MediaMessage::ThumbnailFailed(path, err) => {
+            state.cache.media_errors.record(path, err);
             Task::none()
         }
         MediaMessage::ThumbnailCancelled(_path) => Task::none(),
@@ -238,6 +239,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
         MediaMessage::ImageLoaded(path, result) => {
             match result {
                 Ok((w, h, pixels)) => {
+                    state.cache.media_errors.remove(&path);
                     let handle = iced::widget::image::Handle::from_rgba(w, h, pixels);
                     state.cache.image_cache.push(path.clone(), handle.clone());
                     if let Some(idx) = state.media_grid.selected_index {
@@ -251,6 +253,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                 }
                 Err(err) => {
                     tracing::error!("Failed to load full image: {err}");
+                    state.cache.media_errors.record(path.clone(), err);
                     if let Some(idx) = state.media_grid.selected_index {
                         let entries = state.media_grid.filtered_entries();
                         if let Some(entry) = entries.get(idx)
