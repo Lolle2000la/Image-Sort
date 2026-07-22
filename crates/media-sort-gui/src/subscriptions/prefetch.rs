@@ -11,23 +11,39 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
     std::sync::Mutex<std::sync::mpsc::Sender<ThumbnailRequest>>,
 > = LazyLock::new(|| {
     let (tx, rx) = std::sync::mpsc::channel::<ThumbnailRequest>();
-    std::thread::spawn(move || {
-        let mut player = match media_sort_backend::media::mpv_context::MpvContext::new() {
-            Ok(p) => p,
-            Err(e) => {
-                tracing::error!("Video thumbnail worker: failed to create MpvContext: {e}");
-                while let Ok((_path, response)) = rx.recv() {
-                    let _ = response.send(Err(format!("MpvContext initialization failed: {e}")));
-                }
-                return;
-            }
-        };
+    let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
+    let num_workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .clamp(2, 4);
 
-        while let Ok((path, response)) = rx.recv() {
-            let result = generate_video_thumbnail_frame(&mut player, &path);
-            let _ = response.send(result);
-        }
-    });
+    for i in 0..num_workers {
+        let rx = rx.clone();
+        std::thread::spawn(move || {
+            let mut player =
+                match media_sort_backend::media::mpv_context::MpvContext::new_thumbnail_player() {
+                    Ok(p) => p,
+                    Err(e) => {
+                        tracing::error!(
+                            "Video thumbnail worker {i}: failed to create MpvContext: {e}"
+                        );
+                        return;
+                    }
+                };
+
+            loop {
+                let request = {
+                    let guard = rx.lock().unwrap();
+                    guard.recv().ok()
+                };
+                let Some((path, response)) = request else {
+                    break;
+                };
+                let result = generate_video_thumbnail_frame(&mut player, &path);
+                let _ = response.send(result);
+            }
+        });
+    }
     std::sync::Mutex::new(tx)
 });
 
