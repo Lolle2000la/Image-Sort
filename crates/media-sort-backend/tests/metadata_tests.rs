@@ -651,3 +651,49 @@ fn test_audio_metadata_nonexistent_file() {
     let result = extract_audio_metadata(Path::new("/nonexistent/audio_meta_test_12345.mp3"));
     assert!(result.is_err());
 }
+
+#[test]
+fn test_thumbnail_exif_orientation() {
+    let img = image::RgbImage::from_pixel(100, 50, image::Rgb([255, 0, 0]));
+    let mut jpeg_bytes = Vec::new();
+    let mut cursor = std::io::Cursor::new(&mut jpeg_bytes);
+    img.write_to(&mut cursor, image::ImageFormat::Jpeg).unwrap();
+
+    let exif_app1: &[u8] = &[
+        0xFF, 0xE1, // APP1 marker
+        0x00, 0x22, // Length of segment (34 bytes)
+        0x45, 0x78, 0x69, 0x66, 0x00, 0x00, // "Exif\0\0"
+        0x49, 0x49, 0x2A, 0x00, // TIFF header "II", 0x002A
+        0x08, 0x00, 0x00, 0x00, // Offset to 0th IFD (8)
+        0x01, 0x00, // Number of fields (1)
+        0x12, 0x01, // Tag: 0x0112 (Orientation)
+        0x03, 0x00, // Type: SHORT (3)
+        0x01, 0x00, 0x00, 0x00, // Count: 1
+        0x06, 0x00, 0x00, 0x00, // Value: 6 (rotate 90 CW)
+        0x00, 0x00, 0x00, 0x00, // Offset to next IFD (0)
+    ];
+
+    let mut oriented_jpeg = Vec::new();
+    oriented_jpeg.extend_from_slice(&jpeg_bytes[..2]); // 0xFF, 0xD8 (SOI)
+    oriented_jpeg.extend_from_slice(exif_app1);
+    oriented_jpeg.extend_from_slice(&jpeg_bytes[2..]); // rest of JPEG
+
+    let tmp_path =
+        std::env::temp_dir().join(format!("test_exif_orient_{}.jpg", std::process::id()));
+    std::fs::write(&tmp_path, &oriented_jpeg).unwrap();
+
+    let (w, h, _rgba) = thumbnail::generate_thumbnail(&tmp_path, 128, 128).unwrap();
+    assert!(
+        h > w,
+        "Expected height {h} to be greater than width {w} due to EXIF orientation 6 (90 deg rotation)"
+    );
+
+    let dims = image_decoder::decode_image_dimensions(&tmp_path).unwrap();
+    assert_eq!(
+        dims,
+        (50, 100),
+        "Decoded dimensions should be 50x100 after EXIF orientation"
+    );
+
+    std::fs::remove_file(&tmp_path).ok();
+}

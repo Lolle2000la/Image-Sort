@@ -86,7 +86,7 @@ fn generate_video_thumbnail_frame(
 /// Generate a thumbnail for the given file. GIFs are always decoded as
 /// images here regardless of animation settings — the image path is much
 /// lighter on resources for grid thumbnails.
-pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
+pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
     let media_type = crate::state::detect_media_type(path, false);
 
     if media_type == MediaType::Audio {
@@ -101,7 +101,7 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
             .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
             .clone();
         sender
-            .send((path.clone(), response_tx))
+            .send((path.to_path_buf(), response_tx))
             .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
         return response_rx
             .recv()
@@ -112,13 +112,7 @@ pub fn generate_thumbnail(path: &PathBuf) -> ThumbnailResult {
         return generate_ico_thumbnail(path);
     }
 
-    let file = std::fs::File::open(path).map_err(|e| format!("Failed to open file: {e}"))?;
-    let buf_reader = std::io::BufReader::new(file);
-    let reader = image::ImageReader::new(buf_reader)
-        .with_guessed_format()
-        .map_err(|e| format!("Could not guess image format: {e}"))?;
-    let img = reader
-        .decode()
+    let img = media_sort_backend::media::image_decoder::load_image(path)
         .map_err(|e| format!("Image decoding failed: {e}"))?;
 
     let thumbnail = img.thumbnail(128, 128).to_rgba8();
@@ -204,5 +198,49 @@ mod tests {
     fn test_generate_thumbnail_nonexistent() {
         let result = generate_thumbnail(&std::path::PathBuf::from("/nonexistent/image_xyz.jpg"));
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_generate_thumbnail_exif_orientation() {
+        let dir = std::env::temp_dir().join("mediasort_test_exif_thumb");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("test.jpg");
+
+        let img = image::RgbImage::from_pixel(100, 50, image::Rgb([255, 0, 0]));
+        let mut jpeg_bytes = Vec::new();
+        let mut cursor = std::io::Cursor::new(&mut jpeg_bytes);
+        img.write_to(&mut cursor, image::ImageFormat::Jpeg).unwrap();
+
+        let exif_app1: &[u8] = &[
+            0xFF, 0xE1, // APP1 marker
+            0x00, 0x22, // Length of segment (34 bytes)
+            0x45, 0x78, 0x69, 0x66, 0x00, 0x00, // "Exif\0\0"
+            0x49, 0x49, 0x2A, 0x00, // TIFF header "II", 0x002A
+            0x08, 0x00, 0x00, 0x00, // Offset to 0th IFD (8)
+            0x01, 0x00, // Number of fields (1)
+            0x12, 0x01, // Tag: 0x0112 (Orientation)
+            0x03, 0x00, // Type: SHORT (3)
+            0x01, 0x00, 0x00, 0x00, // Count: 1
+            0x06, 0x00, 0x00, 0x00, // Value: 6 (rotate 90 CW)
+            0x00, 0x00, 0x00, 0x00, // Offset to next IFD (0)
+        ];
+
+        let mut oriented_jpeg = Vec::new();
+        oriented_jpeg.extend_from_slice(&jpeg_bytes[..2]);
+        oriented_jpeg.extend_from_slice(exif_app1);
+        oriented_jpeg.extend_from_slice(&jpeg_bytes[2..]);
+
+        std::fs::write(&path, &oriented_jpeg).unwrap();
+
+        let result = generate_thumbnail(&path);
+        assert!(result.is_ok());
+        let (w, h, rgba) = result.unwrap();
+        assert!(
+            h > w,
+            "Expected thumbnail height {h} > width {w} due to EXIF orientation 6 (90 deg CW)"
+        );
+        assert_eq!(rgba.len(), (w * h * 4) as usize);
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

@@ -94,7 +94,7 @@ pub fn generate_thumbnail(
     ))
 }
 
-fn apply_orientation(mut img: image::DynamicImage, path: &Path) -> image::DynamicImage {
+pub fn apply_orientation(mut img: image::DynamicImage, path: &Path) -> image::DynamicImage {
     if let Ok(file) = std::fs::File::open(path) {
         let mut buf_reader = std::io::BufReader::new(&file);
         if let Ok(exif) = exif::Reader::new().read_from_container(&mut buf_reader)
