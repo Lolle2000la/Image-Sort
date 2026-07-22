@@ -3558,7 +3558,6 @@ dependencies = [
 name = "media-sort-backend"
 version = "3.0.0-alpha.5"
 dependencies = [
- "ash",
  "chrono",
  "fast_image_resize",
  "id3",
@@ -3606,7 +3605,6 @@ dependencies = [
 name = "media-sort-gui"
 version = "3.0.0-alpha.5"
 dependencies = [
- "ash",
  "bytemuck",
  "clap",
  "dirs",
