@@ -194,7 +194,7 @@ The video playback path is complex and worth understanding before touching:
 2. **Subscription** — `video_player_subscription()` spawns a `VideoWorker` background thread that owns the `MpvContext` and runs an mpv event loop
 3. **Communication** — GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) via `tokio::sync::mpsc::Sender`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused)
 4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height }`, stored in `AppState`. The `video_canvas` widget (`widgets/video_canvas.rs`) renders it via a custom wgpu shader (`widgets/video_shader.rs`) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
-5. **Lifecycle** — When the user navigates away from a video, `Deactivate` is sent. The worker stops rendering and the video frame is cleared.
+5. **Lifecycle** — When the user navigates away from a video or closes the application (`CloseRequested`/`Quit`), `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 
 The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
 
