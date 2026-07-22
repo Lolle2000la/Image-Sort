@@ -607,9 +607,7 @@ fn set_expand_recursive(
 
                     let mut new_children = build_children(&node.path, current);
 
-                    for p_node in parent_nav_nodes.into_iter().rev() {
-                        new_children.insert(0, p_node);
-                    }
+                    new_children.splice(0..0, parent_nav_nodes);
 
                     node.children = new_children;
                 }

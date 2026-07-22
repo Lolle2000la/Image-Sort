@@ -17,26 +17,24 @@ pub fn detect_locale() -> &'static str {
             let val_norm = val_lower.replace('_', "-");
 
             // Pass 1: exact match
-            for &lang in AVAILABLE_LOCALES {
-                let lang_norm = lang.to_ascii_lowercase().replace('_', "-");
-                if val_norm == lang_norm {
-                    return lang;
-                }
+            if let Some(&lang) = AVAILABLE_LOCALES
+                .iter()
+                .find(|&&lang| val_norm == lang.to_ascii_lowercase().replace('_', "-"))
+            {
+                return lang;
             }
 
             // Pass 2: longest prefix match
-            let mut best_match: Option<&'static str> = None;
-            for &lang in AVAILABLE_LOCALES {
-                let lang_norm = lang.to_ascii_lowercase().replace('_', "-");
-                if val_norm
-                    .strip_prefix(&lang_norm)
-                    .is_some_and(|rest| rest.starts_with(['-', '.', '@']))
-                    && best_match.is_none_or(|best| lang.len() > best.len())
-                {
-                    best_match = Some(lang);
-                }
-            }
-            if let Some(lang) = best_match {
+            if let Some(&lang) = AVAILABLE_LOCALES
+                .iter()
+                .filter(|&&lang| {
+                    let lang_norm = lang.to_ascii_lowercase().replace('_', "-");
+                    val_norm
+                        .strip_prefix(&lang_norm)
+                        .is_some_and(|rest| rest.starts_with(['-', '.', '@']))
+                })
+                .max_by_key(|&&lang| lang.len())
+            {
                 return lang;
             }
         }

@@ -52,13 +52,9 @@ pub fn unregister() -> Result<(), String> {
 pub fn is_registered() -> Result<bool, String> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
 
-    for reg_path in REG_PATHS {
-        let cmd_path = format!("{}\\command", reg_path);
-        if hkcu.open_subkey(&cmd_path).is_ok() {
-            return Ok(true);
-        }
-    }
-    Ok(false)
+    Ok(REG_PATHS
+        .iter()
+        .any(|reg_path| hkcu.open_subkey(&format!("{reg_path}\\command")).is_ok()))
 }
 
 #[cfg(test)]

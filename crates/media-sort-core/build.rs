@@ -6,15 +6,19 @@ fn main() {
     let mut locales: Vec<(String, String)> = Vec::new();
 
     if let Ok(entries) = fs::read_dir(locales_dir) {
-        for entry in entries.flatten() {
-            if entry.file_type().map(|t| t.is_dir()).unwrap_or(false)
-                && let Ok(code) = entry.file_name().into_string()
-            {
-                let display =
-                    locale_display_from_ftl(&locales_dir.join(&code).join("main.ftl"), &code);
-                locales.push((code, display));
-            }
-        }
+        locales = entries
+            .flatten()
+            .filter_map(|entry| {
+                if entry.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                    let code = entry.file_name().into_string().ok()?;
+                    let display =
+                        locale_display_from_ftl(&locales_dir.join(&code).join("main.ftl"), &code);
+                    Some((code, display))
+                } else {
+                    None
+                }
+            })
+            .collect();
     }
 
     locales.sort_by(|a, b| a.0.cmp(&b.0));

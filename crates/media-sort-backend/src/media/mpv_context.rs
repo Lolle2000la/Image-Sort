@@ -650,7 +650,7 @@ pub async fn run_video_worker(
     }
 
     let max_buffer_size = (960 * 540 * 4) as usize;
-    let mut pool = vec![
+    let mut pool = [
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
@@ -809,13 +809,9 @@ pub async fn run_video_worker(
                             let unrot_size = (render_unrot_w * render_unrot_h * 4) as usize;
 
                             // Find a free buffer in the pool (where we are the sole owner)
-                            let mut free_buffer = None;
-                            for buf in &mut pool {
-                                if std::sync::Arc::strong_count(buf) == 1 {
-                                    free_buffer = Some(buf);
-                                    break;
-                                }
-                            }
+                            let free_buffer = pool
+                                .iter_mut()
+                                .find(|buf| std::sync::Arc::strong_count(buf) == 1);
 
                             if let Some(arc_buf) = free_buffer
                                 && let Some(target_vec) = std::sync::Arc::get_mut(arc_buf)

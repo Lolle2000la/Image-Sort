@@ -84,11 +84,12 @@ fn find_spec_path(spec_path: &Path) -> PathBuf {
             return default_flow;
         }
         if let Ok(entries) = std::fs::read_dir(spec_path) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.is_file() && path.extension().is_some_and(|ext| ext == "json") {
-                    return path;
-                }
+            if let Some(path) = entries
+                .flatten()
+                .map(|e| e.path())
+                .find(|p| p.is_file() && p.extension().is_some_and(|ext| ext == "json"))
+            {
+                return path;
             }
         }
     }

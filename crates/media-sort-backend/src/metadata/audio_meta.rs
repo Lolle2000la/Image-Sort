@@ -101,11 +101,11 @@ fn extract_flac_metadata(
     let mut flac_section: BTreeMap<String, String> = BTreeMap::new();
 
     if let Some(vc) = tag.vorbis_comments() {
-        for (key, values) in &vc.comments {
-            if let Some(value) = values.first() {
-                flac_section.insert(key.clone(), value.clone());
-            }
-        }
+        flac_section.extend(
+            vc.comments
+                .iter()
+                .filter_map(|(key, values)| Some((key.clone(), values.first()?.clone()))),
+        );
     }
 
     if !flac_section.is_empty() {

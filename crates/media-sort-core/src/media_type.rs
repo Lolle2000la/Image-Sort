@@ -75,18 +75,13 @@ impl MediaRegistry {
     /// first so the native stack wins any overlap. Subsequent calls are ignored — the
     /// registry can only be set once per process.
     pub fn init(mpv_discovered: HashSet<String>) {
-        let mut allowed = HashSet::new();
-
-        for ext in native_image_extensions()
+        let mut allowed: HashSet<String> = native_image_extensions()
             .iter()
             .chain(NATIVE_AUDIO_EXTS.iter())
-        {
-            allowed.insert((*ext).to_string());
-        }
+            .map(|ext| (*ext).to_string())
+            .collect();
 
-        for ext in &mpv_discovered {
-            allowed.insert(ext.clone());
-        }
+        allowed.extend(mpv_discovered.iter().cloned());
 
         let _ = SYSTEM_REGISTRY.set(MediaRegistry {
             allowed_extensions: allowed,
@@ -103,16 +98,17 @@ impl MediaRegistry {
     /// baseline in [`MediaType::extensions`] — mpv-discovered formats that
     /// aren't in that hardcoded list are NOT included here.
     pub fn fallback_allowed_extensions() -> HashSet<String> {
-        let mut set = HashSet::new();
-        for ext in native_image_extensions()
+        let mut set: HashSet<String> = native_image_extensions()
             .iter()
             .chain(NATIVE_AUDIO_EXTS.iter())
-        {
-            set.insert((*ext).to_string());
-        }
-        for ext in MediaType::Video.extensions() {
-            set.insert((*ext).to_string());
-        }
+            .map(|ext| (*ext).to_string())
+            .collect();
+        set.extend(
+            MediaType::Video
+                .extensions()
+                .iter()
+                .map(|ext| (*ext).to_string()),
+        );
         set
     }
 
