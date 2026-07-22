@@ -396,6 +396,14 @@ impl MpvContext {
     }
 
     pub fn get_video_rotation(&self) -> i64 {
+        if let Some(path_str) = self.get_current_path()
+            && let Some(rot) =
+                crate::metadata::video_meta::detect_video_rotation(Path::new(&path_str))
+            && rot != 0
+        {
+            return rot.rem_euclid(360);
+        }
+
         unsafe {
             let mut rotate: i64 = 0;
             // 1. Check video-params/rotate
