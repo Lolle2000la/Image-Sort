@@ -30,8 +30,9 @@ impl MpvContext {
             mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
             let loop_file = CString::new("inf").expect("static string contains no null bytes");
             mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
+            let hwdec = CString::new("auto-copy").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
             let no = CString::new("no").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"hwdec".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
             mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
