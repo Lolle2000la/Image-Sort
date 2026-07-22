@@ -33,7 +33,6 @@ rfd = { workspace = true }
 lucide-icons = "1.21"
 bytemuck = "1"
 dirs = { workspace = true }
-once_cell.workspace = true
 serde = { workspace = true }
 rayon.workspace = true
 ico.workspace = true
