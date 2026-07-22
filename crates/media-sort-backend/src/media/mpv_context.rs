@@ -9,6 +9,42 @@ const MPV_RENDER_PARAM_SW_FORMAT: mpv_render_param_type = 18;
 const MPV_RENDER_PARAM_SW_STRIDE: mpv_render_param_type = 19;
 const MPV_RENDER_PARAM_SW_POINTER: mpv_render_param_type = 20;
 
+pub const MPV_RENDER_PARAM_VULKAN_INIT_PARAMS: mpv_render_param_type = 14;
+pub const MPV_RENDER_PARAM_VULKAN_FBO: mpv_render_param_type = 15;
+
+pub type MpvVulkanGetProcAddressFn =
+    unsafe extern "C" fn(ctx: *mut c_void, name: *const c_char) -> Option<unsafe extern "C" fn()>;
+
+#[repr(C)]
+pub struct mpv_vulkan_init_params {
+    pub get_proc_address: Option<MpvVulkanGetProcAddressFn>,
+    pub get_proc_address_ctx: *mut c_void,
+    pub instance: ash::vk::Instance,
+    pub physical_device: ash::vk::PhysicalDevice,
+    pub device: ash::vk::Device,
+    pub queue: ash::vk::Queue,
+    pub queue_family_index: u32,
+    pub device_extensions_count: u32,
+    pub device_extensions: *const *const c_char,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct mpv_vulkan_image {
+    pub image: ash::vk::Image,
+    pub image_format: ash::vk::Format,
+    pub image_layout: ash::vk::ImageLayout,
+}
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct mpv_vulkan_fbo {
+    pub img: mpv_vulkan_image,
+    pub w: c_int,
+    pub h: c_int,
+    pub internal_format: c_int,
+}
+
 pub struct MpvContext {
     pub handle: *mut mpv_handle,
     pub render_ctx: *mut mpv_render_context,
@@ -84,6 +120,99 @@ impl MpvContext {
                 render_ctx,
                 callback_context_raw: ptr::null_mut(),
             })
+        }
+    }
+
+    pub fn new_vulkan(init_params: &mut mpv_vulkan_init_params) -> Result<Self, String> {
+        unsafe {
+            let handle = mpv_create();
+            if handle.is_null() {
+                return Err("Failed to create mpv instance".to_string());
+            }
+
+            let vo_name = CString::new("libmpv").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"vo".as_ptr(), vo_name.as_ptr());
+            let keep_open = CString::new("yes").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
+            let loop_file = CString::new("inf").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
+            let hwdec = CString::new("auto-safe").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
+
+            let no = CString::new("no").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"video-rotate".as_ptr(), no.as_ptr());
+
+            let vo_framedrop = CString::new("vo").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"framedrop".as_ptr(), vo_framedrop.as_ptr());
+            let video_sync = CString::new("audio").expect("static string contains no null bytes");
+            mpv_set_option_string(handle, c"video-sync".as_ptr(), video_sync.as_ptr());
+            let video_timing_offset =
+                CString::new("0").expect("static string contains no null bytes");
+            mpv_set_option_string(
+                handle,
+                c"video-timing-offset".as_ptr(),
+                video_timing_offset.as_ptr(),
+            );
+            mpv_set_option_string(handle, c"force-window".as_ptr(), no.as_ptr());
+            mpv_set_option_string(handle, c"input-default-bindings".as_ptr(), no.as_ptr());
+
+            let err = mpv_initialize(handle);
+            if err < 0 {
+                mpv_terminate_destroy(handle);
+                return Err(format!("Failed to initialize mpv: {err}"));
+            }
+
+            let api_type = CString::new("vulkan").expect("static string contains no null bytes");
+            let mut params = [
+                mpv_render_param {
+                    type_: mpv_render_param_type_MPV_RENDER_PARAM_API_TYPE,
+                    data: api_type.as_ptr() as *mut c_void,
+                },
+                mpv_render_param {
+                    type_: MPV_RENDER_PARAM_VULKAN_INIT_PARAMS,
+                    data: init_params as *mut _ as *mut c_void,
+                },
+                mpv_render_param {
+                    type_: 0,
+                    data: ptr::null_mut(),
+                },
+            ];
+
+            let mut render_ctx: *mut mpv_render_context = ptr::null_mut();
+            let err = mpv_render_context_create(&mut render_ctx, handle, params.as_mut_ptr());
+            if err < 0 {
+                mpv_terminate_destroy(handle);
+                return Err(format!("Failed to create Vulkan render context: {err}"));
+            }
+
+            Ok(Self {
+                handle,
+                render_ctx,
+                callback_context_raw: ptr::null_mut(),
+            })
+        }
+    }
+
+    pub fn render_vulkan_fbo(&self, fbo: &mut mpv_vulkan_fbo) -> Result<(), String> {
+        unsafe {
+            let mut params = [
+                mpv_render_param {
+                    type_: MPV_RENDER_PARAM_VULKAN_FBO,
+                    data: fbo as *mut _ as *mut c_void,
+                },
+                mpv_render_param {
+                    type_: 0,
+                    data: ptr::null_mut(),
+                },
+            ];
+            let err = mpv_render_context_render(self.render_ctx, params.as_mut_ptr());
+            if err < 0 {
+                return Err(format!("Failed to render Vulkan frame: {err}"));
+            }
+            Ok(())
         }
     }
 
