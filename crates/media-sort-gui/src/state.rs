@@ -374,10 +374,11 @@ fn build_tree_nodes_data(
 
     let mut tree = Vec::new();
 
-    let mut children = build_children(root, Some(root));
-    for node in build_parent_chain(root) {
-        children.insert(0, node);
-    }
+    let mut children: Vec<_> = build_parent_chain(root)
+        .into_iter()
+        .rev()
+        .chain(build_children(root, Some(root)))
+        .collect();
     restore_expansion(&mut children, expanded_paths);
     tree.push(FolderNode {
         path: root.to_path_buf(),
@@ -395,10 +396,11 @@ fn build_tree_nodes_data(
         if media_sort_core::path_utils::paths_equal(root, &pinned.path) {
             continue;
         }
-        let mut pinned_children = build_children(&pinned.path, Some(root));
-        for node in build_parent_chain(&pinned.path) {
-            pinned_children.insert(0, node);
-        }
+        let mut pinned_children: Vec<_> = build_parent_chain(&pinned.path)
+            .into_iter()
+            .rev()
+            .chain(build_children(&pinned.path, Some(root)))
+            .collect();
         restore_expansion(&mut pinned_children, expanded_paths);
         tree.push(FolderNode {
             path: pinned.path.clone(),
@@ -433,15 +435,14 @@ fn first_visible_child(nodes: &[FolderNode], path: &Path) -> Option<PathBuf> {
 }
 
 pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<FolderNode> {
-    let mut children = Vec::new();
-    if let Ok(entries) = std::fs::read_dir(parent) {
-        for entry in entries.flatten() {
-            let Ok(ft) = entry.file_type() else {
-                continue;
-            };
-            if !ft.is_dir() {
-                continue;
-            }
+    let Ok(entries) = std::fs::read_dir(parent) else {
+        return Vec::new();
+    };
+
+    let mut children: Vec<FolderNode> = entries
+        .flatten()
+        .filter(|entry| entry.file_type().is_ok_and(|ft| ft.is_dir()))
+        .map(|entry| {
             let path = entry.path();
             let name = path
                 .file_name()
@@ -450,35 +451,36 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
             let is_current =
                 current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
 
-            let mut node_children = Vec::new();
-            if let Ok(sub_entries) = std::fs::read_dir(&path) {
-                for sub_entry in sub_entries.flatten() {
-                    if let Ok(sub_ft) = sub_entry.file_type()
-                        && sub_ft.is_dir()
-                    {
-                        node_children.push(FolderNode {
-                            path: PathBuf::new(),
-                            name: String::new(),
-                            children: Vec::new(),
-                            is_current: false,
-                            is_expanded: true,
-                            is_parent_nav: false,
-                        });
-                        break;
-                    }
-                }
-            }
+            let has_child_dir = std::fs::read_dir(&path).is_ok_and(|sub_entries| {
+                sub_entries
+                    .flatten()
+                    .any(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))
+            });
 
-            children.push(FolderNode {
+            let node_children = if has_child_dir {
+                vec![FolderNode {
+                    path: PathBuf::new(),
+                    name: String::new(),
+                    children: Vec::new(),
+                    is_current: false,
+                    is_expanded: true,
+                    is_parent_nav: false,
+                }]
+            } else {
+                Vec::new()
+            };
+
+            FolderNode {
                 path,
                 name,
                 children: node_children,
                 is_current,
                 is_expanded: false,
                 is_parent_nav: false,
-            });
-        }
-    }
+            }
+        })
+        .collect();
+
     children.sort_by_key(|a| a.name.to_lowercase());
     children
 }
@@ -488,49 +490,36 @@ fn is_dummy_or_empty(children: &[FolderNode]) -> bool {
 }
 
 fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
-    let mut ancestors: Vec<std::path::PathBuf> = Vec::new();
-    let mut parent = current.to_path_buf();
-    while parent.pop() {
-        if parent.as_os_str().is_empty() {
-            break;
-        }
-        ancestors.push(parent.clone());
-    }
+    let ancestors: Vec<std::path::PathBuf> =
+        std::iter::successors(current.parent(), |p| p.parent())
+            .filter(|p| !p.as_os_str().is_empty())
+            .map(|p| p.to_path_buf())
+            .collect();
 
     if ancestors.is_empty() {
         return Vec::new();
     }
 
-    ancestors.reverse();
-    let mut prev: Option<FolderNode> = None;
+    ancestors
+        .into_iter()
+        .rev()
+        .fold(None, |prev: Option<FolderNode>, ancestor| {
+            let name = ancestor
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_else(|| ancestor.display().to_string());
 
-    for ancestor in ancestors {
-        let name = ancestor
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| ancestor.display().to_string());
-
-        let mut children = Vec::new();
-        if let Some(p) = prev.take() {
-            children.push(p);
-        }
-
-        let node = FolderNode {
-            path: ancestor.clone(),
-            name,
-            children,
-            is_current: false,
-            is_expanded: false,
-            is_parent_nav: true,
-        };
-        prev = Some(node);
-    }
-
-    if let Some(rootmost) = prev {
-        vec![rootmost]
-    } else {
-        Vec::new()
-    }
+            Some(FolderNode {
+                path: ancestor,
+                name,
+                children: prev.map(|p| vec![p]).unwrap_or_default(),
+                is_current: false,
+                is_expanded: false,
+                is_parent_nav: true,
+            })
+        })
+        .map(|rootmost| vec![rootmost])
+        .unwrap_or_default()
 }
 
 fn toggle_expand_recursive(
@@ -562,9 +551,7 @@ fn toggle_expand_recursive(
 
                 let mut new_children = build_children(&node.path, current);
 
-                for p_node in parent_nav_nodes.into_iter().rev() {
-                    new_children.insert(0, p_node);
-                }
+                new_children.splice(0..0, parent_nav_nodes);
 
                 node.children = new_children;
             }

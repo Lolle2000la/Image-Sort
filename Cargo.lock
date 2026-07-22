@@ -3625,6 +3625,7 @@ dependencies = [
  "once_cell",
  "pgp",
  "pollster",
+ "rayon",
  "reqwest",
  "rfd",
  "serde",

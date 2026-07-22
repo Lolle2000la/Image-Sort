@@ -114,22 +114,23 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     }
 
     let scan_finished = if let Some(ref rx) = state.media_grid.scan_receiver {
-        for path in rx.try_iter() {
-            let media_type =
-                crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
-            let file_name = path
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| path.display().to_string());
-            state
-                .media_grid
-                .entries
-                .push(media_sort_core::models::MediaEntry {
+        let new_entries: Vec<_> = rx
+            .try_iter()
+            .map(|path| {
+                let media_type =
+                    crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                let file_name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| path.display().to_string());
+                media_sort_core::models::MediaEntry {
                     path,
                     media_type,
                     file_name,
-                });
-        }
+                }
+            })
+            .collect();
+        state.media_grid.entries.extend(new_entries);
         matches!(
             rx.try_recv(),
             Err(std::sync::mpsc::TryRecvError::Disconnected)

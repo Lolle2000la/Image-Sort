@@ -57,11 +57,10 @@ impl MediaType {
     }
 
     pub fn all_extensions() -> Vec<&'static str> {
-        let mut exts = Vec::new();
-        for ty in [Self::Image, Self::Video, Self::Audio] {
-            exts.extend(ty.extensions());
-        }
-        exts
+        [Self::Image, Self::Video, Self::Audio]
+            .iter()
+            .flat_map(|ty| ty.extensions().iter().copied())
+            .collect()
     }
 }
 

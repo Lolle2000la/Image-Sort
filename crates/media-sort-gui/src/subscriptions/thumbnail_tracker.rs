@@ -47,9 +47,7 @@ impl ThumbnailVisibilityTracker {
         I: IntoIterator<Item = PathBuf>,
     {
         if let Ok(mut guard) = self.visible_paths.write() {
-            for p in paths {
-                guard.insert(p);
-            }
+            guard.extend(paths);
         }
     }
 
@@ -86,10 +84,9 @@ impl ThumbnailVisibilityTracker {
         };
 
         if start_idx < total_items && start_idx < end_idx {
-            for path in &entry_paths[start_idx..end_idx] {
-                target_paths.insert(path.clone());
-                load_queue.push(path.clone());
-            }
+            let slice = &entry_paths[start_idx..end_idx];
+            target_paths.extend(slice.iter().cloned());
+            load_queue.extend_from_slice(slice);
         }
 
         if let Ok(mut guard) = self.visible_paths.write() {

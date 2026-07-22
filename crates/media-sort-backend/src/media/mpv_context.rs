@@ -457,14 +457,13 @@ impl MpvContext {
                 );
                 if err >= 0 && !ptr.is_null() {
                     let list_str = CStr::from_ptr(ptr).to_string_lossy();
-                    for line in list_str.lines() {
-                        for ext in line.trim().split(',') {
-                            let clean_ext = ext.trim().to_lowercase();
-                            if !clean_ext.is_empty() {
-                                extensions.insert(clean_ext);
-                            }
-                        }
-                    }
+                    extensions.extend(
+                        list_str
+                            .lines()
+                            .flat_map(|line| line.trim().split(','))
+                            .map(|ext| ext.trim().to_lowercase())
+                            .filter(|ext| !ext.is_empty()),
+                    );
                     mpv_free(ptr as *mut c_void);
                 }
             }

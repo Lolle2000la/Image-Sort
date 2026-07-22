@@ -2,6 +2,8 @@ use std::fmt;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
+use rayon::prelude::*;
+
 use media_sort_core::models::MediaEntry;
 
 /// Snapshot of the media grid's scrollable viewport. Updated whenever the
@@ -69,18 +71,26 @@ impl MediaGridState {
         self.scan_receiver = None;
         self.entries.clear();
         if let Some(folder) = current_folder {
-            for p in media_sort_backend::filesystem::scanner::scan_media_files(folder) {
-                let media_type = super::detect_media_type(&p, animate_gifs);
-                let file_name = p
-                    .file_name()
-                    .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| p.display().to_string());
-                self.entries.push(MediaEntry {
-                    path: p,
-                    media_type,
-                    file_name,
-                });
-            }
+            let paths: Vec<PathBuf> =
+                media_sort_backend::filesystem::scanner::scan_media_files(folder)
+                    .into_iter()
+                    .collect();
+
+            self.entries = paths
+                .into_par_iter()
+                .map(|path| {
+                    let media_type = super::detect_media_type(&path, animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                    }
+                })
+                .collect::<Vec<_>>();
         }
     }
 }

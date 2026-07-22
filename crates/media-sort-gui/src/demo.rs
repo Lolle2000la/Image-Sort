@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use rayon::prelude::*;
+
 use iced_automation::{AutomationStateTrait, DemoApp};
 
 use crate::message::{FolderMessage, Message};
@@ -122,23 +124,36 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
             let locales: Vec<&'static str> = media_sort_core::l10n::AVAILABLE_LOCALES.to_vec();
 
             // Render each flow × locale combination: <stem>_<locale>.mp4
-            for path in &flow_paths {
-                let file_stem = path
-                    .file_stem()
-                    .expect("path is filtered to JSON files, so it must have a file stem")
-                    .to_string_lossy();
-                for &locale in &locales {
-                    let output_video_path =
-                        export_path.join(format!("{}_{}.mp4", file_stem, locale));
+            let combos: Vec<_> = flow_paths
+                .iter()
+                .flat_map(|path| {
+                    let file_stem = path
+                        .file_stem()
+                        .expect("path is filtered to JSON files, so it must have a file stem")
+                        .to_string_lossy();
+                    locales.iter().map(move |&locale| {
+                        let output_video_path =
+                            export_path.join(format!("{}_{}.mp4", file_stem, locale));
+                        (path.as_path(), output_video_path, locale)
+                    })
+                })
+                .collect();
 
+            let results: Vec<Result<(), Box<dyn std::error::Error>>> = combos
+                .par_iter()
+                .map(|&(path, ref output_video_path, locale)| {
                     tracing::info!(
                         "Rendering demo [{locale}]: {} -> {:?}",
                         path.display(),
                         output_video_path
                     );
+                    export_demo_video_with_locale(path, output_video_path, locale)
+                        .map_err(|e| e.into())
+                })
+                .collect();
 
-                    export_demo_video_with_locale(path, &output_video_path, locale)?;
-                }
+            for result in results {
+                result?;
             }
             Ok(())
         } else {

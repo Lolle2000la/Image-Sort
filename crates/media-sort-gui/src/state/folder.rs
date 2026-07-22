@@ -54,18 +54,12 @@ impl FolderState {
         if let Some(ref path) = self.selected_folder.clone() {
             let visible = self.collect_visible_folders();
             if let Some(old_idx) = self.selected_folder_idx {
-                let mut best_idx = None;
-                let mut min_diff = usize::MAX;
-                for (i, p) in visible.iter().enumerate() {
-                    if p == path {
-                        let diff = i.abs_diff(old_idx);
-                        if diff < min_diff {
-                            min_diff = diff;
-                            best_idx = Some(i);
-                        }
-                    }
-                }
-                self.selected_folder_idx = best_idx;
+                self.selected_folder_idx = visible
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, p)| *p == path)
+                    .min_by_key(|(i, _)| i.abs_diff(old_idx))
+                    .map(|(i, _)| i);
             } else {
                 self.selected_folder_idx = visible.iter().position(|p| p == path);
             }
@@ -165,14 +159,14 @@ impl FolderState {
                 && super::find_node_expanded(&self.folder_tree, parent).is_some()
             {
                 let visible = self.collect_visible_folders();
-                if let Some(old_idx) = self.selected_folder_idx {
-                    for i in (0..old_idx.min(visible.len())).rev() {
-                        if visible[i] == parent {
-                            self.selected_folder = Some(parent.to_path_buf());
-                            self.selected_folder_idx = Some(i);
-                            return;
-                        }
-                    }
+                if let Some(old_idx) = self.selected_folder_idx
+                    && let Some(i) = visible[..old_idx.min(visible.len())]
+                        .iter()
+                        .rposition(|p| *p == parent)
+                {
+                    self.selected_folder = Some(parent.to_path_buf());
+                    self.selected_folder_idx = Some(i);
+                    return;
                 }
                 if let Some(pos) = visible.iter().position(|p| *p == parent) {
                     self.selected_folder = Some(parent.to_path_buf());

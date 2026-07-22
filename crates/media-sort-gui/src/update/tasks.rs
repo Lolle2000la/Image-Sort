@@ -17,10 +17,10 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         let start = index.saturating_sub(5);
         let end = (index + 6).min(filtered_len);
-        let mut thumbnail_paths = Vec::new();
-        for entry in filtered.iter().take(end).skip(start) {
-            thumbnail_paths.push(entry.path.clone());
-        }
+        let thumbnail_paths: Vec<_> = filtered[start..end]
+            .iter()
+            .map(|entry| entry.path.clone())
+            .collect();
 
         let mut preload_tasks = Vec::new();
         if index + 1 < filtered_len {
@@ -147,18 +147,14 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
             tasks.push(load_full_image(path, media_type));
         }
 
-        for t in preload_tasks {
-            tasks.push(t);
-        }
+        tasks.extend(preload_tasks);
 
-        for p in thumbnail_paths {
-            if !state.cache.thumbnail_cache.contains(&p) {
-                tasks.push(load_thumbnail(
-                    p,
-                    state.cache.thumbnail_tracker.clone_checker(),
-                ));
-            }
-        }
+        tasks.extend(
+            thumbnail_paths
+                .into_iter()
+                .filter(|p| !state.cache.thumbnail_cache.contains(p))
+                .map(|p| load_thumbnail(p, state.cache.thumbnail_tracker.clone_checker())),
+        );
         Task::batch(tasks)
     } else {
         state.media_grid.selected_index = None;
