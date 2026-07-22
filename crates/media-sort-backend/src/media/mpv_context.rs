@@ -875,10 +875,13 @@ pub async fn run_video_worker(
 
         tokio::select! {
             cmd_opt = cmd_rx.recv() => {
-                let Some(cmd) = cmd_opt else {
+                let Some(mut cmd) = cmd_opt else {
                     player.stop();
                     break;
                 };
+                while let Ok(newer_cmd) = cmd_rx.try_recv() {
+                    cmd = newer_cmd;
+                }
                 match cmd {
                     VideoCommand::Load(path) => {
                         player.stop();
