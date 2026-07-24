@@ -166,4 +166,16 @@ update-available-body = Version {version} ist verfügbar. Möchten Sie sie jetzt
 update-confirm = Aktualisieren
 update-dismiss = Nicht jetzt
 
-
+# Drag and drop overlay
+drag-drop-copy-title = Dateien kopieren
+drag-drop-copy-desc = Hier ablegen, um Dateien in den geöffneten Ordner zu kopieren
+drag-drop-move-title = Dateien verschieben
+drag-drop-move-desc = Hier ablegen, um Dateien in den geöffneten Ordner zu verschieben
+drag-drop-open-title = Ordner öffnen
+drag-drop-open-desc = Hier ablegen, um diesen Ordner in Image-Sort zu öffnen
+drag-drop-pin-title = Ordner anheften
+drag-drop-pin-desc = Hier ablegen, um diesen Ordner an die Seitenleiste anzuheften
+drag-drop-denied-title = Ablegen nicht möglich
+drag-drop-denied-no-folder = Öffne zuerst einen Ordner in Media Sort, bevor du Dateien kopierst oder verschiebst.
+drag-drop-denied-mixed = Gleichzeitiges Ablegen von Dateien und Ordnern wird nicht unterstützt.
+drag-drop-denied-multiple-folders = Das Ablegen mehrerer Ordner gleichzeitig wird nicht unterstützt.

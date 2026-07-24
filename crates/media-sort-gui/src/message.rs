@@ -32,11 +32,21 @@ pub enum Message {
     Media(MediaMessage),
     #[serde(skip_deserializing)]
     Video(VideoMessage),
+    #[serde(skip_deserializing)]
+    DragDrop(DragDropMessage),
 
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
     Update(UpdateMessage),
     NoOp,
+}
+
+#[derive(Debug, Clone)]
+pub enum DragDropMessage {
+    FileHovered(PathBuf),
+    FileHoveredCancelled,
+    FileDropped(PathBuf),
+    ZoneHovered(crate::state::drag_drop::DragZone),
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

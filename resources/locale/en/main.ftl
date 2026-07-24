@@ -164,6 +164,17 @@ metadata-field-focallength = Focal Length
 metadata-field-lensmodel = Lens
 metadata-field-gpslatitude = Latitude
 metadata-field-gpslongitude = Longitude
-metadata-field-gpsaltitude = Altitude
 
-
+# Drag and drop overlay
+drag-drop-copy-title = Copy Files
+drag-drop-copy-desc = Drop here to copy files to the open folder
+drag-drop-move-title = Move Files
+drag-drop-move-desc = Drop here to move files to the open folder
+drag-drop-open-title = Open Folder
+drag-drop-open-desc = Drop here to open this folder in Image-Sort
+drag-drop-pin-title = Pin Folder
+drag-drop-pin-desc = Drop here to add this folder to pinned folders
+drag-drop-denied-title = Drop Not Allowed
+drag-drop-denied-no-folder = Open a folder in Media Sort first before copying or moving files.
+drag-drop-denied-mixed = Dragging a mix of files and folders is not supported.
+drag-drop-denied-multiple-folders = Dragging multiple folders at once is not supported.

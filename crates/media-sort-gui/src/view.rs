@@ -1,5 +1,6 @@
 pub mod control_panel;
 pub mod credits_dialog;
+pub mod drag_drop;
 pub mod folder_panel;
 pub mod folder_tree;
 pub mod main_layout;

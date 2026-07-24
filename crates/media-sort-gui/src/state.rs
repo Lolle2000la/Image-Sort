@@ -1,6 +1,7 @@
 mod audio;
 mod cache;
 mod create_folder_modal;
+pub mod drag_drop;
 mod folder;
 pub mod media_errors;
 mod media_grid;
@@ -12,6 +13,7 @@ mod video;
 pub use audio::AudioPlaybackState;
 pub use cache::CacheState;
 pub use create_folder_modal::CreateFolderModalState;
+pub use drag_drop::DragDropState;
 pub use folder::FolderState;
 pub use media_grid::{MediaGridScrollState, MediaGridState, SearchState};
 pub use metadata::MetadataPanelState;
@@ -44,6 +46,7 @@ pub struct AppState {
     pub cache: CacheState,
     pub metadata: MetadataPanelState,
     pub settings_ui: SettingsUiState,
+    pub drag_drop: DragDropState,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -125,6 +128,7 @@ impl AppState {
             cache: CacheState::new(),
             metadata,
             settings_ui: SettingsUiState::default(),
+            drag_drop: DragDropState::new(),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]

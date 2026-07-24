@@ -203,10 +203,13 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         ));
     }
 
-    if !overlays.is_empty() {
+    if !overlays.is_empty() || state.drag_drop.hovering {
         let mut stack = iced::widget::stack![result];
         for (overlay, close_msg) in overlays {
             stack = stack.push(crate::view::overlay::modal_overlay(overlay, close_msg));
+        }
+        if state.drag_drop.hovering {
+            stack = stack.push(crate::view::drag_drop::drag_drop_overlay_view(state));
         }
         return stack.into();
     }

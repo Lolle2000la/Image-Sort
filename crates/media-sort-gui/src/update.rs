@@ -1,3 +1,4 @@
+pub mod drag_drop;
 pub mod folder;
 pub mod keyboard;
 pub mod media;
@@ -30,6 +31,9 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Folder(folder_msg) => folder::handle_folder_message(state, folder_msg),
         Message::Media(media_msg) => media::handle_media_message(state, media_msg),
         Message::Settings(settings_msg) => settings::handle_settings_message(state, settings_msg),
+        Message::DragDrop(drag_drop_msg) => {
+            drag_drop::handle_drag_drop_message(state, drag_drop_msg)
+        }
         Message::KeyCaptured(key, ctrl, shift, alt) => {
             keyboard::handle_key_captured(state, key, ctrl, shift, alt)
         }
@@ -86,6 +90,14 @@ fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Messa
 
     let bg_task = poll_background_channels(state);
     let refresh_thumbnails = state.cache.thumbnail_tracker.tick();
+
+    if state.drag_drop.hovering
+        && let Some(pos) = state.drag_drop.last_cursor_position
+    {
+        let win_w = state.settings.window_position.width as f32;
+        let win_h = state.settings.window_position.height as f32;
+        state.drag_drop.update_cursor(pos, (win_w, win_h));
+    }
 
     if let Some(ref player) = state.audio.player
         && state.audio.playing
@@ -185,31 +197,12 @@ impl iced_automation::AutomationContext<Message> for AppState {
 
 fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Message> {
     match event {
-        iced::Event::Window(iced::window::Event::CloseRequested) => {
-            let _ = state.settings.save();
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-            }
-            iced::window::latest().and_then(iced::window::close)
-        }
-        iced::Event::Window(iced::window::Event::Resized(size)) => {
-            state.settings.window_position.width = size.width.round() as u32;
-            state.settings.window_position.height = size.height.round() as u32;
-            #[cfg(feature = "demo")]
-            if let Some(automation) = state.automation_mut() {
-                automation.update_window_size(size.width, size.height);
-            }
-
-            state.cache.thumbnail_tracker.handle_scroll();
-            Task::none()
-        }
-        iced::Event::Window(iced::window::Event::Moved(point)) => {
-            state.settings.window_position.left = point.x.round() as i32;
-            state.settings.window_position.top = point.y.round() as i32;
-            Task::none()
-        }
+        iced::Event::Window(window_event) => handle_window_event(state, window_event),
         iced::Event::Mouse(iced::mouse::Event::CursorMoved { position }) => {
+            let win_w = state.settings.window_position.width as f32;
+            let win_h = state.settings.window_position.height as f32;
+            state.drag_drop.update_cursor(position, (win_w, win_h));
+
             if state.folder.dragging_folder_divider {
                 let new_width = position.x.round().clamp(100.0, 800.0) as u16;
                 state.settings.general.folder_tree_width = new_width;
@@ -236,6 +229,45 @@ fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Messa
                     let _ = state.settings.save();
                 }
             }
+            Task::none()
+        }
+        _ => Task::none(),
+    }
+}
+
+fn handle_window_event(state: &mut AppState, event: iced::window::Event) -> Task<Message> {
+    use crate::message::DragDropMessage;
+    match event {
+        iced::window::Event::FileHovered(path) => {
+            drag_drop::handle_drag_drop_message(state, DragDropMessage::FileHovered(path))
+        }
+        iced::window::Event::FilesHoveredLeft => {
+            drag_drop::handle_drag_drop_message(state, DragDropMessage::FileHoveredCancelled)
+        }
+        iced::window::Event::FileDropped(path) => {
+            drag_drop::handle_drag_drop_message(state, DragDropMessage::FileDropped(path))
+        }
+        iced::window::Event::CloseRequested => {
+            let _ = state.settings.save();
+            if let Some(ref sender) = state.video.sender {
+                let _ = sender
+                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+            }
+            iced::window::latest().and_then(iced::window::close)
+        }
+        iced::window::Event::Resized(size) => {
+            state.settings.window_position.width = size.width.round() as u32;
+            state.settings.window_position.height = size.height.round() as u32;
+            #[cfg(feature = "demo")]
+            if let Some(automation) = state.automation_mut() {
+                automation.update_window_size(size.width, size.height);
+            }
+            state.cache.thumbnail_tracker.handle_scroll();
+            Task::none()
+        }
+        iced::window::Event::Moved(point) => {
+            state.settings.window_position.left = point.x.round() as i32;
+            state.settings.window_position.top = point.y.round() as i32;
             Task::none()
         }
         _ => Task::none(),
