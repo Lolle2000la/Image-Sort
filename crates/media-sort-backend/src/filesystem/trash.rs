@@ -55,6 +55,19 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
 
     #[cfg(not(target_os = "macos"))]
     {
+        // Windows: callers may pass 8.3 short paths (e.g. TEMP resolves to
+        // C:\Users\RUNNER~1\... on CI runners). Canonicalize while the file
+        // still exists so the stored path matches what the trash metadata
+        // records, stripping the \\?\ verbatim prefix canonicalize yields.
+        #[cfg(target_os = "windows")]
+        let original_path = {
+            let canon = original_path.canonicalize().unwrap_or(original_path);
+            match canon.to_string_lossy().strip_prefix(r"\\?\") {
+                Some(stripped) => PathBuf::from(stripped.to_owned()),
+                None => canon,
+            }
+        };
+
         trash::delete(&original_path)
             .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
         Ok(Box::new(NativeTrashRestore {
@@ -72,6 +85,20 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
             flushed: false,
         }))
     }
+}
+
+/// Windows trash item matching: case-insensitive and tolerant of `\\?\`
+/// verbatim prefixes, since the shell may report a different path form
+/// than the caller passed (short 8.3 names, casing, verbatim paths).
+#[cfg(target_os = "windows")]
+fn windows_trash_paths_match(item_path: &Path, stored: &Path) -> bool {
+    fn strip_verbatim(p: &Path) -> String {
+        let s = p.to_string_lossy();
+        s.strip_prefix(r"\\?\")
+            .map(str::to_owned)
+            .unwrap_or_else(|| s.into_owned())
+    }
+    strip_verbatim(item_path).eq_ignore_ascii_case(&strip_verbatim(stored))
 }
 
 struct NativeTrashRestore {
@@ -102,7 +129,16 @@ impl TrashRestoreHandle for NativeTrashRestore {
 
             let item = items
                 .into_iter()
-                .find(|i| i.original_path() == self.original_path)
+                .find(|i| {
+                    #[cfg(target_os = "windows")]
+                    {
+                        windows_trash_paths_match(&i.original_path(), &self.original_path)
+                    }
+                    #[cfg(not(target_os = "windows"))]
+                    {
+                        i.original_path() == self.original_path
+                    }
+                })
                 .ok_or_else(|| {
                     ActionError::RestorationFailed("item not found in system trash".into())
                 })?;
