@@ -143,6 +143,12 @@ pub struct AutomationState<Message> {
     pub pending_bounds_id: Option<Id>,
     pub step_ready: bool,
     pub style: AutomationStyle,
+    /// Whether the automation advances on real-time ticks (`Instant`-based,
+    /// via `try_tick`). Interactive demos use this. Headless video export
+    /// must set this to `false` so the flow is driven exclusively by
+    /// deterministic virtual ticks — otherwise real wall-clock time
+    /// fast-forwards the steps relative to the rendered frames.
+    pub real_time: bool,
 }
 
 pub static VIRTUAL_CURSOR: OnceLock<Mutex<Point>> = OnceLock::new();
@@ -172,6 +178,7 @@ impl<Message> AutomationState<Message> {
             virtual_elapsed: Duration::ZERO,
             step_elapsed: Duration::ZERO,
             style,
+            real_time: true,
         }
     }
 
@@ -513,6 +520,7 @@ where
     MapBounds: FnMut(Option<Rectangle>) -> Message + Send + 'static,
 {
     if let Some(automation) = automation_opt
+        && automation.real_time
         && let Some(result) = handle_automation_tick(automation, instant)
     {
         match result {

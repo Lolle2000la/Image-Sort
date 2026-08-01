@@ -159,6 +159,15 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |
 | `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation) |
 
+### Demo video export (parallel rendering)
+
+`media-sort-gui --export` renders all flows × locales in parallel via rayon. To stay race-free:
+
+- **Locale** is passed explicitly: `DemoConfig.locale` → `DemoApp::configure_settings_for_demo()` hook → `settings.general.locale`. Never mutate `LANG`/`LC_ALL` env vars for this — they are process-global.
+- **Fixture dirs** are unique per render (`demo_<pid>_<counter>` in temp), created in `init_demo`.
+- **Automation clock**: `AutomationState.real_time` must be `false` for headless export so flows advance only on deterministic virtual ticks (1 per frame). Interactive demos keep `real_time = true`. If both clocks drive the automation, wall-clock load fast-forwards steps relative to rendered frames.
+- Flow specs reference fixture files by absolute name (e.g. `$DEMO_ROOT/mock 5.png`) — when renumbering/renaming `resources/MockState/`, update `resources/demo_flows/*.json` accordingly.
+
 ### website (Astro + Starlight)
 
 | Directory / File | Purpose |

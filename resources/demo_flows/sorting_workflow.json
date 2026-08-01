@@ -44,7 +44,7 @@
     {
       "delay_ms": 1500,
       "target": { "type": "Widget", "value": { "id": "delete_btn" } },
-      "message": { "Media": { "DeleteEntry": "$DEMO_ROOT/mock 5.jpg" } }
+      "message": { "Media": { "DeleteEntry": "$DEMO_ROOT/mock 5.png" } }
     },
     {
       "delay_ms": 1500,

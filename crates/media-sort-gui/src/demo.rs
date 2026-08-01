@@ -9,9 +9,6 @@ use iced_automation::{AutomationStateTrait, DemoApp};
 use crate::message::{FolderMessage, Message};
 use crate::state::AppState;
 
-use std::sync::Mutex;
-static ACTIVE_SPEC_PATH: Mutex<Option<PathBuf>> = Mutex::new(None);
-
 impl DemoApp for AppState {
     type Message = Message;
     type Settings = media_sort_core::settings::store::SettingsStore;
@@ -22,6 +19,15 @@ impl DemoApp for AppState {
 
     fn default_settings() -> Self::Settings {
         media_sort_core::settings::store::SettingsStore::default()
+    }
+
+    fn configure_settings_for_demo(
+        settings: &mut Self::Settings,
+        config: &iced_automation::DemoConfig,
+    ) {
+        if let Some(locale) = &config.locale {
+            settings.general.locale = Some(locale.clone());
+        }
     }
 
     fn resolve_widget_id(fixture_root: &Path, json_id: &str) -> String {
@@ -37,19 +43,23 @@ impl DemoApp for AppState {
         message.automation_keycap().unwrap_or("Action").to_string()
     }
 
-    fn bootstrap_messages(settings: &Self::Settings, demo_root: &Path) -> Vec<Self::Message> {
+    fn bootstrap_messages(
+        settings: &Self::Settings,
+        demo_root: &Path,
+        config: &iced_automation::DemoConfig,
+    ) -> Vec<Self::Message> {
         let mut msgs = vec![
             Message::Folder(FolderMessage::Open(demo_root.to_path_buf())),
             Message::SettingsLoaded(Box::new(Ok(settings.clone()))),
         ];
 
-        if let Ok(guard) = ACTIVE_SPEC_PATH.lock() {
-            if let Some(spec_path) = guard.as_ref() {
-                let file_name = spec_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if file_name.contains("theme") {
-                    msgs.push(Message::Settings(crate::message::SettingsMessage::Open));
-                }
-            }
+        let file_name = config
+            .spec_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("");
+        if file_name.contains("theme") {
+            msgs.push(Message::Settings(crate::message::SettingsMessage::Open));
         }
 
         msgs
@@ -83,14 +93,13 @@ fn find_spec_path(spec_path: &Path) -> PathBuf {
         if default_flow.exists() {
             return default_flow;
         }
-        if let Ok(entries) = std::fs::read_dir(spec_path) {
-            if let Some(path) = entries
+        if let Ok(entries) = std::fs::read_dir(spec_path)
+            && let Some(path) = entries
                 .flatten()
                 .map(|e| e.path())
                 .find(|p| p.is_file() && p.extension().is_some_and(|ext| ext == "json"))
-            {
-                return path;
-            }
+        {
+            return path;
         }
     }
     spec_path.to_path_buf()
@@ -131,7 +140,9 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                     let file_stem = path
                         .file_stem()
                         .expect("path is filtered to JSON files, so it must have a file stem")
-                        .to_string_lossy();
+                        .to_string_lossy()
+                        .into_owned();
+                    let export_path = export_path.clone();
                     locales.iter().map(move |&locale| {
                         let output_video_path =
                             export_path.join(format!("{}_{}.mp4", file_stem, locale));
@@ -140,7 +151,9 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                 })
                 .collect();
 
-            let results: Vec<Result<(), Box<dyn std::error::Error>>> = combos
+            // Note: rayon requires items to be `Send`, but `Box<dyn std::error::Error>`
+            // is not, so errors are stringified here and re-boxed after collecting.
+            let results: Vec<Result<(), String>> = combos
                 .par_iter()
                 .map(|&(path, ref output_video_path, locale)| {
                     tracing::info!(
@@ -149,12 +162,12 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                         output_video_path
                     );
                     export_demo_video_with_locale(path, output_video_path, locale)
-                        .map_err(|e| e.into())
+                        .map_err(|e| e.to_string())
                 })
                 .collect();
 
             for result in results {
-                result?;
+                result.map_err(|e| -> Box<dyn std::error::Error> { e.into() })?;
             }
             Ok(())
         } else {
@@ -173,10 +186,6 @@ pub fn init(cli: &crate::Cli, state: &mut AppState) -> Option<PathBuf> {
     let spec_path = resolve_workspace_path(&cli.demo_spec);
     let final_spec_path = find_spec_path(&spec_path);
 
-    if let Ok(mut guard) = ACTIVE_SPEC_PATH.lock() {
-        *guard = Some(final_spec_path.clone());
-    }
-
     let demo_root = std::env::temp_dir().join(format!("media_sort_demo_{}", std::process::id()));
     let mock_state_src = resolve_workspace_path("resources/MockState");
 
@@ -190,6 +199,7 @@ pub fn init(cli: &crate::Cli, state: &mut AppState) -> Option<PathBuf> {
         window_width: state.settings.window_position.width as f32,
         window_height: state.settings.window_position.height as f32,
         style: iced_automation::AutomationStyle::default(),
+        locale: None,
     };
 
     let bootstrap = iced_automation::init_demo::<AppState>(&config).expect("failed to init demo");
@@ -214,18 +224,6 @@ pub fn export_demo_video_with_locale(
     let completed = Arc::new(AtomicBool::new(false));
     let mock_state_src = resolve_workspace_path("resources/MockState");
 
-    // Override locale environment for this render.
-    // AppState::new calls detect_locale() which reads LC_ALL / LANG, so setting
-    // these env vars is sufficient to drive the rendered app's language.
-    let prev_lang = std::env::var("LANG").ok();
-    let prev_lc_all = std::env::var("LC_ALL").ok();
-    // SAFETY: This is a single-threaded demo export runner, so no other threads
-    // will concurrently access or mutate the environment variables.
-    unsafe {
-        std::env::set_var("LANG", format!("{}.UTF-8", locale.replace('-', "_")));
-        std::env::set_var("LC_ALL", format!("{}.UTF-8", locale.replace('-', "_")));
-    }
-
     let config = iced_automation::DemoConfig {
         spec_path: json_spec_path.to_path_buf(),
         fixture: Some(iced_automation::FixtureSpec {
@@ -236,12 +234,23 @@ pub fn export_demo_video_with_locale(
         window_width: DEFAULT_WIDTH as f32,
         window_height: DEFAULT_HEIGHT as f32,
         style: iced_automation::AutomationStyle::default(),
+        // The locale is passed explicitly through the settings (via
+        // `configure_settings_for_demo`), which keeps parallel renders
+        // race-free — no process-wide environment mutation needed.
+        locale: Some(locale.to_string()),
     };
 
-    if let Ok(mut guard) = ACTIVE_SPEC_PATH.lock() {
-        *guard = Some(json_spec_path.to_path_buf());
+    let mut bootstrap =
+        iced_automation::init_demo::<AppState>(&config).expect("failed to init demo");
+
+    // Headless export drives the automation with deterministic virtual ticks
+    // (one per rendered frame). The app's real-time tick subscription also
+    // runs inside the emulator, so real-time advancement must be disabled —
+    // otherwise wall-clock time fast-forwards the flow relative to the frames,
+    // and slow parallel renders complete after only a handful of frames.
+    if let Some(automation) = bootstrap.state.automation_mut().as_mut() {
+        automation.real_time = false;
     }
-    let bootstrap = iced_automation::init_demo::<AppState>(&config).expect("failed to init demo");
 
     let completed_clone = completed.clone();
     let headless_app = bootstrap.into_headless_app(
@@ -262,20 +271,6 @@ pub fn export_demo_video_with_locale(
     video_config.extra_fonts = vec![std::borrow::Cow::Borrowed(lucide_icons::LUCIDE_FONT_BYTES)];
 
     let result = iced_automation::export_video(&headless_app, completed, &video_config);
-
-    // Restore locale environment
-    // SAFETY: This is a single-threaded demo export runner, so no other threads
-    // will concurrently access or mutate the environment variables.
-    unsafe {
-        match prev_lc_all {
-            Some(v) => std::env::set_var("LC_ALL", v),
-            None => std::env::remove_var("LC_ALL"),
-        }
-        match prev_lang {
-            Some(v) => std::env::set_var("LANG", v),
-            None => std::env::remove_var("LANG"),
-        }
-    }
 
     result?;
     Ok(())

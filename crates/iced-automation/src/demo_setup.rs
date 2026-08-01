@@ -26,6 +26,10 @@ pub struct DemoConfig {
     pub window_width: f32,
     pub window_height: f32,
     pub style: AutomationStyle,
+    /// Locale to render the demo in (e.g. `"de"`). Interpreted by the
+    /// application's `configure_settings_for_demo` hook; `None` means the
+    /// application's default locale resolution is used.
+    pub locale: Option<String>,
 }
 
 impl Default for DemoConfig {
@@ -37,6 +41,7 @@ impl Default for DemoConfig {
             window_width: 1920.0,
             window_height: 1080.0,
             style: AutomationStyle::default(),
+            locale: None,
         }
     }
 }
@@ -115,6 +120,13 @@ pub trait DemoApp: AutomationStateTrait<Self::Message> + Sized {
     /// Default settings for the application.
     fn default_settings() -> Self::Settings;
 
+    /// Hook to adjust the demo settings before the app state is created,
+    /// e.g. to apply `config.locale`. Called by `init_demo` after
+    /// `default_settings()` and before `new_app_state()` /
+    /// `bootstrap_messages()`. The default implementation leaves the
+    /// settings unchanged.
+    fn configure_settings_for_demo(_settings: &mut Self::Settings, _config: &DemoConfig) {}
+
     /// Resolve a widget ID from the JSON spec into the app's widget ID convention.
     /// Called for each `Widget` target in the JSON flow. `fixture_root` is the
     /// directory where demo media files are staged.
@@ -128,7 +140,11 @@ pub trait DemoApp: AutomationStateTrait<Self::Message> + Sized {
     fn format_keycap(message: &Self::Message) -> String;
 
     /// Startup messages to fire when the demo begins.
-    fn bootstrap_messages(settings: &Self::Settings, demo_root: &Path) -> Vec<Self::Message>;
+    fn bootstrap_messages(
+        settings: &Self::Settings,
+        demo_root: &Path,
+        config: &DemoConfig,
+    ) -> Vec<Self::Message>;
 }
 
 /// Initialise a demo application from a JSON flow spec and optional fixture directory.
@@ -142,7 +158,12 @@ pub fn init_demo<A: DemoApp>(
     let demo_root = match &config.fixture {
         Some(fixture) => {
             let target = fixture.target.clone().unwrap_or_else(|| {
-                std::env::temp_dir().join(format!("demo_{}", std::process::id()))
+                // Unique per call: multiple demos may be initialized in
+                // parallel within the same process (e.g. rayon video export),
+                // and each needs its own fixture directory to mutate.
+                static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                std::env::temp_dir().join(format!("demo_{}_{}", std::process::id(), n))
             });
             std::fs::create_dir_all(&target)?;
             copy_dir_all(&fixture.source, &target)?;
@@ -166,7 +187,8 @@ pub fn init_demo<A: DemoApp>(
         A::format_keycap,
     );
 
-    let settings = A::default_settings();
+    let mut settings = A::default_settings();
+    A::configure_settings_for_demo(&mut settings, config);
     let mut state = A::new_app_state(&settings);
 
     *state.automation_mut() = Some(AutomationState::new(
@@ -177,7 +199,7 @@ pub fn init_demo<A: DemoApp>(
         config.style.clone(),
     ));
 
-    let messages = A::bootstrap_messages(&settings, &demo_root);
+    let messages = A::bootstrap_messages(&settings, &demo_root, config);
     let task = messages.into_iter().fold(iced::Task::none(), |acc, msg| {
         let t: iced::Task<A::Message> = iced::Task::done(msg);
         acc.chain(t)
