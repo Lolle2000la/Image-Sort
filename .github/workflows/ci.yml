@@ -2,12 +2,12 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
   pull_request:
-    branches: [main]
+    branches: [main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
