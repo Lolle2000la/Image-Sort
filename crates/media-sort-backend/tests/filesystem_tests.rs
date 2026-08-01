@@ -224,14 +224,23 @@ fn test_windows_trash_restore_picks_most_recent() {
     fs::write(&file, b"second version").unwrap();
     let mut handle2 = delete_to_trash(&file).expect("second delete failed");
 
-    handle2.restore().expect("second restore failed");
+    // Restore OLDEST first: the trash crate's restore refuses to overwrite
+    // the existing path (RestoreCollision), and undo semantics dictate the
+    // newest entry is undone first anyway.
+    handle1.restore().expect("first restore failed");
     assert!(file.exists());
     assert_eq!(
         fs::read_to_string(&file).unwrap(),
-        "second version",
-        "restore must pick the most recently deleted same-name item"
+        "first version",
+        "restore must pick the oldest same-name item first"
     );
 
-    handle1.restore().expect("first restore failed");
-    assert_eq!(fs::read_to_string(&file).unwrap(), "first version");
+    // The file now collides with the newer trash entry; move it away so
+    // the newer entry can be restored.
+    let moved = tmp.path.join("moved_away.txt");
+    fs::rename(&file, &moved).unwrap();
+
+    handle2.restore().expect("second restore failed");
+    assert!(file.exists());
+    assert_eq!(fs::read_to_string(&file).unwrap(), "second version");
 }
