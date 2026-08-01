@@ -28,7 +28,14 @@ impl fmt::Debug for AudioPlaybackState {
 impl AudioPlaybackState {
     pub fn new() -> Self {
         Self {
+            // In test builds, never open an audio stream: repeatedly
+            // creating and dropping rodio/cpal streams is racy (observed as
+            // STATUS_ACCESS_VIOLATION inside WASAPI teardown on headless
+            // Windows CI runners), and no GUI test exercises audio output.
+            #[cfg(not(test))]
             player: AudioPlayer::new().ok(),
+            #[cfg(test)]
+            player: None,
             playing: false,
             position: 0.0,
             duration: 0.0,
