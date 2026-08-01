@@ -151,7 +151,14 @@ pub struct AutomationState<Message> {
     pub real_time: bool,
 }
 
-pub static VIRTUAL_CURSOR: OnceLock<Mutex<Point>> = OnceLock::new();
+thread_local! {
+    /// Cursor position mirrored from the automation state on each virtual
+    /// tick, read by the headless export loop to drive hover rendering.
+    /// Thread-local on purpose: parallel exports (rayon) each run their whole
+    /// render loop on one worker thread, and a process-global position makes
+    /// hover states flicker as concurrent renders overwrite each other.
+    pub static VIRTUAL_CURSOR: std::cell::RefCell<Point> = const { std::cell::RefCell::new(Point::ORIGIN) };
+}
 
 impl<Message> AutomationState<Message> {
     pub fn new(
@@ -624,11 +631,8 @@ where
             Task::none()
         };
 
-        if let Some(automation) = state.automation()
-            && let Some(cell) = VIRTUAL_CURSOR.get()
-            && let Ok(mut guard) = cell.lock()
-        {
-            *guard = automation.virtual_cursor;
+        if let Some(automation) = state.automation() {
+            VIRTUAL_CURSOR.with(|cell| *cell.borrow_mut() = automation.virtual_cursor);
         }
 
         return Some(Task::batch(vec![bg_task, automation_task]));

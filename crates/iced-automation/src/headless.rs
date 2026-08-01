@@ -195,12 +195,7 @@ where
         .expect("stdin was piped when spawning ffmpeg");
 
     let mut frame_count = 0u64;
-    if let Some(cell) = crate::automation::VIRTUAL_CURSOR.get()
-        && let Ok(mut guard) = cell.lock()
-    {
-        *guard = iced::Point::ORIGIN;
-    }
-    let _ = crate::automation::VIRTUAL_CURSOR.set(std::sync::Mutex::new(iced::Point::ORIGIN));
+    crate::automation::VIRTUAL_CURSOR.with(|cell| *cell.borrow_mut() = iced::Point::ORIGIN);
     let unpadded_row = config.width as usize * 4;
 
     struct DemoClipboard {
@@ -229,13 +224,7 @@ where
         let view = emulator.view(program);
         let theme = emulator.theme(program).unwrap_or(iced::Theme::Dark);
         let cursor = crate::automation::VIRTUAL_CURSOR
-            .get()
-            .and_then(|cell| {
-                cell.lock()
-                    .ok()
-                    .map(|guard| iced::advanced::mouse::Cursor::Available(*guard))
-            })
-            .unwrap_or(iced::advanced::mouse::Cursor::Unavailable);
+            .with(|cell| iced::advanced::mouse::Cursor::Available(*cell.borrow()));
 
         let mut ui = UserInterface::build(
             view,
