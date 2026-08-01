@@ -70,8 +70,20 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
 
         trash::delete(&original_path)
             .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+        // Windows: remember when the delete happened so restore can bind
+        // this handle to the correct trash entry among several same-name
+        // items (time_deleted has second granularity like the shell's).
+        #[cfg(target_os = "windows")]
+        let delete_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
         Ok(Box::new(NativeTrashRestore {
             original_path,
+            #[cfg(target_os = "windows")]
+            delete_time,
             flushed: false,
         }))
     }
@@ -105,6 +117,10 @@ struct NativeTrashRestore {
     original_path: PathBuf,
     #[cfg(target_os = "macos")]
     trash_path: Option<PathBuf>,
+    /// Unix seconds when the delete was performed; used on Windows to bind
+    /// this handle to the correct recycle-bin entry.
+    #[cfg(target_os = "windows")]
+    delete_time: i64,
     flushed: bool,
 }
 
@@ -156,8 +172,10 @@ impl TrashRestoreHandle for NativeTrashRestore {
             // so both matching and the crate's name-based restore would use
             // the wrong file name. Instead match on original_parent plus the
             // extension of the recycle-bin data file ($Rxxxx.ext, which keeps
-            // the true extension), prefer the most recently deleted
-            // candidate, and restore with the true file name patched in.
+            // the true extension), and among same-name candidates pick the
+            // entry whose deletion time is closest to this handle's delete
+            // (correct undo order: newest delete is undone first). Restore
+            // with the true file name patched in.
             let mut candidates: Vec<_> = items
                 .into_iter()
                 .filter(|i| {
@@ -170,7 +188,7 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     parent_matches && id_ext == ext
                 })
                 .collect();
-            candidates.sort_by_key(|i| std::cmp::Reverse(i.time_deleted));
+            candidates.sort_by_key(|i| (i.time_deleted - delete_time).abs());
 
             let Some(mut item) = candidates.into_iter().next() else {
                 return Err(ActionError::RestorationFailed(
