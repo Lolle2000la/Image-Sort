@@ -162,3 +162,17 @@ fn test_delete_to_trash_nonexistent_file() {
     let result = delete_to_trash(Path::new("/nonexistent/trash_test_12345.txt"));
     assert!(result.is_err());
 }
+
+#[test]
+fn test_delete_to_trash_and_restore_roundtrip() {
+    let tmp = TempDir::new("trash_roundtrip");
+    let file = tmp.path.join("roundtrip.txt");
+    fs::write(&file, b"trash roundtrip").unwrap();
+
+    let mut handle = delete_to_trash(&file).expect("delete_to_trash failed");
+    assert!(!file.exists(), "file should be in trash after delete");
+
+    handle.restore().expect("restore failed");
+    assert!(file.exists(), "file should be back after restore");
+    assert_eq!(fs::read_to_string(&file).unwrap(), "trash roundtrip");
+}
