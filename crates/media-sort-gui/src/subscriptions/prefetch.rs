@@ -126,6 +126,7 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
 
     if media_type == MediaType::Audio {
         return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
+            .map(|d| d.into_parts())
             .map_err(|e| format!("Audio cover thumbnail error: {e}"));
     }
 
@@ -133,7 +134,7 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         // ffmpeg is bundled in release packages and is ~2.4x faster;
         // mpv is the fallback (e.g. Linux without ffmpeg installed).
         if let Ok(result) = media_sort_backend::media::ffmpeg_pipe::extract_frame(path, 128, 128) {
-            return Ok(result);
+            return Ok(result.into_parts());
         }
 
         let (response_tx, response_rx) = std::sync::mpsc::channel();
@@ -154,6 +155,7 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
     }
 
     media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
+        .map(|d| d.into_parts())
         .map_err(|e| format!("Image decoding failed: {e}"))
 }
 

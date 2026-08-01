@@ -46,13 +46,12 @@ pub fn decode_image_dimensions(path: &Path) -> Result<(u32, u32), image::ImageEr
 }
 
 /// Decode `path` to fit inside the `max_width` x `max_height` box (preserving
-/// aspect ratio), using the per-format optimized pipeline. Returns
-/// `(width, height, rgba8)`.
+/// aspect ratio), using the per-format optimized pipeline.
 pub fn load_preview(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<super::DecodedImage, image::ImageError> {
     super::format_pipeline::process_image(path, max_width, max_height)
 }
 

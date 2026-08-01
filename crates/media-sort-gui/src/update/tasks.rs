@@ -387,6 +387,7 @@ pub fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<
             // widget anyway; ~97% less memory per cached preview).
             let res = tokio::task::spawn_blocking(move || {
                 media_sort_backend::media::image_decoder::load_preview(&path_clone, 1920, 1440)
+                    .map(|d| d.into_parts())
                     .map_err(|e| e.to_string())
             })
             .await

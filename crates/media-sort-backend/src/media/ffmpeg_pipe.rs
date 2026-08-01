@@ -45,7 +45,7 @@ pub fn find_ffmpeg() -> Option<PathBuf> {
 /// Extract the first video frame, scaled to fit max_w×max_h (aspect preserved),
 /// as RGBA. Uses `-vf scale=W:H:force_original_aspect_ratio=decrease,setsar=1`
 /// piped as PNG (`-f image2pipe -vcodec png -`), decoded via the image crate.
-pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<(u32, u32, Vec<u8>), String> {
+pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::DecodedImage, String> {
     let ffmpeg = find_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
 
     let vf = format!(
@@ -94,5 +94,5 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<(u32, u32, V
 
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
-    Ok((w, h, rgba.into_raw()))
+    Ok(super::DecodedImage::new(w, h, rgba.into_raw()))
 }

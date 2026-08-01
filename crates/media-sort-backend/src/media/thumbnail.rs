@@ -21,7 +21,7 @@ pub fn generate_thumbnail(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<super::DecodedImage, image::ImageError> {
     super::format_pipeline::process_image(path, max_width, max_height)
 }
 

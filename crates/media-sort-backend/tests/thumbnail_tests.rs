@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use id3::TagLike;
 use image::ImageFormat;
+use media_sort_backend::media::DecodedImage;
 use media_sort_backend::media::image_decoder::load_preview;
 use media_sort_backend::media::thumbnail;
 
@@ -54,12 +55,12 @@ fn assert_aspect(src_w: u32, src_h: u32, w: u32, h: u32) {
     );
 }
 
-fn assert_thumbnail(
-    src_w: u32,
-    src_h: u32,
-    result: Result<(u32, u32, Vec<u8>), image::ImageError>,
-) {
-    let (w, h, rgba) = result.unwrap();
+fn assert_thumbnail(src_w: u32, src_h: u32, result: Result<DecodedImage, image::ImageError>) {
+    let DecodedImage {
+        width: w,
+        height: h,
+        rgba,
+    } = result.unwrap();
     assert!(w > 0, "width must be > 0");
     assert!(h > 0, "height must be > 0");
     assert!(w <= 128, "thumbnail width {w} exceeds 128");
@@ -73,8 +74,12 @@ fn assert_thumbnail(
     assert_aspect(src_w, src_h, w, h);
 }
 
-fn assert_preview(src_w: u32, src_h: u32, result: Result<(u32, u32, Vec<u8>), image::ImageError>) {
-    let (w, h, rgba) = result.unwrap();
+fn assert_preview(src_w: u32, src_h: u32, result: Result<DecodedImage, image::ImageError>) {
+    let DecodedImage {
+        width: w,
+        height: h,
+        rgba,
+    } = result.unwrap();
     assert!(w > 0 && h > 0);
     assert!(w <= 1920, "preview width {w} exceeds 1920");
     assert!(h <= 1440, "preview height {h} exceeds 1440");
@@ -143,7 +148,9 @@ fn test_thumbnail_exif_orientation() {
     oriented_jpeg.extend_from_slice(&jpeg_bytes[2..]); // rest of JPEG
     std::fs::write(&path, &oriented_jpeg).unwrap();
 
-    let (w, h, rgba) = thumbnail::generate_thumbnail(&path, 128, 128).unwrap();
+    let (w, h, rgba) = thumbnail::generate_thumbnail(&path, 128, 128)
+        .unwrap()
+        .into_parts();
     assert!(
         h > w,
         "Expected height {h} > width {w} due to EXIF orientation 6 (90 deg CW)"
@@ -165,7 +172,7 @@ fn test_preview_programmatic_formats() {
 #[test]
 fn test_preview_large_jpeg_capped() {
     let path = mock_state_dir().join("mock 1.jpg");
-    let (w, h, rgba) = load_preview(&path, 1920, 1440).unwrap();
+    let (w, h, rgba) = load_preview(&path, 1920, 1440).unwrap().into_parts();
     assert!(w <= 1920 && h <= 1440, "preview not capped to box: {w}x{h}");
     assert!(
         w < 5260,
@@ -284,7 +291,9 @@ fn test_extract_video_frame() {
 
     let path = mock_state_dir().join("mock 3.mp4");
     let result = ffmpeg_pipe::extract_frame(&path, 128, 128);
-    let (w, h, rgba) = result.expect("extract_frame should succeed for mock video");
+    let (w, h, rgba) = result
+        .expect("extract_frame should succeed for mock video")
+        .into_parts();
 
     assert!(w > 0 && w <= 128, "width {w} out of range");
     assert!(h > 0 && h <= 128, "height {h} out of range");

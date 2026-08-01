@@ -20,6 +20,7 @@ use std::path::Path;
 use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer};
 
+use super::DecodedImage;
 use super::thumbnail::calculate_thumbnail_dimensions;
 
 fn extension_lower(path: &Path) -> String {
@@ -47,12 +48,12 @@ fn io_image_error(err: std::io::Error) -> image::ImageError {
 }
 
 /// Decode `path` to fit inside the `max_width` x `max_height` box, preserving
-/// aspect ratio. Returns `(width, height, rgba8)`.
+/// aspect ratio.
 pub(crate) fn process_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let ext = extension_lower(path);
 
     if is_audio_extension(&ext) {
@@ -71,7 +72,7 @@ fn audio_cover_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let img = match super::thumbnail::extract_audio_cover(path) {
         Some(bytes) => image::load_from_memory(&bytes)?,
         None => super::image_decoder::load_image(path)?,
@@ -83,7 +84,7 @@ fn decode_fir_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let img = image::ImageReader::open(path)?
         .with_guessed_format()?
         .decode()?;
@@ -94,38 +95,44 @@ fn resize_with_fir(
     img_rgba: &image::RgbaImage,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let (src_w, src_h) = img_rgba.dimensions();
     let (dst_w, dst_h) = calculate_thumbnail_dimensions(src_w, src_h, max_width, max_height);
 
     if dst_w == 0 || dst_h == 0 {
-        return Ok((src_w, src_h, img_rgba.as_raw().clone()));
+        return Ok(DecodedImage::new(src_w, src_h, img_rgba.as_raw().clone()));
     }
 
     let resized =
         resize_rgba(img_rgba.as_raw(), src_w, src_h, dst_w, dst_h).map_err(to_image_error)?;
-    Ok((dst_w, dst_h, resized))
+    Ok(DecodedImage::new(dst_w, dst_h, resized))
 }
 
 fn jpeg_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let bytes = std::fs::read(path).map_err(io_image_error)?;
     let orientation = parse_exif_orientation_from_bytes(&bytes);
-    let (src_w, src_h, decoded, final_w, final_h) =
-        decode_jpeg_turbojpeg_scaled(&bytes, orientation, max_width, max_height)
-            .map_err(to_image_error)?;
-    resize_and_orient_to(&decoded, src_w, src_h, orientation, final_w, final_h)
-        .map_err(to_image_error)
+    let scaled = decode_jpeg_turbojpeg_scaled(&bytes, orientation, max_width, max_height)
+        .map_err(to_image_error)?;
+    resize_and_orient_to(
+        &scaled.image.rgba,
+        scaled.image.width,
+        scaled.image.height,
+        orientation,
+        scaled.target_width,
+        scaled.target_height,
+    )
+    .map_err(to_image_error)
 }
 
 fn avif_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     // Native decode via dav1d (`avif-native` feature) is in-process and fast.
     // The ffmpeg pipe only serves as a fallback for files the native decoder
     // rejects.
@@ -139,11 +146,11 @@ fn fallback_image(
     path: &Path,
     max_width: u32,
     max_height: u32,
-) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
+) -> Result<DecodedImage, image::ImageError> {
     let img = super::image_decoder::load_image(path)?;
     let thumbnail = img.thumbnail(max_width, max_height).to_rgba8();
     let (w, h) = thumbnail.dimensions();
-    Ok((w, h, thumbnail.into_raw()))
+    Ok(DecodedImage::new(w, h, thumbnail.into_raw()))
 }
 
 // ── EXIF orientation (ported from benchmarks variants.rs) ─────────────
@@ -294,9 +301,9 @@ fn resize_and_orient_to(
     orientation: Option<u32>,
     final_w: u32,
     final_h: u32,
-) -> Result<(u32, u32, Vec<u8>), String> {
+) -> Result<DecodedImage, String> {
     if final_w == 0 || final_h == 0 {
-        return Ok((src_w, src_h, src_rgba.to_vec()));
+        return Ok(DecodedImage::new(src_w, src_h, src_rgba.to_vec()));
     }
 
     let (resize_w, resize_h) = if let Some(o) = orientation
@@ -311,9 +318,9 @@ fn resize_and_orient_to(
 
     if let Some(o) = orientation {
         let (fw, fh) = apply_orientation_to_rgba(resize_w, resize_h, &mut resized, o);
-        Ok((fw, fh, resized))
+        Ok(DecodedImage::new(fw, fh, resized))
     } else {
-        Ok((resize_w, resize_h, resized))
+        Ok(DecodedImage::new(resize_w, resize_h, resized))
     }
 }
 
@@ -365,12 +372,20 @@ fn choose_turbojpeg_scaling_factor(
     turbojpeg::ScalingFactor::ONE
 }
 
+/// Intermediate scaled JPEG decode plus the final output dims computed
+/// from the TRUE header dims (see resize_and_orient_to docs).
+struct ScaledDecode {
+    image: DecodedImage,
+    target_width: u32,
+    target_height: u32,
+}
+
 fn decode_jpeg_turbojpeg_scaled(
     bytes: &[u8],
     orientation: Option<u32>,
     max_w: u32,
     max_h: u32,
-) -> Result<(u32, u32, Vec<u8>, u32, u32), String> {
+) -> Result<ScaledDecode, String> {
     let mut decompressor =
         turbojpeg::Decompressor::new().map_err(|e| format!("turbojpeg init: {e}"))?;
     let header = decompressor
@@ -406,18 +421,16 @@ fn decode_jpeg_turbojpeg_scaled(
     decompressor
         .decompress(bytes, image.as_deref_mut())
         .map_err(|e| format!("turbojpeg decompress: {e}"))?;
-    Ok((
-        scaled.width as u32,
-        scaled.height as u32,
-        image.pixels,
-        final_w,
-        final_h,
-    ))
+    Ok(ScaledDecode {
+        image: DecodedImage::new(scaled.width as u32, scaled.height as u32, image.pixels),
+        target_width: final_w,
+        target_height: final_h,
+    })
 }
 
 // ── ffmpeg subprocess pipe (delegates to shared ffmpeg_pipe module) ──
 
-fn ffmpeg_pipe(path: &Path, max_w: u32, max_h: u32) -> Result<(u32, u32, Vec<u8>), String> {
+fn ffmpeg_pipe(path: &Path, max_w: u32, max_h: u32) -> Result<DecodedImage, String> {
     super::ffmpeg_pipe::extract_frame(path, max_w, max_h)
 }
 
