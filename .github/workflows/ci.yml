@@ -91,16 +91,16 @@ jobs:
       - name: Run Clippy Lints
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
         run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Run Workspace Tests
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        run: cargo test --workspace --all-targets
+        # --tests, not --all-targets: bench targets are harness=false, so
+        # "testing" them would execute the full divan benchmark suite.
+        run: cargo test --workspace --tests
 
   verify-contributors:
     name: Verify Contributors List

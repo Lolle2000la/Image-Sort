@@ -111,7 +111,6 @@ jobs:
       - name: Build Standalone Binary
         env:
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
-          LIB: ${{ startsWith(matrix.os, 'windows') && 'libs' || '' }}
           RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
         run: |
           rustup target add ${{ matrix.target }}

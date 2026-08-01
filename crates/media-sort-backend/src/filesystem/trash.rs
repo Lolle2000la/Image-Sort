@@ -123,11 +123,10 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     ));
                 }
                 if let Some(parent) = self.original_path.parent() {
-                    std::fs::create_dir_all(parent).map_err(|e| ActionError::Io(e))?;
+                    std::fs::create_dir_all(parent).map_err(ActionError::Io)?;
                 }
 
-                std::fs::rename(trash_item_path, &self.original_path)
-                    .map_err(|e| ActionError::Io(e))?;
+                std::fs::rename(trash_item_path, &self.original_path).map_err(ActionError::Io)?;
 
                 self.flushed = true;
                 Ok(())
