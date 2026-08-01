@@ -82,6 +82,10 @@ jobs:
         run: |
           pip install meson ninja
           choco install -y nasm
+          # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
+          # when pkg-config is absent (always on Windows runners); force
+          # the vendored meson build instead.
+          echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: matrix.os == 'windows-latest'
