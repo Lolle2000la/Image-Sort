@@ -131,12 +131,11 @@ pub fn handle_settings_loaded(
             state.settings = settings;
             #[cfg(target_os = "windows")]
             {
-                if state.settings.general.integration_with_windows {
-                    if let Ok(exe) = std::env::current_exe()
-                        && let Some(exe_str) = exe.to_str()
-                    {
-                        let _ = media_sort_backend::platform::windows_shell::register(exe_str);
-                    }
+                if state.settings.general.integration_with_windows
+                    && let Ok(exe) = std::env::current_exe()
+                    && let Some(exe_str) = exe.to_str()
+                {
+                    let _ = media_sort_backend::platform::windows_shell::register(exe_str);
                 }
             }
             Task::none()
