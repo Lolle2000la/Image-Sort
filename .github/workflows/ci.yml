@@ -108,7 +108,18 @@ jobs:
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
         # --tests, not --all-targets: bench targets are harness=false, so
         # "testing" them would execute the full divan benchmark suite.
-        run: cargo test --workspace --tests
+        shell: bash
+        run: |
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cargo test --workspace --tests --exclude media-sort-gui
+            # GUI tests serially + nocapture: native libs they touch
+            # (trash-crate COM, rodio/WASAPI) are suspects in a parallel
+            # access-violation crash on headless runners; if it still
+            # crashes, nocapture identifies the exact test.
+            cargo test -p media-sort-gui --tests -- --test-threads=1 --nocapture
+          else
+            cargo test --workspace --tests
+          fi
 
   verify-contributors:
     name: Verify Contributors List
