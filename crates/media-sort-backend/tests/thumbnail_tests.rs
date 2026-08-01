@@ -14,7 +14,16 @@ fn mock_state_dir() -> PathBuf {
 }
 
 fn temp_dir(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("mediasort_{name}_{}", std::process::id()));
+    // Unique per call: tests in this binary run in parallel threads of the
+    // SAME process, and per-extension dirs shared between the thumbnail and
+    // preview tests race (one test's remove_dir_all deletes the other's
+    // files mid-assert -> sporadic NotFound).
+    static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let dir = std::env::temp_dir().join(format!(
+        "mediasort_{name}_{}_{}",
+        std::process::id(),
+        COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
 }

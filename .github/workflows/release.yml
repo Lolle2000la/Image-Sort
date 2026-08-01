@@ -107,6 +107,7 @@ jobs:
           if [ "${{ matrix.target }}" != "aarch64-pc-windows-msvc" ]; then
             choco install -y nasm
           fi
+          choco install -y pkgconfiglite
           # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
           # when pkg-config is absent (always on Windows runners); force
           # the vendored meson build instead.

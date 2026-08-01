@@ -81,7 +81,7 @@ jobs:
         shell: bash
         run: |
           pip install meson ninja
-          choco install -y nasm
+          choco install -y nasm pkgconfiglite
           # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
           # when pkg-config is absent (always on Windows runners); force
           # the vendored meson build instead.

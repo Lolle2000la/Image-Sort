@@ -524,7 +524,12 @@ fn test_rename_entry_success() {
     assert_eq!(state.history.done_len(), 1);
     assert!(state.history.last_done_name(&state.l10n).is_some());
     assert_eq!(state.media_grid.entries.len(), 1);
-    assert_eq!(state.media_grid.entries[0].path, renamed);
+    // Canonicalize: on macOS temp_dir is /var/... (symlink to /private/var)
+    // while the app stores canonicalized paths.
+    assert_eq!(
+        state.media_grid.entries[0].path,
+        renamed.canonicalize().unwrap()
+    );
     assert_eq!(state.media_grid.entries[0].file_name, "renamed_image.jpg");
 
     std::fs::remove_dir_all(&root).ok();
