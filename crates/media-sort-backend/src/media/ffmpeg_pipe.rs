@@ -68,13 +68,25 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<(u32, u32, V
             "-",
         ])
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
+        .stderr(std::process::Stdio::piped())
         .output()
         .map_err(|e| format!("ffmpeg spawn: {e}"))?;
 
+    let stderr_tail = || {
+        let s = String::from_utf8_lossy(&output.stderr);
+        s.trim().chars().take(500).collect::<String>()
+    };
+    if !output.status.success() {
+        return Err(format!(
+            "ffmpeg exited with {}: {}",
+            output.status,
+            stderr_tail()
+        ));
+    }
+
     let bytes = output.stdout;
     if bytes.is_empty() {
-        return Err("ffmpeg produced empty output".to_string());
+        return Err(format!("ffmpeg produced empty output: {}", stderr_tail()));
     }
 
     let img = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png)

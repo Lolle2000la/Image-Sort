@@ -114,9 +114,10 @@ fn jpeg_image(
 ) -> Result<(u32, u32, Vec<u8>), image::ImageError> {
     let bytes = std::fs::read(path).map_err(io_image_error)?;
     let orientation = parse_exif_orientation_from_bytes(&bytes);
-    let (src_w, src_h, decoded) =
-        decode_jpeg_turbojpeg_scaled(&bytes, max_width).map_err(to_image_error)?;
-    resize_and_orient(&decoded, src_w, src_h, orientation, max_width, max_height)
+    let (src_w, src_h, decoded, final_w, final_h) =
+        decode_jpeg_turbojpeg_scaled(&bytes, orientation, max_width, max_height)
+            .map_err(to_image_error)?;
+    resize_and_orient_to(&decoded, src_w, src_h, orientation, final_w, final_h)
         .map_err(to_image_error)
 }
 
@@ -219,9 +220,15 @@ fn flip_vertical_inplace(w: u32, h: u32, rgba: &mut [u8]) {
 }
 
 fn rotate_180_inplace(_w: u32, _h: u32, rgba: &mut [u8]) {
-    let len = rgba.len();
-    for i in 0..len / 2 {
-        rgba.swap(i, len - 1 - i);
+    // Swap 4-byte PIXEL groups, not individual bytes: reversing the raw
+    // buffer would also reverse the channel order inside each pixel
+    // (RGBA -> ABGR).
+    let pixels = rgba.len() / 4;
+    for i in 0..pixels / 2 {
+        let j = pixels - 1 - i;
+        for c in 0..4 {
+            rgba.swap(i * 4 + c, j * 4 + c);
+        }
     }
 }
 
@@ -275,17 +282,19 @@ fn oriented_src_dims(src_w: u32, src_h: u32, orientation: Option<u32>) -> (u32, 
     }
 }
 
-fn resize_and_orient(
+/// Resizes to precomputed final dims (orientation applied afterwards).
+/// The final dims must come from the TRUE source dims: DCT-scaled decodes
+/// round each axis independently, so recomputing the target box from the
+/// decoded (already scaled) dims distorts extreme aspect ratios
+/// (1000x10 -> 1/8 decode 125x2 -> (100,2) instead of (100,1)).
+fn resize_and_orient_to(
     src_rgba: &[u8],
     src_w: u32,
     src_h: u32,
     orientation: Option<u32>,
-    max_w: u32,
-    max_h: u32,
+    final_w: u32,
+    final_h: u32,
 ) -> Result<(u32, u32, Vec<u8>), String> {
-    let (eff_w, eff_h) = oriented_src_dims(src_w, src_h, orientation);
-    let (final_w, final_h) = calculate_thumbnail_dimensions(eff_w, eff_h, max_w, max_h);
-
     if final_w == 0 || final_h == 0 {
         return Ok((src_w, src_h, src_rgba.to_vec()));
     }
@@ -337,16 +346,19 @@ fn resize_rgba(
 fn choose_turbojpeg_scaling_factor(
     width: usize,
     height: usize,
-    target_min: u32,
+    need_w: usize,
+    need_h: usize,
 ) -> turbojpeg::ScalingFactor {
-    let t = target_min as usize;
+    // Smallest decode that still covers the size the image will be resized
+    // to, per axis (never upscale afterwards).
     let candidates = [
         turbojpeg::ScalingFactor::ONE_EIGHTH,
+        turbojpeg::ScalingFactor::ONE_QUARTER,
         turbojpeg::ScalingFactor::ONE_HALF,
         turbojpeg::ScalingFactor::ONE,
     ];
     for &factor in &candidates {
-        if factor.scale(width) >= t && factor.scale(height) >= t {
+        if factor.scale(width) >= need_w && factor.scale(height) >= need_h {
             return factor;
         }
     }
@@ -355,14 +367,30 @@ fn choose_turbojpeg_scaling_factor(
 
 fn decode_jpeg_turbojpeg_scaled(
     bytes: &[u8],
-    target_min: u32,
-) -> Result<(u32, u32, Vec<u8>), String> {
+    orientation: Option<u32>,
+    max_w: u32,
+    max_h: u32,
+) -> Result<(u32, u32, Vec<u8>, u32, u32), String> {
     let mut decompressor =
         turbojpeg::Decompressor::new().map_err(|e| format!("turbojpeg init: {e}"))?;
     let header = decompressor
         .read_header(bytes)
         .map_err(|e| format!("turbojpeg header: {e}"))?;
-    let factor = choose_turbojpeg_scaling_factor(header.width, header.height, target_min);
+    // Required decode resolution and final output dims, both computed from
+    // the TRUE header dims (not the rounded DCT-scaled decode dims).
+    let (eff_w, eff_h) = oriented_src_dims(header.width as u32, header.height as u32, orientation);
+    let (final_w, final_h) = calculate_thumbnail_dimensions(eff_w, eff_h, max_w, max_h);
+    let (need_w, need_h) = if orientation.is_some_and(is_orientation_swap) {
+        (final_h, final_w)
+    } else {
+        (final_w, final_h)
+    };
+    let factor = choose_turbojpeg_scaling_factor(
+        header.width,
+        header.height,
+        need_w.max(1) as usize,
+        need_h.max(1) as usize,
+    );
     let scaled = header.scaled(factor);
     decompressor
         .set_scaling_factor(factor)
@@ -378,11 +406,80 @@ fn decode_jpeg_turbojpeg_scaled(
     decompressor
         .decompress(bytes, image.as_deref_mut())
         .map_err(|e| format!("turbojpeg decompress: {e}"))?;
-    Ok((scaled.width as u32, scaled.height as u32, image.pixels))
+    Ok((
+        scaled.width as u32,
+        scaled.height as u32,
+        image.pixels,
+        final_w,
+        final_h,
+    ))
 }
 
 // ── ffmpeg subprocess pipe (delegates to shared ffmpeg_pipe module) ──
 
 fn ffmpeg_pipe(path: &Path, max_w: u32, max_h: u32) -> Result<(u32, u32, Vec<u8>), String> {
     super::ffmpeg_pipe::extract_frame(path, max_w, max_h)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rotate_180_swaps_pixels_not_channels() {
+        // Two pixels with distinct channels: byte-level reversal would turn
+        // RGBA into ABGR; pixel-level reversal must keep channels intact.
+        let mut rgba = vec![1, 2, 3, 4, 10, 20, 30, 40];
+        rotate_180_inplace(2, 1, &mut rgba);
+        assert_eq!(rgba, vec![10, 20, 30, 40, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn flip_horizontal_keeps_channels() {
+        let mut rgba = vec![1, 2, 3, 4, 10, 20, 30, 40];
+        flip_horizontal_inplace(2, 1, &mut rgba);
+        assert_eq!(rgba, vec![10, 20, 30, 40, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn flip_vertical_keeps_channels() {
+        let mut rgba = vec![1, 2, 3, 4, 10, 20, 30, 40];
+        flip_vertical_inplace(1, 2, &mut rgba);
+        assert_eq!(rgba, vec![10, 20, 30, 40, 1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn scaling_factor_covers_needed_dims_per_axis() {
+        // Preview case from review: 4000x3000 into a 1920x1440 box needs
+        // 1920x1440 output; 1/2 decode (2000x1500) covers it per axis and
+        // must not be rejected by a single min-dimension threshold.
+        let f = choose_turbojpeg_scaling_factor(4000, 3000, 1920, 1440);
+        assert_eq!(f, turbojpeg::ScalingFactor::ONE_HALF);
+
+        // Thumbnail case: 1/8 of 5260x3511 = 658x439 covers 128x86.
+        let f = choose_turbojpeg_scaling_factor(5260, 3511, 128, 86);
+        assert_eq!(f, turbojpeg::ScalingFactor::ONE_EIGHTH);
+
+        // Quarter slot: 1/8 would not cover 800x600 but 1/4 does.
+        let f = choose_turbojpeg_scaling_factor(4000, 3000, 800, 600);
+        assert_eq!(f, turbojpeg::ScalingFactor::ONE_QUARTER);
+
+        // Full decode when nothing smaller covers the target.
+        let f = choose_turbojpeg_scaling_factor(4000, 3000, 3900, 2900);
+        assert_eq!(f, turbojpeg::ScalingFactor::ONE);
+    }
+
+    #[test]
+    fn scaling_needs_account_for_orientation_swap() {
+        // 3000x4000 (portrait stored) with orientation 6 -> effective
+        // 4000x3000 landscape; into 1920x1440 box the needed stored dims are
+        // 1440x1920 (swapped back), so 1/2 decode (1500x2000) suffices.
+        let (eff_w, eff_h) = oriented_src_dims(3000, 4000, Some(6));
+        assert_eq!((eff_w, eff_h), (4000, 3000));
+        let (final_w, final_h) = calculate_thumbnail_dimensions(eff_w, eff_h, 1920, 1440);
+        assert_eq!((final_w, final_h), (1920, 1440));
+        let (need_w, need_h) = (final_h, final_w); // swapped back
+        let f = choose_turbojpeg_scaling_factor(3000, 4000, need_w as usize, need_h as usize);
+        assert_eq!(f, turbojpeg::ScalingFactor::ONE_HALF);
+    }
 }

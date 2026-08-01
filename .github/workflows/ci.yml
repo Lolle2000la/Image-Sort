@@ -75,6 +75,8 @@ jobs:
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
+          # Test binaries link libmpv-2.dll at load time; make it resolvable.
+          echo "$PWD/libs" >> "$GITHUB_PATH"
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: matrix.os == 'windows-latest'
