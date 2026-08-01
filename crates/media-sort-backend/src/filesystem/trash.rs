@@ -114,14 +114,11 @@ impl TrashRestoreHandle for NativeTrashRestore {
             return Err(ActionError::RestorationFailed("already flushed".into()));
         }
 
-        #[cfg(any(
-            target_os = "windows",
-            all(
-                unix,
-                not(target_os = "macos"),
-                not(target_os = "ios"),
-                not(target_os = "android")
-            )
+        #[cfg(all(
+            unix,
+            not(target_os = "macos"),
+            not(target_os = "ios"),
+            not(target_os = "android")
         ))]
         {
             let items = trash::os_limited::list()
@@ -129,19 +126,60 @@ impl TrashRestoreHandle for NativeTrashRestore {
 
             let item = items
                 .into_iter()
-                .find(|i| {
-                    #[cfg(target_os = "windows")]
-                    {
-                        windows_trash_paths_match(&i.original_path(), &self.original_path)
-                    }
-                    #[cfg(not(target_os = "windows"))]
-                    {
-                        i.original_path() == self.original_path
-                    }
-                })
+                .find(|i| i.original_path() == self.original_path)
                 .ok_or_else(|| {
                     ActionError::RestorationFailed("item not found in system trash".into())
                 })?;
+
+            trash::os_limited::restore_all([item])
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+            self.flushed = true;
+            Ok(())
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let items = trash::os_limited::list()
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+            let parent = self.original_path.parent();
+            let ext = self
+                .original_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.to_lowercase());
+
+            // On Windows, TrashItem::original_path() is unreliable: the
+            // shell display name (SIGDN_PARENTRELATIVE) drops the extension
+            // for known file types (Explorer's "hide extensions" setting),
+            // so both matching and the crate's name-based restore would use
+            // the wrong file name. Instead match on original_parent plus the
+            // extension of the recycle-bin data file ($Rxxxx.ext, which keeps
+            // the true extension), prefer the most recently deleted
+            // candidate, and restore with the true file name patched in.
+            let mut candidates: Vec<_> = items
+                .into_iter()
+                .filter(|i| {
+                    let parent_matches =
+                        parent.is_some_and(|p| windows_trash_paths_match(&i.original_parent, p));
+                    let id_ext = PathBuf::from(&i.id)
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(|e| e.to_lowercase());
+                    parent_matches && id_ext == ext
+                })
+                .collect();
+            candidates.sort_by_key(|i| std::cmp::Reverse(i.time_deleted));
+
+            let Some(mut item) = candidates.into_iter().next() else {
+                return Err(ActionError::RestorationFailed(
+                    "item not found in system trash".into(),
+                ));
+            };
+            if let Some(name) = self.original_path.file_name() {
+                item.name = name.to_os_string();
+            }
 
             trash::os_limited::restore_all([item])
                 .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
