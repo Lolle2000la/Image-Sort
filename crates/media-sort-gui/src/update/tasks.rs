@@ -383,14 +383,10 @@ pub fn load_full_image(path: std::path::PathBuf, media_type: MediaType) -> Task<
     Task::perform(
         async move {
             let path_clone = path.clone();
+            // Preview is capped at 1920x1440 (no zoom UI exists; iced scales the
+            // widget anyway; ~97% less memory per cached preview).
             let res = tokio::task::spawn_blocking(move || {
-                media_sort_backend::media::image_decoder::load_image(&path_clone)
-                    .map(|img| {
-                        use image::GenericImageView;
-                        let (w, h) = img.dimensions();
-                        let rgba = img.to_rgba8().into_raw();
-                        (w, h, rgba)
-                    })
+                media_sort_backend::media::image_decoder::load_preview(&path_clone, 1920, 1440)
                     .map_err(|e| e.to_string())
             })
             .await

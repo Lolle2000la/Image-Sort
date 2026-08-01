@@ -1,0 +1,44 @@
+[package]
+name = "benchmarks"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+media-sort-backend = { path = "../media-sort-backend" }
+image.workspace = true
+fast_image_resize.workspace = true
+zune-jpeg = "0.5"
+zune-core = "0.5"
+libmpv-sys = "3.1.0"
+turbojpeg = "1.5"
+kamadak-exif.workspace = true
+webp = "0.3"
+bytemuck = "1"
+ico = "0.5"
+
+[dev-dependencies]
+divan = "0.1"
+rayon.workspace = true
+
+[[bench]]
+name = "image_thumbnails"
+harness = false
+
+[[bench]]
+name = "preview"
+harness = false
+
+[[bench]]
+name = "video_thumbnails"
+harness = false
+
+[[bench]]
+name = "format_thumbnails"
+harness = false
+
+[[bench]]
+name = "format_previews"
+harness = false
