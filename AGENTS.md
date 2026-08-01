@@ -8,6 +8,10 @@ cargo test --workspace
 cargo fmt --all --
 cargo clippy --workspace --all-targets -- -D warnings
 
+# Benchmarks (divan; baseline vs optimized thumbnail/preview variants)
+cargo bench -p benchmarks                          # all benches
+cargo bench -p benchmarks --bench image_thumbnails # single bench file
+
 # Documentation Website (Astro / Node.js 24 LTS)
 cd website
 npm ci
@@ -15,7 +19,7 @@ npm run render-demos  # Renders all demo flows to website/public/demos/
 npm run build
 ```
 
-Clang is required (libmpv-sys needs `libclang`).
+Clang is required (libmpv-sys needs `libclang`). `cmake` + `nasm` (x86/x86_64 only) are required to build the vendored libjpeg-turbo (static, via `turbojpeg-sys`). AVIF decode uses dav1d (`avif-native` image feature): on Linux/macOS install the system library (`libdav1d-dev` / `brew install dav1d`, found via pkg-config); if not found it falls back to a vendored meson+ninja source build (this is the path used on Windows CI).
 
 ## Pre-commit hooks
 
@@ -23,13 +27,15 @@ Hooks run `cargo fmt --all --` and `cargo clippy --fix --allow-dirty --allow-sta
 
 ## Workspace layout
 
-Four crates in `crates/` with strict dependency order:
+Four app crates in `crates/` with strict dependency order, plus a benchmark crate:
 
 ```
 media-sort-gui       (iced 0.14, winit, wgpu — the app binary)
   ├─ iced-automation     (generic iced app automation & video rendering)
   └─ media-sort-backend  (filesystem, media decoding, libmpv)
        └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
+
+benchmarks           (divan benches for thumbnail/preview pipelines, see below)
 
 website/             (Astro, Starlight docs template, React components)
 ```
@@ -130,9 +136,10 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `filesystem/trash.rs` | Delete-to-trash (wrapping `platform/trash.rs`) |
 | `filesystem/watcher.rs` | `notify` + `notify-debouncer-mini` filesystem change events |
 | `media/mpv_context.rs` | `MpvContext`, `VideoWorker` thread, `VideoCommand`/`VideoEvent` channel protocol |
-| `media/image_decoder.rs` | Full-resolution image loading via `image` crate |
+| `media/format_pipeline.rs` | Per-format thumbnail/preview dispatch (private, shared by thumbnail.rs + image_decoder.rs) |
+| `media/image_decoder.rs` | Full-resolution image loading via `image` crate; `load_preview()` (capped preview decode) |
 | `media/audio_decoder.rs` | `AudioPlayer` using `rodio` output + `symphonia` decoding |
-| `media/thumbnail.rs` | Thumbnail generation |
+| `media/thumbnail.rs` | Thumbnail generation (dispatches into format_pipeline) |
 | `metadata/image_meta.rs` | EXIF extraction via `kamadak-exif` |
 | `metadata/audio_meta.rs` | Audio tags via `id3`/`metaflac`/`mp4ameta` |
 | `metadata/video_meta.rs` | Video metadata extraction |
@@ -166,6 +173,7 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 - **Locale** is passed explicitly: `DemoConfig.locale` → `DemoApp::configure_settings_for_demo()` hook → `settings.general.locale`. Never mutate `LANG`/`LC_ALL` env vars for this — they are process-global.
 - **Fixture dirs** are unique per render (`demo_<pid>_<counter>` in temp), created in `init_demo`.
 - **Automation clock**: `AutomationState.real_time` must be `false` for headless export so flows advance only on deterministic virtual ticks (1 per frame). Interactive demos keep `real_time = true`. If both clocks drive the automation, wall-clock load fast-forwards steps relative to rendered frames.
+- **Virtual cursor**: `VIRTUAL_CURSOR` (mirrors `AutomationState.virtual_cursor` for the headless render loop's hover drawing) is `thread_local!`. Each rayon render stays on one worker thread; a process-global cursor makes hover states flicker as renders overwrite each other.
 - Flow specs reference fixture files by absolute name (e.g. `$DEMO_ROOT/mock 5.png`) — when renumbering/renaming `resources/MockState/`, update `resources/demo_flows/*.json` accordingly.
 
 ### website (Astro + Starlight)
@@ -207,6 +215,8 @@ The video playback path is complex and worth understanding before touching:
 
 The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
 
+**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
+
 ## Audio player
 
 Audio playback uses `rodio` for output and `symphonia` (all codecs) for decoding, independent of mpv. The `AudioPlayer` is created in `AppState::new()` and is `None` if initialization fails (non-fatal). Commands: `PlayAudio`, `PauseAudio`, `StopAudio`. There is no seek or progress tracking for audio.
@@ -233,10 +243,27 @@ The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches i
 | Cache | Type | Capacity | Purpose |
 |-------|------|----------|---------|
 | `thumbnail_cache` | `LruCache<PathBuf, Handle>` | 200 | Grid thumbnails |
-| `image_cache` | `LruCache<PathBuf, Handle>` | 20 | Full-resolution preview images |
+| `image_cache` | `LruCache<PathBuf, Handle>` | 20 | Preview images (capped at 1920×1440, see below) |
 | `media_errors` | `MediaErrorTracker` | unbounded | Tracks media files that failed to read or decode along with error details; prevents retry spam |
 
 When selection changes, next/previous images are preloaded into `image_cache`.
+
+## Per-format decode pipeline (benchmark-driven)
+
+`media-sort-backend` dispatches thumbnail (`thumbnail::generate_thumbnail`) and preview (`image_decoder::load_preview`) generation per extension through `media/format_pipeline.rs`. Strategies were chosen from `cargo bench -p benchmarks` measurements, not guesses:
+
+| Extension group | Strategy | Why |
+|---|---|---|
+| jpg/jpeg | libturbojpeg scaled DCT decode (1/2, 1/4, 1/8) + fast_image_resize; EXIF orientation applied AFTER resize from a single in-memory read | ~2× faster than image-crate decode |
+| bmp, tga, qoi, ff/farbfeld | image-crate decode + fast_image_resize | 1.7–3× faster than `img.thumbnail()` |
+| png, gif, tiff, pnm, hdr, exr | `load_image` + `img.thumbnail()` (image crate's built-in) | FIR is *slower* here (full RGBA intermediate / float→RGBA8 cost) |
+| avif | native dav1d decode (`avif-native` image feature), ffmpeg CLI pipe as fallback | `avif` feature alone is encode-only |
+| audio extensions | `extract_audio_cover` + fast_image_resize | cover art |
+| everything else | `load_image` + `img.thumbnail()` fallback | — |
+
+Previews are **capped at 1920×1440** (`load_preview` in `update/tasks.rs`) — there is no zoom UI and iced scales the widget anyway; this cuts preview memory by ~97% vs full-res RGBA (e.g. 9.8MB vs 96MB for a 24MP JPEG) and is faster for JPEG (turbojpeg scaled decode).
+
+If you change these code paths, re-run `cargo bench -p benchmarks` to confirm you didn't regress the measured winning strategy.
 
 ## build.rs — locale code generation
 
@@ -273,6 +300,17 @@ cargo test -p media-sort-core
 cargo test -p media-sort-backend
 cargo test -p media-sort-gui          # runs #[cfg(test)] modules only
 ```
+
+## Benchmarks crate
+
+`crates/benchmarks` (divan) measures the thumbnail/preview pipelines against fixtures in `resources/MockState/`. It replicates the production code paths as `baseline_*` variants (they copy the logic, they do not call the GUI) and compares them against optimized variants in `src/variants.rs`:
+
+- `benches/image_thumbnails.rs` — 128px grid thumbnails. Baseline: `load_image` + `img.thumbnail()`. Variants: fast_image_resize, single-read EXIF, zune-jpeg, turbojpeg scaled decode (1/8 / 1/4 DCT scaling + fast_image_resize). Turbojpeg is ~2× faster.
+- `benches/preview.rs` — full-image preview decode. Baseline: full-res RGBA. Variants: downscale to a 1920×1440 box (fast_image_resize, zune, turbojpeg scaled).
+- `benches/video_thumbnails.rs` — mpv poll-loop baseline vs. polling tweaks vs. `ffmpeg` subprocess extraction (ffmpeg is ~2.4× faster than the mpv loop — now the production default with mpv fallback).
+- `benches/format_thumbnails.rs` / `benches/format_previews.rs` — per-format coverage for every `image` crate `default-formats` format (png, jpeg, gif, bmp, ico, tiff, webp, qoi, tga, hdr, exr, pnm, farbfeld; avif). Fixtures are generated at runtime into a temp dir by `src/fixture_gen.rs` (never committed). Known decoder gaps: the image crate's AVIF *decode* requires the `avif-native` feature (dav1d; `avif` alone is encode-only — now enabled workspace-wide), and its DDS decoder is DXT-only (uncompressed DDS undecodable).
+
+The benchmarks crate builds the same vendored static libjpeg-turbo as the backend (cmake + nasm needed) and uses the `ffmpeg`/`ffprobe` CLIs for those variants; ffmpeg-dependent and mpv-dependent tests skip gracefully when the tools are unavailable. Correctness tests for every variant run via `cargo test -p benchmarks`.
 
 ## Key dependencies beyond Rust std
 

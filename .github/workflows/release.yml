@@ -22,18 +22,21 @@ jobs:
             exe_name: media-sort-gui.exe
             mpv_arch: x86_64
             vcredist: vcredist143-x64
+            msvc_arch: x64
           - os: windows-latest
             platform: win-x86
             target: i686-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: i686
             vcredist: vcredist143-x86
+            msvc_arch: x86
           - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
             exe_name: media-sort-gui.exe
             mpv_arch: aarch64
             vcredist: vcredist143-arm64
+            msvc_arch: arm64
 
           # Linux Releases
           - os: ubuntu-24.04
@@ -66,11 +69,18 @@ jobs:
 
       - name: Install System Dependencies (Linux Only)
         if: startsWith(matrix.os, 'ubuntu')
-        run: sudo apt-get update && sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev squashfs-tools
+          if [ "${{ matrix.target }}" = "x86_64-unknown-linux-gnu" ]; then
+            sudo apt-get install -y nasm
+          fi
 
       - name: Install System Dependencies (macOS Only)
         if: startsWith(matrix.os, 'macos')
-        run: brew install mpv dylibbundler
+        run: |
+          brew install mpv ffmpeg dylibbundler dav1d
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
       - name: Setup libmpv Link Libraries (Windows)
         if: startsWith(matrix.os, 'windows')
@@ -81,6 +91,22 @@ jobs:
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
+          curl -L -o ffmpeg.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/ffmpeg-${{ matrix.mpv_arch }}-git-2576e0943.7z
+          7z e ffmpeg.7z ffmpeg.exe -olibs -y
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: startsWith(matrix.os, 'windows')
+        with:
+          arch: ${{ matrix.msvc_arch }}
+
+      - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
+        if: startsWith(matrix.os, 'windows')
+        shell: bash
+        run: |
+          pip install meson ninja
+          if [ "${{ matrix.target }}" != "aarch64-pc-windows-msvc" ]; then
+            choco install -y nasm
+          fi
 
       - name: Build Standalone Binary
         env:
@@ -117,13 +143,15 @@ jobs:
             cp "$TARGET_DIR/media-sort-gui" "dist/Media Sort.app/Contents/MacOS/"
             cp packaging/macos/Info.plist "dist/Media Sort.app/Contents/"
             cp packaging/macos/icon.icns "dist/Media Sort.app/Contents/Resources/"
+            cp "${{ matrix.brew_prefix }}/bin/ffmpeg" "dist/Media Sort.app/Contents/MacOS/ffmpeg"
 
-            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -d "dist/Media Sort.app/Contents/libs/" -s ${{ matrix.brew_prefix }}/lib
+            dylibbundler -od -b -x "dist/Media Sort.app/Contents/MacOS/media-sort-gui" -x "dist/Media Sort.app/Contents/MacOS/ffmpeg" -d "dist/Media Sort.app/Contents/libs/" -s ${{ matrix.brew_prefix }}/lib
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
             cp "$TARGET_DIR/media-sort-gui.exe" dist/
             cp libs/libmpv-2.dll dist/
+            cp libs/ffmpeg.exe dist/
             cp packaging/windows/icon.ico dist/
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}

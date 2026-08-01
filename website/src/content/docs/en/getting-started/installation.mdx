@@ -25,28 +25,30 @@ Depending on your platform, you may need to install the `mpv` media playback eng
 
 ### Windows & macOS
 
-**No manual setup is needed!** The precompiled packages for both Windows and macOS automatically bundle all required `libmpv` libraries natively inside the application bundle.
+**No manual setup is needed!** The precompiled packages for both Windows and macOS automatically bundle all required `libmpv` libraries natively inside the application bundle, along with dav1d for AVIF image support and ffmpeg for fast video thumbnails.
 
 ### Linux
 
-The Linux AppImage packages run dynamically on the host environment and require `libmpv` to be installed on your system. The AppImage also depends on `libasound2` and X11/Wayland libraries which are typically pre-installed on desktop Linux distributions.
+The Linux AppImage packages run dynamically on the host environment and require `libmpv` and `libdav1d` (for AVIF image decoding) to be installed on your system. The AppImage also depends on `libasound2` and X11/Wayland libraries which are typically pre-installed on desktop Linux distributions.
+
+Installing `ffmpeg` is optional on Linux — it enables faster video thumbnails, but Media Sort falls back to mpv when it is not present.
 
 #### Arch Linux / CachyOS
 
 ```bash
-sudo pacman -S mpv
+sudo pacman -S mpv dav1d
 ```
 
 #### Debian / Ubuntu
 
 ```bash
-sudo apt install libmpv2 libasound2
+sudo apt install libmpv2 libasound2 libdav1d7
 ```
 
 #### Fedora
 
 ```bash
-sudo dnf install mpv-libs
+sudo dnf install mpv-libs dav1d-libs
 ```
 
 :::note

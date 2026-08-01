@@ -16,13 +16,19 @@ description: Media Sortのソースコードをご自身でコンパイルおよ
 #### Arch Linux / CachyOS
 
 ```bash
-sudo pacman -S clang mpv
+sudo pacman -S clang mpv cmake dav1d
+```
+
+x86_64では、`nasm` もインストールしてください（同梱のlibjpeg-turboのSIMDビルドに必要）：
+
+```bash
+sudo pacman -S nasm
 ```
 
 #### Debian / Ubuntu
 
 ```bash
-sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev cmake nasm libdav1d-dev
 ```
 
 ### macOS
@@ -31,7 +37,7 @@ Xcode Command Line ToolsとHomebrew依存関係をインストールします：
 
 ```bash
 xcode-select --install
-brew install mpv
+brew install mpv dav1d cmake
 ```
 
 ### Windows
@@ -44,6 +50,11 @@ brew install mpv
 - [vcpkg](https://github.com/microsoft/vcpkg) 経由のmpv開発ファイル:
     ```powershell
     vcpkg install mpv
+    ```
+- pip経由のmesonとninja、およびChocolatey経由のnasm（x64/x86のみ）（同梱のlibjpeg-turboのSIMDビルドに必要）:
+    ```powershell
+    pip install meson ninja
+    choco install nasm
     ```
 
 ---
@@ -73,3 +84,5 @@ brew install mpv
 ## 実行時の要件
 
 ビルド後、動画再生にはシステムに `libmpv` がインストールされている必要があります。`libmpv` がない場合でも、Media Sortは画像と音声に対しては機能しますが、アプリ内での動画とGIFの再生は無効になります。動画ファイルは引き続き検出され、ブラウズできますが、サムネイルは利用できません。
+
+高速な動画サムネイルのために、Media Sortは利用可能な場合に `ffmpeg` も使用できます。公式のWindows版・macOS版パッケージには自動的に同梱されます。Linuxではパッケージマネージャーでインストールできます。これは任意で、無い場合はmpvにフォールバックします。

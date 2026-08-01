@@ -16,13 +16,19 @@ Installieren Sie vor dem Kompilieren die erforderlichen Compiler-Tools und Entwi
 #### Arch Linux / CachyOS
 
 ```bash
-sudo pacman -S clang mpv
+sudo pacman -S clang mpv cmake dav1d
+```
+
+Auf x86_64 zusätzlich `nasm` installieren (erforderlich für den SIMD-Build des eingebetteten libjpeg-turbo):
+
+```bash
+sudo pacman -S nasm
 ```
 
 #### Debian / Ubuntu
 
 ```bash
-sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev
+sudo apt install clang libclang-dev libmpv-dev libasound2-dev libxkbcommon-dev libwayland-dev libx11-dev libvulkan-dev cmake nasm libdav1d-dev
 ```
 
 ### macOS
@@ -31,7 +37,7 @@ Installieren Sie die Xcode-Befehlszeilentools und Homebrew-Abhängigkeiten:
 
 ```bash
 xcode-select --install
-brew install mpv
+brew install mpv dav1d cmake
 ```
 
 ### Windows
@@ -44,6 +50,11 @@ Installieren Sie die folgenden Voraussetzungen:
 - mpv-Entwicklungsdateien über [vcpkg](https://github.com/microsoft/vcpkg):
     ```powershell
     vcpkg install mpv
+    ```
+- meson und ninja über pip sowie nasm (nur x64/x86) über Chocolatey (erforderlich für den SIMD-Build des eingebetteten libjpeg-turbo):
+    ```powershell
+    pip install meson ninja
+    choco install nasm
     ```
 
 ---
@@ -73,3 +84,5 @@ Installieren Sie die folgenden Voraussetzungen:
 ## Laufzeitanforderungen
 
 Nach dem Bau muss `libmpv` auf Ihrem System installiert sein, um die Video-Wiedergabe zu ermöglichen. Ohne `libmpv` funktioniert Media Sort weiterhin für Bilder und Audio, jedoch sind die interne Video- und GIF-Wiedergabe deaktiviert. Videodateien werden weiterhin erkannt und können durchsucht werden, allerdings ohne Miniaturansichten.
+
+Für schnellere Video-Miniaturansichten kann Media Sort zusätzlich `ffmpeg` verwenden, sofern verfügbar. Die offiziellen Windows- und macOS-Pakete bündeln es automatisch; unter Linux können Sie es über Ihren Paketmanager installieren. Es ist optional — ohne ffmpeg greift Media Sort für Video-Miniaturansichten auf mpv zurück.

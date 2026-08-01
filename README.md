@@ -68,6 +68,8 @@ No data is willingly collected. If you turn on "Check for updates on startup" in
 - Linux, macOS, or Windows
 - Rust 1.80 or later (if building from source)
 - libmpv (needed for video and audio playback)
+- libdav1d (needed for AVIF image decoding)
+- ffmpeg (bundled on Windows and macOS for fast video thumbnails; optional on Linux — falls back to mpv)
 
 Install libmpv through your package manager:
 - Ubuntu/Debian: `libmpv-dev`
@@ -75,6 +77,15 @@ Install libmpv through your package manager:
 - Arch: `mpv`
 - macOS: `brew install mpv`
 - Windows: download from [mpv.io](https://mpv.io/installation/)
+
+Install libdav1d through your package manager:
+- Ubuntu/Debian: `libdav1d7`
+- Fedora: `dav1d-libs`
+- Arch: `dav1d`
+- macOS: bundled into the app automatically via `brew install dav1d` at build time
+- Windows: bundled statically into the app
+
+libjpeg-turbo (used for fast JPEG decoding) is vendored statically at build time — no installation needed.
 
 ## Building
 
@@ -85,6 +96,11 @@ cargo build --release
 cargo run --release
 ```
 
+Build dependencies:
+- Linux: `cmake` and `nasm` (x86_64 only) for the vendored libjpeg-turbo SIMD build, plus `libdav1d-dev` (strongly preferred — if missing, dav1d is compiled from source via meson, ninja, and git).
+- macOS: `brew install dav1d` and `cmake` (preinstalled on most dev machines / available via brew). No nasm needed on Apple Silicon.
+- Windows: `pip install meson ninja` and `choco install nasm` (x64/x86 only), in addition to the existing requirements.
+
 Pre-built binaries for Linux, Windows, and macOS are provided with automatic updates via the GitHub Releases page.
 
 ## Installation
@@ -93,7 +109,7 @@ Pre-compiled standalone binaries with automatic updates are provided for Linux, 
 
 ### Requirements
 
-All platforms require **libmpv** to be installed on your system to manage video and audio playback pipelines.
+All platforms require **libmpv** to be installed on your system to manage video and audio playback pipelines. Linux additionally requires **libdav1d** for AVIF image decoding.
 
 ### Platform Setup Instructions
 

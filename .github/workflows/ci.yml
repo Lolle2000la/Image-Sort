@@ -58,11 +58,13 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmpv-dev libasound2-dev
+          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
 
       - name: Install System Dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        run: brew install mpv
+        run: |
+          brew install mpv dav1d
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
       - name: Setup libmpv Link Libraries (Windows)
         if: matrix.os == 'windows-latest'
@@ -73,6 +75,18 @@ jobs:
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
+
+      - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          pip install meson ninja
+          choco install -y nasm
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
+        with:
+          arch: x64
 
       - name: Run Clippy Lints
         env:
