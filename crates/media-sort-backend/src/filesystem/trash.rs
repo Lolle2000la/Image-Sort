@@ -188,7 +188,7 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     parent_matches && id_ext == ext
                 })
                 .collect();
-            candidates.sort_by_key(|i| (i.time_deleted - delete_time).abs());
+            candidates.sort_by_key(|i| (i.time_deleted - self.delete_time).abs());
 
             let Some(mut item) = candidates.into_iter().next() else {
                 return Err(ActionError::RestorationFailed(
