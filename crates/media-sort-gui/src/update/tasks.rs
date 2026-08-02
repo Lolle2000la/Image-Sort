@@ -258,30 +258,14 @@ pub fn calculate_scroll_into_view_h(
     content_width: f32,
     margin: f32,
 ) -> Option<f32> {
-    if viewport_width <= 0.0 || content_width <= viewport_width {
-        return None;
-    }
-
-    let max_offset = (content_width - viewport_width).max(0.0);
-    let item_width = (item_right - item_left).max(0.0);
-    let effective_margin = margin.min((viewport_width - item_width).max(0.0) / 2.0);
-
-    let view_left = offset_x;
-    let view_right = offset_x + viewport_width;
-
-    let target_offset = if item_left - effective_margin < view_left {
-        (item_left - effective_margin).max(0.0)
-    } else if item_right + effective_margin > view_right {
-        (item_right + effective_margin - viewport_width).min(max_offset)
-    } else {
-        return None;
-    };
-
-    if (target_offset - offset_x).abs() > 0.5 {
-        Some(target_offset.clamp(0.0, max_offset))
-    } else {
-        None
-    }
+    calculate_scroll_into_view_1d(
+        item_left,
+        item_right,
+        offset_x,
+        viewport_width,
+        content_width,
+        margin,
+    )
 }
 
 /// Computes target vertical scroll offset to keep `[item_top, item_bottom]`
@@ -296,26 +280,48 @@ pub fn calculate_scroll_into_view_v(
     content_height: f32,
     margin: f32,
 ) -> Option<f32> {
-    if viewport_height <= 0.0 || content_height <= viewport_height {
+    calculate_scroll_into_view_1d(
+        item_top,
+        item_bottom,
+        offset_y,
+        viewport_height,
+        content_height,
+        margin,
+    )
+}
+
+/// Computes target 1D scroll offset to keep `[item_start, item_end]` visible within
+/// `[current_offset, current_offset + viewport_size]` with at least `margin` padding.
+/// Returns `Some(target_offset)` if scrolling is needed, or `None` if the item is
+/// already comfortably in view.
+pub fn calculate_scroll_into_view_1d(
+    item_start: f32,
+    item_end: f32,
+    current_offset: f32,
+    viewport_size: f32,
+    content_size: f32,
+    margin: f32,
+) -> Option<f32> {
+    if viewport_size <= 0.0 || content_size <= viewport_size {
         return None;
     }
 
-    let max_offset = (content_height - viewport_height).max(0.0);
-    let item_height = (item_bottom - item_top).max(0.0);
-    let effective_margin = margin.min((viewport_height - item_height).max(0.0) / 2.0);
+    let max_offset = (content_size - viewport_size).max(0.0);
+    let item_size = (item_end - item_start).max(0.0);
+    let effective_margin = margin.min((viewport_size - item_size).max(0.0) / 2.0);
 
-    let view_top = offset_y;
-    let view_bottom = offset_y + viewport_height;
+    let view_start = current_offset;
+    let view_end = current_offset + viewport_size;
 
-    let target_offset = if item_top - effective_margin < view_top {
-        (item_top - effective_margin).max(0.0)
-    } else if item_bottom + effective_margin > view_bottom {
-        (item_bottom + effective_margin - viewport_height).min(max_offset)
+    let target_offset = if item_start - effective_margin < view_start {
+        (item_start - effective_margin).max(0.0)
+    } else if item_end + effective_margin > view_end {
+        (item_end + effective_margin - viewport_size).min(max_offset)
     } else {
         return None;
     };
 
-    if (target_offset - offset_y).abs() > 0.5 {
+    if (target_offset - current_offset).abs() > 0.5 {
         Some(target_offset.clamp(0.0, max_offset))
     } else {
         None

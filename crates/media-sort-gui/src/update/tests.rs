@@ -1,5 +1,6 @@
 use super::tasks::{
-    calculate_scroll_into_view_h, calculate_scroll_into_view_v, relative_position_for,
+    calculate_scroll_into_view_1d, calculate_scroll_into_view_h, calculate_scroll_into_view_v,
+    relative_position_for,
 };
 use super::*;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
@@ -834,6 +835,19 @@ fn test_calculate_scroll_into_view_v() {
     assert_eq!(
         calculate_scroll_into_view_v(10.0, 36.0, 100.0, 500.0, 2000.0, 30.0),
         Some(0.0)
+    );
+}
+
+#[test]
+fn test_calculate_scroll_into_view_1d() {
+    // Both H and V delegate to 1D and produce identical results
+    assert_eq!(
+        calculate_scroll_into_view_1d(100.0, 150.0, 0.0, 400.0, 1000.0, 20.0),
+        None
+    );
+    assert_eq!(
+        calculate_scroll_into_view_1d(390.0, 410.0, 0.0, 400.0, 1000.0, 20.0),
+        Some(30.0)
     );
 }
 
