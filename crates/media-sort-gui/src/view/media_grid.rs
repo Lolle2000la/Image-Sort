@@ -80,7 +80,12 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     };
 
     if start > 0 {
-        entries_row = entries_row.push(space().width(Length::Fixed(start as f32 * CARD_STRIDE)));
+        // Subtract one card spacing: the row's `spacing` inserts
+        // `MEDIA_GRID_CARD_SPACING` between this spacer and the first
+        // rendered card, so the card lands at `start * CARD_STRIDE`
+        // exactly matching its un-virtualized position.
+        let pad = (start as f32 * CARD_STRIDE) - MEDIA_GRID_CARD_SPACING;
+        entries_row = entries_row.push(space().width(Length::Fixed(pad)));
     }
 
     for (local_i, entry) in filtered[start..end].iter().enumerate() {
@@ -199,8 +204,12 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     }
 
     if end < total {
-        entries_row =
-            entries_row.push(space().width(Length::Fixed((total - end) as f32 * CARD_STRIDE)));
+        // Subtract one card spacing to compensate for the gap the row
+        // inserts between the last rendered card and this trailing
+        // spacer, keeping the total content width identical to the
+        // un-virtualized layout.
+        let pad = ((total - end) as f32 * CARD_STRIDE) - MEDIA_GRID_CARD_SPACING;
+        entries_row = entries_row.push(space().width(Length::Fixed(pad)));
     }
 
     // Wrap the row of cards in a column with empty space at the bottom. This

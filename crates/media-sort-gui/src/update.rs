@@ -137,7 +137,7 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     }
 
     let (new_entries, scan_finished) = if let Some(ref rx) = state.media_grid.scan_receiver {
-        let new_entries: Vec<_> = rx
+        let mut new_entries: Vec<media_sort_core::models::MediaEntry> = rx
             .try_iter()
             .map(|path| {
                 let media_type =
@@ -155,10 +155,36 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
                 }
             })
             .collect();
-        let disconnected = matches!(
-            rx.try_recv(),
-            Err(std::sync::mpsc::TryRecvError::Disconnected)
-        );
+        // Drain any item that arrived between try_iter() and this loop; only
+        // treat Disconnected (not an Ok'd item) as "scan finished". Without
+        // this, a single item landing in the nanosecond window between
+        // try_iter() and a bare try_recv() would be consumed and silently
+        // dropped.
+        let mut disconnected = false;
+        loop {
+            match rx.try_recv() {
+                Ok(path) => {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
+                    new_entries.push(media_sort_core::models::MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                        animated,
+                    });
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    disconnected = true;
+                    break;
+                }
+            }
+        }
         (new_entries, disconnected)
     } else {
         (Vec::new(), false)

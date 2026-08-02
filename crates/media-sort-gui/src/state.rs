@@ -156,6 +156,8 @@ impl AppState {
                 sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         self.video.frame = None;
+        self.video.selected_path = None;
+        self.video.ready = false;
         self.video.position = 0.0;
         self.video.duration = 0.0;
         self.cache.media_errors.clear();
@@ -194,6 +196,16 @@ impl AppState {
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
+        // Clear video state so a late FrameReady from the previously-selected
+        // video can't repopulate video.rgba during the rescan (the cached
+        // selected_path would otherwise match a stale mpv frame).
+        if let Some(ref sender) = self.video.sender {
+            let _ =
+                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+        }
+        self.video.frame = None;
+        self.video.selected_path = None;
+        self.video.ready = false;
         self.media_grid.scan_receiver = Some(
             media_sort_backend::filesystem::scanner::scan_media_files(&folder),
         );
