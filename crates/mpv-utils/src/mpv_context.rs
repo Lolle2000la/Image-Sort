@@ -749,6 +749,51 @@ mod tests {
         );
     }
 
+    /// Polls for a renderable frame and renders it into a 128x128-fit box.
+    /// Mirrors the production frame pump: wait for a pending frame after the
+    /// video output is ready, then render + rotate.
+    fn wait_and_render_frame(
+        player: &mut MpvContext,
+        deadline: Instant,
+        label: &str,
+    ) -> (u32, u32, Vec<u8>) {
+        while Instant::now() < deadline {
+            if player.has_frame_ready() && player.is_video_ready() {
+                let (w, h) = player.get_video_size();
+                if w > 0 && h > 0 {
+                    let rotation = player.get_video_rotation();
+                    let (eff_w, eff_h) = if rotation.is_swapped() {
+                        (h, w)
+                    } else {
+                        (w, h)
+                    };
+                    let scale = (128.0f64 / eff_w as f64)
+                        .min(128.0f64 / eff_h as f64)
+                        .min(1.0);
+                    let render_w = ((w as f64 * scale) as i32) & !1;
+                    let render_h = ((h as f64 * scale) as i32) & !1;
+                    if render_w > 0 && render_h > 0 {
+                        let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                        if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                            let (final_w, final_h, rgba) = crate::rotate_rgba(
+                                render_w as u32,
+                                render_h as u32,
+                                &buffer,
+                                rotation,
+                            );
+                            assert!(final_w > 0 && final_h > 0);
+                            assert!(final_w <= 128 && final_h <= 128);
+                            assert_eq!(rgba.len(), (final_w * final_h * 4) as usize);
+                            return (final_w, final_h, rgba);
+                        }
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        panic!("timed out waiting for a renderable frame ({label})");
+    }
+
     #[test]
     fn test_seek_then_render_frame() {
         let Some(mut player) = thumbnail_player() else {
@@ -779,49 +824,24 @@ mod tests {
             }
         };
 
+        // Render the first frame before seeking: this activates the video
+        // output pipeline (on macOS no frame becomes pending until the first
+        // render call, so a seek on a never-rendered context stalls).
+        wait_and_render_frame(
+            &mut player,
+            Instant::now() + Duration::from_secs(5),
+            "before seek",
+        );
+
         player.seek(duration * 0.1);
 
         // The seek must not break rendering: poll for the next frame and
-        // render it into a 128x128-fit box.
-        let start = Instant::now();
-        loop {
-            assert!(
-                start.elapsed() < Duration::from_secs(5),
-                "timed out waiting for a renderable frame after seek"
-            );
-            if player.has_frame_ready() && player.is_video_ready() {
-                let (w, h) = player.get_video_size();
-                if w > 0 && h > 0 {
-                    let rotation = player.get_video_rotation();
-                    let (eff_w, eff_h) = if rotation.is_swapped() {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
-                    let scale = (128.0f64 / eff_w as f64)
-                        .min(128.0f64 / eff_h as f64)
-                        .min(1.0);
-                    let render_w = ((w as f64 * scale) as i32) & !1;
-                    let render_h = ((h as f64 * scale) as i32) & !1;
-                    if render_w > 0 && render_h > 0 {
-                        let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
-                        if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                            let (final_w, final_h, rgba) = crate::rotate_rgba(
-                                render_w as u32,
-                                render_h as u32,
-                                &buffer,
-                                rotation,
-                            );
-                            assert!(final_w > 0 && final_h > 0);
-                            assert!(final_w <= 128 && final_h <= 128);
-                            assert_eq!(rgba.len(), (final_w * final_h * 4) as usize);
-                            break;
-                        }
-                    }
-                }
-            }
-            std::thread::sleep(Duration::from_millis(10));
-        }
+        // render it.
+        wait_and_render_frame(
+            &mut player,
+            Instant::now() + Duration::from_secs(5),
+            "after seek",
+        );
 
         player.stop();
     }

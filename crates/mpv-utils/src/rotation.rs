@@ -107,7 +107,10 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
         if box_type == b"moov" || box_type == b"trak" {
             continue;
         } else if box_type == b"tkhd" {
-            let mut tkhd_data = vec![0u8; (box_len as usize).min(256)];
+            // Read only the payload: `box_len` includes the 8-byte header, so
+            // reading that many bytes from `content_start` would over-read
+            // into the next box (or past EOF when tkhd is the last box).
+            let mut tkhd_data = vec![0u8; (payload_len as usize).min(256)];
             file.seek(SeekFrom::Start(content_start)).ok()?;
             if file.read_exact(&mut tkhd_data).is_ok() && tkhd_data.len() >= 70 {
                 let version = tkhd_data[0];
@@ -242,7 +245,7 @@ mod tests {
         let mut tkhd = Vec::new();
         tkhd.extend_from_slice(&[0u8; 40]);
         let unit = 65536.0f64; // 16.16 fixed point
-        let (a, b, c, d) = (0.0, unit, -unit, 0.0); // 90° clockwise
+        let (a, b, c, d) = (0.0, 1.0, -1.0, 0.0); // 90° clockwise
         for v in [a, b, 0.0, c, d, 0.0, 0.0, 0.0, 1.0] {
             tkhd.extend_from_slice(&((v * unit) as i32).to_be_bytes());
         }
@@ -270,10 +273,6 @@ mod tests {
             box_bytes
         };
         bytes.extend_from_slice(&moov_box);
-        // The tkhd parser reads `box_len` bytes from the payload start (it
-        // must also work when tkhd is followed by more boxes), so pad the
-        // tail to keep the final tkhd read inside the file.
-        bytes.extend_from_slice(&[0u8; 32]);
 
         let dir =
             std::env::temp_dir().join(format!("mpv_utils_rotation_size64_{}", std::process::id()));
