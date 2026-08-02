@@ -12,12 +12,14 @@ struct Handlers<FReady, FEvent> {
 }
 
 // iced identifies subscriptions by the `Hash` of their state. Closures are not
-// hashable, so the identity is derived from the closure *types* via TypeId —
-// this keeps the stream alive as long as the same closure types are passed
-// across frames (the common case: function items or non-capturing closures).
+// hashable, so the identity is derived from the closure *types* via TypeId,
+// plus the worker [`PlayerConfig`] — the config is part of the identity so a
+// changed config restarts the worker instead of silently keeping the old one.
 impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEvent> {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         std::any::TypeId::of::<Self>().hash(state);
+        self.config.max_frame_width.hash(state);
+        self.config.max_frame_height.hash(state);
     }
 }
 
@@ -37,13 +39,16 @@ impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEve
 ///
 /// iced deduplicates subscriptions by hashing their state. Closures are not
 /// hashable, so this subscription's identity is the closure *types* (via
-/// `TypeId`). Consequences to be aware of:
+/// `TypeId`) **plus the worker [`PlayerConfig`]**. Consequences to be aware of:
 ///
-/// - Captured values do **not** restart the stream when they change — the
-///   worker keeps running as long as the same closure types are passed.
-/// - Two subscriptions with identical closure types (e.g. the same function
-///   item used twice) are deduplicated into **one** stream by iced. If your
-///   app embeds multiple video players, give each a distinct closure type.
+/// - Captured values (other than the config) do **not** restart the stream
+///   when they change — the worker keeps running as long as the same closure
+///   types and config are passed.
+/// - Changing the config (e.g. `max_frame_width`) **does** restart the
+///   worker, so the new config is actually applied.
+/// - Two subscriptions with identical closure types **and** an identical
+///   config are deduplicated into **one** stream by iced. If your app embeds
+///   multiple video players, give each a distinct closure type.
 pub fn video_player_subscription<Message, FReady, FEvent>(
     on_ready: FReady,
     on_event: FEvent,

@@ -323,10 +323,18 @@ impl VideoState {
     /// Also marks `path` as the selected video so that only frames belonging
     /// to it are committed ([`WorkerEvent::FrameReady`] matching). The next
     /// committed frame reports a [`VideoEvent::FrameReady`] domain event.
+    ///
+    /// The transport state is reset so the control bar never shows the
+    /// previous video's time or pause state until the first
+    /// [`WorkerEvent::PlaybackProgress`] arrives.
     pub fn load(&mut self, path: PathBuf) {
         self.selected_path = Some(path.clone());
         self.rgba = None;
         self.ready = false;
+        self.position = 0.0;
+        self.duration = 0.0;
+        self.seek_position = None;
+        self.paused = false;
         self.send(VideoCommand::Load(path));
     }
 
@@ -460,6 +468,32 @@ mod tests {
         assert!(!state.ready());
         assert_eq!(state.position(), 0.0);
         assert_eq!(state.duration(), 0.0);
+    }
+
+    #[test]
+    fn test_load_resets_transport_state() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+        let _ = state.update(PlayerMessage::Event(progress_event(30.0, 60.0)));
+        let _ = state.update(PlayerMessage::Event(WorkerEvent::Paused(true)));
+        state.seek(40.0);
+        assert_eq!(state.position(), 30.0);
+        assert!(state.paused());
+        assert_eq!(state.seek_position(), Some(40.0));
+
+        // Loading a different video must not show the previous one's
+        // position/duration, pending seek or paused state until the worker
+        // reports fresh values.
+        state.load(PathBuf::from("/videos/two.mp4"));
+        assert_eq!(
+            state.selected_path().map(|p| p.as_path()),
+            Some(Path::new("/videos/two.mp4"))
+        );
+        assert_eq!(state.position(), 0.0);
+        assert_eq!(state.duration(), 0.0);
+        assert_eq!(state.seek_position(), None);
+        assert!(!state.paused());
+        assert!(!state.ready());
     }
 
     #[test]

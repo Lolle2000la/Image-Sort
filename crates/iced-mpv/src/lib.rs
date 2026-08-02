@@ -42,7 +42,9 @@
 //! state.video.select(Some(path)); // `None` when navigating away
 //!
 //! // 4. view: frame + built-in controls, mapped into your message type
-//! iced_mpv::video_player_view(&state.video, thumb, None, |action| Message::Video(action))
+//! iced_mpv::video_player_view(&state.video, thumb, None, |action| {
+//!     Message::Video(iced_mpv::PlayerMessage::Action(action))
+//! })
 //! ```
 
 pub mod action;
