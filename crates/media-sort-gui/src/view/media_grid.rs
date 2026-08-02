@@ -150,28 +150,77 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                 .into()
         };
 
-        let thumbnail = container(thumbnail_content)
+        let thumbnail_stacked: Element<'_, Message> = if is_selected {
+            let check_badge = container(
+                text(char::from(lucide_icons::Icon::Check))
+                    .font(iced::Font::with_name("lucide"))
+                    .size(10)
+                    .color(Color::WHITE),
+            )
+            .padding([2, 3])
+            .style(|theme: &iced::Theme| {
+                let primary = theme.palette().primary;
+                iced::widget::container::Style {
+                    background: Some(iced::Background::Color(primary)),
+                    border: iced::Border {
+                        radius: 3.0.into(),
+                        width: 1.0,
+                        color: Color::WHITE,
+                    },
+                    shadow: iced::Shadow {
+                        offset: iced::Vector::new(0.0, 1.0),
+                        blur_radius: 3.0,
+                        color: Color::from_rgba(0.0, 0.0, 0.0, 0.5),
+                    },
+                    ..iced::widget::container::Style::default()
+                }
+            });
+
+            let badge_overlay = container(check_badge)
+                .width(Length::Fill)
+                .height(Length::Fill)
+                .align_x(Alignment::Start)
+                .align_y(Alignment::Start)
+                .padding(2);
+
+            iced::widget::stack![thumbnail_content, badge_overlay].into()
+        } else {
+            thumbnail_content
+        };
+
+        let thumbnail = container(thumbnail_stacked)
             .center_x(MEDIA_GRID_CARD_WIDTH)
             .center_y(50)
             .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH))
             .height(Length::Fixed(50.0))
+            .padding(if is_selected { 2 } else { 0 })
+            .clip(true)
             .style(move |theme: &iced::Theme| {
                 let palette = theme.palette();
-                let bg = if is_selected {
-                    palette.primary
-                } else {
-                    Color::from_rgb(0.08, 0.08, 0.1)
-                };
+                let primary = palette.primary;
                 iced::widget::container::Style {
-                    background: Some(iced::Background::Color(bg)),
+                    background: Some(iced::Background::Color(if is_selected {
+                        primary
+                    } else {
+                        Color::from_rgb(0.08, 0.08, 0.1)
+                    })),
                     border: iced::Border {
                         radius: 4.0.into(),
-                        width: 1.0,
+                        width: if is_selected { 2.5 } else { 1.0 },
                         color: if is_selected {
-                            palette.text
+                            primary
                         } else {
                             Color::from_rgb(0.2, 0.2, 0.25)
                         },
+                    },
+                    shadow: if is_selected {
+                        iced::Shadow {
+                            offset: iced::Vector::new(0.0, 0.0),
+                            blur_radius: 6.0,
+                            color: Color { a: 0.6, ..primary },
+                        }
+                    } else {
+                        iced::Shadow::default()
                     },
                     ..iced::widget::container::Style::default()
                 }
@@ -186,7 +235,25 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .width(Length::Fill)
             .height(Length::Fixed(26.0))
             .align_x(Alignment::Center)
-            .clip(true);
+            .padding(if is_selected { [2, 4] } else { [0, 0] })
+            .clip(true)
+            .style(move |theme: &iced::Theme| {
+                let palette = theme.palette();
+                if is_selected {
+                    iced::widget::container::Style {
+                        background: Some(iced::Background::Color(palette.primary)),
+                        text_color: Some(Color::WHITE),
+                        border: iced::Border {
+                            radius: 4.0.into(),
+                            width: 0.0,
+                            color: Color::TRANSPARENT,
+                        },
+                        ..iced::widget::container::Style::default()
+                    }
+                } else {
+                    iced::widget::container::Style::default()
+                }
+            });
 
         let card = column![thumbnail, file_name_container]
             .align_x(Alignment::Center)
