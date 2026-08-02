@@ -220,7 +220,7 @@ pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message>
         }
 
         let margin = card_stride * 1.5;
-        let Some(target_offset) = calculate_scroll_into_view_h(
+        let Some(target_offset) = calculate_scroll_into_view_1d(
             item_left,
             item_right,
             scroll.offset_x,
@@ -246,50 +246,6 @@ pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message>
             x: Some(relative_x),
             y: None,
         },
-    )
-}
-
-/// Computes target horizontal scroll offset to keep `[item_left, item_right]`
-/// visible within `[offset_x, offset_x + viewport_width]` with at least `margin`
-/// padding. Returns `Some(target_offset)` if scrolling is needed, or `None` if
-/// the item is already comfortably in view.
-pub fn calculate_scroll_into_view_h(
-    item_left: f32,
-    item_right: f32,
-    offset_x: f32,
-    viewport_width: f32,
-    content_width: f32,
-    margin: f32,
-) -> Option<f32> {
-    calculate_scroll_into_view_1d(
-        item_left,
-        item_right,
-        offset_x,
-        viewport_width,
-        content_width,
-        margin,
-    )
-}
-
-/// Computes target vertical scroll offset to keep `[item_top, item_bottom]`
-/// visible within `[offset_y, offset_y + viewport_height]` with at least `margin`
-/// padding. Returns `Some(target_offset)` if scrolling is needed, or `None` if
-/// the item is already comfortably in view.
-pub fn calculate_scroll_into_view_v(
-    item_top: f32,
-    item_bottom: f32,
-    offset_y: f32,
-    viewport_height: f32,
-    content_height: f32,
-    margin: f32,
-) -> Option<f32> {
-    calculate_scroll_into_view_1d(
-        item_top,
-        item_bottom,
-        offset_y,
-        viewport_height,
-        content_height,
-        margin,
     )
 }
 
@@ -368,7 +324,7 @@ pub fn scroll_to_selected_folder(state: &mut AppState) -> Task<Message> {
         let item_bottom = item_top + item_height;
         let margin = (scroll.viewport_height * 0.15).clamp(26.0, 78.0);
 
-        let Some(target_offset) = calculate_scroll_into_view_v(
+        let Some(target_offset) = calculate_scroll_into_view_1d(
             item_top,
             item_bottom,
             scroll.offset_y,

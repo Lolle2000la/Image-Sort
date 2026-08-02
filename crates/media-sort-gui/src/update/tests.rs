@@ -1,7 +1,4 @@
-use super::tasks::{
-    calculate_scroll_into_view_1d, calculate_scroll_into_view_h, calculate_scroll_into_view_v,
-    relative_position_for,
-};
+use super::tasks::{calculate_scroll_into_view_1d, relative_position_for};
 use super::*;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::{AppState, SettingsUiState};
@@ -787,68 +784,35 @@ fn test_relative_position_for_scrolling() {
 }
 
 #[test]
-fn test_calculate_scroll_into_view_h() {
-    // When viewport size is 0 or content fits in viewport, no scrolling
+fn test_calculate_scroll_into_view_1d() {
+    // When viewport size is 0 or content fits in viewport, no scrolling needed
     assert_eq!(
-        calculate_scroll_into_view_h(0.0, 60.0, 0.0, 0.0, 1000.0, 50.0),
+        calculate_scroll_into_view_1d(0.0, 60.0, 0.0, 0.0, 1000.0, 50.0),
         None
     );
     assert_eq!(
-        calculate_scroll_into_view_h(0.0, 60.0, 0.0, 600.0, 500.0, 50.0),
+        calculate_scroll_into_view_1d(0.0, 60.0, 0.0, 600.0, 500.0, 50.0),
         None
     );
 
     // Item already comfortably visible with margin: no scroll needed
     assert_eq!(
-        calculate_scroll_into_view_h(200.0, 260.0, 100.0, 600.0, 2000.0, 50.0),
+        calculate_scroll_into_view_1d(200.0, 260.0, 100.0, 600.0, 2000.0, 50.0),
         None
     );
 
-    // Item too close to or past right edge: scroll right to bring into view with margin
+    // Item too close to or past trailing edge: scroll forward to bring into view with margin
     assert_eq!(
-        calculate_scroll_into_view_h(600.0, 660.0, 100.0, 600.0, 2000.0, 50.0),
+        calculate_scroll_into_view_1d(600.0, 660.0, 100.0, 600.0, 2000.0, 50.0),
         Some(110.0)
     );
 
-    // Item past left edge: scroll left to bring into view with margin
+    // Item past leading edge: scroll backward to bring into view with margin
     assert_eq!(
-        calculate_scroll_into_view_h(60.0, 120.0, 200.0, 600.0, 2000.0, 50.0),
+        calculate_scroll_into_view_1d(60.0, 120.0, 200.0, 600.0, 2000.0, 50.0),
         Some(10.0)
     );
-}
 
-#[test]
-fn test_calculate_scroll_into_view_v() {
-    // Item comfortably visible: no scroll needed
-    assert_eq!(
-        calculate_scroll_into_view_v(100.0, 126.0, 50.0, 500.0, 2000.0, 30.0),
-        None
-    );
-
-    // Item past bottom edge: scroll down
-    assert_eq!(
-        calculate_scroll_into_view_v(500.0, 526.0, 0.0, 500.0, 2000.0, 30.0),
-        Some(56.0)
-    );
-
-    // Item past top edge: scroll up
-    assert_eq!(
-        calculate_scroll_into_view_v(10.0, 36.0, 100.0, 500.0, 2000.0, 30.0),
-        Some(0.0)
-    );
-}
-
-#[test]
-fn test_calculate_scroll_into_view_1d() {
-    // Both H and V delegate to 1D and produce identical results
-    assert_eq!(
-        calculate_scroll_into_view_1d(100.0, 150.0, 0.0, 400.0, 1000.0, 20.0),
-        None
-    );
-    assert_eq!(
-        calculate_scroll_into_view_1d(390.0, 410.0, 0.0, 400.0, 1000.0, 20.0),
-        Some(30.0)
-    );
     // Stale scroll offset beyond content bounds (e.g. after list shrinks) is clamped safely
     assert_eq!(
         calculate_scroll_into_view_1d(50.0, 100.0, 800.0, 400.0, 600.0, 20.0),
