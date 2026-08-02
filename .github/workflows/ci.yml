@@ -14,6 +14,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+  HOMEBREW_NO_ENV_HINTS: "1"
 
 jobs:
   fmt:
@@ -28,7 +31,6 @@ jobs:
 
   test:
     name: Test & Lint (${{ matrix.os }})
-    needs: fmt
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -42,17 +44,20 @@ jobs:
         with:
           components: clippy
 
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@v6
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
         with:
-          path: |
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ matrix.os }}-cargo-
+          arch: x64
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@cargo-nextest
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: ${{ matrix.os }}
+          save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/v3.0' }}
+
+      - uses: mozilla-actions/sccache-action@v0.0.8
 
       - name: Install System Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -71,13 +76,12 @@ jobs:
         shell: bash
         run: |
           mkdir -p libs
-          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          if [ ! -f mpv-dev.7z ]; then
+            curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          fi
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
-          # Test binaries link libmpv-2.dll at load time; make it resolvable.
-          # (cygpath: $PWD is POSIX-form in git-bash, which the Windows DLL
-          # loader cannot use as a PATH entry.)
           echo "$(cygpath -w "$PWD")\\libs" >> "$GITHUB_PATH"
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
@@ -85,51 +89,51 @@ jobs:
         shell: bash
         run: |
           pip install meson ninja
-          choco install -y nasm pkgconfiglite
-          # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
-          # when pkg-config is absent (always on Windows runners); force
-          # the vendored meson build instead.
+          if ! command -v nasm &> /dev/null; then
+            choco install -y nasm pkgconfiglite
+          fi
           echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
-
-      - uses: ilammy/msvc-dev-cmd@v1
-        if: matrix.os == 'windows-latest'
-        with:
-          arch: x64
 
       - name: Run Clippy Lints
         env:
+          RUSTC_WRAPPER: sccache
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        # profile.dev.package."*" is opt-level=3 for local GUI dev
-        # responsiveness; CI doesn't need that and compiles 2-3x faster
-        # without it.
         run: cargo --config 'profile.dev.package."*".opt-level=0' clippy --workspace --all-targets -- -D warnings
 
       - name: Run Workspace Tests
         if: matrix.os != 'windows-latest'
         env:
+          RUSTC_WRAPPER: sccache
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-        # --tests, not --all-targets: bench targets are harness=false, so
-        # "testing" them would execute the full divan benchmark suite.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests
+        run: cargo --config 'profile.dev.package."*".opt-level=0' nextest run --workspace --lib --bins --tests
+
+      - name: Run Doc Tests
+        if: matrix.os != 'windows-latest'
+        env:
+          RUSTC_WRAPPER: sccache
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+        run: cargo --config 'profile.dev.package."*".opt-level=0' test --doc --workspace
 
       - name: Run Workspace Tests (Windows, excluding GUI)
         if: matrix.os == 'windows-latest'
         env:
+          RUSTC_WRAPPER: sccache
           RUSTFLAGS: '-L native=libs'
-        # NOTE: keep the default shell here. Under git-bash, /usr/bin precedes
-        # the MSVC dirs in PATH and rustc invokes GNU coreutils' `link`
-        # instead of MSVC link.exe.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests --exclude media-sort-gui
+        run: cargo --config 'profile.dev.package."*".opt-level=0' nextest run --workspace --lib --bins --tests --exclude media-sort-gui
+
+      - name: Run Doc Tests (Windows, excluding GUI)
+        if: matrix.os == 'windows-latest'
+        env:
+          RUSTC_WRAPPER: sccache
+          RUSTFLAGS: '-L native=libs'
+        run: cargo --config 'profile.dev.package."*".opt-level=0' test --doc --workspace --exclude media-sort-gui
 
       - name: Run GUI Tests (Windows, serial)
         if: matrix.os == 'windows-latest'
         env:
+          RUSTC_WRAPPER: sccache
           RUSTFLAGS: '-L native=libs'
-        # Serial + nocapture: native libs the GUI tests touch (trash-crate
-        # COM, rodio/WASAPI) are suspects in a parallel access-violation
-        # crash on headless runners; if it still crashes, nocapture names
-        # the culprit test in the log.
         run: cargo --config 'profile.dev.package."*".opt-level=0' test -p media-sort-gui --tests -- --test-threads=1 --nocapture
 
   verify-contributors:
