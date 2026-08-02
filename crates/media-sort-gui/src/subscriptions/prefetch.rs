@@ -47,13 +47,14 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
     std::sync::Mutex::new(tx)
 });
 
-// Bounded ffmpeg worker pool — mirrors `VIDEO_THUMBNAIL_WORKER` (mpv) so
-// scroll-storm fan-out is capped at `available_parallelism().clamp(2, 4)`
-// concurrent `extract_frame` subprocesses instead of spawning one per
-// `spawn_blocking`. Without this cap, scrolling through a folder of N
+// Bounded ffmpeg worker pool — sized larger (clamp 2..16) than the mpv pool
+// (clamp 2..4) because ffmpeg is a short-lived lightweight subprocess (~70 ms,
+// ~40 MB RSS, no persistent state) while each MpvContext holds GPU resources
+// and a libmpv handle. cap=16 lets a typical visible set (~20–30 video cards)
+// render in 1–2 batches on most machines while still bounding pathological
+// scroll-storm fan-out. Without this cap, scrolling through a folder of N
 // video files can spawn N simultaneous ffmpeg processes (default tokio
-// blocking pool ceiling is 512). See `benches/perf_candidates.rs` Group G
-// for the bounded-vs-unbounded wall-time/resource tradeoff.
+// blocking pool ceiling is 512). See `benches/perf_candidates.rs` Group G.
 static FFMPEG_THUMBNAIL_WORKER: LazyLock<
     std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
@@ -62,7 +63,7 @@ static FFMPEG_THUMBNAIL_WORKER: LazyLock<
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(4)
-        .clamp(2, 4);
+        .clamp(2, 16);
 
     for i in 0..num_workers {
         let rx = rx.clone();
@@ -75,9 +76,6 @@ static FFMPEG_THUMBNAIL_WORKER: LazyLock<
                 let Some((path, response)) = request else {
                     break;
                 };
-                // `extract_frame` returns an `Err` for missing/invalid input;
-                // the caller (`generate_thumbnail`) treats that as a signal to
-                // fall through to the mpv worker pool.
                 let result =
                     match media_sort_backend::media::ffmpeg_pipe::extract_frame(&path, 128, 128) {
                         Ok(decoded) => Ok(decoded.into_parts()),
@@ -192,7 +190,7 @@ pub fn generate_thumbnail(
     if media_type == MediaType::Video {
         // ffmpeg is bundled in release packages and is ~2.4× faster than
         // the mpv poll loop. Route through a bounded worker pool
-        // (`FFMPEG_THUMBNAIL_WORKER`, `available_parallelism().clamp(2, 4)`)
+        // (`FFMPEG_THUMBNAIL_WORKER`, `available_parallelism().clamp(2, 16)`)
         // so a scroll-storm can't fan out N simultaneous ffmpeg
         // subprocesses. On ffmpeg miss / extract failure, fall back to the
         // existing mpv worker pool — same semantics as before, just with a

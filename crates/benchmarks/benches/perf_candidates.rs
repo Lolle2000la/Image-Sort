@@ -386,6 +386,45 @@ fn g_extract_concurrent_bounded_2_8(bencher: divan::Bencher) {
     });
 }
 
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_unbounded_20(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 20, None);
+        divan::black_box((wall, peak));
+    });
+}
+
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_bounded_16_20(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 20, Some(16));
+        divan::black_box((wall, peak));
+    });
+}
+
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_bounded_4_20(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 20, Some(4));
+        divan::black_box((wall, peak));
+    });
+}
+
 // ─── Group H: is_animated_gif caching ──────────────────────────────
 
 fn gif_fixture() -> PathBuf {
