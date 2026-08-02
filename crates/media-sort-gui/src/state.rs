@@ -818,11 +818,13 @@ mod tests {
                 path: "/a.jpg".into(),
                 media_type: MediaType::Image,
                 file_name: "a.jpg".into(),
+                animated: None,
             },
             MediaEntry {
                 path: "/b.png".into(),
                 media_type: MediaType::Image,
                 file_name: "b.png".into(),
+                animated: None,
             },
         ];
         state.media_grid.search.query = String::new();
@@ -838,11 +840,13 @@ mod tests {
                 path: "/sunset.jpg".into(),
                 media_type: MediaType::Image,
                 file_name: "sunset.jpg".into(),
+                animated: None,
             },
             MediaEntry {
                 path: "/mountain.png".into(),
                 media_type: MediaType::Image,
                 file_name: "mountain.png".into(),
+                animated: None,
             },
         ];
         state.media_grid.search.query = "sun".into();
@@ -858,6 +862,7 @@ mod tests {
             path: "/SUNSET.jpg".into(),
             media_type: MediaType::Image,
             file_name: "SUNSET.jpg".into(),
+            animated: None,
         }];
         state.media_grid.search.query = "sun".into();
         let results = state.media_grid.filtered_entries();
@@ -871,6 +876,7 @@ mod tests {
             path: "/test.jpg".into(),
             media_type: MediaType::Image,
             file_name: "test.jpg".into(),
+            animated: None,
         }];
         state.media_grid.search.query = "nonexistent".into();
         let results = state.media_grid.filtered_entries();

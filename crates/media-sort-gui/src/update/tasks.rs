@@ -17,10 +17,16 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         let start = index.saturating_sub(5);
         let end = (index + 6).min(filtered_len);
-        let thumbnail_paths: Vec<_> = filtered[start..end]
+        let thumbnail_meta: Vec<(
+            std::path::PathBuf,
+            media_sort_core::media_type::MediaType,
+            Option<bool>,
+        )> = filtered[start..end]
             .iter()
-            .map(|entry| entry.path.clone())
+            .map(|entry| (entry.path.clone(), entry.media_type, entry.animated))
             .collect();
+        let thumbnail_paths: Vec<std::path::PathBuf> =
+            thumbnail_meta.iter().map(|(p, _, _)| p.clone()).collect();
 
         let mut preload_tasks = Vec::new();
         if index + 1 < filtered_len {
@@ -151,10 +157,17 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         tasks.extend(preload_tasks);
 
         tasks.extend(
-            thumbnail_paths
+            thumbnail_meta
                 .into_iter()
-                .filter(|p| !state.cache.thumbnail_cache.contains(p))
-                .map(|p| load_thumbnail(p, state.cache.thumbnail_tracker.clone_checker())),
+                .filter(|(p, _, _)| !state.cache.thumbnail_cache.contains(p))
+                .map(|(p, mt, animated)| {
+                    load_thumbnail(
+                        p,
+                        state.cache.thumbnail_tracker.clone_checker(),
+                        mt,
+                        animated,
+                    )
+                }),
         );
         Task::batch(tasks)
     } else {
@@ -246,17 +259,27 @@ pub fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
 }
 
 pub fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
-    let entry_paths: Vec<std::path::PathBuf> = state
-        .media_grid
-        .filtered_entries()
-        .iter()
-        .map(|e| e.path.clone())
-        .collect();
+    let filtered = state.media_grid.filtered_entries();
+    let entry_paths: Vec<std::path::PathBuf> = filtered.iter().map(|e| e.path.clone()).collect();
     let load_queue = state.cache.thumbnail_tracker.update_viewport(
         &state.media_grid.scroll,
         &entry_paths,
         state.settings.window_position.width,
     );
+
+    // Per-path metadata lookup so `load_thumbnail` can skip the redundant
+    // `detect_media_type(path, false)` + `is_animated_gif` re-discovery
+    // inside `prefetch::generate_thumbnail` (the entry already paid for
+    // both at scan time). Falls back to `(Image, None)` for paths the
+    // filter dropped (shouldn't normally happen — `load_queue` is a subset
+    // of `entry_paths`).
+    let entry_meta: std::collections::HashMap<
+        std::path::PathBuf,
+        (media_sort_core::media_type::MediaType, Option<bool>),
+    > = filtered
+        .iter()
+        .map(|e| (e.path.clone(), (e.media_type, e.animated)))
+        .collect();
 
     Task::batch(
         load_queue
@@ -265,7 +288,18 @@ pub fn load_visible_thumbnails(state: &mut AppState) -> Task<Message> {
                 !state.cache.thumbnail_cache.contains(path)
                     && !state.cache.media_errors.has_error(path)
             })
-            .map(|path| load_thumbnail(path, state.cache.thumbnail_tracker.clone_checker())),
+            .map(|path| {
+                let (media_type, animated) = entry_meta
+                    .get(&path)
+                    .copied()
+                    .unwrap_or((media_sort_core::media_type::MediaType::Image, None));
+                load_thumbnail(
+                    path,
+                    state.cache.thumbnail_tracker.clone_checker(),
+                    media_type,
+                    animated,
+                )
+            }),
     )
 }
 
@@ -274,6 +308,8 @@ pub fn load_thumbnail(
     visible_tracker: std::sync::Arc<
         std::sync::RwLock<std::collections::HashSet<std::path::PathBuf>>,
     >,
+    media_type: media_sort_core::media_type::MediaType,
+    animated: Option<bool>,
 ) -> Task<Message> {
     Task::perform(
         async move {
@@ -285,7 +321,11 @@ pub fn load_thumbnail(
                 {
                     return Ok(None);
                 }
-                match crate::subscriptions::prefetch::generate_thumbnail(&path_clone) {
+                match crate::subscriptions::prefetch::generate_thumbnail(
+                    &path_clone,
+                    media_type,
+                    animated,
+                ) {
                     Ok((w, h, rgba)) => Ok(Some((w, h, rgba))),
                     Err(e) => Err(e),
                 }

@@ -18,6 +18,7 @@ fn test_select_entry_in_bounds() {
         path: PathBuf::from("/test/a.jpg"),
         media_type: MediaType::Image,
         file_name: "a.jpg".into(),
+        animated: None,
     }];
     state.media_grid.search.query = String::new();
     let _task = update(&mut state, Message::Media(MediaMessage::SelectEntry(0)));
@@ -33,11 +34,13 @@ fn test_select_entry_out_of_bounds() {
             path: PathBuf::from("/test/a.jpg"),
             media_type: MediaType::Image,
             file_name: "a.jpg".into(),
+            animated: None,
         },
         MediaEntry {
             path: PathBuf::from("/test/b.jpg"),
             media_type: MediaType::Image,
             file_name: "b.jpg".into(),
+            animated: None,
         },
     ];
     state.media_grid.search.query = String::new();
@@ -53,6 +56,7 @@ fn test_select_entry_filtered_empty() {
         path: PathBuf::from("/test/a.jpg"),
         media_type: MediaType::Image,
         file_name: "a.jpg".into(),
+        animated: None,
     }];
     state.media_grid.search.query = "nomatch".into();
     state.media_grid.selected_index = Some(0);

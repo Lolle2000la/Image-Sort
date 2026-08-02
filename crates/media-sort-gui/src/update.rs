@@ -145,10 +145,12 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_else(|| path.display().to_string());
+                let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
                 media_sort_core::models::MediaEntry {
                     path,
                     media_type,
                     file_name,
+                    animated,
                 }
             })
             .collect();

@@ -525,6 +525,7 @@ pub fn synthetic_media_entries(n: usize) -> Vec<MediaEntry> {
                 path,
                 media_type,
                 file_name,
+                animated: None,
             }
         })
         .collect()
