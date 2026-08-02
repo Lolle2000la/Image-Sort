@@ -415,9 +415,21 @@ fn test_undo_after_move() {
     let dest_file = dest.join("test_image.jpg");
     assert!(dest_file.exists());
     assert!(state.history.can_undo());
-
     let _task = update(&mut state, Message::Media(MediaMessage::Undo));
 
+    // Undo now uses an async scan; drain it so the pending selection at
+    // index 0 takes effect before we assert. The 10 s deadline is generous
+    // enough to absorb scheduler delays from concurrent tests spawning
+    // their own scanner threads.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while state.media_grid.scan_receiver.is_some() && std::time::Instant::now() < deadline {
+        let _ = poll_background_channels(&mut state);
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    assert!(
+        state.media_grid.scan_receiver.is_none(),
+        "async scan did not complete after Undo"
+    );
     assert!(file.exists());
     assert!(!dest_file.exists());
     assert!(!state.history.can_undo());

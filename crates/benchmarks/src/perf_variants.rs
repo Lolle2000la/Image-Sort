@@ -4,7 +4,9 @@
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
+use std::time::{Duration, Instant};
 
 use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, PixelType, ResizeAlg, ResizeOptions, Resizer};
@@ -366,6 +368,125 @@ pub fn settings_save_noop_if_clean(dirty: bool) -> Result<(), &'static str> {
 }
 
 // ──────────────────────────────────────────────────────────────────────
+// Candidate G: video thumbnail queue concurrency — bounded semaphore
+// protects against unbounded ffmpeg subprocess fan-out under scroll
+// storms. Production today spawns one `spawn_blocking`-backed
+// `extract_frame` per video thumbnail with no concurrency cap; the
+// proposed change mirrors the existing mpv worker pool (2–4 worker
+// threads) on the ffmpeg side via a small semaphore or worker count.
+// ──────────────────────────────────────────────────────────────────────
+
+pub struct Semaphore {
+    state: Mutex<usize>,
+    cond: Condvar,
+}
+
+impl Semaphore {
+    pub fn new(permits: usize) -> Self {
+        Self {
+            state: Mutex::new(permits),
+            cond: Condvar::new(),
+        }
+    }
+
+    pub fn acquire(&self) -> PermitGuard<'_> {
+        let mut guard = self.state.lock().expect("semaphore state lock");
+        while *guard == 0 {
+            guard = self.cond.wait(guard).expect("semaphore cond wait");
+        }
+        *guard -= 1;
+        PermitGuard { sem: self }
+    }
+
+    fn release(&self) {
+        let mut guard = self.state.lock().expect("semaphore state lock");
+        *guard += 1;
+        self.cond.notify_one();
+    }
+}
+
+pub struct PermitGuard<'a> {
+    sem: &'a Semaphore,
+}
+
+impl Drop for PermitGuard<'_> {
+    fn drop(&mut self) {
+        self.sem.release();
+    }
+}
+
+/// Submit `n` concurrent `extract_frame` operations against `mp4`, returning
+/// `(wall_time, peak_concurrent_processes)`. `cap = None` mirrors the current
+/// production spawn-blocking-per-image path (no bound on concurrent ffmpeg
+/// subprocesses); `cap = Some(c)` wraps each invocation in a permit from a
+/// `c`-wide semaphore so peak concurrency never exceeds `c`.
+pub fn extract_frame_concurrent_burst(
+    mp4: &Path,
+    n: usize,
+    cap: Option<usize>,
+) -> (Duration, usize) {
+    let peak = Arc::new(AtomicUsize::new(0));
+    let active = Arc::new(AtomicUsize::new(0));
+    let semaphore: Option<Arc<Semaphore>> = cap.map(|c| Arc::new(Semaphore::new(c)));
+
+    let start = Instant::now();
+    let handles: Vec<_> = (0..n)
+        .map(|_| {
+            let mp4 = mp4.to_path_buf();
+            let peak = peak.clone();
+            let active = active.clone();
+            let sem = semaphore.clone();
+            std::thread::spawn(move || {
+                let _guard = sem.as_ref().map(|s| s.acquire());
+                let cur = active.fetch_add(1, Ordering::SeqCst) + 1;
+                let mut p = peak.load(Ordering::Relaxed);
+                while cur > p {
+                    match peak.compare_exchange(p, cur, Ordering::SeqCst, Ordering::Relaxed) {
+                        Ok(_) => break,
+                        Err(new_p) => p = new_p,
+                    }
+                }
+                let _ = media_sort_backend::media::ffmpeg_pipe::extract_frame(&mp4, 128, 128);
+                active.fetch_sub(1, Ordering::SeqCst);
+            })
+        })
+        .collect();
+
+    for h in handles {
+        let _ = h.join();
+    }
+
+    (start.elapsed(), peak.load(Ordering::Relaxed))
+}
+
+// ──────────────────────────────────────────────────────────────────────
+// Candidate H: cache `is_animated_gif` on `MediaEntry` — the production
+// path opens the file and decodes two GIF frames per call. With an
+// `animated: Option<bool>` field set at scan time, the second call (in
+// `prefetch::generate_thumbnail`) becomes an O(1) field read.
+// ──────────────────────────────────────────────────────────────────────
+
+pub fn ensure_gif_fixture() -> Option<PathBuf> {
+    let dir = std::env::temp_dir().join(format!("media-sort-bench-gif-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).ok()?;
+    let path = dir.join("bench_static.gif");
+    if path.exists() {
+        return Some(path);
+    }
+    let img = image::RgbaImage::from_pixel(64, 64, image::Rgba([255, 0, 0, 255]));
+    img.save_with_format(&path, image::ImageFormat::Gif).ok()?;
+    Some(path)
+}
+
+pub fn is_animated_gif_baseline(path: &Path) -> Option<bool> {
+    media_sort_backend::media::image_decoder::is_animated_gif(path)
+}
+
+pub fn is_animated_gif_cached(cache: &HashMap<PathBuf, Option<bool>>, path: &Path) -> Option<bool> {
+    cache.get(path).copied().flatten()
+}
+
+// ──────────────────────────────────────────────────────────────────────
 // Helpers (no benches required)
 // ──────────────────────────────────────────────────────────────────────
 
@@ -470,5 +591,67 @@ mod tests {
             let b_names: Vec<_> = b.iter().map(|e| &e.file_name).collect();
             assert_eq!(a_names, b_names, "query={}", query);
         }
+    }
+
+    // Evidence that the Group G benches actually exercise the
+    // peak-concurrency difference. Skips gracefully when ffmpeg or the
+    // mp4 fixture isn't available. Failing cases print the actual peaks to
+    // stderr for diagnostic.
+    #[test]
+    fn g_burst_peak_concurrency_differs() {
+        let mp4 = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/MockState/mock 3.mp4"
+        ));
+        if !mp4.exists() {
+            eprintln!("g_burst test: mock 3.mp4 absent — skipping");
+            return;
+        }
+        if media_sort_backend::media::ffmpeg_pipe::find_ffmpeg().is_none() {
+            eprintln!("g_burst test: ffmpeg absent — skipping");
+            return;
+        }
+
+        let (_, peak_unbounded) = extract_frame_concurrent_burst(mp4, 8, None);
+        let (_, peak_bounded_4) = extract_frame_concurrent_burst(mp4, 8, Some(4));
+        let (_, peak_bounded_2) = extract_frame_concurrent_burst(mp4, 8, Some(2));
+
+        eprintln!(
+            "g_burst peak: unbounded={}, bounded_4={}, bounded_2={}",
+            peak_unbounded, peak_bounded_4, peak_bounded_2
+        );
+
+        // The bounded semaphore must cap peak concurrency exactly.
+        assert_eq!(
+            peak_bounded_4, 4,
+            "bounded-to-4 must cap peak at 4, got {}",
+            peak_bounded_4
+        );
+        assert_eq!(
+            peak_bounded_2, 2,
+            "bounded-to-2 must cap peak at 2, got {}",
+            peak_bounded_2
+        );
+        // Unbounded must reach strictly higher peak than the 4-cap variant
+        // (otherwise the cap has no effect to evaluate).
+        assert!(
+            peak_unbounded > peak_bounded_4,
+            "unbounded peak ({}) must exceed bounded-4 peak ({})",
+            peak_unbounded,
+            peak_bounded_4
+        );
+    }
+
+    // Smoke-test the GIF fixture used by Group H so the bench body doesn't
+    // silently skip when the fixture write fails.
+    #[test]
+    fn h_gif_fixture_writes_and_decodes() {
+        let Some(path) = ensure_gif_fixture() else {
+            eprintln!("h_gif_fixture test: could not create fixture — skipping");
+            return;
+        };
+        assert!(path.exists(), "fixture should exist after write");
+        let animated = is_animated_gif_baseline(&path);
+        assert_eq!(animated, Some(false), "single-frame GIF is not animated");
     }
 }

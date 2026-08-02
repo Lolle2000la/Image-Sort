@@ -190,21 +190,21 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             let index = state.media_grid.selected_index.unwrap_or(0);
             if let Err(e) = state.history.undo() {
                 tracing::error!("Undo failed: {e}");
+                Task::none()
             } else {
-                state.scan_media();
-                return super::tasks::select_and_load_entry(state, index);
+                state.start_async_media_scan(index);
+                Task::none()
             }
-            Task::none()
         }
         MediaMessage::Redo => {
             let index = state.media_grid.selected_index.unwrap_or(0);
             if let Err(e) = state.history.redo() {
                 tracing::error!("Redo failed: {e}");
+                Task::none()
             } else {
-                state.scan_media();
-                return super::tasks::select_and_load_entry(state, index);
+                state.start_async_media_scan(index);
+                Task::none()
             }
-            Task::none()
         }
         MediaMessage::MetadataLoaded(result) => match result {
             Ok(metadata) => {

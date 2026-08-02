@@ -93,6 +93,12 @@ impl MediaGridState {
 
     /// Synchronously scans `current_folder` for media files and populates
     /// `entries`. Clears any in-progress async scan receiver.
+    ///
+    /// Production callers now route through `AppState::start_async_media_scan`
+    /// (which feeds the existing `poll_background_channels` pipeline). This
+    /// synchronous variant survives for tests that need to assert on
+    /// `entries` immediately after the scan returns.
+    #[allow(dead_code)]
     pub fn scan_media(&mut self, current_folder: Option<&Path>, animate_gifs: bool) {
         self.scan_receiver = None;
         self.entries.clear();

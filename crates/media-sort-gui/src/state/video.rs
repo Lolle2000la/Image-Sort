@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::time::Instant;
 
 #[derive(Debug, Clone)]
@@ -17,6 +18,11 @@ pub struct VideoPlaybackState {
     pub ready: bool,
     pub seek_position: Option<f64>,
     pub last_seek_time: Option<Instant>,
+    /// Cached path of the currently-selected entry. Set in
+    /// `select_and_load_entry` so the per-video-frame `FrameReady` handler
+    /// can compare via a single `Path::eq` instead of recomputing O(n)
+    /// `filtered_entries()` + clone every frame.
+    pub selected_path: Option<PathBuf>,
 }
 
 impl Default for VideoPlaybackState {
@@ -36,6 +42,7 @@ impl Default for VideoPlaybackState {
             ready: false,
             seek_position: None,
             last_seek_time: None,
+            selected_path: None,
         }
     }
 }

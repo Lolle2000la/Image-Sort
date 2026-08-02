@@ -9,11 +9,16 @@
 //!   D_detect_media_type  — HashMap + ASCII-lowercase stack buf vs 3 linear scans
 //!   E_filtered_entries    — pre-lowercased names cache vs re-lowercase per call
 //!   F_settings_save      — save() cost vs serialize-only vs no-op dirty check
+//!   G_video_queue         — bounded ffmpeg concurrency vs unbounded spawn storm
+//!   H_is_animated_gif    — file open + decode vs cached field read
 
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use benchmarks::perf_variants;
+
+// Fixtures shared with bench body.
+use std::collections::HashMap;
 
 fn mock_state_root() -> &'static PathBuf {
     static ROOT: OnceLock<PathBuf> = OnceLock::new();
@@ -327,6 +332,102 @@ fn f_settings_save_noop_if_clean(bencher: divan::Bencher) {
     bencher.bench(|| {
         let r = perf_variants::settings_save_noop_if_clean(divan::black_box(false));
         let _ = divan::black_box(r);
+    });
+}
+
+// ─── Group G: video thumbnail queue concurrency ─────────────────────
+
+// N video thumbnails submitted in a burst, mirroring the scroll-storm case
+// where every visible card fires `extract_frame` simultaneously. The
+// baseline matches production (one `spawn_blocking` per request, no
+// concurrency cap); the bounded variant uses a `cap`-wide semaphore so
+// peak concurrent ffmpeg subprocesses never exceeds `cap`.
+//
+// divan reports the *wall time* of the burst; the `peak_concurrency`
+// returned alongside it (visible via `divan::black_box` of the tuple)
+// distinguishes the two strategies when their wall times are similar.
+
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_unbounded_8(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 8, None);
+        divan::black_box((wall, peak));
+    });
+}
+
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_bounded_4_8(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 8, Some(4));
+        divan::black_box((wall, peak));
+    });
+}
+
+#[divan::bench(sample_count = 5, sample_size = 1)]
+fn g_extract_concurrent_bounded_2_8(bencher: divan::Bencher) {
+    let mp4 = mp4_fixture();
+    if !mp4.exists() || perf_variants::ffmpeg_path_baseline().is_none() {
+        return;
+    }
+    bencher.bench(|| {
+        let (wall, peak) =
+            perf_variants::extract_frame_concurrent_burst(divan::black_box(&mp4), 8, Some(2));
+        divan::black_box((wall, peak));
+    });
+}
+
+// ─── Group H: is_animated_gif caching ──────────────────────────────
+
+fn gif_fixture() -> PathBuf {
+    perf_variants::ensure_gif_fixture().unwrap_or_else(|| PathBuf::from("/dev/null"))
+}
+
+fn gif_cache() -> HashMap<PathBuf, Option<bool>> {
+    let mut cache = HashMap::new();
+    if let Some(path) = perf_variants::ensure_gif_fixture() {
+        // Populate once at scan time (would live on `MediaEntry.animated`
+        // in the proposed optimization; HashMap stands in as such a field).
+        let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
+        cache.insert(path, animated);
+    }
+    cache
+}
+
+#[divan::bench]
+fn h_is_animated_gif_baseline(bencher: divan::Bencher) {
+    let path = gif_fixture();
+    if !path.exists() {
+        return;
+    }
+    bencher.bench(|| {
+        let r = perf_variants::is_animated_gif_baseline(divan::black_box(&path));
+        divan::black_box(r);
+    });
+}
+
+#[divan::bench]
+fn h_is_animated_gif_cached(bencher: divan::Bencher) {
+    let path = gif_fixture();
+    let cache = gif_cache();
+    if !path.exists() {
+        return;
+    }
+    bencher.bench(|| {
+        let r = perf_variants::is_animated_gif_cached(
+            divan::black_box(&cache),
+            divan::black_box(&path),
+        );
+        divan::black_box(r);
     });
 }
 

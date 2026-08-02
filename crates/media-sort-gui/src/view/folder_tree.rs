@@ -145,7 +145,6 @@ fn render_node<'a>(
     } else {
         FolderMessage::Selected(node_path.clone(), current_flat_idx)
     };
-    let folder_id_str = format!("folder_{}", node.path.display());
     let is_selected = selected_folder_idx == Some(current_flat_idx);
     let is_dragging_this = dragging_pinned_folder == Some(&node.path);
     let is_hovered = hovered_pinned_folder == Some(&node.path) && dragging_pinned_folder.is_none();
@@ -222,11 +221,7 @@ fn render_node<'a>(
             )))
         };
 
-        container(mouse_area_element)
-            .id(iced::widget::Id::new(Box::leak(
-                folder_id_str.into_boxed_str(),
-            )))
-            .width(Length::Shrink)
+        container(mouse_area_element).width(Length::Shrink)
     } else {
         let button_element = button(row_content)
             .on_press(Message::Folder(folder_action))
@@ -268,11 +263,7 @@ fn render_node<'a>(
             })
             .width(Length::Shrink);
 
-        container(button_element)
-            .id(iced::widget::Id::new(Box::leak(
-                folder_id_str.into_boxed_str(),
-            )))
-            .width(Length::Shrink)
+        container(button_element).width(Length::Shrink)
     };
 
     let item_layout = row![arrow_content, select_button]

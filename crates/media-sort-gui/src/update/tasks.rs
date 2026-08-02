@@ -55,6 +55,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         state.media_grid.selected_index = Some(index);
         state.metadata.current = None;
+        state.video.selected_path = Some(path.clone());
 
         state.settings.general.last_selected_media = Some(path.to_string_lossy().to_string());
         state.settings.mark_dirty();
@@ -160,6 +161,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.media_grid.selected_index = None;
         state.metadata.current = None;
         state.cache.selected_image = None;
+        state.video.selected_path = None;
 
         state.settings.general.last_selected_media = None;
         state.settings.mark_dirty();

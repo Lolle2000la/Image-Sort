@@ -174,10 +174,31 @@ impl AppState {
         self.media_grid.pending_select_index = Some(0);
     }
 
+    #[allow(dead_code)]
     pub fn scan_media(&mut self) {
         let animate_gifs = self.settings.general.animate_gifs;
         let folder = self.folder.current_folder.as_deref();
         self.media_grid.scan_media(folder, animate_gifs);
+    }
+
+    /// Kick off an asynchronous media scan of `current_folder`. The GUI
+    /// thread drops to an empty grid immediately; `poll_background_channels`
+    /// drains the receiver on subsequent `Tick`s, classifies each entry,
+    /// and finally calls `select_and_load_entry(state, select_idx)` once the
+    /// scan finishes. Used by `open_folder` and by Undo/Redo — routes what
+    /// used to be a blocking on-UI-thread rescan into the existing async
+    /// pipeline.
+    pub fn start_async_media_scan(&mut self, select_idx: usize) {
+        let Some(folder) = self.folder.current_folder.clone() else {
+            return;
+        };
+        self.media_grid.entries.clear();
+        self.media_grid.rebuild_lower_names();
+        self.media_grid.selected_index = None;
+        self.media_grid.scan_receiver = Some(
+            media_sort_backend::filesystem::scanner::scan_media_files(&folder),
+        );
+        self.media_grid.pending_select_index = Some(select_idx);
     }
 
     pub fn build_folder_tree(&mut self) {

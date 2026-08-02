@@ -198,10 +198,7 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
                 .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
                 .style(iced::widget::button::secondary)
                 .width(Length::Fixed(120.0)),
-        )
-        .id(iced::widget::Id::new(Box::leak(
-            format!("keybinding_edit_{}", idx).into_boxed_str()
-        ),)),
+        ),
     ]
     .spacing(8)
     .align_y(Alignment::Center)
