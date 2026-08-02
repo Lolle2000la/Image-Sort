@@ -65,7 +65,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
+          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm cmake libturbojpeg0-dev
 
       - name: Install System Dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -90,10 +90,12 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
+          # Remove Strawberry Perl from PATH to prevent broken pkg-config.BAT conflicts
+          PATH=$(echo "$PATH" | tr ':' '\n' | grep -i -v "strawberry" | tr '\n' ':')
+          echo "$PATH" >> "$GITHUB_PATH"
+          
           pip install meson ninja
-          if ! command -v nasm &> /dev/null; then
-            choco install -y nasm pkgconfiglite
-          fi
+          choco install -y nasm pkgconfiglite
           echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
 
       - name: Run Clippy Lints
