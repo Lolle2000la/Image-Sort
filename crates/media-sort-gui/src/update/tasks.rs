@@ -2,6 +2,10 @@ use iced::Task;
 
 use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
+use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
+use crate::view::media_grid::{
+    MEDIA_GRID_CARD_SPACING, MEDIA_GRID_CARD_WIDTH, MEDIA_GRID_SCROLLABLE_ID,
+};
 use media_sort_core::media_type::MediaType;
 
 pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message> {
@@ -198,10 +202,6 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 /// is executed. If it moves near or past the viewport edge, the scroll position
 /// adjusts minimally so the item comes into view with margin.
 pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message> {
-    use crate::view::media_grid::{
-        MEDIA_GRID_CARD_SPACING, MEDIA_GRID_CARD_WIDTH, MEDIA_GRID_SCROLLABLE_ID,
-    };
-
     let total = state.media_grid.filtered_entries().len();
     if total <= 1 {
         return Task::none();
@@ -300,8 +300,6 @@ pub fn relative_position_for(index: usize, total: usize) -> Option<f32> {
 }
 
 pub fn scroll_to_selected_folder(state: &mut AppState) -> Task<Message> {
-    use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
-
     let visible = state.folder.collect_visible_folders();
     let total = visible.len();
     let Some(idx) = state.folder.selected_folder_idx.filter(|i| *i < total) else {
