@@ -141,10 +141,10 @@ impl AppState {
     pub fn open_folder(&mut self, path: &Path) {
         self.folder.current_folder = Some(path.to_path_buf());
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
-        let _ = self.settings.save();
+        self.settings.mark_dirty();
         self.history.clear();
         self.media_grid.entries.clear();
-        self.build_folder_tree();
+        self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
         self.metadata.current = None;
         self.folder.selected_folder = None;
@@ -156,6 +156,8 @@ impl AppState {
                 sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
         }
         self.video.frame = None;
+        self.video.selected_path = None;
+        self.video.ready = false;
         self.video.position = 0.0;
         self.video.duration = 0.0;
         self.cache.media_errors.clear();
@@ -173,10 +175,34 @@ impl AppState {
         self.media_grid.pending_select_index = Some(0);
     }
 
-    pub fn scan_media(&mut self) {
-        let animate_gifs = self.settings.general.animate_gifs;
-        let folder = self.folder.current_folder.as_deref();
-        self.media_grid.scan_media(folder, animate_gifs);
+    /// Kick off an asynchronous media scan of `current_folder`. The GUI
+    /// thread drops to an empty grid immediately; `poll_background_channels`
+    /// drains the receiver on subsequent `Tick`s, classifies each entry,
+    /// and finally calls `select_and_load_entry(state, select_idx)` once the
+    /// scan finishes. Used by `open_folder` and by Undo/Redo — routes what
+    /// used to be a blocking on-UI-thread rescan into the existing async
+    /// pipeline.
+    pub fn start_async_media_scan(&mut self, select_idx: usize) {
+        let Some(folder) = self.folder.current_folder.clone() else {
+            return;
+        };
+        self.media_grid.entries.clear();
+        self.media_grid.rebuild_lower_names();
+        self.media_grid.selected_index = None;
+        // Clear video state so a late FrameReady from the previously-selected
+        // video can't repopulate video.rgba during the rescan (the cached
+        // selected_path would otherwise match a stale mpv frame).
+        if let Some(ref sender) = self.video.sender {
+            let _ =
+                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
+        }
+        self.video.frame = None;
+        self.video.selected_path = None;
+        self.video.ready = false;
+        self.media_grid.scan_receiver = Some(
+            media_sort_backend::filesystem::scanner::scan_media_files(&folder),
+        );
+        self.media_grid.pending_select_index = Some(select_idx);
     }
 
     pub fn build_folder_tree(&mut self) {
@@ -192,6 +218,7 @@ impl AppState {
             .expect("current_folder must be Some since we checked it is not None above");
         self.folder.folder_tree =
             build_tree_nodes_data(&root, &self.folder.pinned_folders, &expanded_paths);
+        self.folder.invalidate_visible_folders_cache();
         self.folder.sync_selected_idx();
     }
 
@@ -217,6 +244,7 @@ impl AppState {
             path,
             self.folder.current_folder.as_deref(),
         );
+        self.folder.invalidate_visible_folders_cache();
         self.folder.sync_selected_idx();
     }
 
@@ -301,13 +329,14 @@ impl AppState {
             if pos + 1 < self.folder.folder_tree.len() {
                 self.folder.folder_tree.swap(pos + 1, pos);
             }
+            self.folder.invalidate_visible_folders_cache();
             self.settings.pinned_folders.paths = self
                 .folder
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            let _ = self.settings.save();
+            self.settings.mark_dirty();
         }
     }
 
@@ -324,13 +353,14 @@ impl AppState {
             if pos + 2 < self.folder.folder_tree.len() {
                 self.folder.folder_tree.swap(pos + 1, pos + 2);
             }
+            self.folder.invalidate_visible_folders_cache();
             self.settings.pinned_folders.paths = self
                 .folder
                 .pinned_folders
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            let _ = self.settings.save();
+            self.settings.mark_dirty();
         }
     }
 
@@ -339,6 +369,7 @@ impl AppState {
         if pos_a + 1 < self.folder.folder_tree.len() && pos_b + 1 < self.folder.folder_tree.len() {
             self.folder.folder_tree.swap(pos_a + 1, pos_b + 1);
         }
+        self.folder.invalidate_visible_folders_cache();
         self.settings.pinned_folders.paths = self
             .folder
             .pinned_folders
@@ -485,7 +516,7 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
         })
         .collect();
 
-    children.sort_by_key(|a| a.name.to_lowercase());
+    children.sort_by_cached_key(|a| a.name.to_lowercase());
     children
 }
 
@@ -796,11 +827,13 @@ mod tests {
                 path: "/a.jpg".into(),
                 media_type: MediaType::Image,
                 file_name: "a.jpg".into(),
+                animated: None,
             },
             MediaEntry {
                 path: "/b.png".into(),
                 media_type: MediaType::Image,
                 file_name: "b.png".into(),
+                animated: None,
             },
         ];
         state.media_grid.search.query = String::new();
@@ -816,11 +849,13 @@ mod tests {
                 path: "/sunset.jpg".into(),
                 media_type: MediaType::Image,
                 file_name: "sunset.jpg".into(),
+                animated: None,
             },
             MediaEntry {
                 path: "/mountain.png".into(),
                 media_type: MediaType::Image,
                 file_name: "mountain.png".into(),
+                animated: None,
             },
         ];
         state.media_grid.search.query = "sun".into();
@@ -836,6 +871,7 @@ mod tests {
             path: "/SUNSET.jpg".into(),
             media_type: MediaType::Image,
             file_name: "SUNSET.jpg".into(),
+            animated: None,
         }];
         state.media_grid.search.query = "sun".into();
         let results = state.media_grid.filtered_entries();
@@ -849,6 +885,7 @@ mod tests {
             path: "/test.jpg".into(),
             media_type: MediaType::Image,
             file_name: "test.jpg".into(),
+            animated: None,
         }];
         state.media_grid.search.query = "nonexistent".into();
         let results = state.media_grid.filtered_entries();
@@ -1325,6 +1362,7 @@ mod tests {
         assert_eq!(state.folder.selected_folder, Some(p_root.clone()));
 
         state.folder.folder_tree[0].is_expanded = true;
+        state.folder.invalidate_visible_folders_cache();
 
         state.folder.select_below();
         assert_eq!(state.folder.selected_folder, Some(p_sub));

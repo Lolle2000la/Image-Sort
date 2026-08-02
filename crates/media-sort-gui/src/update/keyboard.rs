@@ -37,7 +37,7 @@ pub fn handle_key_captured(
                 shift,
                 alt,
             );
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
         }
         return Task::none();
     }

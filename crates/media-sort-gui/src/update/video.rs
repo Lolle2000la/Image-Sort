@@ -19,14 +19,11 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                     rgba,
                 } => {
                     state.cache.media_errors.remove(&path);
-                    let current_path = state.media_grid.selected_index.and_then(|idx| {
-                        state
-                            .media_grid
-                            .filtered_entries()
-                            .get(idx)
-                            .map(|e| e.path.clone())
-                    });
-                    if Some(path) == current_path && state.video.ready {
+                    // O(1) cached-path compare instead of per-frame O(n)
+                    // `filtered_entries()` + `path.clone()`.
+                    if state.video.selected_path.as_deref() == Some(path.as_path())
+                        && state.video.ready
+                    {
                         state.video.rgba = Some(rgba);
                         state.video.width = width;
                         state.video.height = height;

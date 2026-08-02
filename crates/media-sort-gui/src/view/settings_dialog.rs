@@ -191,17 +191,21 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
         text(shortcut_text).size(12)
     };
 
+    let kb_container = container(
+        button(btn_label)
+            .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
+            .style(iced::widget::button::secondary)
+            .width(Length::Fixed(120.0)),
+    );
+    #[cfg(feature = "demo")]
+    let kb_container = kb_container.id(iced_automation::static_widget_id(format!(
+        "keybinding_edit_{}",
+        idx
+    )));
+
     row![
         text(label).size(12).width(Length::Fixed(240.0)),
-        container(
-            button(btn_label)
-                .on_press(Message::Settings(SettingsMessage::EditKeyBinding(idx)))
-                .style(iced::widget::button::secondary)
-                .width(Length::Fixed(120.0)),
-        )
-        .id(iced::widget::Id::new(Box::leak(
-            format!("keybinding_edit_{}", idx).into_boxed_str()
-        ),)),
+        kb_container,
     ]
     .spacing(8)
     .align_y(Alignment::Center)

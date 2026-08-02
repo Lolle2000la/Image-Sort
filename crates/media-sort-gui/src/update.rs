@@ -111,6 +111,8 @@ fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Messa
         }
     }
 
+    let _ = state.settings.save_if_dirty();
+
     if refresh_thumbnails {
         Task::batch(vec![
             tasks::load_visible_thumbnails(state),
@@ -130,11 +132,12 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     {
         state.folder.folder_tree_receiver = None;
         state.folder.folder_tree = tree;
+        state.folder.invalidate_visible_folders_cache();
         state.folder.sync_selected_idx();
     }
 
-    let scan_finished = if let Some(ref rx) = state.media_grid.scan_receiver {
-        let new_entries: Vec<_> = rx
+    let (new_entries, scan_finished) = if let Some(ref rx) = state.media_grid.scan_receiver {
+        let mut new_entries: Vec<media_sort_core::models::MediaEntry> = rx
             .try_iter()
             .map(|path| {
                 let media_type =
@@ -143,21 +146,53 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_else(|| path.display().to_string());
+                let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
                 media_sort_core::models::MediaEntry {
                     path,
                     media_type,
                     file_name,
+                    animated,
                 }
             })
             .collect();
-        state.media_grid.entries.extend(new_entries);
-        matches!(
-            rx.try_recv(),
-            Err(std::sync::mpsc::TryRecvError::Disconnected)
-        )
+        // Drain any item that arrived between try_iter() and this loop; only
+        // treat Disconnected (not an Ok'd item) as "scan finished". Without
+        // this, a single item landing in the nanosecond window between
+        // try_iter() and a bare try_recv() would be consumed and silently
+        // dropped.
+        let mut disconnected = false;
+        loop {
+            match rx.try_recv() {
+                Ok(path) => {
+                    let media_type =
+                        crate::state::detect_media_type(&path, state.settings.general.animate_gifs);
+                    let file_name = path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_else(|| path.display().to_string());
+                    let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
+                    new_entries.push(media_sort_core::models::MediaEntry {
+                        path,
+                        media_type,
+                        file_name,
+                        animated,
+                    });
+                }
+                Err(std::sync::mpsc::TryRecvError::Empty) => break,
+                Err(std::sync::mpsc::TryRecvError::Disconnected) => {
+                    disconnected = true;
+                    break;
+                }
+            }
+        }
+        (new_entries, disconnected)
     } else {
-        false
+        (Vec::new(), false)
     };
+    if !new_entries.is_empty() {
+        state.media_grid.entries.extend(new_entries);
+        state.media_grid.rebuild_lower_names();
+    }
 
     if scan_finished {
         state.media_grid.scan_receiver = None;
@@ -216,18 +251,14 @@ fn handle_event_occurred(state: &mut AppState, event: iced::Event) -> Task<Messa
             Task::none()
         }
         iced::Event::Mouse(iced::mouse::Event::ButtonReleased(iced::mouse::Button::Left)) => {
-            let mut saved = false;
             if state.folder.dragging_folder_divider || state.metadata.dragging_divider {
                 state.folder.dragging_folder_divider = false;
                 state.metadata.dragging_divider = false;
-                let _ = state.settings.save();
-                saved = true;
+                state.settings.mark_dirty();
             }
             if state.folder.dragging_pinned_folder.is_some() {
                 state.folder.dragging_pinned_folder = None;
-                if !saved {
-                    let _ = state.settings.save();
-                }
+                state.settings.mark_dirty();
             }
             Task::none()
         }

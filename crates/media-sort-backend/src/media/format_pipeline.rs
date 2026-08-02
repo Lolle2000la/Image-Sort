@@ -337,16 +337,20 @@ fn resize_rgba(
     if dst_w == 0 || dst_h == 0 {
         return Ok(Vec::new());
     }
+    thread_local! {
+        static RESIZER: std::cell::RefCell<Resizer> = std::cell::RefCell::new(Resizer::new());
+    }
     let src_img = image::RgbaImage::from_raw(src_w, src_h, src.to_vec())
         .ok_or_else(|| "failed to create RgbaImage from raw data".to_string())?;
     let mut dst_img = Image::new(dst_w, dst_h, PixelType::U8x4);
-    let mut resizer = Resizer::new();
-    resizer
-        .resize(
-            &src_img,
-            &mut dst_img,
-            &ResizeOptions::new().resize_alg(ResizeAlg::Convolution(FilterType::Bilinear)),
-        )
+    RESIZER
+        .with_borrow_mut(|resizer| {
+            resizer.resize(
+                &src_img,
+                &mut dst_img,
+                &ResizeOptions::new().resize_alg(ResizeAlg::Convolution(FilterType::Bilinear)),
+            )
+        })
         .map_err(|e| format!("{e}"))?;
     Ok(dst_img.into_vec())
 }

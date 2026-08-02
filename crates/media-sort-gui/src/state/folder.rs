@@ -15,6 +15,7 @@ pub struct FolderState {
     pub dragging_pinned_folder: Option<PathBuf>,
     pub hovered_pinned_folder: Option<PathBuf>,
     pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
+    pub(crate) visible_folders_cache: Vec<PathBuf>,
 }
 
 impl fmt::Debug for FolderState {
@@ -29,15 +30,26 @@ impl fmt::Debug for FolderState {
             .field("dragging_pinned_folder", &self.dragging_pinned_folder)
             .field("hovered_pinned_folder", &self.hovered_pinned_folder)
             .field("folder_tree_receiver", &self.folder_tree_receiver.is_some())
+            .field(
+                "visible_folders_cache_len",
+                &self.visible_folders_cache.len(),
+            )
             .finish()
     }
 }
 
 impl FolderState {
-    pub fn collect_visible_folders(&self) -> Vec<PathBuf> {
-        let mut list = Vec::new();
-        super::collect_visible_folders_recursive(&self.folder_tree, &mut list);
-        list
+    pub fn invalidate_visible_folders_cache(&mut self) {
+        self.visible_folders_cache.clear();
+    }
+
+    pub fn collect_visible_folders(&mut self) -> Vec<PathBuf> {
+        if self.visible_folders_cache.is_empty() && !self.folder_tree.is_empty() {
+            let mut list = Vec::new();
+            super::collect_visible_folders_recursive(&self.folder_tree, &mut list);
+            self.visible_folders_cache = list;
+        }
+        self.visible_folders_cache.clone()
     }
 
     pub fn set_selected(&mut self, path: PathBuf, idx: usize) {
@@ -138,6 +150,7 @@ impl FolderState {
                     true,
                     self.current_folder.as_deref(),
                 );
+                self.invalidate_visible_folders_cache();
             }
         }
         self.sync_selected_idx();
@@ -155,6 +168,7 @@ impl FolderState {
                     false,
                     self.current_folder.as_deref(),
                 );
+                self.invalidate_visible_folders_cache();
             } else if let Some(parent) = selected.parent()
                 && super::find_node_expanded(&self.folder_tree, parent).is_some()
             {

@@ -5,12 +5,12 @@ use std::sync::LazyLock;
 use tracing;
 
 type ThumbnailResult = Result<(u32, u32, Vec<u8>), String>;
-type ThumbnailRequest = (PathBuf, std::sync::mpsc::Sender<ThumbnailResult>);
+type VideoThumbnailRequest = (PathBuf, std::sync::mpsc::Sender<ThumbnailResult>);
 
 static VIDEO_THUMBNAIL_WORKER: LazyLock<
-    std::sync::Mutex<std::sync::mpsc::Sender<ThumbnailRequest>>,
+    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
-    let (tx, rx) = std::sync::mpsc::channel::<ThumbnailRequest>();
+    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
@@ -41,6 +41,52 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
                 };
                 let result = generate_video_thumbnail_frame(&mut player, &path);
                 let _ = response.send(result);
+            }
+        });
+    }
+    std::sync::Mutex::new(tx)
+});
+
+// Bounded ffmpeg worker pool — sized larger (clamp 2..16) than the mpv pool
+// (clamp 2..4) because ffmpeg is a short-lived lightweight subprocess (~70 ms,
+// ~40 MB RSS, no persistent state) while each MpvContext holds GPU resources
+// and a libmpv handle. cap=16 lets a typical visible set (~20–30 video cards)
+// render in 1–2 batches on most machines while still bounding pathological
+// scroll-storm fan-out. Without this cap, scrolling through a folder of N
+// video files can spawn N simultaneous ffmpeg processes (default tokio
+// blocking pool ceiling is 512). See `benches/perf_candidates.rs` Group G.
+static FFMPEG_THUMBNAIL_WORKER: LazyLock<
+    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
+> = LazyLock::new(|| {
+    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
+    let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
+    let num_workers = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(4)
+        .clamp(2, 16);
+
+    for i in 0..num_workers {
+        let rx = rx.clone();
+        std::thread::spawn(move || {
+            loop {
+                let request = {
+                    let guard = rx.lock().unwrap();
+                    guard.recv().ok()
+                };
+                let Some((path, response)) = request else {
+                    break;
+                };
+                let result =
+                    match media_sort_backend::media::ffmpeg_pipe::extract_frame(&path, 128, 128) {
+                        Ok(decoded) => Ok(decoded.into_parts()),
+                        Err(e) => Err(e),
+                    };
+                if response.send(result).is_err() {
+                    tracing::warn!(
+                        "FFMPEG thumbnail worker {i}: response channel closed for {}",
+                        path.display()
+                    );
+                }
             }
         });
     }
@@ -118,12 +164,23 @@ fn generate_video_thumbnail_frame(
     result
 }
 
-/// Generate a thumbnail for the given file. GIFs are always decoded as
-/// images here regardless of animation settings — the image path is much
-/// lighter on resources for grid thumbnails.
-pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
-    let media_type = crate::state::detect_media_type(path, false);
-
+/// Generate a thumbnail for the given file. Takes the entry's cached
+/// `media_type` and `animated` (the latter `Some(_)` for GIFs, populated
+/// at scan time) so the production code path no longer re-runs
+/// `detect_media_type(path, false)` here — that call internally re-opens
+/// / re-decodes GIF files when the extension is `.gif` to decide whether
+/// they should be reclassified as `Image`. With the cached args threaded
+/// through, the GIF "is_animated" check happens exactly once per scan.
+///
+/// `animated` is unused at dispatch today (the `media_type` arg already
+/// carries the animate_gifs-driven classification) but is threaded through
+/// so future callers can use it (e.g. a metadata-panel "Animated" field)
+/// without reopening `is_animated_gif`.
+pub fn generate_thumbnail(
+    path: &std::path::Path,
+    media_type: MediaType,
+    _animated: Option<bool>,
+) -> ThumbnailResult {
     if media_type == MediaType::Audio {
         return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
             .map(|d| d.into_parts())
@@ -131,23 +188,42 @@ pub fn generate_thumbnail(path: &std::path::Path) -> ThumbnailResult {
     }
 
     if media_type == MediaType::Video {
-        // ffmpeg is bundled in release packages and is ~2.4x faster;
-        // mpv is the fallback (e.g. Linux without ffmpeg installed).
-        if let Ok(result) = media_sort_backend::media::ffmpeg_pipe::extract_frame(path, 128, 128) {
-            return Ok(result.into_parts());
-        }
-
+        // ffmpeg is bundled in release packages and is ~2.4× faster than
+        // the mpv poll loop. Route through a bounded worker pool
+        // (`FFMPEG_THUMBNAIL_WORKER`, `available_parallelism().clamp(2, 16)`)
+        // so a scroll-storm can't fan out N simultaneous ffmpeg
+        // subprocesses. On ffmpeg miss / extract failure, fall back to the
+        // existing mpv worker pool — same semantics as before, just with a
+        // bounded upper bound on concurrency.
         let (response_tx, response_rx) = std::sync::mpsc::channel();
-        let sender = VIDEO_THUMBNAIL_WORKER
+        if FFMPEG_THUMBNAIL_WORKER
             .lock()
-            .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
-            .clone();
-        sender
+            .expect("FFMPEG_THUMBNAIL_WORKER lock is not poisoned")
             .send((path.to_path_buf(), response_tx))
-            .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
-        return response_rx
-            .recv()
-            .map_err(|e| format!("Failed to receive video thumbnail result: {e}"))?;
+            .is_err()
+        {
+            return Err("Failed to queue ffmpeg video thumbnail request".to_string());
+        }
+        match response_rx.recv() {
+            Ok(Ok(parts)) => return Ok(parts),
+            Ok(Err(_ffmpeg_err)) => {
+                // ffmpeg rejected the file; try the mpv pool as a fallback.
+                let (mpv_tx, mpv_rx) = std::sync::mpsc::channel();
+                let sender = VIDEO_THUMBNAIL_WORKER
+                    .lock()
+                    .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
+                    .clone();
+                sender
+                    .send((path.to_path_buf(), mpv_tx))
+                    .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
+                return mpv_rx
+                    .recv()
+                    .map_err(|e| format!("Failed to receive video thumbnail result: {e}"))?;
+            }
+            Err(e) => {
+                return Err(format!("Failed to receive ffmpeg thumbnail result: {e}"));
+            }
+        }
     }
 
     if path.extension().and_then(|e| e.to_str()) == Some("ico") {
@@ -195,7 +271,7 @@ mod tests {
         let img = image::RgbaImage::from_pixel(32, 32, image::Rgba([255, 0, 0, 255]));
         img.save(&path).unwrap();
 
-        let result = generate_thumbnail(&path);
+        let result = generate_thumbnail(&path, MediaType::Image, None);
         assert!(result.is_ok());
         let (w, h, rgba) = result.unwrap();
         assert!(w > 0 && h > 0);
@@ -223,7 +299,7 @@ mod tests {
         let mut file = std::fs::File::create(&path).unwrap();
         icon_dir.write(&mut file).unwrap();
 
-        let result = generate_thumbnail(&path);
+        let result = generate_thumbnail(&path, MediaType::Image, None);
         assert!(result.is_ok());
         let (w, h, rgba) = result.unwrap();
         assert_eq!((w, h), (32, 32));
@@ -235,7 +311,11 @@ mod tests {
 
     #[test]
     fn test_generate_thumbnail_nonexistent() {
-        let result = generate_thumbnail(&std::path::PathBuf::from("/nonexistent/image_xyz.jpg"));
+        let result = generate_thumbnail(
+            &std::path::PathBuf::from("/nonexistent/image_xyz.jpg"),
+            MediaType::Image,
+            None,
+        );
         assert!(result.is_err());
     }
 
@@ -271,7 +351,7 @@ mod tests {
 
         std::fs::write(&path, &oriented_jpeg).unwrap();
 
-        let result = generate_thumbnail(&path);
+        let result = generate_thumbnail(&path, MediaType::Image, None);
         assert!(result.is_ok());
         let (w, h, rgba) = result.unwrap();
         assert!(

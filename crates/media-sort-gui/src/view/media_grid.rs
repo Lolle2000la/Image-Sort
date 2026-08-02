@@ -59,7 +59,37 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
 
     let mut entries_row = row![].spacing(MEDIA_GRID_CARD_SPACING);
 
-    for (i, entry) in filtered.iter().enumerate() {
+    let total = filtered.len();
+    const CARD_STRIDE: f32 = MEDIA_GRID_CARD_WIDTH + MEDIA_GRID_CARD_SPACING;
+    // Virtualize: render only the windows of cards that fall within the
+    // current scroll viewport (±5 cards of buffer, mirroring
+    // `thumbnail_tracker::update_viewport`). Pad the leading / trailing
+    // gaps with `space()` of the same total width so the scrollable's
+    // content layout — and therefore the scroll offset math — stays
+    // identical to the un-virtualized version. While the viewport_width
+    // snapshot is still 0 (before the first `on_scroll` callback fires),
+    // render the full list so the initial frame is never blank.
+    let (start, end) = if state.media_grid.scroll.viewport_width > 0.0 {
+        let s = (state.media_grid.scroll.offset_x / CARD_STRIDE).floor() as usize;
+        let e = ((state.media_grid.scroll.offset_x + state.media_grid.scroll.viewport_width)
+            / CARD_STRIDE)
+            .ceil() as usize;
+        (s.saturating_sub(5), (e + 5).min(total))
+    } else {
+        (0, total)
+    };
+
+    if start > 0 {
+        // Subtract one card spacing: the row's `spacing` inserts
+        // `MEDIA_GRID_CARD_SPACING` between this spacer and the first
+        // rendered card, so the card lands at `start * CARD_STRIDE`
+        // exactly matching its un-virtualized position.
+        let pad = (start as f32 * CARD_STRIDE) - MEDIA_GRID_CARD_SPACING;
+        entries_row = entries_row.push(space().width(Length::Fixed(pad)));
+    }
+
+    for (local_i, entry) in filtered[start..end].iter().enumerate() {
+        let i = local_i + start;
         let is_selected = state.media_grid.selected_index == Some(i);
 
         let thumbnail_content: Element<'_, Message> = if let Some(handle) =
@@ -163,19 +193,28 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
             .spacing(2)
             .width(Length::Fixed(MEDIA_GRID_CARD_WIDTH));
 
-        let idx = i;
-        let card_id_str = format!("media_card_{}", idx);
         let entry_button = container(
             button(card)
-                .on_press(Message::Media(MediaMessage::SelectEntry(idx)))
+                .on_press(Message::Media(MediaMessage::SelectEntry(i)))
                 .padding(0)
                 .style(iced::widget::button::text),
-        )
-        .id(iced::widget::Id::new(Box::leak(
-            card_id_str.into_boxed_str(),
+        );
+        #[cfg(feature = "demo")]
+        let entry_button = entry_button.id(iced_automation::static_widget_id(format!(
+            "media_card_{}",
+            i
         )));
 
         entries_row = entries_row.push(entry_button);
+    }
+
+    if end < total {
+        // Subtract one card spacing to compensate for the gap the row
+        // inserts between the last rendered card and this trailing
+        // spacer, keeping the total content width identical to the
+        // un-virtualized layout.
+        let pad = ((total - end) as f32 * CARD_STRIDE) - MEDIA_GRID_CARD_SPACING;
+        entries_row = entries_row.push(space().width(Length::Fixed(pad)));
     }
 
     // Wrap the row of cards in a column with empty space at the bottom. This

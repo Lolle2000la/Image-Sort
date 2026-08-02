@@ -100,8 +100,8 @@ The GUI follows iced's TEA pattern with a unidirectional data flow:
 
 - **Model** — `AppState` (`crates/media-sort-gui/src/state.rs:14`) holds all UI state
 - **Messages** — `Message` enum (`crates/media-sort-gui/src/message.rs:8`) with nested sub-enums: `FolderMessage`, `MediaMessage`, `SettingsMessage`, `VideoMessage`
-- **Update** — `app::update()` (`crates/media-sort-gui/src/app.rs:14`) is the pure reducer, ~950 lines, returning `Task<Message>` for side effects
-- **View** — `app::view()` delegates to `main_layout_view()` which composes 10 view sub-modules
+- **Update** — `app::update()` (`crates/media-sort-gui/src/app.rs:14`) is the pure reducer, ~950 lines, returning `Task<Message>` for side effects. Undo/Redo (`MediaMessage::Undo`/`Redo`) feed `AppState::start_async_media_scan(select_idx)`, which kicks off the same `scan_media_files` background scan as `open_folder` rather than blocking the UI thread on a synchronous rescan; `poll_background_channels` drains and finally re-selects the entry at `pending_select_index`. Tests that need `entries` populated before asserting drain the async scan via the `drain_async_scan` helper in `update/tests.rs` (loops `poll_background_channels` until `scan_receiver` is `None`). There is no synchronous scan path in production or tests.
+- **View** — `app::view()` delegates to `main_layout_view()` which composes 10 view sub-modules. `media_grid_view` is **virtualized**: only the cards within the current scroll viewport (±5 cards of buffer, computed via `state.media_grid.scroll`, mirroring `subscriptions/thumbnail_tracker::update_viewport`) are constructed per frame, with leading/trailing `space()` of the same width padding the row so the scrollable's offset math is unchanged. Per-card `iced::widget::Id`s (and the equivalent per-folder-node IDs in `folder_tree_view`) were dropped — none were ever read elsewhere, so this also removes the per-frame `Box::leak` memory leak.
 - **Subscription** — `app::subscription()` (`crates/media-sort-gui/src/app.rs:1218`) merges 4 streams into `Message`:
 
 | Stream | Source | Purpose |
@@ -194,12 +194,12 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 - `PinnedFoldersSettings` — list of pinned folder paths as strings
 - `WindowPosition` — left, top, width, height
 
-Settings are **saved eagerly** on nearly every state mutation (not deferred to exit). This ensures crash resilience but means every toggle/action triggers a disk write. The `UI_TEST` env var swaps the config path to `ui_test_config.toml` for testing.
+Settings are persisted via a **dirty-flag + tick-coalesced** scheme, not eagerly. Call sites that mutate a setting call `state.settings.mark_dirty()` instead of `save()`; the 16 ms `Tick` subscription in `app.rs` (see `handle_tick`) then calls `state.settings.save_if_dirty()` once per tick, so the cost of `toml::to_string_pretty` + `std::fs::write` is amortized across at most one disk write per ~16 ms regardless of how many settings changed in that window. Crash-resilience granularity is also one tick (~16 ms of pending mutations); **force-flush** sites (`state.settings.save()` directly, not via `save_if_dirty`) remain at the three exit paths — `Message::Quit`, the `should_exit` branch of `handle_tick`, and `Message::EventOccurred(Window::CloseRequested)` — so a pending dirty state is always flushed before the process tears down. The `UI_TEST` env var swaps the config path to `ui_test_config.toml` for testing.
 
 To add a new persisted setting:
 1. Add the field to the appropriate sub-struct in `crates/media-sort-core/src/settings/`
 2. Add `#[serde(default)]` (or a concrete default) so old configs remain loadable
-3. If the setting has a UI toggle, call `state.settings.save()` after mutation
+3. If the setting has a UI toggle, call `state.settings.mark_dirty()` after mutation (the next `Tick` flushes it; the three exit paths above force-flush)
 4. If the setting is exposed in the GUI view, update the **Application Settings** manual ([settings.mdx](website/src/content/docs/en/config/settings.mdx)) in all supported locales
 5. If the configuration schema changes (new key/default/section), update the **Configuration File** manual ([config-file.mdx](website/src/content/docs/en/advanced/config-file.mdx)) in all supported locales
 
@@ -213,9 +213,13 @@ The video playback path is complex and worth understanding before touching:
 4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height }`, stored in `AppState`. The `video_canvas` widget (`widgets/video_canvas.rs`) renders it via a custom wgpu shader (`widgets/video_shader.rs`) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
 5. **Lifecycle** — When the user navigates away from a video or closes the application (`CloseRequested`/`Quit`), `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 
+The `FrameReady` handler also uses `VideoPlaybackState.selected_path` (set in `select_and_load_entry` rather than re-derivable per-frame) for its O(1) "is this still the selected entry" check — previously it re-ran `filtered_entries()` + cloned `entry.path` per video frame.
+
 The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
 
-**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
+**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found (or when ffmpeg rejects the file). `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH, and **caches the result in a process-global `OnceLock<Option<PathBuf>>`** — the first call runs the PATH scan + `ffmpeg -version` verify spawn and all subsequent calls return the cached `PathBuf::clone()` with no scan, no spawn, and no syscall. The cache lives for the lifetime of the process and is never invalidated. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
+
+Both `ffmpeg` and mpv invocations go through **bounded worker pools** in `subscriptions/prefetch.rs`: `FFMPEG_THUMBNAIL_WORKER` spawns `available_parallelism().clamp(2, 16)` worker threads (ffmpeg is a lightweight short-lived subprocess, so the cap is sized to fit a typical visible set in 1–2 batches); `VIDEO_THUMBNAIL_WORKER` (mpv) spawns `available_parallelism().clamp(2, 4)` (each `MpvContext` is heavyweight — holds GPU resources, libmpv handle, persistent state). Both pull from a shared `mpsc` receiver (Arc-Mutex guarded, mirroring the watch-pool pattern). The caps prevent scroll-storm fan-out from spawning N simultaneous subprocesses (default tokio blocking-pool ceiling is 512); see `benches/perf_candidates.rs` Group G for the wall-time/resource tradeoff (8-way burst on this dev host: 121 ms unbounded at peak=8 procs vs 170 ms bounded-to-4 at peak=4 procs; 20-way burst: see `g_extract_concurrent_*_20` variants for the visible-set-scale case that motivated cap=16 over cap=4).
 
 ## Audio player
 
@@ -245,6 +249,7 @@ The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches i
 | `thumbnail_cache` | `LruCache<PathBuf, Handle>` | 200 | Grid thumbnails |
 | `image_cache` | `LruCache<PathBuf, Handle>` | 20 | Preview images (capped at 1920×1440, see below) |
 | `media_errors` | `MediaErrorTracker` | unbounded | Tracks media files that failed to read or decode along with error details; prevents retry spam |
+| `MediaGridState.lower_names` | `Vec<String>` (parallel to `entries`) | unbounded | Precomputed lowercase `file_name`s consumed by `filtered_entries`; rebuilt via `rebuild_lower_names()` and MUST be called from every site that mutates `entries` (`clear`/`extend`/`retain` in `state.rs::open_folder`, `update.rs::poll_background_channels`, `update/media.rs`, `update/folder.rs`) |
 
 When selection changes, next/previous images are preloaded into `image_cache`.
 
@@ -262,6 +267,8 @@ When selection changes, next/previous images are preloaded into `image_cache`.
 | everything else | `load_image` + `img.thumbnail()` fallback | — |
 
 Previews are **capped at 1920×1440** (`load_preview` in `update/tasks.rs`) — there is no zoom UI and iced scales the widget anyway; this cuts preview memory by ~97% vs full-res RGBA (e.g. 9.8MB vs 96MB for a 24MP JPEG) and is faster for JPEG (turbojpeg scaled decode).
+
+`image_decoder::decode_image_dimensions` (used by `metadata::image_meta::extract_image_metadata` for the "Dimensions" field) reads **headers only** via `ImageReader::into_dimensions()` and swaps the dims when EXIF orientation is 5–8 — no full pixel decode. This is ~1900× faster than the previous `load_image().dimensions()` path while preserving the EXIF-orientation behavior the metadata tests assert.
 
 If you change these code paths, re-run `cargo bench -p benchmarks` to confirm you didn't regress the measured winning strategy.
 
@@ -309,6 +316,15 @@ cargo test -p media-sort-gui          # runs #[cfg(test)] modules only
 - `benches/preview.rs` — full-image preview decode. Baseline: full-res RGBA. Variants: downscale to a 1920×1440 box (fast_image_resize, zune, turbojpeg scaled).
 - `benches/video_thumbnails.rs` — mpv poll-loop baseline vs. polling tweaks vs. `ffmpeg` subprocess extraction (ffmpeg is ~2.4× faster than the mpv loop — now the production default with mpv fallback).
 - `benches/format_thumbnails.rs` / `benches/format_previews.rs` — per-format coverage for every `image` crate `default-formats` format (png, jpeg, gif, bmp, ico, tiff, webp, qoi, tga, hdr, exr, pnm, farbfeld; avif). Fixtures are generated at runtime into a temp dir by `src/fixture_gen.rs` (never committed). Known decoder gaps: the image crate's AVIF *decode* requires the `avif-native` feature (dav1d; `avif` alone is encode-only — enabled workspace-wide), and its DDS decoder is DXT-only (uncompressed DDS undecodable).
+- `benches/perf_candidates.rs` — incremental perf candidates (A ffmpeg cache, B `resize_rgba` thread_local Resizer reuse, C `decode_image_dimensions` header-only, D `detect_media_type` HashMap, E `filtered_entries` pre-lowercased cache, F `settings.save` dirty-flag coalescing, G bounded ffmpeg concurrency burst, H `is_animated_gif` cached field). Each "baseline" variant records the *prior* production cost so the bench keeps demonstrating the win after the production change lands; the corresponding `_optimized` variant reflects the post-change cost. New optimization candidates should be added under a fresh group letter here, not folded into the format-specific bench files. Correctness tests for each group run via `cargo test -p benchmarks`.
+
+## Media entry model
+
+`MediaEntry` (`crates/media-sort-core/src/models.rs:6`) is `{ path, media_type, file_name, animated }`:
+
+- `media_type` is set by `state::detect_media_type(path, animate_gifs=user_setting)` at scan time. For GIFs this in turn calls `image_decoder::is_animated_gif` (a `File::open` + 2-frame `GifDecoder` decode) to decide whether static GIFs (`is_animated_gif == Some(false)`) get reclassified as `Image` regardless of the user setting.
+- `animated` caches the raw `is_animated_gif` result (`Some(_)` for GIFs, `None` for non-GIFs) so `prefetch::generate_thumbnail` doesn't have to re-run the file-open/2-frame decode — that path takes `(path, media_type, animated)` from the caller and skips its old `detect_media_type(path, false)` re-discovery. Future callers wanting an "Animated: true/false" metadata panel field can read this directly instead of re-opening the file.
+- The scan-time classification lives in two parallel rays: `state.rs::open_folder` kicks off the rayon-based `scan_media_files` scan with `pending_select_index = Some(0)`, and `update::poll_background_channels` (incremental scan drain) classifies each entry with `detect_media_type` + `is_animated_gif`. `update::handle_media_scan_completed` receives pre-built entries from rayon-based `Task::perform` callers and should preserve the `animated` field.
 
 The benchmarks crate builds the same vendored static libjpeg-turbo as the backend (cmake + nasm needed) and uses the `ffmpeg`/`ffprobe` CLIs for those variants; ffmpeg-dependent and mpv-dependent tests skip gracefully when the tools are unavailable. Correctness tests for every variant run via `cargo test -p benchmarks`.
 

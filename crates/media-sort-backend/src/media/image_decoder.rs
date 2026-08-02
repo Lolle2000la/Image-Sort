@@ -3,7 +3,6 @@ use std::path::Path;
 use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, IntoImageView, ResizeAlg, ResizeOptions, Resizer};
 use image::AnimationDecoder;
-use image::GenericImageView;
 
 use super::thumbnail::calculate_thumbnail_dimensions;
 
@@ -41,8 +40,23 @@ pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError>
 }
 
 pub fn decode_image_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
-    let img = load_image(path)?;
-    Ok(img.dimensions())
+    let (w, h) = image::ImageReader::open(path)?
+        .with_guessed_format()?
+        .into_dimensions()?;
+    let orientation = read_exif_orientation_from_path(path).unwrap_or(1);
+    Ok(if matches!(orientation, 5..=8) {
+        (h, w)
+    } else {
+        (w, h)
+    })
+}
+
+fn read_exif_orientation_from_path(path: &Path) -> Option<u32> {
+    let file = std::fs::File::open(path).ok()?;
+    let mut buf = std::io::BufReader::new(file);
+    let exif = exif::Reader::new().read_from_container(&mut buf).ok()?;
+    let field = exif.get_field(exif::Tag::Orientation, exif::In::PRIMARY)?;
+    field.value.get_uint(0)
 }
 
 /// Decode `path` to fit inside the `max_width` x `max_height` box (preserving

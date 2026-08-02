@@ -1,9 +1,12 @@
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 #[cfg(target_os = "windows")]
 const FFMPEG_EXE: &str = "ffmpeg.exe";
 #[cfg(not(target_os = "windows"))]
 const FFMPEG_EXE: &str = "ffmpeg";
+
+static FFMPEG_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 
 fn verify_ffmpeg(ffmpeg_path: &Path) -> bool {
     std::process::Command::new(ffmpeg_path)
@@ -15,8 +18,14 @@ fn verify_ffmpeg(ffmpeg_path: &Path) -> bool {
 }
 
 /// Locate a usable ffmpeg binary: next to the current executable first
-/// (bundled releases), then PATH.
+/// (bundled releases), then PATH. The result is cached for the lifetime of
+/// the process in `FFMPEG_PATH` — the cached lookup skips both the PATH scan
+/// and the `ffmpeg -version` verify spawn on every subsequent call.
 pub fn find_ffmpeg() -> Option<PathBuf> {
+    FFMPEG_PATH.get_or_init(find_ffmpeg_uncached).clone()
+}
+
+fn find_ffmpeg_uncached() -> Option<PathBuf> {
     if let Ok(exe) = std::env::current_exe()
         && let Some(dir) = exe.parent()
     {
