@@ -34,9 +34,9 @@ pub struct MediaGridState {
     /// Precomputed lowercase `file_name`s mirrored from [`entries`]. MUST be
     /// kept in sync via [`rebuild_lower_names`](Self::rebuild_lower_names)
     /// after ANY direct mutation of `entries` (push / clear / drain / swap /
-    /// extend / retain / insert / truncate / etc.). `filtered_entries` falls
-    /// back to per-call lowercasing if the cache length is stale, but won't
-    /// see newly added entries until `rebuild_lower_names` runs.
+    /// extend / retain / insert / truncate / etc.). When the cache length is
+    /// stale, `filtered_entries` falls back to per-call lowercasing — still
+    /// correct (it iterates `entries` directly), just slower.
     pub lower_names: Vec<String>,
     pub selected_index: Option<usize>,
     pub search: SearchState,
