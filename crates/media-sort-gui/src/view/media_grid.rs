@@ -199,6 +199,11 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
                 .padding(0)
                 .style(iced::widget::button::text),
         );
+        #[cfg(feature = "demo")]
+        let entry_button = entry_button.id(iced_automation::static_widget_id(format!(
+            "media_card_{}",
+            i
+        )));
 
         entries_row = entries_row.push(entry_button);
     }

@@ -562,7 +562,10 @@ where
     )
 }
 
-fn static_widget_id(s: String) -> iced::advanced::widget::Id {
+/// Caches the `&'static str` form of `s` process-globally so callers don't
+/// re-leak the same string per frame. Use from view code to assign `Id`s that
+/// need to match the automation engine's bbox-query IDs.
+pub fn static_widget_id(s: String) -> iced::advanced::widget::Id {
     static CACHE: OnceLock<Mutex<HashMap<String, &'static str>>> = OnceLock::new();
     let mut cache = CACHE
         .get_or_init(|| Mutex::new(HashMap::new()))

@@ -9,7 +9,8 @@ pub use automation::{
     AutomationStyle, AutomationTarget, AutomationTickResult, JsonAutomationFlow,
     JsonAutomationStep, JsonTarget, VIRTUAL_CURSOR, VirtualTickMessage, build_automation_steps,
     find_bounds_task, handle_automation_message, handle_automation_tick,
-    handle_automation_virtual_tick, handle_bounds_resolved, try_tick, try_tick_state, wrap_view,
+    handle_automation_virtual_tick, handle_bounds_resolved, static_widget_id, try_tick,
+    try_tick_state, wrap_view,
 };
 
 pub use demo_setup::{DemoApp, DemoBootstrap, DemoConfig, FixtureSpec, init_demo};
