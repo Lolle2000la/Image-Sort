@@ -50,14 +50,16 @@ jobs:
           arch: x64
 
       - name: Install cargo-nextest
-        uses: taiki-e/install-action@cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-nextest
 
       - uses: Swatinem/rust-cache@v2
         with:
           shared-key: ${{ matrix.os }}
           save-if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/v3.0' }}
 
-      - uses: mozilla-actions/sccache-action@v0.0.8
+      - uses: mozilla-actions/sccache-action@v0.0.11
 
       - name: Install System Dependencies (Linux)
         if: matrix.os == 'ubuntu-latest'
