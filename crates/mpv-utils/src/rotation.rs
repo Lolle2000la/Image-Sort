@@ -78,8 +78,6 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
         let size32 = u32::from_be_bytes([buf[0], buf[1], buf[2], buf[3]]) as u64;
         let box_type = &buf[4..8];
 
-        let content_start = file.stream_position().unwrap_or(0);
-
         let box_len = if size32 == 1 {
             let mut size64_buf = [0u8; 8];
             if file.read_exact(&mut size64_buf).is_err() {
@@ -87,7 +85,8 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
             }
             u64::from_be_bytes(size64_buf)
         } else if size32 == 0 {
-            file_len - content_start + 8
+            let header_end = file.stream_position().unwrap_or(8);
+            file_len - header_end + 8
         } else {
             size32
         };
@@ -95,6 +94,13 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
         if box_len < 8 {
             break;
         }
+
+        // Payload start: after the 8-byte header plus the size64 field of
+        // extended-size boxes. Recording it after the size64 read keeps the
+        // tkhd seek and the `content_start + payload_len` advance aligned —
+        // otherwise a 64-bit box (e.g. a large `mdat`) lands 8 bytes early
+        // and desyncs the box walk.
+        let content_start = file.stream_position().unwrap_or(0);
 
         let payload_len = box_len.saturating_sub(if size32 == 1 { 16 } else { 8 });
 
@@ -210,5 +216,77 @@ mod tests {
         for rot in [Rotation::R0, Rotation::R90, Rotation::R180, Rotation::R270] {
             assert_eq!(Rotation::from_degrees(rot.as_degrees()), rot);
         }
+    }
+
+    /// Builds a minimal MP4: an `ftyp`, a *64-bit-sized* `mdat` (extended-size
+    /// boxes are what previously desynced the box walk by 8 bytes), and a
+    /// `moov`/`trak`/`tkhd` whose matrix encodes a 90° rotation.
+    #[test]
+    fn test_mp4_with_size64_mdat_rotation_detected() {
+        let mut bytes = Vec::new();
+
+        let ftyp: [u8; 24] = [
+            0, 0, 0, 24, b'f', b't', b'y', b'p', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        ];
+        bytes.extend_from_slice(&ftyp);
+
+        // mdat with a 64-bit size: 16-byte header, size32 == 1 marker.
+        let mdat_payload: [u8; 4] = [0, 0, 0, 0];
+        let mdat_len = 16u64 + mdat_payload.len() as u64;
+        bytes.extend_from_slice(&1u32.to_be_bytes());
+        bytes.extend_from_slice(b"mdat");
+        bytes.extend_from_slice(&mdat_len.to_be_bytes());
+        bytes.extend_from_slice(&mdat_payload);
+
+        // tkhd payload (version 0): 40 bytes before the 36-byte matrix.
+        let mut tkhd = Vec::new();
+        tkhd.extend_from_slice(&[0u8; 40]);
+        let unit = 65536.0f64; // 16.16 fixed point
+        let (a, b, c, d) = (0.0, unit, -unit, 0.0); // 90° clockwise
+        for v in [a, b, 0.0, c, d, 0.0, 0.0, 0.0, 1.0] {
+            tkhd.extend_from_slice(&((v * unit) as i32).to_be_bytes());
+        }
+        let tkhd_box: Vec<u8> = {
+            let mut box_bytes = Vec::new();
+            box_bytes.extend_from_slice(&((8 + tkhd.len()) as u32).to_be_bytes());
+            box_bytes.extend_from_slice(b"tkhd");
+            box_bytes.extend_from_slice(&tkhd);
+            box_bytes
+        };
+
+        // trak wraps tkhd, moov wraps trak (both 32-bit sizes).
+        let trak_box: Vec<u8> = {
+            let mut box_bytes = Vec::new();
+            box_bytes.extend_from_slice(&((8 + tkhd_box.len()) as u32).to_be_bytes());
+            box_bytes.extend_from_slice(b"trak");
+            box_bytes.extend_from_slice(&tkhd_box);
+            box_bytes
+        };
+        let moov_box: Vec<u8> = {
+            let mut box_bytes = Vec::new();
+            box_bytes.extend_from_slice(&((8 + trak_box.len()) as u32).to_be_bytes());
+            box_bytes.extend_from_slice(b"moov");
+            box_bytes.extend_from_slice(&trak_box);
+            box_bytes
+        };
+        bytes.extend_from_slice(&moov_box);
+        // The tkhd parser reads `box_len` bytes from the payload start (it
+        // must also work when tkhd is followed by more boxes), so pad the
+        // tail to keep the final tkhd read inside the file.
+        bytes.extend_from_slice(&[0u8; 32]);
+
+        let dir =
+            std::env::temp_dir().join(format!("mpv_utils_rotation_size64_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("rotated.mp4");
+        std::fs::write(&path, &bytes).unwrap();
+
+        assert_eq!(
+            detect_video_rotation(&path),
+            Some(Rotation::R90),
+            "the size64 mdat must not desync the box walk"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

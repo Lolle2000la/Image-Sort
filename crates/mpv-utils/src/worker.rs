@@ -211,6 +211,11 @@ async fn run_video_worker(
     let mut current_video_path = PathBuf::new();
     let mut canonical_video_path: Option<PathBuf> = None;
     let mut cached_video_params: Option<(i32, i32, Rotation)> = None;
+    // The rotation re-check (below) must not run per frame: it calls
+    // `get_video_rotation()`, which opens and parses the file on every call.
+    // Rotation is static per file, so re-checking once per second is enough
+    // to catch a late mpv-reported rotation after load.
+    let mut last_rotation_recheck = std::time::Instant::now();
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -342,7 +347,10 @@ async fn run_video_worker(
                             }
                         }
 
-                        if let Some((_, _, cached_rot)) = cached_video_params {
+                        if let Some((_, _, cached_rot)) = cached_video_params
+                            && last_rotation_recheck.elapsed() >= std::time::Duration::from_secs(1)
+                        {
+                            last_rotation_recheck = std::time::Instant::now();
                             let current_rot = player.get_video_rotation();
                             if current_rot != cached_rot {
                                 let (w, h) = player.get_video_size();
@@ -413,26 +421,30 @@ async fn run_video_worker(
                     }
                     let dur = player.get_duration();
                     if pos != last_position {
-                        let _ = event_tx.send(VideoEvent::PlaybackProgress {
+                        // Stateful/periodic events are dropped under
+                        // backpressure (like FrameReady): the worker must
+                        // never stall command handling and frame pumping on a
+                        // slow consumer, and the next tick resends the value.
+                        let _ = event_tx.try_send(VideoEvent::PlaybackProgress {
                             position: pos,
                             duration: dur,
-                        }).await;
+                        });
                         last_position = pos;
                     }
 
                     let mute = player.get_mute();
                     if mute != last_muted {
-                        let _ = event_tx.send(VideoEvent::Muted(mute)).await;
+                        let _ = event_tx.try_send(VideoEvent::Muted(mute));
                         last_muted = mute;
                     }
                     let vol = player.get_volume();
                     if vol != last_volume {
-                        let _ = event_tx.send(VideoEvent::Volume(vol)).await;
+                        let _ = event_tx.try_send(VideoEvent::Volume(vol));
                         last_volume = vol;
                     }
                     let paused = !player.is_playing();
                     if paused != last_paused {
-                        let _ = event_tx.send(VideoEvent::Paused(paused)).await;
+                        let _ = event_tx.try_send(VideoEvent::Paused(paused));
                         last_paused = paused;
                     }
                 }

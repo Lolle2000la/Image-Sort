@@ -595,7 +595,7 @@ impl MpvContext {
                         current_p == *tc || current_p.canonicalize().ok().as_ref() == Some(tc)
                     });
 
-                if paths_match {
+                if paths_match && self.is_video_ready() {
                     let (w, h) = self.get_video_size();
                     if w > 0 && h > 0 {
                         let rotation = self.get_video_rotation();
@@ -789,7 +789,7 @@ mod tests {
                 start.elapsed() < Duration::from_secs(5),
                 "timed out waiting for a renderable frame after seek"
             );
-            if player.has_frame_ready() {
+            if player.has_frame_ready() && player.is_video_ready() {
                 let (w, h) = player.get_video_size();
                 if w > 0 && h > 0 {
                     let rotation = player.get_video_rotation();
