@@ -107,6 +107,8 @@ pub enum FolderMessage {
     CreateInputChanged(String),
     SubmitCreate(PathBuf),
     CancelCreate,
+    #[serde(skip_deserializing)]
+    TreeScrolled(iced::widget::scrollable::AbsoluteOffset, f32, f32),
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

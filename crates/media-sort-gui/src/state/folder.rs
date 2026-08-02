@@ -4,6 +4,16 @@ use std::sync::mpsc;
 
 use media_sort_core::models::{FolderNode, PinnedFolder};
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct FolderScrollState {
+    /// Current vertical scroll offset in pixels.
+    pub offset_y: f32,
+    /// Height of the visible viewport in pixels.
+    pub viewport_height: f32,
+    /// Height of the scrollable content in pixels.
+    pub content_height: f32,
+}
+
 #[derive(Default)]
 pub struct FolderState {
     pub current_folder: Option<PathBuf>,
@@ -16,6 +26,7 @@ pub struct FolderState {
     pub hovered_pinned_folder: Option<PathBuf>,
     pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
     pub(crate) visible_folders_cache: Vec<PathBuf>,
+    pub scroll: FolderScrollState,
 }
 
 impl fmt::Debug for FolderState {
@@ -34,6 +45,7 @@ impl fmt::Debug for FolderState {
                 "visible_folders_cache_len",
                 &self.visible_folders_cache.len(),
             )
+            .field("scroll", &self.scroll)
             .finish()
     }
 }

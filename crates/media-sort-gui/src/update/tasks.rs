@@ -191,26 +191,50 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
     }
 }
 
-/// Build a [`Task`] that scrolls the media grid so that the entry at
-/// `index` is clearly visible. We use a *relative* scroll position so we
-/// don't have to depend on `state.media_grid.scroll.viewport_width` being
-/// up to date — that snapshot can briefly lag behind the actual layout
-/// (e.g. when the user has just resized the window, or the very first
-/// `on_scroll` after opening a folder hasn't fired yet). If we used an
-/// absolute pixel offset computed from a stale viewport, we could end up
-/// "scrolling" to a position that doesn't actually bring the selected
-/// card into view. The scrollable resolves the relative position using
-/// its own, always-current, content and viewport widths.
+/// Build a [`Task`] that scrolls the media grid so that the entry at `index`
+/// is visible within the viewport with a comfortable margin (scroll padding).
 ///
-/// The relative position is `index / (n - 1)`, so the selected card ends
-/// up at the corresponding proportional position in the content, well
-/// inside the viewport for any sane window size.
+/// If the card is already fully visible inside the viewport bounds, no scroll task
+/// is executed. If it moves near or past the viewport edge, the scroll position
+/// adjusts minimally so the item comes into view with margin.
 pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message> {
-    use crate::view::media_grid::MEDIA_GRID_SCROLLABLE_ID;
+    use crate::view::media_grid::{
+        MEDIA_GRID_CARD_SPACING, MEDIA_GRID_CARD_WIDTH, MEDIA_GRID_SCROLLABLE_ID,
+    };
 
-    let n = state.media_grid.filtered_entries().len();
-    let Some(relative_x) = relative_position_for(index, n) else {
+    let total = state.media_grid.filtered_entries().len();
+    if total <= 1 {
         return Task::none();
+    }
+
+    let clamped_index = index.min(total - 1);
+    let card_stride = MEDIA_GRID_CARD_WIDTH + MEDIA_GRID_CARD_SPACING;
+    let item_left = clamped_index as f32 * card_stride;
+    let item_right = item_left + MEDIA_GRID_CARD_WIDTH;
+
+    let scroll = &state.media_grid.scroll;
+
+    let relative_x = if scroll.viewport_width > 0.0 && scroll.content_width > scroll.viewport_width
+    {
+        let margin = card_stride * 1.5;
+        let Some(target_offset) = calculate_scroll_into_view_h(
+            item_left,
+            item_right,
+            scroll.offset_x,
+            scroll.viewport_width,
+            scroll.content_width,
+            margin,
+        ) else {
+            return Task::none();
+        };
+
+        let max_offset = scroll.content_width - scroll.viewport_width;
+        (target_offset / max_offset).clamp(0.0, 1.0)
+    } else {
+        let Some(rel) = relative_position_for(clamped_index, total) else {
+            return Task::none();
+        };
+        rel
     };
 
     iced::widget::operation::snap_to(
@@ -220,6 +244,82 @@ pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message>
             y: None,
         },
     )
+}
+
+/// Computes target horizontal scroll offset to keep `[item_left, item_right]`
+/// visible within `[offset_x, offset_x + viewport_width]` with at least `margin`
+/// padding. Returns `Some(target_offset)` if scrolling is needed, or `None` if
+/// the item is already comfortably in view.
+pub fn calculate_scroll_into_view_h(
+    item_left: f32,
+    item_right: f32,
+    offset_x: f32,
+    viewport_width: f32,
+    content_width: f32,
+    margin: f32,
+) -> Option<f32> {
+    if viewport_width <= 0.0 || content_width <= viewport_width {
+        return None;
+    }
+
+    let max_offset = (content_width - viewport_width).max(0.0);
+    let item_width = (item_right - item_left).max(0.0);
+    let effective_margin = margin.min((viewport_width - item_width).max(0.0) / 2.0);
+
+    let view_left = offset_x;
+    let view_right = offset_x + viewport_width;
+
+    let target_offset = if item_left - effective_margin < view_left {
+        (item_left - effective_margin).max(0.0)
+    } else if item_right + effective_margin > view_right {
+        (item_right + effective_margin - viewport_width).min(max_offset)
+    } else {
+        return None;
+    };
+
+    if (target_offset - offset_x).abs() > 0.5 {
+        Some(target_offset.clamp(0.0, max_offset))
+    } else {
+        None
+    }
+}
+
+/// Computes target vertical scroll offset to keep `[item_top, item_bottom]`
+/// visible within `[offset_y, offset_y + viewport_height]` with at least `margin`
+/// padding. Returns `Some(target_offset)` if scrolling is needed, or `None` if
+/// the item is already comfortably in view.
+pub fn calculate_scroll_into_view_v(
+    item_top: f32,
+    item_bottom: f32,
+    offset_y: f32,
+    viewport_height: f32,
+    content_height: f32,
+    margin: f32,
+) -> Option<f32> {
+    if viewport_height <= 0.0 || content_height <= viewport_height {
+        return None;
+    }
+
+    let max_offset = (content_height - viewport_height).max(0.0);
+    let item_height = (item_bottom - item_top).max(0.0);
+    let effective_margin = margin.min((viewport_height - item_height).max(0.0) / 2.0);
+
+    let view_top = offset_y;
+    let view_bottom = offset_y + viewport_height;
+
+    let target_offset = if item_top - effective_margin < view_top {
+        (item_top - effective_margin).max(0.0)
+    } else if item_bottom + effective_margin > view_bottom {
+        (item_bottom + effective_margin - viewport_height).min(max_offset)
+    } else {
+        return None;
+    };
+
+    if (target_offset - offset_y).abs() > 0.5 {
+        Some(target_offset.clamp(0.0, max_offset))
+    } else {
+        None
+    }
 }
 
 /// Compute the relative horizontal scroll position (in `[0.0, 1.0]`) that
@@ -238,16 +338,43 @@ pub fn scroll_to_selected_folder(state: &mut AppState) -> Task<Message> {
     use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
 
     let visible = state.folder.collect_visible_folders();
-    let Some(idx) = state
-        .folder
-        .selected_folder_idx
-        .filter(|i| *i < visible.len())
-    else {
+    let total = visible.len();
+    let Some(idx) = state.folder.selected_folder_idx.filter(|i| *i < total) else {
         return Task::none();
     };
-    let Some(relative_y) = relative_position_for(idx, visible.len()) else {
+
+    if total <= 1 {
         return Task::none();
-    };
+    }
+
+    let scroll = &state.folder.scroll;
+
+    let relative_y =
+        if scroll.viewport_height > 0.0 && scroll.content_height > scroll.viewport_height {
+            let item_height = scroll.content_height / total as f32;
+            let item_top = idx as f32 * item_height;
+            let item_bottom = item_top + item_height;
+            let margin = (scroll.viewport_height * 0.15).clamp(26.0, 78.0);
+
+            let Some(target_offset) = calculate_scroll_into_view_v(
+                item_top,
+                item_bottom,
+                scroll.offset_y,
+                scroll.viewport_height,
+                scroll.content_height,
+                margin,
+            ) else {
+                return Task::none();
+            };
+
+            let max_offset = scroll.content_height - scroll.viewport_height;
+            (target_offset / max_offset).clamp(0.0, 1.0)
+        } else {
+            let Some(rel) = relative_position_for(idx, total) else {
+                return Task::none();
+            };
+            rel
+        };
 
     iced::widget::operation::snap_to(
         FOLDER_TREE_SCROLLABLE_ID.clone(),

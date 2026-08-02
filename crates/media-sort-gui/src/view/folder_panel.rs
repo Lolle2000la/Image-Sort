@@ -65,6 +65,14 @@ pub fn folder_panel_view(state: &AppState) -> Element<'_, Message> {
             vertical: iced::widget::scrollable::Scrollbar::default(),
             horizontal: iced::widget::scrollable::Scrollbar::default(),
         })
+        .on_scroll(|viewport| {
+            let offset = viewport.absolute_offset();
+            Message::Folder(FolderMessage::TreeScrolled(
+                offset,
+                viewport.bounds().height,
+                viewport.content_bounds().height,
+            ))
+        })
         .width(Length::Fill)
         .height(Length::Fill);
 

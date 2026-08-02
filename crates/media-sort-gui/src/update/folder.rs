@@ -176,5 +176,11 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
             }
             Task::none()
         }
+        FolderMessage::TreeScrolled(offset, viewport_height, content_height) => {
+            state.folder.scroll.offset_y = offset.y;
+            state.folder.scroll.viewport_height = viewport_height;
+            state.folder.scroll.content_height = content_height;
+            Task::none()
+        }
     }
 }
