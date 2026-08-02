@@ -25,28 +25,30 @@ Media Sortはメディア再生やUI制御にネイティブのシステムAPI�
 
 ### Windows & macOS
 
-**手動のセットアップは不要です！** Windows版とmacOS版のプリコンパイルパッケージには、必要なすべての `libmpv` ライブラリがアプリケーション内に同梱されています。
+**手動のセットアップは不要です！** Windows版とmacOS版のプリコンパイルパッケージには、必要なすべての `libmpv` ライブラリがアプリケーション内に同梱されており、AVIF画像サポート用のdav1d、高速な動画サムネイル用のffmpegも含まれています。
 
 ### Linux
 
-Linux版のAppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+Linux版のAppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+
+Linuxでの `ffmpeg` のインストールは任意です。動画サムネイルが高速になりますが、無くてもmpvによるフォールバックが機能します。
 
 #### Arch Linux / CachyOS
 
 ```bash
-sudo pacman -S mpv
+sudo pacman -S mpv dav1d
 ```
 
 #### Debian / Ubuntu
 
 ```bash
-sudo apt install libmpv2 libasound2
+sudo apt install libmpv2 libasound2 libdav1d7
 ```
 
 #### Fedora
 
 ```bash
-sudo dnf install mpv-libs
+sudo dnf install mpv-libs dav1d-libs
 ```
 
 :::note

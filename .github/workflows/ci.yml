@@ -2,12 +2,12 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
   pull_request:
-    branches: [main]
+    branches: [main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
@@ -58,11 +58,13 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libmpv-dev libasound2-dev
+          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
 
       - name: Install System Dependencies (macOS)
         if: matrix.os == 'macos-latest'
-        run: brew install mpv
+        run: |
+          brew install mpv dav1d
+          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
       - name: Setup libmpv Link Libraries (Windows)
         if: matrix.os == 'windows-latest'
@@ -73,20 +75,62 @@ jobs:
           7z e mpv-dev.7z libmpv-2.dll -olibs -y
           7z e mpv-dev.7z libmpv.dll.a -olibs -y
           mv libs/libmpv.dll.a libs/mpv.lib
+          # Test binaries link libmpv-2.dll at load time; make it resolvable.
+          # (cygpath: $PWD is POSIX-form in git-bash, which the Windows DLL
+          # loader cannot use as a PATH entry.)
+          echo "$(cygpath -w "$PWD")\\libs" >> "$GITHUB_PATH"
+
+      - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: bash
+        run: |
+          pip install meson ninja
+          choco install -y nasm pkgconfiglite
+          # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
+          # when pkg-config is absent (always on Windows runners); force
+          # the vendored meson build instead.
+          echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
+
+      - uses: ilammy/msvc-dev-cmd@v1
+        if: matrix.os == 'windows-latest'
+        with:
+          arch: x64
 
       - name: Run Clippy Lints
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        # profile.dev.package."*" is opt-level=3 for local GUI dev
+        # responsiveness; CI doesn't need that and compiles 2-3x faster
+        # without it.
+        run: cargo --config 'profile.dev.package."*".opt-level=0' clippy --workspace --all-targets -- -D warnings
 
       - name: Run Workspace Tests
+        if: matrix.os != 'windows-latest'
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          LIB: ${{ matrix.os == 'windows-latest' && 'libs' || '' }}
-          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        run: cargo test --workspace --all-targets
+        # --tests, not --all-targets: bench targets are harness=false, so
+        # "testing" them would execute the full divan benchmark suite.
+        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests
+
+      - name: Run Workspace Tests (Windows, excluding GUI)
+        if: matrix.os == 'windows-latest'
+        env:
+          RUSTFLAGS: '-L native=libs'
+        # NOTE: keep the default shell here. Under git-bash, /usr/bin precedes
+        # the MSVC dirs in PATH and rustc invokes GNU coreutils' `link`
+        # instead of MSVC link.exe.
+        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests --exclude media-sort-gui
+
+      - name: Run GUI Tests (Windows, serial)
+        if: matrix.os == 'windows-latest'
+        env:
+          RUSTFLAGS: '-L native=libs'
+        # Serial + nocapture: native libs the GUI tests touch (trash-crate
+        # COM, rodio/WASAPI) are suspects in a parallel access-violation
+        # crash on headless runners; if it still crashes, nocapture names
+        # the culprit test in the log.
+        run: cargo --config 'profile.dev.package."*".opt-level=0' test -p media-sort-gui --tests -- --test-threads=1 --nocapture
 
   verify-contributors:
     name: Verify Contributors List

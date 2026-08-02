@@ -54,7 +54,7 @@ pub fn is_registered() -> Result<bool, String> {
 
     Ok(REG_PATHS
         .iter()
-        .any(|reg_path| hkcu.open_subkey(&format!("{reg_path}\\command")).is_ok()))
+        .any(|reg_path| hkcu.open_subkey(format!("{reg_path}\\command")).is_ok()))
 }
 
 #[cfg(test)]

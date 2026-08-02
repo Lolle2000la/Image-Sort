@@ -55,10 +55,35 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
 
     #[cfg(not(target_os = "macos"))]
     {
+        // Windows: callers may pass 8.3 short paths (e.g. TEMP resolves to
+        // C:\Users\RUNNER~1\... on CI runners). Canonicalize while the file
+        // still exists so the stored path matches what the trash metadata
+        // records, stripping the \\?\ verbatim prefix canonicalize yields.
+        #[cfg(target_os = "windows")]
+        let original_path = {
+            let canon = original_path.canonicalize().unwrap_or(original_path);
+            match canon.to_string_lossy().strip_prefix(r"\\?\") {
+                Some(stripped) => PathBuf::from(stripped.to_owned()),
+                None => canon,
+            }
+        };
+
         trash::delete(&original_path)
             .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+        // Windows: remember when the delete happened so restore can bind
+        // this handle to the correct trash entry among several same-name
+        // items (time_deleted has second granularity like the shell's).
+        #[cfg(target_os = "windows")]
+        let delete_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+
         Ok(Box::new(NativeTrashRestore {
             original_path,
+            #[cfg(target_os = "windows")]
+            delete_time,
             flushed: false,
         }))
     }
@@ -74,10 +99,28 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
     }
 }
 
+/// Windows trash item matching: case-insensitive and tolerant of `\\?\`
+/// verbatim prefixes, since the shell may report a different path form
+/// than the caller passed (short 8.3 names, casing, verbatim paths).
+#[cfg(target_os = "windows")]
+fn windows_trash_paths_match(item_path: &Path, stored: &Path) -> bool {
+    fn strip_verbatim(p: &Path) -> String {
+        let s = p.to_string_lossy();
+        s.strip_prefix(r"\\?\")
+            .map(str::to_owned)
+            .unwrap_or_else(|| s.into_owned())
+    }
+    strip_verbatim(item_path).eq_ignore_ascii_case(&strip_verbatim(stored))
+}
+
 struct NativeTrashRestore {
     original_path: PathBuf,
     #[cfg(target_os = "macos")]
     trash_path: Option<PathBuf>,
+    /// Unix seconds when the delete was performed; used on Windows to bind
+    /// this handle to the correct recycle-bin entry.
+    #[cfg(target_os = "windows")]
+    delete_time: i64,
     flushed: bool,
 }
 
@@ -87,14 +130,11 @@ impl TrashRestoreHandle for NativeTrashRestore {
             return Err(ActionError::RestorationFailed("already flushed".into()));
         }
 
-        #[cfg(any(
-            target_os = "windows",
-            all(
-                unix,
-                not(target_os = "macos"),
-                not(target_os = "ios"),
-                not(target_os = "android")
-            )
+        #[cfg(all(
+            unix,
+            not(target_os = "macos"),
+            not(target_os = "ios"),
+            not(target_os = "android")
         ))]
         {
             let items = trash::os_limited::list()
@@ -114,6 +154,58 @@ impl TrashRestoreHandle for NativeTrashRestore {
             Ok(())
         }
 
+        #[cfg(target_os = "windows")]
+        {
+            let items = trash::os_limited::list()
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+            let parent = self.original_path.parent();
+            let ext = self
+                .original_path
+                .extension()
+                .and_then(|e| e.to_str())
+                .map(|e| e.to_lowercase());
+
+            // On Windows, TrashItem::original_path() is unreliable: the
+            // shell display name (SIGDN_PARENTRELATIVE) drops the extension
+            // for known file types (Explorer's "hide extensions" setting),
+            // so both matching and the crate's name-based restore would use
+            // the wrong file name. Instead match on original_parent plus the
+            // extension of the recycle-bin data file ($Rxxxx.ext, which keeps
+            // the true extension), and among same-name candidates pick the
+            // entry whose deletion time is closest to this handle's delete
+            // (correct undo order: newest delete is undone first). Restore
+            // with the true file name patched in.
+            let mut candidates: Vec<_> = items
+                .into_iter()
+                .filter(|i| {
+                    let parent_matches =
+                        parent.is_some_and(|p| windows_trash_paths_match(&i.original_parent, p));
+                    let id_ext = PathBuf::from(&i.id)
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(|e| e.to_lowercase());
+                    parent_matches && id_ext == ext
+                })
+                .collect();
+            candidates.sort_by_key(|i| (i.time_deleted - self.delete_time).abs());
+
+            let Some(mut item) = candidates.into_iter().next() else {
+                return Err(ActionError::RestorationFailed(
+                    "item not found in system trash".into(),
+                ));
+            };
+            if let Some(name) = self.original_path.file_name() {
+                item.name = name.to_os_string();
+            }
+
+            trash::os_limited::restore_all([item])
+                .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
+
+            self.flushed = true;
+            Ok(())
+        }
+
         #[cfg(target_os = "macos")]
         {
             if let Some(ref trash_item_path) = self.trash_path {
@@ -123,11 +215,10 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     ));
                 }
                 if let Some(parent) = self.original_path.parent() {
-                    std::fs::create_dir_all(parent).map_err(|e| ActionError::Io(e))?;
+                    std::fs::create_dir_all(parent).map_err(ActionError::Io)?;
                 }
 
-                std::fs::rename(trash_item_path, &self.original_path)
-                    .map_err(|e| ActionError::Io(e))?;
+                std::fs::rename(trash_item_path, &self.original_path).map_err(ActionError::Io)?;
 
                 self.flushed = true;
                 Ok(())

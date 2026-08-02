@@ -4,7 +4,7 @@ members = [
     "crates/media-sort-backend",
     "crates/iced-automation",
     "crates/iced-automation-macros",
-    "crates/media-sort-gui",
+    "crates/media-sort-gui", "crates/benchmarks",
 ]
 resolver = "2"
 
@@ -29,7 +29,10 @@ strum = { version = "0.28", features = ["derive"] }
 dirs = "6"
 toml = "1.1"
 
-image = { version = "0.25", default-features = false, features = ["default-formats"] }
+image = { version = "0.25", default-features = false, features = [
+    "default-formats",
+    "avif-native",
+] }
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
 ] }
