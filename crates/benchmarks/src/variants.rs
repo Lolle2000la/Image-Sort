@@ -536,7 +536,7 @@ pub fn ffmpeg_extract(_player: &mut MpvContext, path: &Path) -> VariantResult {
 
 // ── Video thumbnail variants ──────────────────────────────────────────
 
-use media_sort_backend::media::mpv_context::MpvContext;
+use iced_mpv::{MpvContext, libmpv_sys, rotate_rgba};
 
 /// Baseline 4: exact replication of the current video thumbnail path.
 pub fn baseline_poll_10ms(player: &mut MpvContext, path: &Path) -> VariantResult {
@@ -623,12 +623,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                         let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
                         if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                             let (final_w, final_h, final_rgba) =
-                                media_sort_backend::media::mpv_context::rotate_rgba(
-                                    render_w as u32,
-                                    render_h as u32,
-                                    &buffer,
-                                    rotate,
-                                );
+                                rotate_rgba(render_w as u32, render_h as u32, &buffer, rotate);
                             result = Ok((final_w, final_h, final_rgba));
                             break;
                         }
@@ -694,12 +689,7 @@ fn poll_based_thumbnail(
                         let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
                         if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                             let (final_w, final_h, final_rgba) =
-                                media_sort_backend::media::mpv_context::rotate_rgba(
-                                    render_w as u32,
-                                    render_h as u32,
-                                    &buffer,
-                                    rotate,
-                                );
+                                rotate_rgba(render_w as u32, render_h as u32, &buffer, rotate);
                             result = Ok((final_w, final_h, final_rgba));
                             break;
                         }

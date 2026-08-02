@@ -121,8 +121,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = &cli;
     }
 
-    let discovered =
-        media_sort_backend::media::mpv_context::MpvContext::query_supported_extensions();
+    let discovered = iced_mpv::MpvContext::query_supported_extensions();
     media_sort_core::media_type::MediaRegistry::init(discovered);
 
     let settings = SettingsStore::load().unwrap_or_default();

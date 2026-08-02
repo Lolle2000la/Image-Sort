@@ -1,6 +1,6 @@
 use iced::{Element, Subscription, Task};
 
-use crate::message::Message;
+use crate::message::{Message, VideoMessage};
 use crate::state::AppState;
 use crate::view;
 
@@ -54,7 +54,8 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 
     let event_sub = iced::event::listen().map(Message::EventOccurred);
 
-    let video_sub = crate::subscriptions::video_player::video_player_subscription();
+    let video_sub = iced_mpv::VideoPlayer::subscription()
+        .map(|player_msg| Message::Video(VideoMessage::Player(player_msg)));
 
     Subscription::batch(vec![tick_sub, keyboard_sub, event_sub, video_sub])
 }

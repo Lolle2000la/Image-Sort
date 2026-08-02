@@ -900,7 +900,7 @@ fn test_pinned_folder_drag_and_drop() {
 fn test_video_player_ready_stores_sender() {
     use tokio::sync::mpsc;
     let mut state = AppState::new(SettingsStore::default());
-    let (tx, _rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
+    let (tx, _rx) = mpsc::channel::<iced_mpv::VideoCommand>(8);
     let _task = update(&mut state, Message::Video(VideoMessage::PlayerReady(tx)));
     assert!(state.video.sender.is_some());
 }
@@ -909,12 +909,12 @@ fn test_video_player_ready_stores_sender() {
 fn test_video_volume_sends_command() {
     use tokio::sync::mpsc;
     let mut state = AppState::new(SettingsStore::default());
-    let (tx, mut rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
+    let (tx, mut rx) = mpsc::channel::<iced_mpv::VideoCommand>(8);
     state.video.sender = Some(tx);
     let _task = update(&mut state, Message::Video(VideoMessage::Volume(50.0)));
     assert!(state.video.sender.is_some());
     match rx.try_recv() {
-        Ok(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(v)) => {
+        Ok(iced_mpv::VideoCommand::SetVolume(v)) => {
             assert_eq!(v, 50.0);
         }
         other => panic!("expected SetVolume(50.0), got {:?}", other),
@@ -940,7 +940,7 @@ fn test_video_stop_no_sender() {
 
 #[test]
 fn test_video_event_playback_progress() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
+    use iced_mpv::VideoEvent;
     let mut state = AppState::new(SettingsStore::default());
     state.video.ready = false;
     let _task = update(
@@ -957,7 +957,7 @@ fn test_video_event_playback_progress() {
 
 #[test]
 fn test_video_event_muted() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
+    use iced_mpv::VideoEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
@@ -968,7 +968,7 @@ fn test_video_event_muted() {
 
 #[test]
 fn test_video_event_volume() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
+    use iced_mpv::VideoEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
@@ -979,7 +979,7 @@ fn test_video_event_volume() {
 
 #[test]
 fn test_video_event_paused() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
+    use iced_mpv::VideoEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,

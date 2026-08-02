@@ -714,8 +714,6 @@ fn test_thumbnail_exif_orientation() {
 
 #[test]
 fn test_detect_video_rotation_nonexistent() {
-    let result = media_sort_backend::metadata::video_meta::detect_video_rotation(Path::new(
-        "/nonexistent/video.mp4",
-    ));
+    let result = iced_mpv::detect_video_rotation(Path::new("/nonexistent/video.mp4"));
     assert_eq!(result, None);
 }

@@ -8,7 +8,6 @@ mod media_grid;
 mod metadata;
 mod rename_modal;
 mod settings_ui;
-mod video;
 
 pub use audio::AudioPlaybackState;
 pub use cache::CacheState;
@@ -19,7 +18,6 @@ pub use media_grid::{MediaGridScrollState, MediaGridState, SearchState};
 pub use metadata::MetadataPanelState;
 pub use rename_modal::RenameModalState;
 pub use settings_ui::SettingsUiState;
-pub use video::VideoPlaybackState;
 
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
@@ -41,7 +39,7 @@ pub struct AppState {
     pub media_grid: MediaGridState,
     pub rename: RenameModalState,
     pub create_folder: CreateFolderModalState,
-    pub video: VideoPlaybackState,
+    pub video: iced_mpv::VideoState,
     pub audio: AudioPlaybackState,
     pub cache: CacheState,
     pub metadata: MetadataPanelState,
@@ -123,7 +121,7 @@ impl AppState {
             media_grid,
             rename,
             create_folder,
-            video: VideoPlaybackState::default(),
+            video: iced_mpv::VideoState::default(),
             audio: AudioPlaybackState::new(),
             cache: CacheState::new(),
             metadata,
@@ -151,10 +149,7 @@ impl AppState {
         self.folder.selected_folder_idx = None;
         self.cache.selected_image = None;
         self.cache.image_cache.clear();
-        if let Some(ref sender) = self.video.sender {
-            let _ =
-                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-        }
+        self.video.deactivate();
         self.video.frame = None;
         self.video.selected_path = None;
         self.video.ready = false;
@@ -192,10 +187,7 @@ impl AppState {
         // Clear video state so a late FrameReady from the previously-selected
         // video can't repopulate video.rgba during the rescan (the cached
         // selected_path would otherwise match a stale mpv frame).
-        if let Some(ref sender) = self.video.sender {
-            let _ =
-                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-        }
+        self.video.deactivate();
         self.video.frame = None;
         self.video.selected_path = None;
         self.video.ready = false;

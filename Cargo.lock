@@ -532,10 +532,10 @@ dependencies = [
  "bytemuck",
  "divan",
  "fast_image_resize",
+ "iced-mpv",
  "ico",
  "image",
  "kamadak-exif",
- "libmpv-sys",
  "media-sort-backend",
  "media-sort-core",
  "rayon",
@@ -2792,6 +2792,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "iced-mpv"
+version = "3.0.0-alpha.13"
+dependencies = [
+ "bytemuck",
+ "iced",
+ "iced_wgpu",
+ "kamadak-exif",
+ "libmpv-sys",
+ "lucide-icons",
+ "mp4ameta",
+ "rayon",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "iced_core"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3718,10 +3734,10 @@ version = "3.0.0-alpha.13"
 dependencies = [
  "chrono",
  "fast_image_resize",
+ "iced-mpv",
  "id3",
  "image",
  "kamadak-exif",
- "libmpv-sys",
  "media-sort-core",
  "metaflac",
  "mp4ameta",
@@ -3769,6 +3785,7 @@ dependencies = [
  "iced",
  "iced-automation",
  "iced-automation-macros",
+ "iced-mpv",
  "iced_runtime",
  "iced_test",
  "iced_wgpu",

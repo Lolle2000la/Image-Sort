@@ -11,9 +11,9 @@ fn fixture() -> PathBuf {
 }
 
 thread_local! {
-    static PLAYER: std::cell::RefCell<media_sort_backend::media::mpv_context::MpvContext> =
+    static PLAYER: std::cell::RefCell<iced_mpv::MpvContext> =
         std::cell::RefCell::new(
-            media_sort_backend::media::mpv_context::MpvContext::new_thumbnail_player()
+            iced_mpv::MpvContext::new_thumbnail_player()
                 .expect("failed to create mpv context")
         );
 }

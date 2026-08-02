@@ -20,16 +20,13 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
     for i in 0..num_workers {
         let rx = rx.clone();
         std::thread::spawn(move || {
-            let mut player =
-                match media_sort_backend::media::mpv_context::MpvContext::new_thumbnail_player() {
-                    Ok(p) => p,
-                    Err(e) => {
-                        tracing::error!(
-                            "Video thumbnail worker {i}: failed to create MpvContext: {e}"
-                        );
-                        return;
-                    }
-                };
+            let mut player = match iced_mpv::MpvContext::new_thumbnail_player() {
+                Ok(p) => p,
+                Err(e) => {
+                    tracing::error!("Video thumbnail worker {i}: failed to create MpvContext: {e}");
+                    return;
+                }
+            };
 
             loop {
                 let request = {
@@ -94,7 +91,7 @@ static FFMPEG_THUMBNAIL_WORKER: LazyLock<
 });
 
 fn generate_video_thumbnail_frame(
-    player: &mut media_sort_backend::media::mpv_context::MpvContext,
+    player: &mut iced_mpv::MpvContext,
     path: &std::path::Path,
 ) -> ThumbnailResult {
     player.stop();
@@ -143,13 +140,12 @@ fn generate_video_thumbnail_frame(
                     if render_w > 0 && render_h > 0 {
                         let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
                         if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                            let (final_w, final_h, final_rgba) =
-                                media_sort_backend::media::mpv_context::rotate_rgba(
-                                    render_w as u32,
-                                    render_h as u32,
-                                    &buffer,
-                                    rotate,
-                                );
+                            let (final_w, final_h, final_rgba) = iced_mpv::rotate_rgba(
+                                render_w as u32,
+                                render_h as u32,
+                                &buffer,
+                                rotate,
+                            );
                             result = Ok((final_w, final_h, final_rgba));
                             break;
                         }

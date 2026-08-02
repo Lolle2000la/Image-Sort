@@ -1,7 +1,7 @@
 use iced::widget::{button, row, slider, text};
 use iced::{Alignment, Element, Font, Length};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum MediaControlMessage {
     PlayPause,
     Stop,
@@ -72,7 +72,7 @@ pub fn media_controls_view(
     .into()
 }
 
-fn format_time(secs: f64) -> String {
+pub fn format_time(secs: f64) -> String {
     if secs.is_nan() || secs.is_infinite() || secs < 0.0 {
         return "00:00".to_string();
     }

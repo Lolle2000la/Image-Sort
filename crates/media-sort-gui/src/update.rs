@@ -42,10 +42,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::Quit => {
             let _ = state.settings.save();
             state.should_exit = true;
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-            }
+            state.video.deactivate();
             Task::none()
         }
         Message::EventOccurred(event) => handle_event_occurred(state, event),
@@ -75,10 +72,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
 fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Message> {
     if state.should_exit {
         let _ = state.settings.save();
-        if let Some(ref sender) = state.video.sender {
-            let _ =
-                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-        }
+        state.video.deactivate();
         return iced::window::latest().and_then(iced::window::close);
     }
 
@@ -280,10 +274,7 @@ fn handle_window_event(state: &mut AppState, event: iced::window::Event) -> Task
         }
         iced::window::Event::CloseRequested => {
             let _ = state.settings.save();
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-            }
+            state.video.deactivate();
             iced::window::latest().and_then(iced::window::close)
         }
         iced::window::Event::Resized(size) => {

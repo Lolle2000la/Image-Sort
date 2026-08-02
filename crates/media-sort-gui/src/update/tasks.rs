@@ -71,31 +71,14 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.settings.mark_dirty();
 
         if media_type == media_sort_core::media_type::MediaType::Video {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::Load(path.clone()),
-                );
-            }
-            state.video.frame = None;
-            state.video.rgba = None;
-            state.video.width = 0;
-            state.video.height = 0;
-            state.video.rotation = 0;
-            state.video.position = 0.0;
-            state.video.duration = 0.0;
-            state.video.ready = false;
-            state.video.seek_position = None;
-            state.video.last_seek_time = None;
+            state.video.load(path.clone());
             if let Some(ref mut ap) = state.audio.player {
                 ap.stop();
             }
             state.audio.playing = false;
             state.audio.position = 0.0;
         } else if media_type == media_sort_core::media_type::MediaType::Audio {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-            }
+            state.video.deactivate();
             state.video.frame = None;
             state.video.rgba = None;
             state.video.width = 0;
@@ -114,10 +97,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
                 }
             }
         } else {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-            }
+            state.video.deactivate();
             state.video.frame = None;
             state.video.rgba = None;
             state.video.width = 0;
@@ -182,10 +162,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         state.settings.general.last_selected_media = None;
         state.settings.mark_dirty();
-        if let Some(ref sender) = state.video.sender {
-            let _ =
-                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Deactivate);
-        }
+        state.video.deactivate();
         state.video.frame = None;
         state.video.rgba = None;
         state.video.width = 0;
