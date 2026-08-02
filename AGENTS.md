@@ -27,20 +27,22 @@ Hooks run `cargo fmt --all --` and `cargo clippy --fix --allow-dirty --allow-sta
 
 ## Workspace layout
 
-Four app crates in `crates/` with strict dependency order, plus a benchmark crate:
+Five app crates in `crates/` with strict dependency order, plus a benchmark crate:
 
 ```
 media-sort-gui       (iced 0.14, winit, wgpu — the app binary)
   ├─ iced-automation     (generic iced app automation & video rendering)
-  └─ media-sort-backend  (filesystem, media decoding, libmpv)
-       └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
+  ├─ media-sort-backend  (filesystem, media decoding)
+  │    └─ media-sort-core    (settings, i18n, undo/redo, no system deps)
+  └─ iced-mpv             (iced subscription/widgets for mpv video playback)
+       └─ mpv-utils          (libmpv wrapper, worker protocol, rotation utils — no iced)
 
 benchmarks           (divan benches for thumbnail/preview pipelines, see below)
 
 website/             (Astro, Starlight docs template, React components)
 ```
 
-`media-sort-core` must never depend on `media-sort-backend`, `iced-automation` or `media-sort-gui`.
+`media-sort-core` must never depend on `media-sort-backend`, `iced-automation`, `iced-mpv`, `mpv-utils` or `media-sort-gui`. `mpv-utils` must never depend on `iced-mpv` or any iced crate — it is the dependency-light entry point for non-GUI consumers (benchmarks, tests).
 
 ## Code style
 
@@ -49,6 +51,8 @@ website/             (Astro, Starlight docs template, React components)
 ## libmpv
 
 The GUI binary links libmpv at build time and loads it at runtime. The system must have `libmpv-dev` (or equivalent) installed to compile. Without it `cargo build` fails on the `libmpv-sys` crate.
+
+The libmpv wrapper itself lives in `mpv-utils` (no iced/wgpu dependency): `MpvContext` (software render context, frame capture, `query_supported_extensions()`), the `VideoCommand`/`VideoEvent` worker protocol, `rotate_rgba` and `detect_video_rotation`/`Rotation`. `iced-mpv` layers the iced subscription, `VideoState` state machine and widgets on top and re-exports the `mpv-utils` items (`iced_mpv::MpvContext`, `iced_mpv::rotate_rgba`, ...). `media-sort-backend` and `benchmarks` depend on `mpv-utils` directly and compile without the iced/wgpu stack.
 
 At startup the app queries mpv for supported formats via `demuxer-lavf-list` and builds the media type registry dynamically. Video/audio support depends entirely on the installed mpv version.
 
@@ -135,7 +139,6 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `filesystem/scanner.rs` | `walkdir`-based media file discovery |
 | `filesystem/trash.rs` | Delete-to-trash (wrapping `platform/trash.rs`) |
 | `filesystem/watcher.rs` | `notify` + `notify-debouncer-mini` filesystem change events |
-| `media/mpv_context.rs` | `MpvContext`, `VideoWorker` thread, `VideoCommand`/`VideoEvent` channel protocol |
 | `media/format_pipeline.rs` | Per-format thumbnail/preview dispatch (private, shared by thumbnail.rs + image_decoder.rs) |
 | `media/image_decoder.rs` | Full-resolution image loading via `image` crate; `load_preview()` (capped preview decode) |
 | `media/audio_decoder.rs` | `AudioPlayer` using `rodio` output + `symphonia` decoding |
@@ -144,6 +147,26 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | `metadata/audio_meta.rs` | Audio tags via `id3`/`metaflac`/`mp4ameta` |
 | `metadata/video_meta.rs` | Video metadata extraction |
 | `platform/trash.rs` | OS-specific trash implementation |
+
+### mpv-utils (no iced dependency)
+
+| Module | Purpose |
+|--------|---------|
+| `mpv_context.rs` | `MpvContext` (software render context, frame capture, `query_supported_extensions()`), `MpvError` |
+| `worker.rs` | `VideoCommand`/`VideoEvent` worker protocol, `rotate_rgba`, `start_video_worker` |
+| `rotation.rs` | `Rotation` enum + `detect_video_rotation` (mp4 tkhd / EXIF / mp4ameta) |
+
+### iced-mpv (iced subscription/widgets for mpv)
+
+| Module | Purpose |
+|--------|---------|
+| `state.rs` | `VideoState` (observable state + command methods, `reset()`, auto-`Deactivate` on drop), `PlayerMessage`/`PlayerHandle`/`VideoPlayerEvent` |
+| `subscription.rs` | `video_player_subscription` — spawns the worker, delivers `PlayerHandle` + events as iced messages |
+| `player.rs` (`ui` feature) | `VideoPlayer` — self-contained state+subscription+view wrapper |
+| `widget/` | `controls.rs` (`media_controls_view`, transport-agnostic — also drives audio), `player.rs` (`video_player_view`), `shader.rs` (wgpu `VideoPipeline`/`VideoPrimitive`/`video_shader_view`) |
+| `action.rs` | `VideoAction` enum — user intent emitted by the widgets |
+
+The raw tokio command channel is hidden behind the opaque `PlayerHandle`; callers never name `tokio::sync::mpsc::Sender<VideoCommand>`. The `ui` feature (default) only adds the `lucide-icons`-based widgets — `--no-default-features` builds the subscription/state core without them.
 
 ### iced-automation (generic, no system deps)
 
@@ -207,17 +230,17 @@ To add a new persisted setting:
 
 The video playback path is complex and worth understanding before touching:
 
-1. **Startup** — `main.rs` queries mpv via `MpvContext::query_supported_extensions()` and initializes the global `MediaRegistry`
-2. **Subscription** — `video_player_subscription()` spawns a `VideoWorker` background thread that owns the `MpvContext` and runs an mpv event loop
-3. **Communication** — GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) via `tokio::sync::mpsc::Sender`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused)
-4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height }`, stored in `AppState`. The `video_canvas` widget (`widgets/video_canvas.rs`) renders it via a custom wgpu shader (`widgets/video_shader.rs`) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
-5. **Lifecycle** — When the user navigates away from a video or closes the application (`CloseRequested`/`Quit`), `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
+1. **Startup** — `main.rs` queries mpv via `MpvContext::query_supported_extensions()` (from `mpv-utils`, re-exported by iced-mpv) and initializes the global `MediaRegistry`
+2. **Subscription** — `video_player_subscription()` (iced-mpv) spawns a tokio `VideoWorker` task (in `mpv-utils`) that owns the `MpvContext` and runs an mpv event loop
+3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused)
+4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height, rotation: Rotation }`, stored in `VideoState`. The `video_player_view` widget (`widgets/video_player.rs` in the GUI) renders it via a custom wgpu shader (`widgets/video_shader.rs` in iced-mpv) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
+5. **Lifecycle** — When the user navigates away from a video (`VideoState::reset()`), closes the application (`CloseRequested`/`Quit`) or the state is dropped, `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 
-The `FrameReady` handler also uses `VideoPlaybackState.selected_path` (set in `select_and_load_entry` rather than re-derivable per-frame) for its O(1) "is this still the selected entry" check — previously it re-ran `filtered_entries()` + cloned `entry.path` per video frame.
+The `FrameReady` handler in `VideoState` only commits frames whose `path` matches `selected_path` and whose `ready` flag is set — the O(1) "is this still the selected entry" check — so a late frame from a previously selected video can never repopulate the state.
 
 The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
 
-**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found (or when ffmpeg rejects the file). `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH, and **caches the result in a process-global `OnceLock<Option<PathBuf>>`** — the first call runs the PATH scan + `ffmpeg -version` verify spawn and all subsequent calls return the cached `PathBuf::clone()` with no scan, no spawn, and no syscall. The cache lives for the lifetime of the process and is never invalidated. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
+**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found (or when ffmpeg rejects the file); each fallback frame goes through `MpvContext::capture_frame(path, 128, 128, 1s)` (mpv-utils), which wraps the old hand-rolled poll loop (load → pause → poll `has_frame_ready` → render → `rotate_rgba`) — the `VIDEO_THUMBNAIL_WORKER` threads in `subscriptions/prefetch.rs` just call it. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH, and **caches the result in a process-global `OnceLock<Option<PathBuf>>`** — the first call runs the PATH scan + `ffmpeg -version` verify spawn and all subsequent calls return the cached `PathBuf::clone()` with no scan, no spawn, and no syscall. The cache lives for the lifetime of the process and is never invalidated. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
 
 Both `ffmpeg` and mpv invocations go through **bounded worker pools** in `subscriptions/prefetch.rs`: `FFMPEG_THUMBNAIL_WORKER` spawns `available_parallelism().clamp(2, 16)` worker threads (ffmpeg is a lightweight short-lived subprocess, so the cap is sized to fit a typical visible set in 1–2 batches); `VIDEO_THUMBNAIL_WORKER` (mpv) spawns `available_parallelism().clamp(2, 4)` (each `MpvContext` is heavyweight — holds GPU resources, libmpv handle, persistent state). Both pull from a shared `mpsc` receiver (Arc-Mutex guarded, mirroring the watch-pool pattern). The caps prevent scroll-storm fan-out from spawning N simultaneous subprocesses (default tokio blocking-pool ceiling is 512); see `benches/perf_candidates.rs` Group G for the wall-time/resource tradeoff (8-way burst on this dev host: 121 ms unbounded at peak=8 procs vs 170 ms bounded-to-4 at peak=4 procs; 20-way burst: see `g_extract_concurrent_*_20` variants for the visible-set-scale case that motivated cap=16 over cap=4).
 
@@ -310,7 +333,7 @@ cargo test -p media-sort-gui          # runs #[cfg(test)] modules only
 
 ## Benchmarks crate
 
-`crates/benchmarks` (divan) measures the thumbnail/preview pipelines against fixtures in `resources/MockState/`. It replicates the production code paths as `baseline_*` variants (they copy the logic, they do not call the GUI) and compares them against optimized variants in `src/variants.rs`:
+`crates/benchmarks` (divan) measures the thumbnail/preview pipelines against fixtures in `resources/MockState/`. It replicates the production code paths as `baseline_*` variants (they copy the logic, they do not call the GUI) and compares them against optimized variants in `src/variants.rs`. Video variants use `mpv-utils` directly (no iced/wgpu in the build) and skip gracefully when libmpv is unavailable:
 
 - `benches/image_thumbnails.rs` — 128px grid thumbnails. Baseline: `load_image` + `img.thumbnail()`. Variants: fast_image_resize, single-read EXIF, zune-jpeg, turbojpeg scaled decode (1/8 / 1/4 DCT scaling + fast_image_resize). Turbojpeg is ~2× faster.
 - `benches/preview.rs` — full-image preview decode. Baseline: full-res RGBA. Variants: downscale to a 1920×1440 box (fast_image_resize, zune, turbojpeg scaled).

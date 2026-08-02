@@ -14,7 +14,7 @@ image.workspace = true
 fast_image_resize.workspace = true
 zune-jpeg = "0.5"
 zune-core = "0.5"
-iced-mpv = { path = "../iced-mpv", default-features = false }
+mpv-utils = { path = "../mpv-utils" }
 turbojpeg = "1.5"
 kamadak-exif.workspace = true
 webp = "0.3"

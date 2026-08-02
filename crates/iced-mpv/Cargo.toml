@@ -7,16 +7,16 @@ repository = "https://github.com/Lolle2000la/Image-Sort"
 
 [features]
 default = ["ui"]
+# Enables the ready-made widgets (controls bar + composite player view) which
+# depend on the `lucide-icons` font. Without it only the iced subscription,
+# state machine and raw shader view are available.
 ui = ["dep:lucide-icons"]
 
 [dependencies]
-libmpv-sys = "3.1.0"
+mpv-utils = { path = "../mpv-utils" }
 iced = { workspace = true, features = ["wgpu", "tokio", "advanced"] }
 iced_wgpu = "0.14"
 bytemuck = "1"
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
 tracing = { workspace = true }
-rayon = { workspace = true }
-kamadak-exif = { workspace = true }
-mp4ameta = { workspace = true }
 lucide-icons = { version = "1.21", optional = true }

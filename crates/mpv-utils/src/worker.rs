@@ -1,30 +1,38 @@
-use crate::engine::mpv_context::MpvContext;
+use crate::mpv_context::MpvContext;
+use crate::rotation::Rotation;
 use libmpv_sys::*;
 use std::ffi::c_char;
 use std::os::raw::c_void;
 use std::path::PathBuf;
 
+/// Commands sent to the background video worker.
 #[derive(Debug, Clone)]
 pub enum VideoCommand {
+    /// Load a file into the player and start playback.
     Load(PathBuf),
     Play,
     Pause,
     TogglePause,
+    /// Relative seek (seconds, may be negative).
     Seek(f64),
+    /// Absolute seek (seconds from the start).
     SeekAbsolute(f64),
     SetMute(bool),
     SetVolume(f64),
     Stop,
+    /// Pause and release the current file handle so OS-level operations
+    /// (rename/move/delete) are not blocked.
     Deactivate,
 }
 
+/// Events emitted by the background video worker.
 #[derive(Debug, Clone)]
 pub enum VideoEvent {
     FrameReady {
         path: PathBuf,
         width: u32,
         height: u32,
-        rotation: i64,
+        rotation: Rotation,
         rgba: std::sync::Arc<Vec<u8>>,
     },
     PlaybackProgress {
@@ -40,13 +48,13 @@ pub enum VideoEvent {
     },
 }
 
-/// Rotates raw RGBA byte buffer by specified degrees (0, 90, 180, 270).
+/// Rotates raw RGBA bytes by the given [`Rotation`].
+///
 /// Returns `(new_width, new_height, new_rgba_bytes)`.
-pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotate: i64) -> (u32, u32, Vec<u8>) {
+pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u32, u32, Vec<u8>) {
     use rayon::prelude::*;
-    let norm_rotate = rotate.rem_euclid(360);
-    match norm_rotate {
-        90 => {
+    match rotation {
+        Rotation::R90 => {
             let dst_w = src_h;
             let dst_h = src_w;
             let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
@@ -69,7 +77,7 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotate: i64) -> (u32, u32
 
             (dst_w, dst_h, dst)
         }
-        180 => {
+        Rotation::R180 => {
             let dst_w = src_w;
             let dst_h = src_h;
             let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
@@ -92,7 +100,7 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotate: i64) -> (u32, u32
 
             (dst_w, dst_h, dst)
         }
-        270 => {
+        Rotation::R270 => {
             let dst_w = src_h;
             let dst_h = src_w;
             let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
@@ -115,10 +123,15 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotate: i64) -> (u32, u32
 
             (dst_w, dst_h, dst)
         }
-        _ => (src_w, src_h, src.to_vec()),
+        Rotation::R0 => (src_w, src_h, src.to_vec()),
     }
 }
 
+/// Spawns the background video worker on the current tokio runtime.
+///
+/// The worker owns an [`MpvContext`], applies incoming [`VideoCommand`]s and
+/// emits [`VideoEvent`]s (rendered frames, playback progress, ...) on
+/// `event_tx`. The worker exits when the command channel is closed.
 pub fn start_video_worker(
     cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
@@ -126,7 +139,8 @@ pub fn start_video_worker(
     tokio::spawn(run_video_worker(cmd_rx, event_tx));
 }
 
-pub async fn run_video_worker(
+/// The worker loop. See [`start_video_worker`] for the public entry point.
+async fn run_video_worker(
     mut cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
 ) {
@@ -145,6 +159,11 @@ pub async fn run_video_worker(
         player.register_callback(wakeup_tx);
     }
 
+    // Frame buffers are pooled and reused while iced still holds them: a pool
+    // slot is reusable only when the worker is its sole owner (strong_count ==
+    // 1). The pool payload stays `Arc<Vec<u8>>` rather than `Arc<[u8]>`
+    // precisely because the pool must resize in place via `Arc::get_mut`; an
+    // immutable slice payload would force a fresh allocation per frame.
     let max_buffer_size = (960 * 540 * 4) as usize;
     let mut pool = [
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
@@ -154,7 +173,7 @@ pub async fn run_video_worker(
 
     let mut current_video_path = PathBuf::new();
     let mut canonical_video_path: Option<PathBuf> = None;
-    let mut cached_video_params: Option<(i32, i32, i64)> = None;
+    let mut cached_video_params: Option<(i32, i32, Rotation)> = None;
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -194,7 +213,7 @@ pub async fn run_video_worker(
                                 let _ = event_tx
                                     .send(VideoEvent::LoadFailed {
                                         path: path.clone(),
-                                        error: err,
+                                        error: err.to_string(),
                                     })
                                     .await;
                             }
@@ -266,9 +285,8 @@ pub async fn run_video_worker(
                             if paths_match && player.is_video_ready() {
                                 let (w, h) = player.get_video_size();
                                 if w > 0 && h > 0 {
-                                    let rotate = player.get_video_rotation();
-                                    let norm_rotate = rotate.rem_euclid(360);
-                                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+                                    let rotation = player.get_video_rotation();
+                                    let (eff_w, eff_h) = if rotation.is_swapped() {
                                         (h, w)
                                     } else {
                                         (w, h)
@@ -281,7 +299,7 @@ pub async fn run_video_worker(
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
                                     if render_unrot_w > 0 && render_unrot_h > 0 {
-                                        cached_video_params = Some((render_unrot_w, render_unrot_h, rotate));
+                                        cached_video_params = Some((render_unrot_w, render_unrot_h, rotation));
                                     }
                                 }
                             }
@@ -292,8 +310,7 @@ pub async fn run_video_worker(
                             if current_rot != cached_rot {
                                 let (w, h) = player.get_video_size();
                                 if w > 0 && h > 0 {
-                                    let norm_rotate = current_rot.rem_euclid(360);
-                                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+                                    let (eff_w, eff_h) = if current_rot.is_swapped() {
                                         (h, w)
                                     } else {
                                         (w, h)
@@ -312,7 +329,7 @@ pub async fn run_video_worker(
                             }
                         }
 
-                        if let Some((render_unrot_w, render_unrot_h, rotate)) = cached_video_params {
+                        if let Some((render_unrot_w, render_unrot_h, rotation)) = cached_video_params {
                             let unrot_size = (render_unrot_w * render_unrot_h * 4) as usize;
 
                             // Find a free buffer in the pool (where we are the sole owner)
@@ -329,7 +346,7 @@ pub async fn run_video_worker(
                                         path: current_video_path.clone(),
                                         width: render_unrot_w as u32,
                                         height: render_unrot_h as u32,
-                                        rotation: rotate,
+                                        rotation,
                                         rgba: arc_buf.clone(),
                                     });
                                 }
@@ -349,7 +366,6 @@ pub async fn run_video_worker(
             _ = progress_interval.tick() => {
                 if is_active {
                     let mut pos: f64 = 0.0;
-                    let mut dur: f64 = 0.0;
                     unsafe {
                         mpv_get_property(
                             player.handle,
@@ -357,13 +373,8 @@ pub async fn run_video_worker(
                             mpv_format_MPV_FORMAT_DOUBLE,
                             &mut pos as *mut _ as *mut c_void,
                         );
-                        mpv_get_property(
-                            player.handle,
-                            c"duration".as_ptr(),
-                            mpv_format_MPV_FORMAT_DOUBLE,
-                            &mut dur as *mut _ as *mut c_void,
-                        );
                     }
+                    let dur = player.get_duration();
                     if pos != last_position {
                         let _ = event_tx.send(VideoEvent::PlaybackProgress {
                             position: pos,
@@ -400,7 +411,7 @@ mod tests {
     #[test]
     fn test_rotate_rgba_0() {
         let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
-        let (w, h, dst) = rotate_rgba(2, 1, &src, 0);
+        let (w, h, dst) = rotate_rgba(2, 1, &src, Rotation::R0);
         assert_eq!((w, h), (2, 1));
         assert_eq!(dst, src);
     }
@@ -408,7 +419,7 @@ mod tests {
     #[test]
     fn test_rotate_rgba_90() {
         let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
-        let (w, h, dst) = rotate_rgba(2, 1, &src, 90);
+        let (w, h, dst) = rotate_rgba(2, 1, &src, Rotation::R90);
         assert_eq!((w, h), (1, 2));
         // 90 deg CW: (0,0) Red -> (0,0); (1,0) Green -> (0,1)
         assert_eq!(&dst[0..4], &[255, 0, 0, 255]);
@@ -418,7 +429,7 @@ mod tests {
     #[test]
     fn test_rotate_rgba_180() {
         let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
-        let (w, h, dst) = rotate_rgba(2, 1, &src, 180);
+        let (w, h, dst) = rotate_rgba(2, 1, &src, Rotation::R180);
         assert_eq!((w, h), (2, 1));
         // 180 deg: Green, Red
         assert_eq!(&dst[0..4], &[0, 255, 0, 255]);
@@ -428,7 +439,7 @@ mod tests {
     #[test]
     fn test_rotate_rgba_270() {
         let src = vec![255, 0, 0, 255, 0, 255, 0, 255]; // 2x1: Red, Green
-        let (w, h, dst) = rotate_rgba(2, 1, &src, 270);
+        let (w, h, dst) = rotate_rgba(2, 1, &src, Rotation::R270);
         assert_eq!((w, h), (1, 2));
         // 270 deg CW: (0,0) Red -> (0,1); (1,0) Green -> (0,0)
         assert_eq!(&dst[0..4], &[0, 255, 0, 255]);

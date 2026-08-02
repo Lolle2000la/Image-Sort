@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use iced::widget::{column, container, text};
 use iced::{Color, Element, Font, Length};
-use iced_mpv::{MediaControlMessage, media_controls_view};
+use iced_mpv::{MediaControl, media_controls_view};
 
 use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
@@ -43,11 +43,11 @@ pub fn audio_controls_view(
         playing,
     )
     .map(|msg| match msg {
-        MediaControlMessage::PlayPause => Message::Media(MediaMessage::AudioPlayPause),
-        MediaControlMessage::Stop => Message::Media(MediaMessage::StopAudio),
-        MediaControlMessage::Seek(v) => Message::Media(MediaMessage::AudioSeek(v)),
-        MediaControlMessage::SetVolume(v) => Message::Media(MediaMessage::AudioSetVolume(v)),
-        MediaControlMessage::ToggleMute => Message::Media(MediaMessage::AudioToggleMute),
+        MediaControl::PlayPause => Message::Media(MediaMessage::AudioPlayPause),
+        MediaControl::Stop => Message::Media(MediaMessage::StopAudio),
+        MediaControl::Seek(v) => Message::Media(MediaMessage::AudioSeek(v)),
+        MediaControl::SetVolume(v) => Message::Media(MediaMessage::AudioSetVolume(v)),
+        MediaControl::ToggleMute => Message::Media(MediaMessage::AudioToggleMute),
     });
 
     let content = column![

@@ -711,9 +711,3 @@ fn test_thumbnail_exif_orientation() {
 
     std::fs::remove_file(&tmp_path).ok();
 }
-
-#[test]
-fn test_detect_video_rotation_nonexistent() {
-    let result = iced_mpv::detect_video_rotation(Path::new("/nonexistent/video.mp4"));
-    assert_eq!(result, None);
-}

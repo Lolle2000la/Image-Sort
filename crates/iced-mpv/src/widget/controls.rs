@@ -1,8 +1,11 @@
 use iced::widget::{button, row, slider, text};
 use iced::{Alignment, Element, Font, Length};
 
+/// User actions produced by the transport-agnostic control bar
+/// ([`media_controls_view`]). A subset of [`crate::VideoAction`] (no
+/// play-externally), so the same bar can drive audio playback too.
 #[derive(Debug, Clone, PartialEq)]
-pub enum MediaControlMessage {
+pub enum MediaControl {
     PlayPause,
     Stop,
     Seek(f64),
@@ -10,13 +13,16 @@ pub enum MediaControlMessage {
     ToggleMute,
 }
 
+/// A transport-agnostic media control bar (play/pause, stop, seekbar, mute
+/// and volume) that emits [`MediaControl`] messages. It only reads plain
+/// values, so it can render video playback state *or* audio player state.
 pub fn media_controls_view(
     position: f64,
     duration: f64,
     volume: f64,
     muted: bool,
     playing: bool,
-) -> Element<'static, MediaControlMessage> {
+) -> Element<'static, MediaControl> {
     let play_pause_btn = button(
         text(char::from(if playing {
             lucide_icons::Icon::Pause
@@ -27,7 +33,7 @@ pub fn media_controls_view(
         .size(16),
     )
     .padding(8)
-    .on_press(MediaControlMessage::PlayPause);
+    .on_press(MediaControl::PlayPause);
 
     let stop_btn = button(
         text(char::from(lucide_icons::Icon::Square))
@@ -35,13 +41,13 @@ pub fn media_controls_view(
             .size(16),
     )
     .padding(8)
-    .on_press(MediaControlMessage::Stop);
+    .on_press(MediaControl::Stop);
 
     let time_str = format!("{} / {}", format_time(position), format_time(duration));
     let time_label = text(time_str).size(13);
 
     let seek_max = if duration > 0.0 { duration } else { 1.0 };
-    let seekbar = slider(0.0..=seek_max, position, MediaControlMessage::Seek).width(Length::Fill);
+    let seekbar = slider(0.0..=seek_max, position, MediaControl::Seek).width(Length::Fill);
 
     let mute_btn = button(
         text(char::from(if muted {
@@ -53,10 +59,10 @@ pub fn media_controls_view(
         .size(16),
     )
     .padding(8)
-    .on_press(MediaControlMessage::ToggleMute);
+    .on_press(MediaControl::ToggleMute);
 
     let volume_slider =
-        slider(0.0..=100.0, volume, MediaControlMessage::SetVolume).width(Length::Fixed(80.0));
+        slider(0.0..=100.0, volume, MediaControl::SetVolume).width(Length::Fixed(80.0));
 
     row![
         play_pause_btn,
@@ -72,6 +78,8 @@ pub fn media_controls_view(
     .into()
 }
 
+/// Formats seconds as `MM:SS`. Non-finite and negative values render as
+/// `00:00`.
 pub fn format_time(secs: f64) -> String {
     if secs.is_nan() || secs.is_infinite() || secs < 0.0 {
         return "00:00".to_string();

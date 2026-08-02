@@ -536,7 +536,7 @@ pub fn ffmpeg_extract(_player: &mut MpvContext, path: &Path) -> VariantResult {
 
 // ── Video thumbnail variants ──────────────────────────────────────────
 
-use iced_mpv::{MpvContext, libmpv_sys, rotate_rgba};
+use mpv_utils::{MpvContext, rotate_rgba};
 
 /// Baseline 4: exact replication of the current video thumbnail path.
 pub fn baseline_poll_10ms(player: &mut MpvContext, path: &Path) -> VariantResult {
@@ -584,16 +584,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                 if !seek_done {
                     let (w, h) = player.get_video_size();
                     if w > 0 && h > 0 {
-                        let dur = unsafe {
-                            let mut d: f64 = 0.0;
-                            libmpv_sys::mpv_get_property(
-                                player.handle,
-                                c"duration".as_ptr(),
-                                libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
-                                &mut d as *mut _ as *mut std::os::raw::c_void,
-                            );
-                            d
-                        };
+                        let dur = player.get_duration();
                         if dur > 0.0 {
                             player.seek(dur * 0.1);
                         }
@@ -605,12 +596,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                 let (w, h) = player.get_video_size();
                 if w > 0 && h > 0 {
                     let rotate = player.get_video_rotation();
-                    let norm_rotate = rotate.rem_euclid(360);
-                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
+                    let (eff_w, eff_h) = if rotate.is_swapped() { (h, w) } else { (w, h) };
 
                     let max_w = 128.0f64;
                     let max_h = 128.0f64;
@@ -671,12 +657,7 @@ fn poll_based_thumbnail(
                 let (w, h) = player.get_video_size();
                 if w > 0 && h > 0 {
                     let rotate = player.get_video_rotation();
-                    let norm_rotate = rotate.rem_euclid(360);
-                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
+                    let (eff_w, eff_h) = if rotate.is_swapped() { (h, w) } else { (w, h) };
 
                     let max_w = 128.0f64;
                     let max_h = 128.0f64;

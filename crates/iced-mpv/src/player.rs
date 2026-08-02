@@ -1,28 +1,20 @@
-use crate::action::VideoAction;
-use crate::engine::worker::{VideoCommand, VideoEvent};
-use crate::state::VideoState;
+use crate::state::{PlayerMessage, VideoState};
 use crate::subscription::video_player_subscription;
 use crate::widget::player::video_player_view;
 use iced::{Element, Subscription};
 use std::path::PathBuf;
-use tokio::sync::mpsc;
 
-#[derive(Debug, Clone)]
-pub enum PlayerMessage {
-    Ready(mpsc::Sender<VideoCommand>),
-    Event(VideoEvent),
-    Action(VideoAction),
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum VideoPlayerEvent {
-    LoadFailed { path: PathBuf, error: String },
-    PlayExternally(PathBuf),
-}
-
+/// A self-contained video player: state, subscription and view in one type.
+///
+/// This is the most ergonomic entry point when you want the crate's own
+/// widgets: subscribe with [`VideoPlayer::subscription`], feed messages into
+/// [`VideoPlayer::update`], and render with [`VideoPlayer::view`]. The app
+/// message type must be [`PlayerMessage`] for `view` to wire the built-in
+/// controls — if your app has its own message enum, embed a
+/// [`VideoState`] and use the free [`crate::video_player_view`] instead.
+#[derive(Debug)]
 pub struct VideoPlayer {
     pub state: VideoState,
-    pub current_path: Option<PathBuf>,
     pub thumb_handle: Option<iced::widget::image::Handle>,
 }
 
@@ -36,7 +28,6 @@ impl VideoPlayer {
     pub fn new() -> Self {
         Self {
             state: VideoState::new(),
-            current_path: None,
             thumb_handle: None,
         }
     }
@@ -51,61 +42,35 @@ impl VideoPlayer {
     }
 
     pub fn load(&mut self, path: impl Into<PathBuf>) {
-        let p = path.into();
-        self.current_path = Some(p.clone());
-        self.state.load(p);
+        self.state.load(path.into());
     }
 
+    /// The subscription that spawns the video worker. Map it into your app's
+    /// message type, or use [`VideoPlayer::subscription_with`].
     pub fn subscription() -> Subscription<PlayerMessage> {
         video_player_subscription(PlayerMessage::Ready, PlayerMessage::Event)
     }
 
-    pub fn update(&mut self, message: PlayerMessage) -> Option<VideoPlayerEvent> {
-        match message {
-            PlayerMessage::Ready(sender) => {
-                self.state.set_sender(sender);
-                if let Some(path) = &self.current_path {
-                    self.state.load(path.clone());
-                }
-                None
-            }
-            PlayerMessage::Event(event) => {
-                if let Some((path, err)) = self.state.handle_event(&event) {
-                    Some(VideoPlayerEvent::LoadFailed { path, error: err })
-                } else {
-                    None
-                }
-            }
-            PlayerMessage::Action(action) => match action {
-                VideoAction::PlayPause => {
-                    self.state.toggle_pause();
-                    None
-                }
-                VideoAction::Stop => {
-                    self.state.stop();
-                    None
-                }
-                VideoAction::Seek(pos) => {
-                    self.state.seek(pos);
-                    None
-                }
-                VideoAction::SetVolume(vol) => {
-                    self.state.set_volume(vol);
-                    None
-                }
-                VideoAction::ToggleMute => {
-                    self.state.toggle_mute();
-                    None
-                }
-                VideoAction::PlayExternally(path) => Some(VideoPlayerEvent::PlayExternally(path)),
-            },
-        }
+    /// Like [`VideoPlayer::subscription`], but maps each [`PlayerMessage`]
+    /// into your own message type inside the subscription.
+    pub fn subscription_with<Message, F>(map: F) -> Subscription<Message>
+    where
+        Message: Send + 'static,
+        F: Fn(PlayerMessage) -> Message + Send + Sync + 'static + Clone,
+    {
+        let on_ready = map.clone();
+        video_player_subscription(
+            move |handle| on_ready(PlayerMessage::Ready(handle)),
+            move |event| map(PlayerMessage::Event(event)),
+        )
+    }
+
+    pub fn update(&mut self, message: PlayerMessage) -> Option<crate::VideoPlayerEvent> {
+        self.state.update(message)
     }
 
     pub fn view(&self) -> Element<'_, PlayerMessage> {
-        let path = self.current_path.clone().unwrap_or_default();
         video_player_view(
-            path,
             &self.state,
             self.thumb_handle.clone(),
             None,
@@ -117,9 +82,7 @@ impl VideoPlayer {
         &'a self,
         placeholder: Element<'a, PlayerMessage>,
     ) -> Element<'a, PlayerMessage> {
-        let path = self.current_path.clone().unwrap_or_default();
         video_player_view(
-            path,
             &self.state,
             self.thumb_handle.clone(),
             Some(placeholder),

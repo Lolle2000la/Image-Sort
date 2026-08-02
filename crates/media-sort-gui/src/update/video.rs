@@ -6,6 +6,12 @@ use crate::state::AppState;
 pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Message> {
     match msg {
         VideoMessage::Player(player_msg) => {
+            if let iced_mpv::PlayerMessage::Event(iced_mpv::VideoEvent::FrameReady {
+                path, ..
+            }) = &player_msg
+            {
+                state.cache.media_errors.remove(path);
+            }
             if let Some(event) = state.video.update(player_msg) {
                 match event {
                     iced_mpv::VideoPlayerEvent::LoadFailed { path, error } => {
@@ -16,20 +22,6 @@ pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Mes
                         super::tasks::open_externally(&path);
                     }
                 }
-            }
-            Task::none()
-        }
-        VideoMessage::PlayerReady(sender) => {
-            state.video.set_sender(sender);
-            Task::none()
-        }
-        VideoMessage::Event(event) => {
-            if let iced_mpv::VideoEvent::FrameReady { ref path, .. } = event {
-                state.cache.media_errors.remove(path);
-            }
-            if let Some((path, err)) = state.video.handle_event(&event) {
-                tracing::error!("Video load failed for {}: {}", path.display(), err);
-                state.cache.media_errors.record(path, err);
             }
             Task::none()
         }

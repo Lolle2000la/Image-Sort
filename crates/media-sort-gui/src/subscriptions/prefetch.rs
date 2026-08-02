@@ -94,70 +94,9 @@ fn generate_video_thumbnail_frame(
     player: &mut iced_mpv::MpvContext,
     path: &std::path::Path,
 ) -> ThumbnailResult {
-    player.stop();
-
-    if let Err(e) = player.load_file(path) {
-        return Err(format!("Failed to load video in mpv player: {e}"));
-    }
-    player.set_paused(true);
-
-    let mut result = Err(format!(
-        "Timed out generating video frame thumbnail for {}",
-        path.display()
-    ));
-    let start = std::time::Instant::now();
-
-    let target_canonical = path.canonicalize().ok();
-
-    while start.elapsed() < std::time::Duration::from_millis(1000) {
-        if player.has_frame_ready()
-            && let Some(current_p_str) = player.get_current_path()
-        {
-            let current_p = std::path::PathBuf::from(current_p_str);
-            let paths_match = current_p == path
-                || target_canonical.as_ref().is_some_and(|tc| {
-                    current_p == *tc || current_p.canonicalize().ok().as_ref() == Some(tc)
-                });
-
-            if paths_match {
-                let (w, h) = player.get_video_size();
-                if w > 0 && h > 0 {
-                    let rotate = player.get_video_rotation();
-                    let norm_rotate = rotate.rem_euclid(360);
-                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
-
-                    let max_w = 128.0;
-                    let max_h = 128.0;
-                    let scale = (max_w / eff_w as f64).min(max_h / eff_h as f64).min(1.0);
-
-                    let render_w = ((w as f64 * scale) as i32) & !1;
-                    let render_h = ((h as f64 * scale) as i32) & !1;
-
-                    if render_w > 0 && render_h > 0 {
-                        let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
-                        if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
-                            let (final_w, final_h, final_rgba) = iced_mpv::rotate_rgba(
-                                render_w as u32,
-                                render_h as u32,
-                                &buffer,
-                                rotate,
-                            );
-                            result = Ok((final_w, final_h, final_rgba));
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        std::thread::sleep(std::time::Duration::from_millis(10));
-    }
-
-    player.stop();
-    result
+    player
+        .capture_frame(path, 128, 128, std::time::Duration::from_millis(1000))
+        .map_err(|e| e.to_string())
 }
 
 /// Generate a thumbnail for the given file. Takes the entry's cached

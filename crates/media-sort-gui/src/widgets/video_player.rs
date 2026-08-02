@@ -12,7 +12,6 @@ pub fn video_player<'a>(
     thumb_handle: Option<iced::widget::image::Handle>,
 ) -> Element<'a, Message> {
     iced_mpv::video_player_view(
-        path.clone(),
         &state.video,
         thumb_handle,
         Some(placeholder(path, &state.l10n)),

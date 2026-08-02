@@ -19,7 +19,6 @@ mp4ameta.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tokio.workspace = true
-iced-mpv = { path = "../iced-mpv", default-features = false }
 chrono = "0.4"
 fast_image_resize.workspace = true
 rayon.workspace = true

@@ -1,66 +1,140 @@
+use crate::rotation::{Rotation, detect_video_rotation};
 use libmpv_sys::*;
 use std::ffi::{CStr, CString};
+use std::fmt;
 use std::os::raw::{c_char, c_int, c_void};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::ptr;
+use std::time::{Duration, Instant};
 
 const MPV_RENDER_PARAM_SW_SIZE: mpv_render_param_type = 17;
 const MPV_RENDER_PARAM_SW_FORMAT: mpv_render_param_type = 18;
 const MPV_RENDER_PARAM_SW_STRIDE: mpv_render_param_type = 19;
 const MPV_RENDER_PARAM_SW_POINTER: mpv_render_param_type = 20;
 
+/// Errors produced by [`MpvContext`] operations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MpvError {
+    /// `mpv_create` returned a null handle.
+    CreateFailed,
+    /// `mpv_initialize` failed with the given libmpv error code.
+    Initialize(i32),
+    /// `mpv_render_context_create` failed with the given libmpv error code.
+    RenderContextCreate(i32),
+    /// `mpv_render_context_render` failed with the given libmpv error code.
+    RenderFrame(i32),
+    /// `mpv_command` failed with the given libmpv error code.
+    Command(i32),
+    /// `mpv_set_property`/`mpv_get_property` failed with the given libmpv error code.
+    Property(i32),
+    /// The caller-provided output buffer was too small for the requested frame.
+    BufferTooSmall { required: usize, available: usize },
+    /// The path cannot be converted to a C string (non-UTF-8).
+    InvalidPath,
+    /// [`MpvContext::capture_frame`] did not produce a frame within its timeout.
+    CaptureTimeout,
+    /// A C-string conversion failed unexpectedly.
+    InvalidCString,
+    /// Any other failure with a human-readable message.
+    Other(String),
+}
+
+impl fmt::Display for MpvError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::CreateFailed => write!(f, "failed to create mpv instance"),
+            Self::Initialize(code) => write!(f, "failed to initialize mpv (code {code})"),
+            Self::RenderContextCreate(code) => {
+                write!(f, "failed to create render context (code {code})")
+            }
+            Self::RenderFrame(code) => write!(f, "failed to render frame (code {code})"),
+            Self::Command(code) => write!(f, "mpv command failed (code {code})"),
+            Self::Property(code) => write!(f, "mpv property access failed (code {code})"),
+            Self::BufferTooSmall {
+                required,
+                available,
+            } => write!(
+                f,
+                "buffer too small: {available} bytes, need {required} bytes"
+            ),
+            Self::InvalidPath => write!(f, "path is not valid UTF-8"),
+            Self::CaptureTimeout => write!(f, "timed out waiting for a video frame"),
+            Self::InvalidCString => write!(f, "string contains a null byte"),
+            Self::Other(msg) => write!(f, "{msg}"),
+        }
+    }
+}
+
+impl std::error::Error for MpvError {}
+
+/// A software-rendered libmpv instance.
+///
+/// Wraps a raw `mpv_handle` plus a software (`sw`) render context that renders
+/// frames into caller-provided CPU memory via [`MpvContext::render_frame`].
+/// Use [`MpvContext::new`] for video playback and
+/// [`MpvContext::new_thumbnail_player`] for cheap thumbnail extraction.
+///
+/// The handle is Send and Sync; callers must serialize access (a single
+/// [`worker`](crate::worker) loop or one thread per context) because libmpv
+/// render contexts are not safe for concurrent access.
 pub struct MpvContext {
-    pub handle: *mut mpv_handle,
-    pub render_ctx: *mut mpv_render_context,
+    pub(crate) handle: *mut mpv_handle,
+    pub(crate) render_ctx: *mut mpv_render_context,
     callback_context_raw: *mut c_void,
 }
 
 impl MpvContext {
-    pub fn new() -> Result<Self, String> {
+    /// Creates a fully configured playback context (video + audio enabled).
+    pub fn new() -> Result<Self, MpvError> {
+        Self::create(false)
+    }
+
+    /// Creates a minimal context tuned for thumbnail extraction: audio and
+    /// subtitles are disabled and seeking is allowed to be approximate, which
+    /// makes frame capture much faster.
+    pub fn new_thumbnail_player() -> Result<Self, MpvError> {
+        Self::create(true)
+    }
+
+    fn create(thumbnail_mode: bool) -> Result<Self, MpvError> {
         unsafe {
             let handle = mpv_create();
             if handle.is_null() {
-                return Err("Failed to create mpv instance".to_string());
+                return Err(MpvError::CreateFailed);
             }
 
-            // Set some default options
-            let vo_name = CString::new("libmpv").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"vo".as_ptr(), vo_name.as_ptr());
-            let keep_open = CString::new("yes").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
-            let loop_file = CString::new("inf").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"loop-file".as_ptr(), loop_file.as_ptr());
-            let hwdec = CString::new("auto-copy").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
-            let no = CString::new("no").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
+            // Common options for both modes.
+            Self::set_option(handle, c"vo", "libmpv");
+            Self::set_option(handle, c"keep-open", "yes");
+            Self::set_option(handle, c"hwdec", "auto-copy");
+            Self::set_option(handle, c"sub-auto", "no");
+            Self::set_option(handle, c"audio-file-auto", "no");
+            Self::set_option(handle, c"cache", "no");
+            // Rotation is applied manually via rotate_rgba after rendering so
+            // the raw unrotated frame can be uploaded to the GPU cheaply.
+            Self::set_option(handle, c"video-rotate", "no");
+            Self::set_option(handle, c"force-window", "no");
+            Self::set_option(handle, c"input-default-bindings", "no");
 
-            mpv_set_option_string(handle, c"video-rotate".as_ptr(), no.as_ptr());
-
-            let vo_framedrop = CString::new("vo").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"framedrop".as_ptr(), vo_framedrop.as_ptr());
-            let video_sync = CString::new("audio").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"video-sync".as_ptr(), video_sync.as_ptr());
-            let video_timing_offset =
-                CString::new("0").expect("static string contains no null bytes");
-            mpv_set_option_string(
-                handle,
-                c"video-timing-offset".as_ptr(),
-                video_timing_offset.as_ptr(),
-            );
-            mpv_set_option_string(handle, c"force-window".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"input-default-bindings".as_ptr(), no.as_ptr());
+            if thumbnail_mode {
+                Self::set_option(handle, c"aid", "no");
+                Self::set_option(handle, c"sid", "no");
+                Self::set_option(handle, c"hr-seek", "no");
+                Self::set_option(handle, c"video-sync", "desync");
+            } else {
+                Self::set_option(handle, c"loop-file", "inf");
+                Self::set_option(handle, c"framedrop", "vo");
+                Self::set_option(handle, c"video-sync", "audio");
+                Self::set_option(handle, c"video-timing-offset", "0");
+            }
 
             let err = mpv_initialize(handle);
             if err < 0 {
                 mpv_terminate_destroy(handle);
-                return Err(format!("Failed to initialize mpv: {err}"));
+                return Err(MpvError::Initialize(err));
             }
 
-            // Create software render context
-            let api_type = CString::new("sw").expect("static string contains no null bytes");
+            let api_type = CString::new("sw").map_err(|_| MpvError::InvalidCString)?;
             let mut params = [
                 mpv_render_param {
                     type_: mpv_render_param_type_MPV_RENDER_PARAM_API_TYPE,
@@ -76,7 +150,7 @@ impl MpvContext {
             let err = mpv_render_context_create(&mut render_ctx, handle, params.as_mut_ptr());
             if err < 0 {
                 mpv_terminate_destroy(handle);
-                return Err(format!("Failed to create render context: {err}"));
+                return Err(MpvError::RenderContextCreate(err));
             }
 
             Ok(Self {
@@ -87,72 +161,23 @@ impl MpvContext {
         }
     }
 
-    pub fn new_thumbnail_player() -> Result<Self, String> {
+    /// Best-effort option setter; errors are ignored because the option set is
+    /// static and expected to be accepted by any libmpv version in use.
+    fn set_option(handle: *mut mpv_handle, key: &'static std::ffi::CStr, value: &str) {
         unsafe {
-            let handle = mpv_create();
-            if handle.is_null() {
-                return Err("Failed to create mpv instance".to_string());
-            }
-
-            let vo_name = CString::new("libmpv").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"vo".as_ptr(), vo_name.as_ptr());
-            let keep_open = CString::new("yes").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"keep-open".as_ptr(), keep_open.as_ptr());
-            let hwdec = CString::new("auto-copy").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"hwdec".as_ptr(), hwdec.as_ptr());
-
-            let no = CString::new("no").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"aid".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"sid".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"sub-auto".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"audio-file-auto".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"cache".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"video-rotate".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"hr-seek".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"force-window".as_ptr(), no.as_ptr());
-            mpv_set_option_string(handle, c"input-default-bindings".as_ptr(), no.as_ptr());
-
-            let desync = CString::new("desync").expect("static string contains no null bytes");
-            mpv_set_option_string(handle, c"video-sync".as_ptr(), desync.as_ptr());
-
-            let err = mpv_initialize(handle);
-            if err < 0 {
-                mpv_terminate_destroy(handle);
-                return Err(format!("Failed to initialize mpv: {err}"));
-            }
-
-            let api_type = CString::new("sw").expect("static string contains no null bytes");
-            let mut params = [
-                mpv_render_param {
-                    type_: mpv_render_param_type_MPV_RENDER_PARAM_API_TYPE,
-                    data: api_type.as_ptr() as *mut c_void,
-                },
-                mpv_render_param {
-                    type_: 0,
-                    data: ptr::null_mut(),
-                },
-            ];
-
-            let mut render_ctx: *mut mpv_render_context = ptr::null_mut();
-            let err = mpv_render_context_create(&mut render_ctx, handle, params.as_mut_ptr());
-            if err < 0 {
-                mpv_terminate_destroy(handle);
-                return Err(format!("Failed to create render context: {err}"));
-            }
-
-            Ok(Self {
-                handle,
-                render_ctx,
-                callback_context_raw: ptr::null_mut(),
-            })
+            let value = CString::new(value).expect("static string contains no null bytes");
+            mpv_set_option_string(handle, key.as_ptr(), value.as_ptr());
         }
     }
 
+    /// Registers a wakeup callback that `try_send`s `()` on `sender` whenever
+    /// the render context has new work (e.g. a frame) to process.
+    ///
     /// # Safety
     ///
-    /// The caller must ensure that `self.render_ctx` is a valid render context and that
-    /// the sender remains usable for the lifetime of the context.
-    pub unsafe fn register_callback(&mut self, sender: tokio::sync::mpsc::Sender<()>) {
+    /// The caller must ensure that `self.render_ctx` is a valid render context
+    /// and that the sender remains usable for the lifetime of the context.
+    pub(crate) unsafe fn register_callback(&mut self, sender: tokio::sync::mpsc::Sender<()>) {
         let sender_box = Box::new(sender);
         self.callback_context_raw = Box::into_raw(sender_box) as *mut c_void;
 
@@ -165,11 +190,13 @@ impl MpvContext {
         }
     }
 
+    /// Returns `true` if the render context has at least one pending frame.
     pub fn has_frame_ready(&self) -> bool {
         let flags = unsafe { mpv_render_context_update(self.render_ctx) };
         (flags & mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME as u64) != 0
     }
 
+    /// The path of the currently loaded file, if any.
     pub fn get_current_path(&self) -> Option<String> {
         unsafe {
             let mut path_ptr: *mut c_char = ptr::null_mut();
@@ -189,23 +216,25 @@ impl MpvContext {
         }
     }
 
-    pub fn load_file(&mut self, path: &Path) -> Result<(), String> {
+    /// Loads a file into the player. Returns an error when the path is not
+    /// valid UTF-8 or mpv rejects the file.
+    pub fn load_file(&mut self, path: &Path) -> Result<(), MpvError> {
         unsafe {
-            let path_str =
-                CString::new(path.to_str().ok_or("Invalid path")?).map_err(|e| e.to_string())?;
+            let path_str = CString::new(path.to_str().ok_or(MpvError::InvalidPath)?)
+                .map_err(|_| MpvError::InvalidCString)?;
             let mut cmd: [*const c_char; 3] =
                 [c"loadfile".as_ptr(), path_str.as_ptr(), ptr::null()];
             let err = mpv_command(self.handle, cmd.as_mut_ptr());
             if err < 0 {
-                return Err(format!("Failed to load file: {err}"));
+                return Err(MpvError::Command(err));
             }
             Ok(())
         }
     }
 
-    /// Send a `stop` command to release the current file and flush internal caches.
-    /// Must be called before loading a new file to prevent mpv from entering an
-    /// inconsistent state when files are switched rapidly.
+    /// Sends a `stop` command to release the current file and flush internal
+    /// caches. Must be called before loading a new file to prevent mpv from
+    /// entering an inconsistent state when files are switched rapidly.
     pub fn stop(&mut self) {
         unsafe {
             let mut cmd: [*const c_char; 2] = [c"stop".as_ptr(), ptr::null()];
@@ -214,6 +243,7 @@ impl MpvContext {
         }
     }
 
+    /// Drains all pending render-context updates without rendering.
     pub fn drain_render_context(&self) {
         unsafe {
             for _ in 0..128 {
@@ -224,10 +254,11 @@ impl MpvContext {
         }
     }
 
-    /// Returns true when the video output chain is fully initialized and ready to
-    /// produce frames. Must be checked before calling `render_frame` to avoid
-    /// `mp_image_crop` assertions during the transient initialization window
-    /// between `load_file` and the first fully-formed frame.
+    /// Returns `true` when the video output chain is fully initialized and
+    /// ready to produce frames. Must be checked before calling
+    /// [`MpvContext::render_frame`] to avoid `mp_image_crop` assertions during
+    /// the transient initialization window between `load_file` and the first
+    /// fully-formed frame.
     pub fn is_video_ready(&self) -> bool {
         unsafe {
             let mut ptr: *mut c_char = ptr::null_mut();
@@ -246,6 +277,8 @@ impl MpvContext {
         }
     }
 
+    /// The width and height of the decoded video, in display pixels. Returns
+    /// `(0, 0)` when no video is loaded.
     pub fn get_video_size(&self) -> (i64, i64) {
         unsafe {
             let mut width: i64 = 0;
@@ -266,17 +299,38 @@ impl MpvContext {
         }
     }
 
-    pub fn get_video_rotation(&self) -> i64 {
+    /// The duration of the currently loaded media in seconds, or `0.0` when
+    /// nothing is loaded.
+    pub fn get_duration(&self) -> f64 {
+        unsafe {
+            let mut dur: f64 = 0.0;
+            mpv_get_property(
+                self.handle,
+                c"duration".as_ptr(),
+                mpv_format_MPV_FORMAT_DOUBLE,
+                &mut dur as *mut _ as *mut c_void,
+            );
+            dur
+        }
+    }
+
+    /// The effective rotation of the currently loaded video.
+    ///
+    /// Prefers the file-based detection in [`detect_video_rotation`] (mp4
+    /// `tkhd` matrix / EXIF / mp4ameta) and falls back to probing up to five
+    /// mpv rotation properties. Returns [`Rotation::R0`] when nothing is
+    /// loaded or no rotation is known.
+    pub fn get_video_rotation(&self) -> Rotation {
         if let Some(path_str) = self.get_current_path()
-            && let Some(rot) = crate::engine::rotation::detect_video_rotation(Path::new(&path_str))
-            && rot != 0
+            && let Some(rot) = detect_video_rotation(Path::new(&path_str))
+            && rot != Rotation::R0
         {
-            return rot.rem_euclid(360);
+            return rot;
         }
 
         unsafe {
-            let mut rotate: i64 = 0;
             // 1. Check video-params/rotate
+            let mut rotate: i64 = 0;
             let mut err = mpv_get_property(
                 self.handle,
                 c"video-params/rotate".as_ptr(),
@@ -284,7 +338,7 @@ impl MpvContext {
                 &mut rotate as *mut _ as *mut c_void,
             );
             if err >= 0 && rotate != 0 {
-                return rotate.rem_euclid(360);
+                return Rotation::from_degrees(rotate);
             }
 
             // 2. Check video-out-params/rotate
@@ -295,7 +349,7 @@ impl MpvContext {
                 &mut rotate as *mut _ as *mut c_void,
             );
             if err >= 0 && rotate != 0 {
-                return rotate.rem_euclid(360);
+                return Rotation::from_degrees(rotate);
             }
 
             // 3. Check track-list/0/demux-rotation
@@ -306,7 +360,7 @@ impl MpvContext {
                 &mut rotate as *mut _ as *mut c_void,
             );
             if err >= 0 && rotate != 0 {
-                return rotate.rem_euclid(360);
+                return Rotation::from_degrees(rotate);
             }
 
             // 4. Check track-list/0/user-rotation
@@ -317,7 +371,7 @@ impl MpvContext {
                 &mut rotate as *mut _ as *mut c_void,
             );
             if err >= 0 && rotate != 0 {
-                return rotate.rem_euclid(360);
+                return Rotation::from_degrees(rotate);
             }
 
             // 5. Check metadata string tags
@@ -342,28 +396,28 @@ impl MpvContext {
                     let parsed = s.trim().parse::<i64>().unwrap_or(0);
                     mpv_free(str_ptr as *mut c_void);
                     if parsed != 0 {
-                        return parsed.rem_euclid(360);
+                        return Rotation::from_degrees(parsed);
                     }
                 }
             }
 
-            0
+            Rotation::R0
         }
     }
 
-    pub fn render_frame(&self, width: i32, height: i32, buffer: &mut [u8]) -> Result<(), String> {
+    /// Renders the current video frame into `buffer` as raw RGBA.
+    ///
+    /// `buffer` must be at least `width * height * 4` bytes long.
+    pub fn render_frame(&self, width: i32, height: i32, buffer: &mut [u8]) -> Result<(), MpvError> {
         let required = (width as usize) * (height as usize) * 4;
         if buffer.len() < required {
-            return Err(format!(
-                "Buffer too small: {} bytes, need {} for {}x{} RGBA",
-                buffer.len(),
+            return Err(MpvError::BufferTooSmall {
                 required,
-                width,
-                height
-            ));
+                available: buffer.len(),
+            });
         }
         unsafe {
-            let format = CString::new("rgba").expect("static string contains no null bytes");
+            let format = CString::new("rgba").map_err(|_| MpvError::InvalidCString)?;
             let mut size: [c_int; 2] = [width, height];
             let mut stride = (width * 4) as usize;
 
@@ -392,12 +446,13 @@ impl MpvContext {
 
             let err = mpv_render_context_render(self.render_ctx, params.as_mut_ptr());
             if err < 0 {
-                return Err(format!("Failed to render frame: {err}"));
+                return Err(MpvError::RenderFrame(err));
             }
             Ok(())
         }
     }
 
+    /// Returns `true` when playback is currently unpaused.
     pub fn is_playing(&self) -> bool {
         unsafe {
             let mut paused: c_int = 0;
@@ -508,9 +563,80 @@ impl MpvContext {
         }
     }
 
-    /// Query the set of file extensions compiled into the underlying FFmpeg layer of
-    /// `libmpv`. Returns an empty set if the context cannot be created or the
-    /// `demuxer-lavf-list` property cannot be read.
+    /// Captures a single (rotated) frame of `path` as raw RGBA, fitted into a
+    /// `max_w`×`max_h` box. This is a convenience for thumbnail generation: it
+    /// loads the file, pauses playback, polls for the first ready frame (up to
+    /// `timeout`), renders it, rotates it per the video's metadata, and stops
+    /// the player.
+    ///
+    /// The returned dimensions are the *rotated* dimensions, and the pixel
+    /// data is already orientation-corrected.
+    pub fn capture_frame(
+        &mut self,
+        path: &Path,
+        max_w: u32,
+        max_h: u32,
+        timeout: Duration,
+    ) -> Result<(u32, u32, Vec<u8>), MpvError> {
+        self.stop();
+        self.load_file(path)?;
+        self.set_paused(true);
+
+        let start = Instant::now();
+        let target_canonical = path.canonicalize().ok();
+
+        while start.elapsed() < timeout {
+            if self.has_frame_ready()
+                && let Some(current_p_str) = self.get_current_path()
+            {
+                let current_p = PathBuf::from(current_p_str);
+                let paths_match = current_p == path
+                    || target_canonical.as_ref().is_some_and(|tc| {
+                        current_p == *tc || current_p.canonicalize().ok().as_ref() == Some(tc)
+                    });
+
+                if paths_match {
+                    let (w, h) = self.get_video_size();
+                    if w > 0 && h > 0 {
+                        let rotation = self.get_video_rotation();
+                        let (eff_w, eff_h) = if rotation.is_swapped() {
+                            (h, w)
+                        } else {
+                            (w, h)
+                        };
+
+                        let scale = (max_w as f64 / eff_w as f64)
+                            .min(max_h as f64 / eff_h as f64)
+                            .min(1.0);
+                        let render_w = ((w as f64 * scale) as i32) & !1;
+                        let render_h = ((h as f64 * scale) as i32) & !1;
+
+                        if render_w > 0 && render_h > 0 {
+                            let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                            if self.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                                let (final_w, final_h, final_rgba) = crate::rotate_rgba(
+                                    render_w as u32,
+                                    render_h as u32,
+                                    &buffer,
+                                    rotation,
+                                );
+                                self.stop();
+                                return Ok((final_w, final_h, final_rgba));
+                            }
+                        }
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        self.stop();
+        Err(MpvError::CaptureTimeout)
+    }
+
+    /// Queries the set of file extensions compiled into the underlying FFmpeg
+    /// layer of `libmpv`. Returns an empty set if the context cannot be
+    /// created or the `demuxer-lavf-list` property cannot be read.
     pub fn query_supported_extensions() -> std::collections::HashSet<String> {
         let mut extensions = std::collections::HashSet::new();
         if let Ok(ctx) = Self::new() {
@@ -560,9 +686,9 @@ impl Drop for MpvContext {
 
 /// # Safety
 ///
-/// `cb_ctx` must be a valid pointer to a `tokio::sync::mpsc::Sender<()>` that was
-/// previously registered via `mpv_render_context_set_update_callback`.
-pub unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
+/// `cb_ctx` must be a valid pointer to a `tokio::sync::mpsc::Sender<()>` that
+/// was previously registered via `mpv_render_context_set_update_callback`.
+pub(crate) unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
     let sender = cb_ctx as *const tokio::sync::mpsc::Sender<()>;
     if let Some(tx) = unsafe { sender.as_ref() } {
         let _ = tx.try_send(());
@@ -570,10 +696,13 @@ pub unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
 }
 
 // SAFETY: MpvContext owns pointers to `mpv_handle` and `mpv_render_context`.
-// libmpv is thread-safe, and we can safely send the handle and render context
-// to other threads as long as we properly manage callbacks and lifetimes.
+// libmpv is thread-safe for individual calls, and we can safely send the
+// handle and render context to other threads as long as we properly manage
+// callbacks and lifetimes.
 unsafe impl Send for MpvContext {}
 
-// SAFETY: Synchronization of libmpv functions is handled internally by
-// the C library, allowing concurrent read/write calls from different threads.
+// SAFETY: libmpv calls are internally synchronized, so sharing an MpvContext
+// across threads is sound as long as callers serialize access to the render
+// context (see the struct docs) — the crate's worker loop and thumbnail
+// helpers each use their context from exactly one thread at a time.
 unsafe impl Sync for MpvContext {}

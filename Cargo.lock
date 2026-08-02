@@ -532,12 +532,12 @@ dependencies = [
  "bytemuck",
  "divan",
  "fast_image_resize",
- "iced-mpv",
  "ico",
  "image",
  "kamadak-exif",
  "media-sort-backend",
  "media-sort-core",
+ "mpv-utils",
  "rayon",
  "toml",
  "turbojpeg",
@@ -2798,11 +2798,8 @@ dependencies = [
  "bytemuck",
  "iced",
  "iced_wgpu",
- "kamadak-exif",
- "libmpv-sys",
  "lucide-icons",
- "mp4ameta",
- "rayon",
+ "mpv-utils",
  "tokio",
  "tracing",
 ]
@@ -3734,7 +3731,6 @@ version = "3.0.0-alpha.13"
 dependencies = [
  "chrono",
  "fast_image_resize",
- "iced-mpv",
  "id3",
  "image",
  "kamadak-exif",
@@ -3910,6 +3906,18 @@ dependencies = [
  "log",
  "num-traits",
  "static_assertions",
+]
+
+[[package]]
+name = "mpv-utils"
+version = "3.0.0-alpha.13"
+dependencies = [
+ "kamadak-exif",
+ "libmpv-sys",
+ "mp4ameta",
+ "rayon",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

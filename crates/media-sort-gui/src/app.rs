@@ -54,8 +54,9 @@ pub fn subscription(_state: &AppState) -> Subscription<Message> {
 
     let event_sub = iced::event::listen().map(Message::EventOccurred);
 
-    let video_sub = iced_mpv::VideoPlayer::subscription()
-        .map(|player_msg| Message::Video(VideoMessage::Player(player_msg)));
+    let video_sub = iced_mpv::VideoPlayer::subscription_with(|player_msg| {
+        Message::Video(VideoMessage::Player(player_msg))
+    });
 
     Subscription::batch(vec![tick_sub, keyboard_sub, event_sub, video_sub])
 }

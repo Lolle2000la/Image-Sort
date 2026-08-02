@@ -65,7 +65,6 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
 
         state.media_grid.selected_index = Some(index);
         state.metadata.current = None;
-        state.video.selected_path = Some(path.clone());
 
         state.settings.general.last_selected_media = Some(path.to_string_lossy().to_string());
         state.settings.mark_dirty();
@@ -78,13 +77,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
             state.audio.playing = false;
             state.audio.position = 0.0;
         } else if media_type == media_sort_core::media_type::MediaType::Audio {
-            state.video.deactivate();
-            state.video.frame = None;
-            state.video.rgba = None;
-            state.video.width = 0;
-            state.video.height = 0;
-            state.video.rotation = 0;
-            state.video.ready = false;
+            state.video.reset();
             if state.audio.playing
                 && let Some(ref player) = state.audio.player
             {
@@ -97,13 +90,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
                 }
             }
         } else {
-            state.video.deactivate();
-            state.video.frame = None;
-            state.video.rgba = None;
-            state.video.width = 0;
-            state.video.height = 0;
-            state.video.rotation = 0;
-            state.video.ready = false;
+            state.video.reset();
             if state.audio.playing {
                 if let Some(ref player) = state.audio.player {
                     player.stop();
@@ -158,16 +145,10 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.media_grid.selected_index = None;
         state.metadata.current = None;
         state.cache.selected_image = None;
-        state.video.selected_path = None;
+        state.video.reset();
 
         state.settings.general.last_selected_media = None;
         state.settings.mark_dirty();
-        state.video.deactivate();
-        state.video.frame = None;
-        state.video.rgba = None;
-        state.video.width = 0;
-        state.video.height = 0;
-        state.video.ready = false;
         Task::none()
     }
 }

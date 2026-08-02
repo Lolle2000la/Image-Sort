@@ -162,10 +162,6 @@ pub enum MediaMessage {
 #[derive(Debug, Clone)]
 pub enum VideoMessage {
     Player(iced_mpv::PlayerMessage),
-    #[allow(dead_code)]
-    PlayerReady(tokio::sync::mpsc::Sender<iced_mpv::VideoCommand>),
-    #[allow(dead_code)]
-    Event(iced_mpv::VideoEvent),
     Seek(f64),
     Volume(f64),
     Mute,
