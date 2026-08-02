@@ -230,6 +230,7 @@ fn render_node<'a>(
     } else {
         let button_element = button(row_content)
             .on_press(Message::Folder(folder_action))
+            .padding([4, 8])
             .style(move |theme: &iced::Theme, _status| {
                 let palette = theme.palette();
                 let base = iced::widget::button::Style::default();

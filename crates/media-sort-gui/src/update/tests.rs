@@ -1,4 +1,4 @@
-use super::tasks::relative_position_for;
+use super::tasks::{calculate_scroll_into_view_1d, relative_position_for};
 use super::*;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
 use crate::state::{AppState, SettingsUiState};
@@ -781,6 +781,43 @@ fn test_relative_position_for_scrolling() {
     assert_eq!(relative_position_for(0, 0), None);
     assert_eq!(relative_position_for(0, 1), None);
     assert_eq!(relative_position_for(99, 7), Some(1.0));
+}
+
+#[test]
+fn test_calculate_scroll_into_view_1d() {
+    // When viewport size is 0 or content fits in viewport, no scrolling needed
+    assert_eq!(
+        calculate_scroll_into_view_1d(0.0, 60.0, 0.0, 0.0, 1000.0, 50.0),
+        None
+    );
+    assert_eq!(
+        calculate_scroll_into_view_1d(0.0, 60.0, 0.0, 600.0, 500.0, 50.0),
+        None
+    );
+
+    // Item already comfortably visible with margin: no scroll needed
+    assert_eq!(
+        calculate_scroll_into_view_1d(200.0, 260.0, 100.0, 600.0, 2000.0, 50.0),
+        None
+    );
+
+    // Item too close to or past trailing edge: scroll forward to bring into view with margin
+    assert_eq!(
+        calculate_scroll_into_view_1d(600.0, 660.0, 100.0, 600.0, 2000.0, 50.0),
+        Some(110.0)
+    );
+
+    // Item past leading edge: scroll backward to bring into view with margin
+    assert_eq!(
+        calculate_scroll_into_view_1d(60.0, 120.0, 200.0, 600.0, 2000.0, 50.0),
+        Some(10.0)
+    );
+
+    // Stale scroll offset beyond content bounds (e.g. after list shrinks) is clamped safely
+    assert_eq!(
+        calculate_scroll_into_view_1d(50.0, 100.0, 800.0, 400.0, 600.0, 20.0),
+        Some(30.0)
+    );
 }
 
 #[test]
