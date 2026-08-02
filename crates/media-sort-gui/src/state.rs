@@ -175,13 +175,6 @@ impl AppState {
         self.media_grid.pending_select_index = Some(0);
     }
 
-    #[allow(dead_code)]
-    pub fn scan_media(&mut self) {
-        let animate_gifs = self.settings.general.animate_gifs;
-        let folder = self.folder.current_folder.as_deref();
-        self.media_grid.scan_media(folder, animate_gifs);
-    }
-
     /// Kick off an asynchronous media scan of `current_folder`. The GUI
     /// thread drops to an empty grid immediately; `poll_background_channels`
     /// drains the receiver on subsequent `Tick`s, classifies each entry,

@@ -1,8 +1,6 @@
 use std::fmt;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::mpsc;
-
-use rayon::prelude::*;
 
 use media_sort_core::models::MediaEntry;
 
@@ -89,43 +87,5 @@ impl MediaGridState {
             .iter()
             .map(|e| e.file_name.to_lowercase())
             .collect();
-    }
-
-    /// Synchronously scans `current_folder` for media files and populates
-    /// `entries`. Clears any in-progress async scan receiver.
-    ///
-    /// Production callers now route through `AppState::start_async_media_scan`
-    /// (which feeds the existing `poll_background_channels` pipeline). This
-    /// synchronous variant survives for tests that need to assert on
-    /// `entries` immediately after the scan returns.
-    #[allow(dead_code)]
-    pub fn scan_media(&mut self, current_folder: Option<&Path>, animate_gifs: bool) {
-        self.scan_receiver = None;
-        self.entries.clear();
-        if let Some(folder) = current_folder {
-            let paths: Vec<PathBuf> =
-                media_sort_backend::filesystem::scanner::scan_media_files(folder)
-                    .into_iter()
-                    .collect();
-
-            self.entries = paths
-                .into_par_iter()
-                .map(|path| {
-                    let media_type = super::detect_media_type(&path, animate_gifs);
-                    let file_name = path
-                        .file_name()
-                        .map(|n| n.to_string_lossy().to_string())
-                        .unwrap_or_else(|| path.display().to_string());
-                    let animated = media_sort_backend::media::image_decoder::is_animated_gif(&path);
-                    MediaEntry {
-                        path,
-                        media_type,
-                        file_name,
-                        animated,
-                    }
-                })
-                .collect::<Vec<_>>();
-        }
-        self.rebuild_lower_names();
     }
 }

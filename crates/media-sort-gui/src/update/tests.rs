@@ -11,6 +11,26 @@ use media_sort_core::settings::keybindings::Key;
 use media_sort_core::settings::store::SettingsStore;
 use std::path::PathBuf;
 
+/// Drive `poll_background_channels` until the media scan started by
+/// `open_folder` (or `start_async_media_scan` via Undo/Redo) finishes.
+/// Production never blocks on the scan — the app keeps rendering empty
+/// until `poll_background_channels` drains the receiver on subsequent
+/// `Tick`s — but tests need `entries` populated before they assert, so
+/// this helper drains synchronously with a 10 s deadline (generous
+/// enough to absorb scheduler contention under parallel test execution
+/// where every test spawns its own scanner thread).
+fn drain_async_scan(state: &mut AppState) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while state.media_grid.scan_receiver.is_some() && std::time::Instant::now() < deadline {
+        let _ = poll_background_channels(state);
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    assert!(
+        state.media_grid.scan_receiver.is_none(),
+        "async media scan did not complete within 10 s deadline"
+    );
+}
+
 #[test]
 fn test_select_entry_in_bounds() {
     let mut state = AppState::new(SettingsStore::default());
@@ -280,7 +300,7 @@ fn test_move_to_folder_success() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.scan_media();
+    drain_async_scan(&mut state);
     state.media_grid.selected_index = Some(0);
 
     assert!(file.exists());
@@ -408,7 +428,7 @@ fn test_undo_after_move() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.scan_media();
+    drain_async_scan(&mut state);
     state.media_grid.selected_index = Some(0);
 
     let _ = update(
@@ -421,19 +441,8 @@ fn test_undo_after_move() {
     assert!(state.history.can_undo());
     let _task = update(&mut state, Message::Media(MediaMessage::Undo));
 
-    // Undo now uses an async scan; drain it so the pending selection at
-    // index 0 takes effect before we assert. The 10 s deadline is generous
-    // enough to absorb scheduler delays from concurrent tests spawning
-    // their own scanner threads.
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    while state.media_grid.scan_receiver.is_some() && std::time::Instant::now() < deadline {
-        let _ = poll_background_channels(&mut state);
-        std::thread::sleep(std::time::Duration::from_millis(1));
-    }
-    assert!(
-        state.media_grid.scan_receiver.is_none(),
-        "async scan did not complete after Undo"
-    );
+    drain_async_scan(&mut state);
+
     assert!(file.exists());
     assert!(!dest_file.exists());
     assert!(!state.history.can_undo());
@@ -472,7 +481,7 @@ fn test_redo_after_undo_move() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.scan_media();
+    drain_async_scan(&mut state);
     state.media_grid.selected_index = Some(0);
 
     let _ = update(
@@ -520,7 +529,7 @@ fn test_rename_entry_success() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.scan_media();
+    drain_async_scan(&mut state);
     state.media_grid.selected_index = Some(0);
 
     assert!(file.exists());
@@ -590,7 +599,7 @@ fn test_move_across_filesystems() {
 
     let mut state = AppState::new(SettingsStore::default());
     state.open_folder(&root);
-    state.scan_media();
+    drain_async_scan(&mut state);
     state.media_grid.selected_index = Some(0);
 
     let _task = update(
