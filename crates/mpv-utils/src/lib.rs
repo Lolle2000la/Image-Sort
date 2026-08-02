@@ -22,4 +22,7 @@ pub mod worker;
 
 pub use mpv_context::{MpvContext, MpvError};
 pub use rotation::{Rotation, detect_video_rotation};
-pub use worker::{VideoCommand, VideoEvent, rotate_rgba, start_video_worker};
+pub use worker::{
+    PlayerConfig, VideoCommand, VideoEvent, rotate_rgba, start_video_worker,
+    start_video_worker_with,
+};

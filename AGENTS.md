@@ -153,16 +153,16 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 | Module | Purpose |
 |--------|---------|
 | `mpv_context.rs` | `MpvContext` (software render context, frame capture, `query_supported_extensions()`), `MpvError` |
-| `worker.rs` | `VideoCommand`/`VideoEvent` worker protocol, `rotate_rgba`, `start_video_worker` |
+| `worker.rs` | `VideoCommand`/`VideoEvent` worker protocol (raw frames + `Rotation` metadata), `rotate_rgba`, `PlayerConfig`, `start_video_worker(_with)` |
 | `rotation.rs` | `Rotation` enum + `detect_video_rotation` (mp4 tkhd / EXIF / mp4ameta) |
 
 ### iced-mpv (iced subscription/widgets for mpv)
 
 | Module | Purpose |
 |--------|---------|
-| `state.rs` | `VideoState` (observable state + command methods, `reset()`, auto-`Deactivate` on drop), `PlayerMessage`/`PlayerHandle`/`VideoPlayerEvent` |
-| `subscription.rs` | `video_player_subscription` — spawns the worker, delivers `PlayerHandle` + events as iced messages |
-| `player.rs` (`ui` feature) | `VideoPlayer` — self-contained state+subscription+view wrapper |
+| `state.rs` | `VideoState` (observable state + command methods, `select()` load-or-reset, `reset()`, auto-`Deactivate` on drop), `PlayerMessage`/`PlayerHandle`/`VideoPlayerEvent` |
+| `subscription.rs` | `video_player_subscription(_with)` — spawns the worker with a `PlayerConfig` (max frame size), delivers `PlayerHandle` + events as iced messages |
+| `player.rs` (`ui` feature) | `VideoPlayer` — self-contained state+subscription+view wrapper (`subscription_with_config` etc.) |
 | `widget/` | `controls.rs` (`media_controls_view`, transport-agnostic — also drives audio), `player.rs` (`video_player_view`), `shader.rs` (wgpu `VideoPipeline`/`VideoPrimitive`/`video_shader_view`) |
 | `action.rs` | `VideoAction` enum — user intent emitted by the widgets |
 
@@ -232,7 +232,7 @@ The video playback path is complex and worth understanding before touching:
 
 1. **Startup** — `main.rs` queries mpv via `MpvContext::query_supported_extensions()` (from `mpv-utils`, re-exported by iced-mpv) and initializes the global `MediaRegistry`
 2. **Subscription** — `video_player_subscription()` (iced-mpv) spawns a tokio `VideoWorker` task (in `mpv-utils`) that owns the `MpvContext` and runs an mpv event loop
-3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused)
+3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused). The worker's render cap is configurable via `PlayerConfig` (`video_player_subscription_with` / `VideoPlayer::subscription_with_config*`; default 960×540).
 4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height, rotation: Rotation }`, stored in `VideoState`. The `video_player_view` widget (`widgets/video_player.rs` in the GUI) renders it via a custom wgpu shader (`widgets/video_shader.rs` in iced-mpv) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
 5. **Lifecycle** — When the user navigates away from a video (`VideoState::reset()`), closes the application (`CloseRequested`/`Quit`) or the state is dropped, `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 

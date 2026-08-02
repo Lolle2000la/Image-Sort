@@ -69,15 +69,19 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.settings.general.last_selected_media = Some(path.to_string_lossy().to_string());
         state.settings.mark_dirty();
 
+        // The player itself decides what a selection means: loading a video
+        // starts playback, selecting anything else stops and resets it.
+        state.video.select(
+            (media_type == media_sort_core::media_type::MediaType::Video).then(|| path.clone()),
+        );
+
         if media_type == media_sort_core::media_type::MediaType::Video {
-            state.video.load(path.clone());
             if let Some(ref mut ap) = state.audio.player {
                 ap.stop();
             }
             state.audio.playing = false;
             state.audio.position = 0.0;
         } else if media_type == media_sort_core::media_type::MediaType::Audio {
-            state.video.reset();
             if state.audio.playing
                 && let Some(ref player) = state.audio.player
             {
@@ -89,15 +93,12 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
                     state.audio.duration = player.duration();
                 }
             }
-        } else {
-            state.video.reset();
-            if state.audio.playing {
-                if let Some(ref player) = state.audio.player {
-                    player.stop();
-                }
-                state.audio.playing = false;
-                state.audio.position = 0.0;
+        } else if state.audio.playing {
+            if let Some(ref player) = state.audio.player {
+                player.stop();
             }
+            state.audio.playing = false;
+            state.audio.position = 0.0;
         }
 
         let mut tasks = vec![load_metadata(state, index)];
@@ -145,7 +146,7 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.media_grid.selected_index = None;
         state.metadata.current = None;
         state.cache.selected_image = None;
-        state.video.reset();
+        state.video.select(None);
 
         state.settings.general.last_selected_media = None;
         state.settings.mark_dirty();
@@ -512,8 +513,20 @@ pub fn load_metadata(state: &AppState, index: usize) -> Task<Message> {
                         .map_err(|e| e.to_string())
                 }
                 MediaType::Video => {
-                    media_sort_backend::metadata::video_meta::extract_video_metadata(&path)
-                        .map_err(|e| e.to_string())
+                    let mut map =
+                        media_sort_backend::metadata::video_meta::extract_video_metadata(&path)
+                            .map_err(|e| e.to_string())?;
+                    // Orientation detection lives in iced-mpv (mp4 tkhd / EXIF /
+                    // mp4ameta); the GUI only displays the result.
+                    if let Some(rotation) = iced_mpv::detect_video_rotation(&path)
+                        && rotation != iced_mpv::Rotation::R0
+                    {
+                        map.entry("File".to_string()).or_default().insert(
+                            "Orientation".to_string(),
+                            format!("{}°", rotation.as_degrees()),
+                        );
+                    }
+                    Ok(map)
                 }
             })
             .await

@@ -128,6 +128,9 @@ impl VideoState {
     }
 
     /// The rotation of the last rendered frame.
+    ///
+    /// Note that frame pixels are always unrotated — the shader applies this
+    /// rotation at draw time. Consumers that want raw pixels can ignore it.
     pub fn rotation(&self) -> Rotation {
         self.rotation
     }
@@ -272,6 +275,17 @@ impl VideoState {
         }
     }
 
+    /// Selects what the player should do after a selection change:
+    /// `Some(path)` loads a video and starts playback, `None` (e.g. an image
+    /// or audio file was selected, or nothing is selected) stops playback and
+    /// resets all observable state via [`VideoState::reset`].
+    pub fn select(&mut self, path: Option<PathBuf>) {
+        match path {
+            Some(path) => self.load(path),
+            None => self.reset(),
+        }
+    }
+
     /// Loads `path` and starts playback.
     ///
     /// Also marks `path` as the selected video so that only frames belonging
@@ -353,5 +367,95 @@ impl VideoState {
 impl Drop for VideoState {
     fn drop(&mut self) {
         self.deactivate();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    fn connected_state() -> VideoState {
+        let (tx, _rx) = tokio::sync::mpsc::channel(8);
+        let mut state = VideoState::new();
+        state.update(PlayerMessage::Ready(PlayerHandle::new(tx)));
+        state
+    }
+
+    #[test]
+    fn test_select_some_loads() {
+        let mut state = connected_state();
+        state.select(Some(PathBuf::from("/videos/one.mp4")));
+        assert_eq!(
+            state.selected_path().map(|p| p.as_path()),
+            Some(Path::new("/videos/one.mp4"))
+        );
+        assert!(!state.ready());
+    }
+
+    #[test]
+    fn test_select_none_resets() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
+            position: 5.0,
+            duration: 10.0,
+        }));
+        assert!(state.ready());
+
+        state.select(None);
+        assert_eq!(state.selected_path(), None);
+        assert!(!state.ready());
+        assert_eq!(state.position(), 0.0);
+        assert_eq!(state.duration(), 0.0);
+    }
+
+    #[test]
+    fn test_reset_clears_all_state() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
+            position: 5.0,
+            duration: 10.0,
+        }));
+        state.update(PlayerMessage::Event(VideoEvent::FrameReady {
+            path: PathBuf::from("/videos/one.mp4"),
+            width: 640,
+            height: 360,
+            rotation: Rotation::R90,
+            rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
+        }));
+        assert!(state.ready());
+        assert!(state.rgba().is_some());
+        assert_eq!(state.width(), 640);
+
+        state.reset();
+        assert_eq!(state.selected_path(), None);
+        assert!(!state.ready());
+        assert!(state.rgba().is_none());
+        assert_eq!(state.width(), 0);
+        assert_eq!(state.rotation(), Rotation::R0);
+        assert_eq!(state.seek_position(), None);
+    }
+
+    #[test]
+    fn test_stale_frame_ignored_after_reset() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
+            position: 0.0,
+            duration: 10.0,
+        }));
+
+        // A frame for a *different* path (or after selection changed) is dropped.
+        state.select(None);
+        state.update(PlayerMessage::Event(VideoEvent::FrameReady {
+            path: PathBuf::from("/videos/one.mp4"),
+            width: 640,
+            height: 360,
+            rotation: Rotation::R0,
+            rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
+        }));
+        assert!(state.rgba().is_none());
     }
 }

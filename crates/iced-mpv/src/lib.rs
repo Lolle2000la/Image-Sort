@@ -40,8 +40,8 @@ pub mod widget;
 
 pub use action::VideoAction;
 pub use mpv_utils::{
-    MpvContext, MpvError, Rotation, VideoCommand, VideoEvent, detect_video_rotation, rotate_rgba,
-    start_video_worker,
+    MpvContext, MpvError, PlayerConfig, Rotation, VideoCommand, VideoEvent, detect_video_rotation,
+    rotate_rgba, start_video_worker, start_video_worker_with,
 };
 
 #[cfg(feature = "ui")]

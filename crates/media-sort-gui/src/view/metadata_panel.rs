@@ -116,6 +116,7 @@ fn localize_tag_name(
             "SIZE" => l10n.tr("metadata-field-size"),
             "MODIFIED" => l10n.tr("metadata-field-modified"),
             "DIMENSIONS" => l10n.tr("metadata-field-dimensions"),
+            "ORIENTATION" => l10n.tr("metadata-field-orientation"),
             _ => key.to_string(),
         }
     } else {

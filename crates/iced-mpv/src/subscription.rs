@@ -1,11 +1,12 @@
-use crate::start_video_worker;
+use crate::start_video_worker_with;
 use crate::state::PlayerHandle;
 use iced::Subscription;
 use iced::futures::SinkExt;
-use mpv_utils::VideoEvent;
+use mpv_utils::{PlayerConfig, VideoEvent};
 
 #[derive(Clone)]
 struct Handlers<FReady, FEvent> {
+    config: PlayerConfig,
     on_ready: FReady,
     on_event: FEvent,
 }
@@ -20,8 +21,9 @@ impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEve
     }
 }
 
-/// Spawns the video worker as an iced subscription and maps its messages into
-/// `Message` via the two handler closures.
+/// Spawns the video worker as an iced subscription with the default
+/// [`PlayerConfig`] and maps its messages into `Message` via the two handler
+/// closures.
 ///
 /// - `on_ready` receives the opaque [`PlayerHandle`] once, when the worker is
 ///   up (deliver it to your [`crate::VideoState`] via
@@ -29,7 +31,7 @@ impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEve
 /// - `on_event` receives every raw [`VideoEvent`].
 ///
 /// Prefer [`crate::VideoPlayer::subscription`] / `subscription_with` unless
-/// you need the raw closures.
+/// you need the raw closures or a custom config.
 pub fn video_player_subscription<Message, FReady, FEvent>(
     on_ready: FReady,
     on_event: FEvent,
@@ -39,12 +41,39 @@ where
     FReady: Fn(PlayerHandle) -> Message + Send + Sync + 'static + Clone,
     FEvent: Fn(VideoEvent) -> Message + Send + Sync + 'static + Clone,
 {
-    Subscription::run_with(Handlers { on_ready, on_event }, |handlers| {
-        video_stream(handlers.on_ready.clone(), handlers.on_event.clone())
-    })
+    video_player_subscription_with(PlayerConfig::default(), on_ready, on_event)
+}
+
+/// Like [`video_player_subscription`], with a custom [`PlayerConfig`] (e.g. a
+/// different maximum frame size).
+pub fn video_player_subscription_with<Message, FReady, FEvent>(
+    config: PlayerConfig,
+    on_ready: FReady,
+    on_event: FEvent,
+) -> Subscription<Message>
+where
+    Message: Send + 'static,
+    FReady: Fn(PlayerHandle) -> Message + Send + Sync + 'static + Clone,
+    FEvent: Fn(VideoEvent) -> Message + Send + Sync + 'static + Clone,
+{
+    Subscription::run_with(
+        Handlers {
+            config,
+            on_ready,
+            on_event,
+        },
+        |handlers| {
+            video_stream(
+                handlers.config.clone(),
+                handlers.on_ready.clone(),
+                handlers.on_event.clone(),
+            )
+        },
+    )
 }
 
 fn video_stream<Message, FReady, FEvent>(
+    config: PlayerConfig,
     on_ready: FReady,
     on_event: FEvent,
 ) -> impl iced::futures::Stream<Item = Message>
@@ -59,7 +88,7 @@ where
             let (cmd_tx, cmd_rx) = tokio::sync::mpsc::channel(64);
             let (event_tx, mut event_rx) = tokio::sync::mpsc::channel(32);
 
-            start_video_worker(cmd_rx, event_tx);
+            start_video_worker_with(cmd_rx, event_tx, config);
 
             if output
                 .send(on_ready(PlayerHandle::new(cmd_tx)))

@@ -1,7 +1,8 @@
 use crate::state::{PlayerMessage, VideoState};
-use crate::subscription::video_player_subscription;
+use crate::subscription::video_player_subscription_with;
 use crate::widget::player::video_player_view;
 use iced::{Element, Subscription};
+use mpv_utils::PlayerConfig;
 use std::path::PathBuf;
 
 /// A self-contained video player: state, subscription and view in one type.
@@ -45,10 +46,16 @@ impl VideoPlayer {
         self.state.load(path.into());
     }
 
-    /// The subscription that spawns the video worker. Map it into your app's
-    /// message type, or use [`VideoPlayer::subscription_with`].
+    /// The subscription that spawns the video worker with the default
+    /// [`PlayerConfig`]. Map it into your app's message type, or use
+    /// [`VideoPlayer::subscription_with`].
     pub fn subscription() -> Subscription<PlayerMessage> {
-        video_player_subscription(PlayerMessage::Ready, PlayerMessage::Event)
+        Self::subscription_with_config(PlayerConfig::default())
+    }
+
+    /// Like [`VideoPlayer::subscription`], with a custom [`PlayerConfig`].
+    pub fn subscription_with_config(config: PlayerConfig) -> Subscription<PlayerMessage> {
+        video_player_subscription_with(config, PlayerMessage::Ready, PlayerMessage::Event)
     }
 
     /// Like [`VideoPlayer::subscription`], but maps each [`PlayerMessage`]
@@ -58,8 +65,22 @@ impl VideoPlayer {
         Message: Send + 'static,
         F: Fn(PlayerMessage) -> Message + Send + Sync + 'static + Clone,
     {
+        Self::subscription_with_config_and_map(PlayerConfig::default(), map)
+    }
+
+    /// Like [`VideoPlayer::subscription_with`], with a custom
+    /// [`PlayerConfig`].
+    pub fn subscription_with_config_and_map<Message, F>(
+        config: PlayerConfig,
+        map: F,
+    ) -> Subscription<Message>
+    where
+        Message: Send + 'static,
+        F: Fn(PlayerMessage) -> Message + Send + Sync + 'static + Clone,
+    {
         let on_ready = map.clone();
-        video_player_subscription(
+        video_player_subscription_with(
+            config,
             move |handle| on_ready(PlayerMessage::Ready(handle)),
             move |event| map(PlayerMessage::Event(event)),
         )

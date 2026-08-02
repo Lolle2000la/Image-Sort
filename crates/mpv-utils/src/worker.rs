@@ -5,6 +5,25 @@ use std::ffi::c_char;
 use std::os::raw::c_void;
 use std::path::PathBuf;
 
+/// Configuration for the background playback worker ([`start_video_worker`]).
+#[derive(Debug, Clone)]
+pub struct PlayerConfig {
+    /// Maximum rendered frame width in pixels. Larger videos are scaled down
+    /// to fit this box; the render size is the video's aspect-fitted size.
+    pub max_frame_width: u32,
+    /// Maximum rendered frame height in pixels.
+    pub max_frame_height: u32,
+}
+
+impl Default for PlayerConfig {
+    fn default() -> Self {
+        Self {
+            max_frame_width: 960,
+            max_frame_height: 540,
+        }
+    }
+}
+
 /// Commands sent to the background video worker.
 #[derive(Debug, Clone)]
 pub enum VideoCommand {
@@ -28,6 +47,13 @@ pub enum VideoCommand {
 /// Events emitted by the background video worker.
 #[derive(Debug, Clone)]
 pub enum VideoEvent {
+    /// A freshly rendered frame.
+    ///
+    /// The pixel data is **always unrotated**: mpv renders with
+    /// `video-rotate=no`, and the video's rotation is reported separately in
+    /// `rotation`. The crate's iced shader applies `rotation` automatically
+    /// at draw time; consumers that want the raw pixels simply ignore the
+    /// field.
     FrameReady {
         path: PathBuf,
         width: u32,
@@ -127,7 +153,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
     }
 }
 
-/// Spawns the background video worker on the current tokio runtime.
+/// Spawns the background video worker on the current tokio runtime with the
+/// default [`PlayerConfig`].
 ///
 /// The worker owns an [`MpvContext`], applies incoming [`VideoCommand`]s and
 /// emits [`VideoEvent`]s (rendered frames, playback progress, ...) on
@@ -136,13 +163,23 @@ pub fn start_video_worker(
     cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
 ) {
-    tokio::spawn(run_video_worker(cmd_rx, event_tx));
+    start_video_worker_with(cmd_rx, event_tx, PlayerConfig::default());
+}
+
+/// Like [`start_video_worker`], with a custom [`PlayerConfig`].
+pub fn start_video_worker_with(
+    cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
+    event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
+    config: PlayerConfig,
+) {
+    tokio::spawn(run_video_worker(cmd_rx, event_tx, config));
 }
 
 /// The worker loop. See [`start_video_worker`] for the public entry point.
 async fn run_video_worker(
     mut cmd_rx: tokio::sync::mpsc::Receiver<VideoCommand>,
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
+    config: PlayerConfig,
 ) {
     let mut player = match MpvContext::new() {
         Ok(p) => p,
@@ -164,7 +201,7 @@ async fn run_video_worker(
     // 1). The pool payload stays `Arc<Vec<u8>>` rather than `Arc<[u8]>`
     // precisely because the pool must resize in place via `Arc::get_mut`; an
     // immutable slice payload would force a fresh allocation per frame.
-    let max_buffer_size = (960 * 540 * 4) as usize;
+    let max_buffer_size = (config.max_frame_width * config.max_frame_height * 4) as usize;
     let mut pool = [
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
@@ -292,9 +329,9 @@ async fn run_video_worker(
                                         (w, h)
                                     };
 
-                                    let max_w = 960.0;
-                                    let max_h = 540.0;
-                                    let scale = (max_w / eff_w as f64).min(max_h / eff_h as f64).min(1.0);
+                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
+                                        .min(config.max_frame_height as f64 / eff_h as f64)
+                                        .min(1.0);
                                     let render_unrot_w = ((w as f64 * scale) as i32) & !1;
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
@@ -316,9 +353,9 @@ async fn run_video_worker(
                                         (w, h)
                                     };
 
-                                    let max_w = 960.0;
-                                    let max_h = 540.0;
-                                    let scale = (max_w / eff_w as f64).min(max_h / eff_h as f64).min(1.0);
+                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
+                                        .min(config.max_frame_height as f64 / eff_h as f64)
+                                        .min(1.0);
                                     let render_unrot_w = ((w as f64 * scale) as i32) & !1;
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
