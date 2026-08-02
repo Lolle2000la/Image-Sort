@@ -35,7 +35,7 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         ),
         FolderMessage::PickPinResult(Some(path)) => {
             state.pin_folder(&path);
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         FolderMessage::PickPinResult(None) => Task::none(),
@@ -65,7 +65,7 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         FolderMessage::DragPinnedReleased => {
             if state.folder.dragging_pinned_folder.is_some() {
                 state.folder.dragging_pinned_folder = None;
-                let _ = state.settings.save();
+                state.settings.mark_dirty();
             }
             Task::none()
         }
@@ -93,23 +93,23 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
                 .or(state.folder.current_folder.clone());
             if let Some(path) = path_to_pin {
                 state.pin_folder(&path);
-                let _ = state.settings.save();
+                state.settings.mark_dirty();
             }
             Task::none()
         }
         FolderMessage::UnpinCurrent(path) => {
             state.unpin_folder(&path);
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         FolderMessage::MovePinnedUp(path) => {
             state.move_pinned_folder_up(&path);
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         FolderMessage::MovePinnedDown(path) => {
             state.move_pinned_folder_down(&path);
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         FolderMessage::TriggerCreate => {
@@ -163,6 +163,7 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
                                 } else {
                                     state.history.push_executed(Box::new(action));
                                     state.media_grid.entries.retain(|e| e.path != entry_path);
+                                    state.media_grid.rebuild_lower_names();
                                     return super::tasks::select_and_load_entry(state, index);
                                 }
                             }

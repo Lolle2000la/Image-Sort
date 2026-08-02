@@ -8,6 +8,8 @@ rust-version.workspace = true
 
 [dependencies]
 media-sort-backend = { path = "../media-sort-backend" }
+media-sort-core = { path = "../media-sort-core" }
+toml.workspace = true
 image.workspace = true
 fast_image_resize.workspace = true
 zune-jpeg = "0.5"
@@ -45,4 +47,8 @@ harness = false
 
 [[bench]]
 name = "format_previews"
+harness = false
+
+[[bench]]
+name = "perf_candidates"
 harness = false

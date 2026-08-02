@@ -8,7 +8,7 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         SettingsMessage::ToggleMetadataPanel => {
             state.metadata.panel_expanded = !state.metadata.panel_expanded;
             state.settings.metadata_panel.is_expanded = state.metadata.panel_expanded;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::EditKeyBinding(index) => {
@@ -33,7 +33,7 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         SettingsMessage::ChangeLanguage(locale) => {
             state.l10n.set_locale(&locale);
             state.settings.general.locale = Some(locale);
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             state.media_grid.search.placeholder = state.l10n.tr("keybindings-search-images");
             state.rename.placeholder = state.l10n.tr("ui-enter-new-name");
             state.create_folder.create_folder_placeholder =
@@ -42,19 +42,19 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         }
         SettingsMessage::SetTheme(theme) => {
             state.settings.general.theme = theme;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::ToggleReopenFolder => {
             state.settings.general.reopen_last_opened_folder =
                 !state.settings.general.reopen_last_opened_folder;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::ToggleReopenMedia => {
             state.settings.general.reopen_last_selected_media =
                 !state.settings.general.reopen_last_selected_media;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::StartDragFolderDivider => {
@@ -67,11 +67,11 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         }
         SettingsMessage::ToggleAnimateGifs => {
             state.settings.general.animate_gifs = !state.settings.general.animate_gifs;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::Save => {
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         SettingsMessage::OpenKeybindings => {
@@ -84,21 +84,21 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         SettingsMessage::RestoreDefaultKeyBindings => {
             state.settings.keybindings =
                 media_sort_core::settings::keybindings::KeyBindings::default();
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         #[cfg(feature = "velopack")]
         SettingsMessage::ToggleCheckForUpdates => {
             state.settings.general.check_for_updates_on_startup =
                 !state.settings.general.check_for_updates_on_startup;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         #[cfg(feature = "velopack")]
         SettingsMessage::ToggleInstallPrerelease => {
             state.settings.general.install_prerelease_builds =
                 !state.settings.general.install_prerelease_builds;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
             Task::none()
         }
         #[cfg(target_os = "windows")]
@@ -106,7 +106,7 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             state.settings.general.integration_with_windows =
                 !state.settings.general.integration_with_windows;
             let enabled = state.settings.general.integration_with_windows;
-            let _ = state.settings.save();
+            state.settings.mark_dirty();
 
             if enabled {
                 if let Ok(exe) = std::env::current_exe()

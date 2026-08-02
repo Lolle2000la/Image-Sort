@@ -55,7 +55,8 @@ impl From<toml::ser::Error> for SettingsError {
 pub struct SettingsStore {
     #[serde(skip)]
     pub custom_path: Option<PathBuf>,
-
+    #[serde(skip)]
+    pub dirty: bool,
     #[serde(default)]
     pub general: GeneralSettings,
     #[serde(default)]
@@ -123,7 +124,7 @@ impl SettingsStore {
         Ok(store)
     }
 
-    pub fn save(&self) -> Result<(), SettingsError> {
+    pub fn save(&mut self) -> Result<(), SettingsError> {
         let path = if let Some(ref custom) = self.custom_path {
             custom.clone()
         } else {
@@ -131,7 +132,21 @@ impl SettingsStore {
         };
         let data = toml::to_string_pretty(self)?;
         std::fs::write(&path, data)?;
+        self.dirty = false;
         Ok(())
+    }
+
+    /// Mark the store as having unsaved changes. The next `Message::Tick`
+    /// flushes via [`save_if_dirty`](Self::save_if_dirty); crash-resilience
+    /// granularity is one tick (~16 ms) of pending mutations.
+    pub fn mark_dirty(&mut self) {
+        self.dirty = true;
+    }
+
+    /// Flush pending changes to disk iff `dirty` is set. Returns `Ok(())`
+    /// (no I/O) when there is nothing to write.
+    pub fn save_if_dirty(&mut self) -> Result<(), SettingsError> {
+        if self.dirty { self.save() } else { Ok(()) }
     }
 
     pub fn parse_wpf_settings(data: &str) -> Option<Self> {

@@ -31,6 +31,13 @@ pub struct SearchState {
 #[derive(Default)]
 pub struct MediaGridState {
     pub entries: Vec<MediaEntry>,
+    /// Precomputed lowercase `file_name`s mirrored from [`entries`]. MUST be
+    /// kept in sync via [`rebuild_lower_names`](Self::rebuild_lower_names)
+    /// after ANY direct mutation of `entries` (push / clear / drain / swap /
+    /// extend / retain / insert / truncate / etc.). `filtered_entries` falls
+    /// back to per-call lowercasing if the cache length is stale, but won't
+    /// see newly added entries until `rebuild_lower_names` runs.
+    pub lower_names: Vec<String>,
     pub selected_index: Option<usize>,
     pub search: SearchState,
     pub scroll: MediaGridScrollState,
@@ -55,14 +62,33 @@ impl fmt::Debug for MediaGridState {
 impl MediaGridState {
     pub fn filtered_entries(&self) -> Vec<&MediaEntry> {
         if self.search.query.is_empty() {
-            self.entries.iter().collect()
+            return self.entries.iter().collect();
+        }
+        let query_lower = self.search.query.to_lowercase();
+        if self.lower_names.len() == self.entries.len() {
+            self.entries
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| self.lower_names[*i].contains(&query_lower))
+                .map(|(_, e)| e)
+                .collect()
         } else {
-            let query_lower = self.search.query.to_lowercase();
             self.entries
                 .iter()
                 .filter(|e| e.file_name.to_lowercase().contains(&query_lower))
                 .collect()
         }
+    }
+
+    /// Recompute [`lower_names`](Self::lower_names) from [`entries`]. Call
+    /// this after every direct mutation of `entries` so `filtered_entries`
+    /// can use the pre-lowercased cache.
+    pub fn rebuild_lower_names(&mut self) {
+        self.lower_names = self
+            .entries
+            .iter()
+            .map(|e| e.file_name.to_lowercase())
+            .collect();
     }
 
     /// Synchronously scans `current_folder` for media files and populates
@@ -92,5 +118,6 @@ impl MediaGridState {
                 })
                 .collect::<Vec<_>>();
         }
+        self.rebuild_lower_names();
     }
 }

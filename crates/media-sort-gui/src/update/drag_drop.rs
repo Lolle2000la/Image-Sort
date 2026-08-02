@@ -126,7 +126,7 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                     }
                     DragZone::Pin => {
                         state.pin_folder(folder_path);
-                        let _ = state.settings.save();
+                        state.settings.mark_dirty();
                     }
                     _ => {}
                 }

@@ -141,9 +141,10 @@ impl AppState {
     pub fn open_folder(&mut self, path: &Path) {
         self.folder.current_folder = Some(path.to_path_buf());
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
-        let _ = self.settings.save();
+        self.settings.mark_dirty();
         self.history.clear();
         self.media_grid.entries.clear();
+        self.media_grid.rebuild_lower_names();
         self.build_folder_tree();
         self.media_grid.selected_index = None;
         self.metadata.current = None;
@@ -307,7 +308,7 @@ impl AppState {
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            let _ = self.settings.save();
+            self.settings.mark_dirty();
         }
     }
 
@@ -330,7 +331,7 @@ impl AppState {
                 .iter()
                 .map(|p| p.path.display().to_string())
                 .collect();
-            let _ = self.settings.save();
+            self.settings.mark_dirty();
         }
     }
 

@@ -194,12 +194,12 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 - `PinnedFoldersSettings` — list of pinned folder paths as strings
 - `WindowPosition` — left, top, width, height
 
-Settings are **saved eagerly** on nearly every state mutation (not deferred to exit). This ensures crash resilience but means every toggle/action triggers a disk write. The `UI_TEST` env var swaps the config path to `ui_test_config.toml` for testing.
+Settings are persisted via a **dirty-flag + tick-coalesced** scheme, not eagerly. Call sites that mutate a setting call `state.settings.mark_dirty()` instead of `save()`; the 16 ms `Tick` subscription in `app.rs` (see `handle_tick`) then calls `state.settings.save_if_dirty()` once per tick, so the cost of `toml::to_string_pretty` + `std::fs::write` is amortized across at most one disk write per ~16 ms regardless of how many settings changed in that window. Crash-resilience granularity is also one tick (~16 ms of pending mutations); **force-flush** sites (`state.settings.save()` directly, not via `save_if_dirty`) remain at the three exit paths — `Message::Quit`, the `should_exit` branch of `handle_tick`, and `Message::EventOccurred(Window::CloseRequested)` — so a pending dirty state is always flushed before the process tears down. The `UI_TEST` env var swaps the config path to `ui_test_config.toml` for testing.
 
 To add a new persisted setting:
 1. Add the field to the appropriate sub-struct in `crates/media-sort-core/src/settings/`
 2. Add `#[serde(default)]` (or a concrete default) so old configs remain loadable
-3. If the setting has a UI toggle, call `state.settings.save()` after mutation
+3. If the setting has a UI toggle, call `state.settings.mark_dirty()` after mutation (the next `Tick` flushes it; the three exit paths above force-flush)
 4. If the setting is exposed in the GUI view, update the **Application Settings** manual ([settings.mdx](website/src/content/docs/en/config/settings.mdx)) in all supported locales
 5. If the configuration schema changes (new key/default/section), update the **Configuration File** manual ([config-file.mdx](website/src/content/docs/en/advanced/config-file.mdx)) in all supported locales
 
@@ -215,7 +215,7 @@ The video playback path is complex and worth understanding before touching:
 
 The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
 
-**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
+**Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH, and **caches the result in a process-global `OnceLock<Option<PathBuf>>`** — the first call runs the PATH scan + `ffmpeg -version` verify spawn and all subsequent calls return the cached `PathBuf::clone()` with no scan, no spawn, and no syscall. The cache lives for the lifetime of the process and is never invalidated. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
 
 ## Audio player
 
@@ -245,6 +245,7 @@ The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches i
 | `thumbnail_cache` | `LruCache<PathBuf, Handle>` | 200 | Grid thumbnails |
 | `image_cache` | `LruCache<PathBuf, Handle>` | 20 | Preview images (capped at 1920×1440, see below) |
 | `media_errors` | `MediaErrorTracker` | unbounded | Tracks media files that failed to read or decode along with error details; prevents retry spam |
+| `MediaGridState.lower_names` | `Vec<String>` (parallel to `entries`) | unbounded | Precomputed lowercase `file_name`s consumed by `filtered_entries`; rebuilt via `rebuild_lower_names()` — called inside `scan_media`, and MUST be called from every site that mutates `entries` (`clear`/`extend`/`retain` in `state.rs::open_folder`, `update.rs::poll_background_channels`, `update/media.rs`, `update/folder.rs`) |
 
 When selection changes, next/previous images are preloaded into `image_cache`.
 
@@ -262,6 +263,8 @@ When selection changes, next/previous images are preloaded into `image_cache`.
 | everything else | `load_image` + `img.thumbnail()` fallback | — |
 
 Previews are **capped at 1920×1440** (`load_preview` in `update/tasks.rs`) — there is no zoom UI and iced scales the widget anyway; this cuts preview memory by ~97% vs full-res RGBA (e.g. 9.8MB vs 96MB for a 24MP JPEG) and is faster for JPEG (turbojpeg scaled decode).
+
+`image_decoder::decode_image_dimensions` (used by `metadata::image_meta::extract_image_metadata` for the "Dimensions" field) reads **headers only** via `ImageReader::into_dimensions()` and swaps the dims when EXIF orientation is 5–8 — no full pixel decode. This is ~1900× faster than the previous `load_image().dimensions()` path while preserving the EXIF-orientation behavior the metadata tests assert.
 
 If you change these code paths, re-run `cargo bench -p benchmarks` to confirm you didn't regress the measured winning strategy.
 

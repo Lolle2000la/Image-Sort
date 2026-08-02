@@ -47,6 +47,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                             } else {
                                 state.history.push_executed(Box::new(action));
                                 state.media_grid.entries.retain(|e| e.path != entry_path);
+                                state.media_grid.rebuild_lower_names();
                                 return super::tasks::select_and_load_entry(state, index);
                             }
                         }
@@ -66,6 +67,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                         media_sort_core::actions::delete_action::DeleteAction::new(&path, handle);
                     state.history.push_executed(Box::new(action));
                     state.media_grid.entries.retain(|e| e.path != path);
+                    state.media_grid.rebuild_lower_names();
                     return super::tasks::select_and_load_entry(state, index_to_select);
                 }
                 Err(e) => {
@@ -297,6 +299,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                             } else {
                                 state.history.push_executed(Box::new(action));
                                 state.media_grid.entries.retain(|e| e.path != entry_path);
+                                state.media_grid.rebuild_lower_names();
                                 return super::tasks::select_and_load_entry(state, index);
                             }
                         }
