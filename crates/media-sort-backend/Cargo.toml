@@ -32,3 +32,12 @@ winreg.workspace = true
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", features = ["NSFileManager", "NSURL", "NSString", "NSError"] }
 
+# Native AVIF decode (dav1d) everywhere except i686-pc-windows-msvc: that
+# target is cross-compiled from an x86_64 host, and dav1d-sys's vendored meson
+# build has no cross-file support (system-deps refuses cross pkg-config).
+# There, AVIF decodes via the bundled ffmpeg pipe fallback (see
+# format_pipeline::avif_image). aarch64-pc-windows-msvc stays native, using
+# clang-cl for the meson build (see release.yml).
+[target.'cfg(not(all(target_os = "windows", target_arch = "x86")))'.dependencies]
+image = { workspace = true, features = ["avif-native"] }
+

@@ -9,7 +9,10 @@
 //! - bmp/tga/qoi/ff/farbfeld: image-crate decode + fast_image_resize bilinear.
 //!   These formats carry no EXIF, so no orientation handling and no
 //!   re-opening of the file.
-//! - avif: native dav1d decode (`avif-native` feature) with an ffmpeg pipe fallback.
+//! - avif: native dav1d decode (`avif-native` feature) with an ffmpeg pipe
+//!   fallback. On i686-pc-windows-msvc `avif-native` is disabled at build
+//!   time (dav1d-sys's vendored meson build can't cross-compile), so the
+//!   ffmpeg pipe handles all AVIF files there.
 //! - audio extensions: embedded cover art, resized with fast_image_resize.
 //! - everything else: `image_decoder::load_image` (keeps EXIF orientation for
 //!   jpeg-like formats) + the image crate's `thumbnail()`.

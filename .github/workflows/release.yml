@@ -112,6 +112,15 @@ jobs:
           # when pkg-config is absent (always on Windows runners); force
           # the vendored meson build instead.
           echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
+          # On aarch64-pc-windows-msvc, build dav1d with clang-cl instead of
+          # cl: dav1d's meson needs gas-preprocessor.pl for MSVC ARM64 asm
+          # (not installed), but skips that path when cc.get_id() ==
+          # 'clang-cl' (meson >= 0.58), using clang's integrated assembler
+          # for the .S files. clang-cl ships in the runner's bundled LLVM.
+          if [ "${{ matrix.target }}" = "aarch64-pc-windows-msvc" ]; then
+            echo "CC=clang-cl" >> "$GITHUB_ENV"
+            echo "CXX=clang-cl" >> "$GITHUB_ENV"
+          fi
 
       - name: Build Standalone Binary
         env:

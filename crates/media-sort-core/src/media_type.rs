@@ -6,10 +6,20 @@ use strum::EnumIter;
 fn native_image_extensions() -> &'static [&'static str] {
     static EXTS: OnceLock<Vec<&'static str>> = OnceLock::new();
     EXTS.get_or_init(|| {
-        image::ImageFormat::all()
+        let mut exts: Vec<&'static str> = image::ImageFormat::all()
             .filter(|f| f.can_read() && !matches!(f, image::ImageFormat::Gif))
             .flat_map(|f| f.extensions_str().iter().copied())
-            .collect()
+            .collect();
+        // AVIF is always treated as a native image: on i686-pc-windows-msvc the
+        // `avif-native` (dav1d) feature is disabled (cross-compile can't drive
+        // dav1d-sys's vendored meson build), but AVIF files are still decodable
+        // via the ffmpeg pipe fallback in the backend, so they must remain
+        // visible to the scanner/classifier. On all other targets `avif` is
+        // already in `exts` via the image feature, so this is a no-op there.
+        if !exts.contains(&"avif") {
+            exts.push("avif");
+        }
+        exts
     })
 }
 

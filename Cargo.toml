@@ -31,7 +31,6 @@ toml = "1.1"
 
 image = { version = "0.25", default-features = false, features = [
     "default-formats",
-    "avif-native",
 ] }
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
