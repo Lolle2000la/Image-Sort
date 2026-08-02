@@ -706,3 +706,123 @@ unsafe impl Send for MpvContext {}
 // context (see the struct docs) — the crate's worker loop and thumbnail
 // helpers each use their context from exactly one thread at a time.
 unsafe impl Sync for MpvContext {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn fixture(name: &str) -> PathBuf {
+        PathBuf::from(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../resources/MockState"
+        ))
+        .join(name)
+    }
+
+    fn thumbnail_player() -> Option<MpvContext> {
+        match MpvContext::new_thumbnail_player() {
+            Ok(player) => Some(player),
+            Err(e) => {
+                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
+                None
+            }
+        }
+    }
+
+    #[test]
+    fn test_capture_frame_returns_valid_thumbnail() {
+        let Some(mut player) = thumbnail_player() else {
+            return;
+        };
+        let (w, h, rgba) = player
+            .capture_frame(&fixture("mock 3.mp4"), 128, 128, Duration::from_secs(5))
+            .expect("capture_frame should produce a frame within the timeout");
+        assert!(w > 0 && h > 0, "captured frame must have non-zero size");
+        assert!(
+            w <= 128 && h <= 128,
+            "captured frame must fit the 128x128 box"
+        );
+        assert_eq!(
+            rgba.len(),
+            (w * h * 4) as usize,
+            "rgba len must match w*h*4"
+        );
+    }
+
+    #[test]
+    fn test_seek_then_render_frame() {
+        let Some(mut player) = thumbnail_player() else {
+            return;
+        };
+        let path = fixture("mock 3.mp4");
+
+        player.stop();
+        player
+            .load_file(&path)
+            .expect("load_file should succeed for the fixture");
+        player.set_paused(true);
+
+        // Wait until the file is loaded and its duration is known.
+        let duration = {
+            let start = Instant::now();
+            loop {
+                assert!(
+                    start.elapsed() < Duration::from_secs(5),
+                    "timed out waiting for the video to load"
+                );
+                let (w, h) = player.get_video_size();
+                let dur = player.get_duration();
+                if w > 0 && h > 0 && dur > 0.0 {
+                    break dur;
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        };
+
+        player.seek(duration * 0.1);
+
+        // The seek must not break rendering: poll for the next frame and
+        // render it into a 128x128-fit box.
+        let start = Instant::now();
+        loop {
+            assert!(
+                start.elapsed() < Duration::from_secs(5),
+                "timed out waiting for a renderable frame after seek"
+            );
+            if player.has_frame_ready() {
+                let (w, h) = player.get_video_size();
+                if w > 0 && h > 0 {
+                    let rotation = player.get_video_rotation();
+                    let (eff_w, eff_h) = if rotation.is_swapped() {
+                        (h, w)
+                    } else {
+                        (w, h)
+                    };
+                    let scale = (128.0f64 / eff_w as f64)
+                        .min(128.0f64 / eff_h as f64)
+                        .min(1.0);
+                    let render_w = ((w as f64 * scale) as i32) & !1;
+                    let render_h = ((h as f64 * scale) as i32) & !1;
+                    if render_w > 0 && render_h > 0 {
+                        let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                        if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
+                            let (final_w, final_h, rgba) = crate::rotate_rgba(
+                                render_w as u32,
+                                render_h as u32,
+                                &buffer,
+                                rotation,
+                            );
+                            assert!(final_w > 0 && final_h > 0);
+                            assert!(final_w <= 128 && final_h <= 128);
+                            assert_eq!(rgba.len(), (final_w * final_h * 4) as usize);
+                            break;
+                        }
+                    }
+                }
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+
+        player.stop();
+    }
+}

@@ -605,4 +605,91 @@ mod tests {
             other => panic!("expected SetVolume(0.0), got {other:?}"),
         }
     }
+
+    #[test]
+    fn test_ready_sets_connected() {
+        let mut state = VideoState::new();
+        assert!(!state.is_connected());
+
+        let (msg, _rx) = testing::ready(8);
+        let _ = state.update(msg);
+        assert!(state.is_connected());
+    }
+
+    #[test]
+    fn test_action_sends_command() {
+        let (msg, mut rx) = testing::ready(8);
+        let mut state = VideoState::new();
+        let _ = state.update(msg);
+        assert!(state.is_connected());
+
+        let _ = state.update(PlayerMessage::Action(crate::VideoAction::SetVolume(50.0)));
+        match rx.try_recv() {
+            Ok(VideoCommand::SetVolume(v)) => assert_eq!(v, 50.0),
+            other => panic!("expected SetVolume(50.0), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_action_play_pause_without_sender() {
+        let mut state = VideoState::new();
+        assert!(!state.is_connected());
+        let _ = state.update(PlayerMessage::Action(crate::VideoAction::PlayPause));
+        assert!(!state.is_connected());
+    }
+
+    #[test]
+    fn test_action_stop_without_sender() {
+        let mut state = VideoState::new();
+        assert!(!state.is_connected());
+        let _ = state.update(PlayerMessage::Action(crate::VideoAction::Stop));
+        assert!(!state.is_connected());
+    }
+
+    #[test]
+    fn test_progress_event_updates_transport() {
+        let mut state = VideoState::new();
+        let _ = state.update(PlayerMessage::Event(progress_event(10.0, 120.0)));
+        assert_eq!(state.position(), 10.0);
+        assert_eq!(state.duration(), 120.0);
+        assert!(state.ready());
+    }
+
+    #[test]
+    fn test_muted_event_sets_muted() {
+        let mut state = VideoState::new();
+        assert!(!state.muted());
+        let _ = state.update(PlayerMessage::Event(WorkerEvent::Muted(true)));
+        assert!(state.muted());
+    }
+
+    #[test]
+    fn test_volume_event_sets_volume() {
+        let mut state = VideoState::new();
+        let _ = state.update(PlayerMessage::Event(WorkerEvent::Volume(75.0)));
+        assert_eq!(state.volume(), 75.0);
+    }
+
+    #[test]
+    fn test_paused_event_sets_paused() {
+        let mut state = VideoState::new();
+        assert!(!state.paused());
+        let _ = state.update(PlayerMessage::Event(WorkerEvent::Paused(true)));
+        assert!(state.paused());
+    }
+
+    #[test]
+    fn test_action_seek_stores_position() {
+        let mut state = connected_state();
+        let _ = state.update(PlayerMessage::Action(crate::VideoAction::Seek(42.0)));
+        assert_eq!(state.seek_position(), Some(42.0));
+    }
+
+    #[test]
+    fn test_action_seek_without_sender() {
+        let mut state = VideoState::new();
+        assert!(!state.is_connected());
+        let _ = state.update(PlayerMessage::Action(crate::VideoAction::Seek(10.0)));
+        assert_eq!(state.seek_position(), Some(10.0));
+    }
 }

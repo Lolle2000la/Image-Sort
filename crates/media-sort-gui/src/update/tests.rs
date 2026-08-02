@@ -895,134 +895,42 @@ fn test_pinned_folder_drag_and_drop() {
 // ============================================================================
 // Video message tests
 // ============================================================================
+//
+// `VideoState` behavior (Ready wiring, Action dispatch, WorkerEvent handling,
+// seek storage, no-sender paths) is tested in the iced-mpv crate itself
+// (src/state.rs). The GUI only owns the app-level handling of the
+// `VideoEvent` domain events returned by the state machine: load failures are
+// recorded in `media_errors`, and the first committed frame clears them.
 
 #[test]
-fn test_video_player_ready_stores_sender() {
+fn test_video_load_failed_records_error_and_frame_ready_clears() {
     let mut state = AppState::new(SettingsStore::default());
-    let (msg, _rx) = iced_mpv::testing::ready(8);
-    let _task = update(&mut state, Message::Video(msg));
-    assert!(state.video.is_connected());
-}
+    let path = PathBuf::from("/videos/broken.mp4");
 
-#[test]
-fn test_video_action_sends_command() {
-    let mut state = AppState::new(SettingsStore::default());
-    let (msg, mut rx) = iced_mpv::testing::ready(8);
-    let _ = state.video.update(msg);
-    assert!(state.video.is_connected());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Action(
-            iced_mpv::VideoAction::SetVolume(50.0),
-        )),
-    );
-    match rx.try_recv() {
-        Ok(iced_mpv::VideoCommand::SetVolume(v)) => {
-            assert_eq!(v, 50.0);
-        }
-        other => panic!("expected SetVolume(50.0), got {:?}", other),
-    }
-    drop(state);
-}
+    let fail = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::LoadFailed {
+        path: path.clone(),
+        error: "demo error".into(),
+    });
+    let _task = update(&mut state, Message::Video(fail));
+    assert!(state.cache.media_errors.get_error(&path).is_some());
 
-#[test]
-fn test_video_play_pause_no_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.video.is_connected());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Action(
-            iced_mpv::VideoAction::PlayPause,
-        )),
-    );
-    assert!(!state.video.is_connected());
-}
-
-#[test]
-fn test_video_stop_no_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.video.is_connected());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Action(iced_mpv::VideoAction::Stop)),
-    );
-    assert!(!state.video.is_connected());
-}
-
-#[test]
-fn test_video_event_playback_progress() {
-    use iced_mpv::WorkerEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Event(
-            WorkerEvent::PlaybackProgress {
-                position: 10.0,
-                duration: 120.0,
-            },
-        )),
-    );
-    assert_eq!(state.video.position(), 10.0);
-    assert_eq!(state.video.duration(), 120.0);
-    assert!(state.video.ready());
-}
-
-#[test]
-fn test_video_event_muted() {
-    use iced_mpv::WorkerEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Muted(true))),
-    );
-    assert!(state.video.muted());
-}
-
-#[test]
-fn test_video_event_volume() {
-    use iced_mpv::WorkerEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Volume(75.0))),
-    );
-    assert_eq!(state.video.volume(), 75.0);
-}
-
-#[test]
-fn test_video_event_paused() {
-    use iced_mpv::WorkerEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Paused(true))),
-    );
-    assert!(state.video.paused());
-}
-
-#[test]
-fn test_video_seek_stores_position() {
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Action(
-            iced_mpv::VideoAction::Seek(42.0),
-        )),
-    );
-    assert_eq!(state.video.seek_position(), Some(42.0));
-}
-
-#[test]
-fn test_video_seek_without_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(!state.video.is_connected());
-    let _task = update(
-        &mut state,
-        Message::Video(iced_mpv::PlayerMessage::Action(
-            iced_mpv::VideoAction::Seek(10.0),
-        )),
-    );
-    assert_eq!(state.video.seek_position(), Some(10.0));
+    // A successful load cycle: select the file, the worker reports readiness,
+    // and the first committed frame clears the recorded error.
+    state.video.select(Some(path.clone()));
+    let progress = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::PlaybackProgress {
+        position: 0.0,
+        duration: 10.0,
+    });
+    let _task = update(&mut state, Message::Video(progress));
+    let ready = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::FrameReady {
+        path: path.clone(),
+        width: 640,
+        height: 360,
+        rotation: iced_mpv::Rotation::R0,
+        rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
+    });
+    let _task = update(&mut state, Message::Video(ready));
+    assert!(state.cache.media_errors.get_error(&path).is_none());
 }
 
 // ============================================================================

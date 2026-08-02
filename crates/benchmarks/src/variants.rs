@@ -807,66 +807,6 @@ mod tests {
     }
 
     #[test]
-    fn test_video_baseline_poll_10ms() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = baseline_poll_10ms(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_poll_1ms() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = poll_1ms(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_poll_0ms_spin() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = poll_0ms_spin(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_seek_10pct() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = seek_10pct(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
     fn test_orientation_thumbs_agree() {
         let gui = baseline_gui(&fixture("mock 1.jpg")).unwrap();
         let (w, h, rgba) = no_exif_reread(&fixture("mock 1.jpg")).unwrap();
