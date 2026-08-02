@@ -214,8 +214,11 @@ pub fn scroll_to_selected_entry(state: &AppState, index: usize) -> Task<Message>
 
     let scroll = &state.media_grid.scroll;
 
-    let relative_x = if scroll.viewport_width > 0.0 && scroll.content_width > scroll.viewport_width
-    {
+    let relative_x = if scroll.viewport_width > 0.0 {
+        if scroll.content_width <= scroll.viewport_width {
+            return Task::none();
+        }
+
         let margin = card_stride * 1.5;
         let Some(target_offset) = calculate_scroll_into_view_h(
             item_left,
@@ -355,32 +358,35 @@ pub fn scroll_to_selected_folder(state: &mut AppState) -> Task<Message> {
 
     let scroll = &state.folder.scroll;
 
-    let relative_y =
-        if scroll.viewport_height > 0.0 && scroll.content_height > scroll.viewport_height {
-            let item_height = scroll.content_height / total as f32;
-            let item_top = idx as f32 * item_height;
-            let item_bottom = item_top + item_height;
-            let margin = (scroll.viewport_height * 0.15).clamp(26.0, 78.0);
+    let relative_y = if scroll.viewport_height > 0.0 {
+        if scroll.content_height <= scroll.viewport_height {
+            return Task::none();
+        }
 
-            let Some(target_offset) = calculate_scroll_into_view_v(
-                item_top,
-                item_bottom,
-                scroll.offset_y,
-                scroll.viewport_height,
-                scroll.content_height,
-                margin,
-            ) else {
-                return Task::none();
-            };
+        let item_height = scroll.content_height / total as f32;
+        let item_top = idx as f32 * item_height;
+        let item_bottom = item_top + item_height;
+        let margin = (scroll.viewport_height * 0.15).clamp(26.0, 78.0);
 
-            let max_offset = scroll.content_height - scroll.viewport_height;
-            (target_offset / max_offset).clamp(0.0, 1.0)
-        } else {
-            let Some(rel) = relative_position_for(idx, total) else {
-                return Task::none();
-            };
-            rel
+        let Some(target_offset) = calculate_scroll_into_view_v(
+            item_top,
+            item_bottom,
+            scroll.offset_y,
+            scroll.viewport_height,
+            scroll.content_height,
+            margin,
+        ) else {
+            return Task::none();
         };
+
+        let max_offset = scroll.content_height - scroll.viewport_height;
+        (target_offset / max_offset).clamp(0.0, 1.0)
+    } else {
+        let Some(rel) = relative_position_for(idx, total) else {
+            return Task::none();
+        };
+        rel
+    };
 
     iced::widget::operation::snap_to(
         FOLDER_TREE_SCROLLABLE_ID.clone(),
