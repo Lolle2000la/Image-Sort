@@ -696,16 +696,16 @@ pub(crate) unsafe extern "C" fn mpv_wakeup_callback(cb_ctx: *mut c_void) {
 }
 
 // SAFETY: MpvContext owns pointers to `mpv_handle` and `mpv_render_context`.
-// libmpv is thread-safe for individual calls, and we can safely send the
-// handle and render context to other threads as long as we properly manage
-// callbacks and lifetimes.
+// libmpv's core is internally synchronized, so it is sound to move the
+// context to the thread that owns it (the worker task, the thumbnail worker
+// threads). `Send` alone is sound because a moved context is used from
+// exactly one thread at a time.
 unsafe impl Send for MpvContext {}
-
-// SAFETY: libmpv calls are internally synchronized, so sharing an MpvContext
-// across threads is sound as long as callers serialize access to the render
-// context (see the struct docs) — the crate's worker loop and thumbnail
-// helpers each use their context from exactly one thread at a time.
-unsafe impl Sync for MpvContext {}
+// NOTE: there is deliberately no `Sync` impl. The libmpv render API
+// (`mpv_render_context_update`/`mpv_render_context_render`, reachable via the
+// `&self` methods `has_frame_ready`, `render_frame`, `drain_render_context`)
+// must only be called from a single thread, and `Sync` would make it sound to
+// share `&MpvContext` across threads without any serialization.
 
 #[cfg(test)]
 mod tests {
