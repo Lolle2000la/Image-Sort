@@ -234,7 +234,7 @@ pub fn relative_position_for(index: usize, total: usize) -> Option<f32> {
     Some(clamped_index as f32 / (total - 1) as f32)
 }
 
-pub fn scroll_to_selected_folder(state: &AppState) -> Task<Message> {
+pub fn scroll_to_selected_folder(state: &mut AppState) -> Task<Message> {
     use crate::view::folder_panel::FOLDER_TREE_SCROLLABLE_ID;
 
     let visible = state.folder.collect_visible_folders();

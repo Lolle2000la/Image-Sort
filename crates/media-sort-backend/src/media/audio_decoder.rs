@@ -91,8 +91,10 @@ impl AudioPlayer {
     pub fn play(&self, path: &Path) -> Result<(), AudioError> {
         let file = File::open(path)?;
         let decoder = Decoder::try_from(file)?;
-        let dur = probe_duration(path)
-            .or_else(|| decoder.total_duration().map(|d| d.as_secs_f64()))
+        let dur = decoder
+            .total_duration()
+            .map(|d| d.as_secs_f64())
+            .or_else(|| probe_duration(path))
             .unwrap_or(0.0);
         self.player.append(decoder);
         if let Ok(mut d) = self.duration.lock() {

@@ -132,6 +132,7 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     {
         state.folder.folder_tree_receiver = None;
         state.folder.folder_tree = tree;
+        state.folder.invalidate_visible_folders_cache();
         state.folder.sync_selected_idx();
     }
 

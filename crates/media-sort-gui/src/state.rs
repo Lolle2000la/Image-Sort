@@ -145,7 +145,6 @@ impl AppState {
         self.history.clear();
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
-        self.build_folder_tree();
         self.media_grid.selected_index = None;
         self.metadata.current = None;
         self.folder.selected_folder = None;
@@ -214,6 +213,7 @@ impl AppState {
             .expect("current_folder must be Some since we checked it is not None above");
         self.folder.folder_tree =
             build_tree_nodes_data(&root, &self.folder.pinned_folders, &expanded_paths);
+        self.folder.invalidate_visible_folders_cache();
         self.folder.sync_selected_idx();
     }
 
@@ -239,6 +239,7 @@ impl AppState {
             path,
             self.folder.current_folder.as_deref(),
         );
+        self.folder.invalidate_visible_folders_cache();
         self.folder.sync_selected_idx();
     }
 
@@ -323,6 +324,7 @@ impl AppState {
             if pos + 1 < self.folder.folder_tree.len() {
                 self.folder.folder_tree.swap(pos + 1, pos);
             }
+            self.folder.invalidate_visible_folders_cache();
             self.settings.pinned_folders.paths = self
                 .folder
                 .pinned_folders
@@ -346,6 +348,7 @@ impl AppState {
             if pos + 2 < self.folder.folder_tree.len() {
                 self.folder.folder_tree.swap(pos + 1, pos + 2);
             }
+            self.folder.invalidate_visible_folders_cache();
             self.settings.pinned_folders.paths = self
                 .folder
                 .pinned_folders
@@ -361,6 +364,7 @@ impl AppState {
         if pos_a + 1 < self.folder.folder_tree.len() && pos_b + 1 < self.folder.folder_tree.len() {
             self.folder.folder_tree.swap(pos_a + 1, pos_b + 1);
         }
+        self.folder.invalidate_visible_folders_cache();
         self.settings.pinned_folders.paths = self
             .folder
             .pinned_folders
@@ -507,7 +511,7 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
         })
         .collect();
 
-    children.sort_by_key(|a| a.name.to_lowercase());
+    children.sort_by_cached_key(|a| a.name.to_lowercase());
     children
 }
 
@@ -1353,6 +1357,7 @@ mod tests {
         assert_eq!(state.folder.selected_folder, Some(p_root.clone()));
 
         state.folder.folder_tree[0].is_expanded = true;
+        state.folder.invalidate_visible_folders_cache();
 
         state.folder.select_below();
         assert_eq!(state.folder.selected_folder, Some(p_sub));
