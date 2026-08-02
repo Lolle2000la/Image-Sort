@@ -1,0 +1,39 @@
+[package]
+name = "iced-mpv"
+version.workspace = true
+edition.workspace = true
+license = "MIT"
+repository = "https://github.com/Lolle2000la/Image-Sort"
+
+[features]
+default = ["ui", "wgpu"]
+# Ready-made widgets (controls bar + composite player view), which depend on
+# the `lucide-icons` font and the wgpu shader stack for rendering frames.
+ui = ["dep:lucide-icons", "wgpu"]
+# The wgpu shader stack used to render video frames (iced's wgpu renderer plus
+# the custom `VideoPipeline` shader). Without it only the iced subscription,
+# state machine and `ui` icon widgets are available — no GPU dependency is
+# compiled at all.
+wgpu = ["dep:iced_wgpu", "dep:bytemuck", "iced/wgpu"]
+# Helpers for driving `VideoState` in unit/integration tests without a running
+# worker. Enable this in dev-dependencies of consuming crates.
+test-utils = []
+
+[dependencies]
+mpv-utils = { path = "../mpv-utils" }
+# Declared directly (not workspace-inherited) so `--no-default-features`
+# really drops the wgpu stack: the workspace entry enables iced's `wgpu`
+# unconditionally for the GUI, while this edge stays minimal and the `wgpu`
+# feature re-adds it. Same version string, so cargo unifies both edges.
+iced = { version = "0.14", default-features = false, features = [
+    "tokio",
+    "advanced",
+    "image-without-codecs",
+    "x11",
+    "wayland",
+] }
+iced_wgpu = { workspace = true, optional = true }
+bytemuck = { version = "1", optional = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
+tracing = { workspace = true }
+lucide-icons = { version = "1.21", optional = true }

@@ -1,3 +1,4 @@
+use crate::Rotation;
 use iced::advanced::graphics::Viewport;
 use iced::advanced::mouse;
 use iced::{Element, Length, Rectangle};
@@ -61,6 +62,7 @@ const VERTICES: &[Vertex] = &[
     },
 ];
 
+/// The wgpu pipeline used to blit a video frame texture to the screen.
 pub struct VideoPipeline {
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
@@ -179,11 +181,15 @@ impl Pipeline for VideoPipeline {
     }
 }
 
+/// A single video frame to render: raw RGBA pixels plus display geometry.
+///
+/// The frame is uploaded to the GPU with aspect-ratio fitting and rotation
+/// applied via texture coordinates.
 #[derive(Debug, Clone)]
 pub struct VideoPrimitive {
     pub width: u32,
     pub height: u32,
-    pub rotation: i64,
+    pub rotation: Rotation,
     pub rgba: Option<std::sync::Arc<Vec<u8>>>,
 }
 
@@ -202,8 +208,7 @@ impl Primitive for VideoPrimitive {
             return;
         }
 
-        let norm_rotate = self.rotation.rem_euclid(360);
-        let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
+        let (eff_w, eff_h) = if self.rotation.is_swapped() {
             (self.height, self.width)
         } else {
             (self.width, self.height)
@@ -224,11 +229,11 @@ impl Primitive for VideoPrimitive {
             }
         }
 
-        let (t_bl, t_br, t_tl, t_tr) = match norm_rotate {
-            90 => ([1.0, 1.0], [1.0, 0.0], [0.0, 1.0], [0.0, 0.0]),
-            180 => ([1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 1.0]),
-            270 => ([0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]),
-            _ => ([0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]),
+        let (t_bl, t_br, t_tl, t_tr) = match self.rotation {
+            Rotation::R90 => ([1.0, 1.0], [1.0, 0.0], [0.0, 1.0], [0.0, 0.0]),
+            Rotation::R180 => ([1.0, 0.0], [0.0, 0.0], [1.0, 1.0], [0.0, 1.0]),
+            Rotation::R270 => ([0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]),
+            Rotation::R0 => ([0.0, 1.0], [1.0, 1.0], [0.0, 0.0], [1.0, 0.0]),
         };
 
         let vertices = [
@@ -333,11 +338,18 @@ impl Primitive for VideoPrimitive {
     }
 }
 
+/// The iced shader program bridging [`VideoPrimitive`] into the
+/// `iced::widget::shader::Program` widget API. Prefer [`video_shader_view`].
+#[derive(Debug, Clone)]
 pub struct VideoProgram {
-    pub width: u32,
-    pub height: u32,
-    pub rotation: i64,
-    pub rgba: Option<std::sync::Arc<Vec<u8>>>,
+    primitive: VideoPrimitive,
+}
+
+impl VideoProgram {
+    /// Creates a program that renders the given frame.
+    pub fn new(primitive: VideoPrimitive) -> Self {
+        Self { primitive }
+    }
 }
 
 impl<Message> iced::widget::shader::Program<Message> for VideoProgram {
@@ -350,30 +362,30 @@ impl<Message> iced::widget::shader::Program<Message> for VideoProgram {
         _cursor: mouse::Cursor,
         _bounds: Rectangle,
     ) -> Self::Primitive {
-        VideoPrimitive {
-            width: self.width,
-            height: self.height,
-            rotation: self.rotation,
-            rgba: self.rgba.clone(),
-        }
+        self.primitive.clone()
     }
 }
 
+/// A raw video frame element without any control UI or overlay buttons.
+///
+/// Renders `rgba` (which must be `width × height × 4` bytes, unrotated) with
+/// the given [`Rotation`] applied at draw time. Returns an empty element when
+/// `rgba` is `None`.
 pub fn video_shader_view<'a, Message: 'a, Theme: 'a, Renderer>(
     width: u32,
     height: u32,
-    rotation: i64,
+    rotation: Rotation,
     rgba: Option<std::sync::Arc<Vec<u8>>>,
 ) -> Element<'a, Message, Theme, Renderer>
 where
     Renderer: iced_wgpu::primitive::Renderer + 'a,
 {
-    iced::widget::Shader::new(VideoProgram {
+    iced::widget::Shader::new(VideoProgram::new(VideoPrimitive {
         width,
         height,
         rotation,
         rgba,
-    })
+    }))
     .width(Length::Fill)
     .height(Length::Fill)
     .into()

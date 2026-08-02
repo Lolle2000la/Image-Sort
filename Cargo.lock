@@ -535,9 +535,9 @@ dependencies = [
  "ico",
  "image",
  "kamadak-exif",
- "libmpv-sys",
  "media-sort-backend",
  "media-sort-core",
+ "mpv-utils",
  "rayon",
  "toml",
  "turbojpeg",
@@ -2792,6 +2792,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "iced-mpv"
+version = "3.0.0-alpha.13"
+dependencies = [
+ "bytemuck",
+ "iced",
+ "iced_wgpu",
+ "lucide-icons",
+ "mpv-utils",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "iced_core"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3721,7 +3734,6 @@ dependencies = [
  "id3",
  "image",
  "kamadak-exif",
- "libmpv-sys",
  "media-sort-core",
  "metaflac",
  "mp4ameta",
@@ -3769,6 +3781,7 @@ dependencies = [
  "iced",
  "iced-automation",
  "iced-automation-macros",
+ "iced-mpv",
  "iced_runtime",
  "iced_test",
  "iced_wgpu",
@@ -3893,6 +3906,18 @@ dependencies = [
  "log",
  "num-traits",
  "static_assertions",
+]
+
+[[package]]
+name = "mpv-utils"
+version = "3.0.0-alpha.13"
+dependencies = [
+ "kamadak-exif",
+ "libmpv-sys",
+ "mp4ameta",
+ "rayon",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

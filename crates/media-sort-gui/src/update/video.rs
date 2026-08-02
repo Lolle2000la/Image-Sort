@@ -1,110 +1,25 @@
 use iced::Task;
 
-use crate::message::{Message, VideoMessage};
+use crate::message::Message;
 use crate::state::AppState;
 
-pub fn handle_video_message(state: &mut AppState, msg: VideoMessage) -> Task<Message> {
-    match msg {
-        VideoMessage::PlayerReady(sender) => {
-            state.video.sender = Some(sender);
-            Task::none()
-        }
-        VideoMessage::Event(event) => {
-            match event {
-                media_sort_backend::media::mpv_context::VideoEvent::FrameReady {
-                    path,
-                    width,
-                    height,
-                    rotation,
-                    rgba,
-                } => {
-                    state.cache.media_errors.remove(&path);
-                    // O(1) cached-path compare instead of per-frame O(n)
-                    // `filtered_entries()` + `path.clone()`.
-                    if state.video.selected_path.as_deref() == Some(path.as_path())
-                        && state.video.ready
-                    {
-                        state.video.rgba = Some(rgba);
-                        state.video.width = width;
-                        state.video.height = height;
-                        state.video.rotation = rotation;
-                        state.video.frame =
-                            Some(iced::widget::image::Handle::from_rgba(1, 1, vec![0]));
-                    }
-                }
-                media_sort_backend::media::mpv_context::VideoEvent::PlaybackProgress {
-                    position,
-                    duration,
-                } => {
-                    state.video.position = position;
-                    state.video.duration = duration;
-                    state.video.ready = true;
-                }
-                media_sort_backend::media::mpv_context::VideoEvent::Muted(muted) => {
-                    state.video.muted = muted;
-                }
-                media_sort_backend::media::mpv_context::VideoEvent::Volume(vol) => {
-                    state.video.volume = vol;
-                }
-                media_sort_backend::media::mpv_context::VideoEvent::Paused(paused) => {
-                    state.video.paused = paused;
-                }
-                media_sort_backend::media::mpv_context::VideoEvent::LoadFailed { path, error } => {
-                    tracing::error!("Video load failed for {}: {}", path.display(), error);
-                    state.cache.media_errors.record(path, error);
-                }
+pub fn handle_video_message(state: &mut AppState, msg: iced_mpv::PlayerMessage) -> Task<Message> {
+    if let Some(event) = state.video.update(msg) {
+        match event {
+            iced_mpv::VideoEvent::LoadFailed { path, error } => {
+                tracing::error!("Video load failed for {}: {}", path.display(), error);
+                state.cache.media_errors.record(path, error);
             }
-            Task::none()
-        }
-        VideoMessage::Seek(pos) => {
-            state.video.seek_position = Some(pos);
-            let should_seek = state
-                .video
-                .last_seek_time
-                .is_none_or(|t| t.elapsed() >= std::time::Duration::from_millis(333));
-            if should_seek {
-                if let Some(ref sender) = state.video.sender {
-                    let _ = sender.try_send(
-                        media_sort_backend::media::mpv_context::VideoCommand::SeekAbsolute(pos),
-                    );
-                }
-                state.video.last_seek_time = Some(std::time::Instant::now());
+            iced_mpv::VideoEvent::PlayExternally(path) => {
+                super::tasks::open_externally(&path);
             }
-            Task::none()
-        }
-        VideoMessage::Volume(vol) => {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(vol));
+            // The first committed frame proves the file is playable, so any
+            // previously recorded error (e.g. from thumbnail generation) is
+            // dropped.
+            iced_mpv::VideoEvent::FrameReady { path } => {
+                state.cache.media_errors.remove(&path);
             }
-            Task::none()
-        }
-        VideoMessage::Mute => {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::SetMute(
-                        !state.video.muted,
-                    ),
-                );
-            }
-            Task::none()
-        }
-        VideoMessage::PlayPause => {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
-            }
-            Task::none()
-        }
-        VideoMessage::Stop => {
-            if let Some(ref sender) = state.video.sender {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
-            }
-            Task::none()
-        }
-        VideoMessage::PlayExternally(path) => {
-            super::tasks::open_externally(&path);
-            Task::none()
         }
     }
+    Task::none()
 }

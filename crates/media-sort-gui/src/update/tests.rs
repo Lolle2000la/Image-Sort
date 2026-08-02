@@ -1,6 +1,6 @@
 use super::tasks::{calculate_scroll_into_view_1d, relative_position_for};
 use super::*;
-use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::{AppState, SettingsUiState};
 use crate::update::keyboard::handle_key_captured;
 use media_sort_core::actions::rename_action::RenameAction;
@@ -895,112 +895,42 @@ fn test_pinned_folder_drag_and_drop() {
 // ============================================================================
 // Video message tests
 // ============================================================================
+//
+// `VideoState` behavior (Ready wiring, Action dispatch, WorkerEvent handling,
+// seek storage, no-sender paths) is tested in the iced-mpv crate itself
+// (src/state.rs). The GUI only owns the app-level handling of the
+// `VideoEvent` domain events returned by the state machine: load failures are
+// recorded in `media_errors`, and the first committed frame clears them.
 
 #[test]
-fn test_video_player_ready_stores_sender() {
-    use tokio::sync::mpsc;
+fn test_video_load_failed_records_error_and_frame_ready_clears() {
     let mut state = AppState::new(SettingsStore::default());
-    let (tx, _rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
-    let _task = update(&mut state, Message::Video(VideoMessage::PlayerReady(tx)));
-    assert!(state.video.sender.is_some());
-}
+    let path = PathBuf::from("/videos/broken.mp4");
 
-#[test]
-fn test_video_volume_sends_command() {
-    use tokio::sync::mpsc;
-    let mut state = AppState::new(SettingsStore::default());
-    let (tx, mut rx) = mpsc::channel::<media_sort_backend::media::mpv_context::VideoCommand>(8);
-    state.video.sender = Some(tx);
-    let _task = update(&mut state, Message::Video(VideoMessage::Volume(50.0)));
-    assert!(state.video.sender.is_some());
-    match rx.try_recv() {
-        Ok(media_sort_backend::media::mpv_context::VideoCommand::SetVolume(v)) => {
-            assert_eq!(v, 50.0);
-        }
-        other => panic!("expected SetVolume(50.0), got {:?}", other),
-    }
-    drop(state);
-}
+    let fail = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::LoadFailed {
+        path: path.clone(),
+        error: "demo error".into(),
+    });
+    let _task = update(&mut state, Message::Video(fail));
+    assert!(state.cache.media_errors.get_error(&path).is_some());
 
-#[test]
-fn test_video_play_pause_no_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video.sender.is_none());
-    let _task = update(&mut state, Message::Video(VideoMessage::PlayPause));
-    assert!(state.video.sender.is_none());
-}
-
-#[test]
-fn test_video_stop_no_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video.sender.is_none());
-    let _task = update(&mut state, Message::Video(VideoMessage::Stop));
-    assert!(state.video.sender.is_none());
-}
-
-#[test]
-fn test_video_event_playback_progress() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    state.video.ready = false;
-    let _task = update(
-        &mut state,
-        Message::Video(VideoMessage::Event(VideoEvent::PlaybackProgress {
-            position: 10.0,
-            duration: 120.0,
-        })),
-    );
-    assert_eq!(state.video.position, 10.0);
-    assert_eq!(state.video.duration, 120.0);
-    assert!(state.video.ready);
-}
-
-#[test]
-fn test_video_event_muted() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(VideoMessage::Event(VideoEvent::Muted(true))),
-    );
-    assert!(state.video.muted);
-}
-
-#[test]
-fn test_video_event_volume() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(VideoMessage::Event(VideoEvent::Volume(75.0))),
-    );
-    assert_eq!(state.video.volume, 75.0);
-}
-
-#[test]
-fn test_video_event_paused() {
-    use media_sort_backend::media::mpv_context::VideoEvent;
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(
-        &mut state,
-        Message::Video(VideoMessage::Event(VideoEvent::Paused(true))),
-    );
-    assert!(state.video.paused);
-}
-
-#[test]
-fn test_video_seek_stores_position() {
-    let mut state = AppState::new(SettingsStore::default());
-    let _task = update(&mut state, Message::Video(VideoMessage::Seek(42.0)));
-    assert_eq!(state.video.seek_position, Some(42.0));
-}
-
-#[test]
-fn test_video_seek_without_sender() {
-    let mut state = AppState::new(SettingsStore::default());
-    assert!(state.video.sender.is_none());
-    let _task = update(&mut state, Message::Video(VideoMessage::Seek(10.0)));
-    assert_eq!(state.video.seek_position, Some(10.0));
+    // A successful load cycle: select the file, the worker reports readiness,
+    // and the first committed frame clears the recorded error.
+    state.video.select(Some(path.clone()));
+    let progress = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::PlaybackProgress {
+        position: 0.0,
+        duration: 10.0,
+    });
+    let _task = update(&mut state, Message::Video(progress));
+    let ready = iced_mpv::PlayerMessage::Event(iced_mpv::WorkerEvent::FrameReady {
+        path: path.clone(),
+        width: 640,
+        height: 360,
+        rotation: iced_mpv::Rotation::R0,
+        rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
+    });
+    let _task = update(&mut state, Message::Video(ready));
+    assert!(state.cache.media_errors.get_error(&path).is_none());
 }
 
 // ============================================================================

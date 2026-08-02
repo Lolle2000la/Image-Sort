@@ -126,6 +126,7 @@ metadata-field-name = 名前
 metadata-field-size = サイズ
 metadata-field-modified = 更新日時
 metadata-field-dimensions = 解像度
+metadata-field-orientation = 向き
 metadata-section-container = コンテナメタデータ
 metadata-field-duration = 長さ
 metadata-field-encoder = エンコーダー

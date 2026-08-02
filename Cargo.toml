@@ -2,6 +2,8 @@
 members = [
     "crates/media-sort-core",
     "crates/media-sort-backend",
+    "crates/mpv-utils",
+    "crates/iced-mpv",
     "crates/iced-automation",
     "crates/iced-automation-macros",
     "crates/media-sort-gui", "crates/benchmarks",

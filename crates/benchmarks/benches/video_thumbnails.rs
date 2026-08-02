@@ -11,51 +11,56 @@ fn fixture() -> PathBuf {
 }
 
 thread_local! {
-    static PLAYER: std::cell::RefCell<media_sort_backend::media::mpv_context::MpvContext> =
-        std::cell::RefCell::new(
-            media_sort_backend::media::mpv_context::MpvContext::new_thumbnail_player()
-                .expect("failed to create mpv context")
-        );
+    static PLAYER: std::cell::RefCell<Option<mpv_utils::MpvContext>> =
+        const { std::cell::RefCell::new(None) };
+}
+
+fn with_player<R>(f: impl FnOnce(&mut mpv_utils::MpvContext) -> R) -> Option<R> {
+    PLAYER.with(|cell| {
+        let mut slot = cell.borrow_mut();
+        if slot.is_none() {
+            match mpv_utils::MpvContext::new_thumbnail_player() {
+                Ok(p) => *slot = Some(p),
+                Err(e) => {
+                    eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
+                    return None;
+                }
+            }
+        }
+        Some(f(slot.as_mut().unwrap()))
+    })
 }
 
 #[divan::bench(sample_count = 10)]
 fn baseline_poll_10ms() -> (u32, u32, Vec<u8>) {
-    PLAYER.with(|cell| {
-        let mut player = cell.borrow_mut();
-        divan::black_box(variants::baseline_poll_10ms(&mut player, &fixture()).unwrap())
+    with_player(|player| {
+        divan::black_box(variants::baseline_poll_10ms(player, &fixture()).unwrap())
     })
+    .unwrap_or((0, 0, Vec::new()))
 }
 
 #[divan::bench(sample_count = 10)]
 fn poll_1ms() -> (u32, u32, Vec<u8>) {
-    PLAYER.with(|cell| {
-        let mut player = cell.borrow_mut();
-        divan::black_box(variants::poll_1ms(&mut player, &fixture()).unwrap())
-    })
+    with_player(|player| divan::black_box(variants::poll_1ms(player, &fixture()).unwrap()))
+        .unwrap_or((0, 0, Vec::new()))
 }
 
 #[divan::bench(sample_count = 10)]
 fn poll_0ms_spin() -> (u32, u32, Vec<u8>) {
-    PLAYER.with(|cell| {
-        let mut player = cell.borrow_mut();
-        divan::black_box(variants::poll_0ms_spin(&mut player, &fixture()).unwrap())
-    })
+    with_player(|player| divan::black_box(variants::poll_0ms_spin(player, &fixture()).unwrap()))
+        .unwrap_or((0, 0, Vec::new()))
 }
 
 #[divan::bench(sample_count = 10)]
 fn seek_10pct() -> (u32, u32, Vec<u8>) {
-    PLAYER.with(|cell| {
-        let mut player = cell.borrow_mut();
-        divan::black_box(variants::seek_10pct(&mut player, &fixture()).unwrap())
-    })
+    with_player(|player| divan::black_box(variants::seek_10pct(player, &fixture()).unwrap()))
+        .unwrap_or((0, 0, Vec::new()))
 }
 
 #[divan::bench(sample_count = 10)]
 fn ffmpeg_extract() -> (u32, u32, Vec<u8>) {
-    PLAYER.with(|cell| {
-        let mut player = cell.borrow_mut();
-        divan::black_box(variants::ffmpeg_extract(&mut player, &fixture()).unwrap())
-    })
+    with_player(|player| divan::black_box(variants::ffmpeg_extract(player, &fixture()).unwrap()))
+        .unwrap_or((0, 0, Vec::new()))
 }
 
 fn main() {

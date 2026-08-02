@@ -131,6 +131,7 @@ metadata-field-name = Name
 metadata-field-size = Size
 metadata-field-modified = Modified
 metadata-field-dimensions = Dimensions
+metadata-field-orientation = Orientation
 metadata-section-container = Container Metadata
 metadata-field-duration = Duration
 metadata-field-encoder = Encoder

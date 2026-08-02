@@ -82,10 +82,7 @@ pub fn handle_key_captured(
         && state.rename.path.is_none()
         && state.create_folder.creating_folder_parent.is_none()
     {
-        if let Some(ref sender) = state.video.sender {
-            let _ =
-                sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
-        }
+        state.video.toggle_pause();
         return Task::none();
     }
 
@@ -93,41 +90,28 @@ pub fn handle_key_captured(
         return Task::done(Message::Quit);
     }
 
-    if let Some(ref sender) = state.video.sender {
-        match key {
-            Key::MediaPlayPause | Key::MediaPlay | Key::MediaPause => {
-                let _ = sender
-                    .try_send(media_sort_backend::media::mpv_context::VideoCommand::TogglePause);
-                return Task::none();
-            }
-            Key::MediaStop => {
-                let _ = sender.try_send(media_sort_backend::media::mpv_context::VideoCommand::Stop);
-                return Task::none();
-            }
-            Key::AudioVolumeUp => {
-                let new_vol = (state.video.volume + 5.0).min(100.0);
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
-                );
-                return Task::none();
-            }
-            Key::AudioVolumeDown => {
-                let new_vol = (state.video.volume - 5.0).max(0.0);
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::SetVolume(new_vol),
-                );
-                return Task::none();
-            }
-            Key::AudioVolumeMute => {
-                let _ = sender.try_send(
-                    media_sort_backend::media::mpv_context::VideoCommand::SetMute(
-                        !state.video.muted,
-                    ),
-                );
-                return Task::none();
-            }
-            _ => {}
+    match key {
+        Key::MediaPlayPause | Key::MediaPlay | Key::MediaPause => {
+            state.video.toggle_pause();
+            return Task::none();
         }
+        Key::MediaStop => {
+            state.video.stop();
+            return Task::none();
+        }
+        Key::AudioVolumeUp => {
+            state.video.set_volume(state.video.volume() + 5.0);
+            return Task::none();
+        }
+        Key::AudioVolumeDown => {
+            state.video.set_volume(state.video.volume() - 5.0);
+            return Task::none();
+        }
+        Key::AudioVolumeMute => {
+            state.video.toggle_mute();
+            return Task::none();
+        }
+        _ => {}
     }
 
     match key {

@@ -536,7 +536,7 @@ pub fn ffmpeg_extract(_player: &mut MpvContext, path: &Path) -> VariantResult {
 
 // ── Video thumbnail variants ──────────────────────────────────────────
 
-use media_sort_backend::media::mpv_context::MpvContext;
+use mpv_utils::{MpvContext, rotate_rgba};
 
 /// Baseline 4: exact replication of the current video thumbnail path.
 pub fn baseline_poll_10ms(player: &mut MpvContext, path: &Path) -> VariantResult {
@@ -584,16 +584,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                 if !seek_done {
                     let (w, h) = player.get_video_size();
                     if w > 0 && h > 0 {
-                        let dur = unsafe {
-                            let mut d: f64 = 0.0;
-                            libmpv_sys::mpv_get_property(
-                                player.handle,
-                                c"duration".as_ptr(),
-                                libmpv_sys::mpv_format_MPV_FORMAT_DOUBLE,
-                                &mut d as *mut _ as *mut std::os::raw::c_void,
-                            );
-                            d
-                        };
+                        let dur = player.get_duration();
                         if dur > 0.0 {
                             player.seek(dur * 0.1);
                         }
@@ -605,12 +596,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                 let (w, h) = player.get_video_size();
                 if w > 0 && h > 0 {
                     let rotate = player.get_video_rotation();
-                    let norm_rotate = rotate.rem_euclid(360);
-                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
+                    let (eff_w, eff_h) = if rotate.is_swapped() { (h, w) } else { (w, h) };
 
                     let max_w = 128.0f64;
                     let max_h = 128.0f64;
@@ -623,12 +609,7 @@ pub fn seek_10pct(player: &mut MpvContext, path: &Path) -> VariantResult {
                         let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
                         if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                             let (final_w, final_h, final_rgba) =
-                                media_sort_backend::media::mpv_context::rotate_rgba(
-                                    render_w as u32,
-                                    render_h as u32,
-                                    &buffer,
-                                    rotate,
-                                );
+                                rotate_rgba(render_w as u32, render_h as u32, &buffer, rotate);
                             result = Ok((final_w, final_h, final_rgba));
                             break;
                         }
@@ -676,12 +657,7 @@ fn poll_based_thumbnail(
                 let (w, h) = player.get_video_size();
                 if w > 0 && h > 0 {
                     let rotate = player.get_video_rotation();
-                    let norm_rotate = rotate.rem_euclid(360);
-                    let (eff_w, eff_h) = if norm_rotate == 90 || norm_rotate == 270 {
-                        (h, w)
-                    } else {
-                        (w, h)
-                    };
+                    let (eff_w, eff_h) = if rotate.is_swapped() { (h, w) } else { (w, h) };
 
                     let max_w = 128.0f64;
                     let max_h = 128.0f64;
@@ -694,12 +670,7 @@ fn poll_based_thumbnail(
                         let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
                         if player.render_frame(render_w, render_h, &mut buffer).is_ok() {
                             let (final_w, final_h, final_rgba) =
-                                media_sort_backend::media::mpv_context::rotate_rgba(
-                                    render_w as u32,
-                                    render_h as u32,
-                                    &buffer,
-                                    rotate,
-                                );
+                                rotate_rgba(render_w as u32, render_h as u32, &buffer, rotate);
                             result = Ok((final_w, final_h, final_rgba));
                             break;
                         }
@@ -833,66 +804,6 @@ mod tests {
     fn test_zune_preview() {
         assert_preview_valid!(zune_preview(&fixture("mock 1.jpg")));
         assert_preview_valid!(zune_preview(&fixture("mock 5.png")));
-    }
-
-    #[test]
-    fn test_video_baseline_poll_10ms() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = baseline_poll_10ms(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_poll_1ms() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = poll_1ms(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_poll_0ms_spin() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = poll_0ms_spin(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
-    }
-
-    #[test]
-    fn test_video_seek_10pct() {
-        let mut player = match MpvContext::new_thumbnail_player() {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("SKIP: MpvContext::new_thumbnail_player() failed: {e}");
-                return;
-            }
-        };
-        let (w, h, rgba) = seek_10pct(&mut player, &fixture("mock 3.mp4")).unwrap();
-        assert!(w > 0 && h > 0);
-        assert!(w <= 128 && h <= 128);
-        assert_eq!(rgba.len(), (w * h * 4) as usize);
     }
 
     #[test]

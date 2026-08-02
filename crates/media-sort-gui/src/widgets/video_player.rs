@@ -3,61 +3,20 @@ use std::path::PathBuf;
 use iced::widget::{button, column, container, row, text};
 use iced::{Alignment, Element, Font, Length};
 
-use crate::message::{Message, VideoMessage};
+use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
-use crate::widgets::media_controls;
 
 pub fn video_player<'a>(
     path: PathBuf,
     state: &AppState,
     thumb_handle: Option<iced::widget::image::Handle>,
 ) -> Element<'a, Message> {
-    let video_content: Element<'_, Message> = if state.video.rgba.is_some() {
-        crate::widgets::video_shader::video_shader_view(
-            state.video.width,
-            state.video.height,
-            state.video.rotation,
-            state.video.rgba.clone(),
-        )
-    } else if let Some(handle) = thumb_handle {
-        iced::widget::image(handle)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
-    } else {
-        placeholder(path, &state.l10n)
-    };
-
-    let display_position = state.video.seek_position.unwrap_or(state.video.position);
-
-    let controls_row = media_controls::media_controls_view(
-        display_position,
-        state.video.duration,
-        state.video.volume,
-        state.video.muted,
-        !state.video.paused,
+    iced_mpv::video_player_view(
+        &state.video,
+        thumb_handle,
+        Some(placeholder(path, &state.l10n)),
+        |action| Message::Video(iced_mpv::PlayerMessage::Action(action)),
     )
-    .map(|msg| match msg {
-        media_controls::MediaControlMessage::PlayPause => Message::Video(VideoMessage::PlayPause),
-        media_controls::MediaControlMessage::Stop => Message::Video(VideoMessage::Stop),
-        media_controls::MediaControlMessage::Seek(v) => Message::Video(VideoMessage::Seek(v)),
-        media_controls::MediaControlMessage::SetVolume(v) => {
-            Message::Video(VideoMessage::Volume(v))
-        }
-        media_controls::MediaControlMessage::ToggleMute => Message::Video(VideoMessage::Mute),
-    });
-
-    column![
-        container(video_content)
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .center_x(Length::Fill)
-            .center_y(Length::Fill),
-        controls_row
-    ]
-    .width(Length::Fill)
-    .height(Length::Fill)
-    .into()
 }
 
 fn placeholder(
@@ -78,7 +37,7 @@ fn placeholder(
                 .align_y(Alignment::Center)
             )
             .padding([8, 16])
-            .on_press(Message::Video(VideoMessage::PlayExternally(path))),
+            .on_press(Message::Media(MediaMessage::OpenExternal(path))),
         ]
         .spacing(12)
         .align_x(Alignment::Center),
