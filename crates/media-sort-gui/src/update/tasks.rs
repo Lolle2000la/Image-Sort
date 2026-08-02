@@ -310,8 +310,8 @@ pub fn calculate_scroll_into_view_1d(
     let item_size = (item_end - item_start).max(0.0);
     let effective_margin = margin.min((viewport_size - item_size).max(0.0) / 2.0);
 
-    let view_start = current_offset;
-    let view_end = current_offset + viewport_size;
+    let view_start = current_offset.clamp(0.0, max_offset);
+    let view_end = view_start + viewport_size;
 
     let target_offset = if item_start - effective_margin < view_start {
         (item_start - effective_margin).max(0.0)

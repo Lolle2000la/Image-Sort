@@ -849,6 +849,11 @@ fn test_calculate_scroll_into_view_1d() {
         calculate_scroll_into_view_1d(390.0, 410.0, 0.0, 400.0, 1000.0, 20.0),
         Some(30.0)
     );
+    // Stale scroll offset beyond content bounds (e.g. after list shrinks) is clamped safely
+    assert_eq!(
+        calculate_scroll_into_view_1d(50.0, 100.0, 800.0, 400.0, 600.0, 20.0),
+        Some(30.0)
+    );
 }
 
 #[test]
