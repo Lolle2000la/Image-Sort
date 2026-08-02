@@ -103,19 +103,19 @@ Conventional commits (`feat:`, `fix:`, `chore:`). The `docs/` directory is the G
 The GUI follows iced's TEA pattern with a unidirectional data flow:
 
 - **Model** — `AppState` (`crates/media-sort-gui/src/state.rs:14`) holds all UI state
-- **Messages** — `Message` enum (`crates/media-sort-gui/src/message.rs:8`) with nested sub-enums: `FolderMessage`, `MediaMessage`, `SettingsMessage`, `VideoMessage`
-- **Update** — `app::update()` (`crates/media-sort-gui/src/app.rs:14`) is the pure reducer, ~950 lines, returning `Task<Message>` for side effects. Undo/Redo (`MediaMessage::Undo`/`Redo`) feed `AppState::start_async_media_scan(select_idx)`, which kicks off the same `scan_media_files` background scan as `open_folder` rather than blocking the UI thread on a synchronous rescan; `poll_background_channels` drains and finally re-selects the entry at `pending_select_index`. Tests that need `entries` populated before asserting drain the async scan via the `drain_async_scan` helper in `update/tests.rs` (loops `poll_background_channels` until `scan_receiver` is `None`). There is no synchronous scan path in production or tests.
+- **Messages** — `Message` enum (`crates/media-sort-gui/src/message.rs:8`) with nested sub-enums: `FolderMessage`, `MediaMessage`, `SettingsMessage`, plus a direct `Video(iced_mpv::PlayerMessage)` variant (the player's own message type carries both events and user intents — there is no separate `VideoMessage` enum)
+- **Update** — `app::update()` (`crates/media-sort-gui/src/app.rs:10`) is the pure reducer, ~950 lines across `update/`, returning `Task<Message>` for side effects. Undo/Redo (`MediaMessage::Undo`/`Redo`) feed `AppState::start_async_media_scan(select_idx)`, which kicks off the same `scan_media_files` background scan as `open_folder` rather than blocking the UI thread on a synchronous rescan; `poll_background_channels` drains and finally re-selects the entry at `pending_select_index`. Tests that need `entries` populated before asserting drain the async scan via the `drain_async_scan` helper in `update/tests.rs` (loops `poll_background_channels` until `scan_receiver` is `None`). There is no synchronous scan path in production or tests.
 - **View** — `app::view()` delegates to `main_layout_view()` which composes 10 view sub-modules. `media_grid_view` is **virtualized**: only the cards within the current scroll viewport (±5 cards of buffer, computed via `state.media_grid.scroll`, mirroring `subscriptions/thumbnail_tracker::update_viewport`) are constructed per frame, with leading/trailing `space()` of the same width padding the row so the scrollable's offset math is unchanged. Per-card `iced::widget::Id`s (and the equivalent per-folder-node IDs in `folder_tree_view`) were dropped — none were ever read elsewhere, so this also removes the per-frame `Box::leak` memory leak.
-- **Subscription** — `app::subscription()` (`crates/media-sort-gui/src/app.rs:1218`) merges 4 streams into `Message`:
+- **Subscription** — `app::subscription()` (`crates/media-sort-gui/src/app.rs:50`) merges 4 streams into `Message`:
 
 | Stream | Source | Purpose |
 |--------|--------|---------|
 | Tick | `iced::time::every(16ms)` | Main loop tick; handles deferred exit + settings save |
 | Keyboard | `subscriptions::keyboard` | Raw key events via `winit`, matched against configurable keybindings |
 | Events | `iced::event::listen()` | Window resize/move/close, mouse drag (divider resize) |
-| Video | `subscriptions::video_player` | mpv worker thread events (frame ready, playback progress, etc.) |
+| Video | `iced_mpv::VideoPlayer::subscription_with` | mpv worker thread events (frame ready, playback progress, etc.); omitted in headless demo export via `app::demo_subscription` |
 
-Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic is in app.rs`). The module exists only to hold the `#[cfg(test)]` module with unit tests.
+Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `update` module (`crates/media-sort-gui/src/update.rs`), which holds the `#[cfg(test)] mod tests` unit tests (`update/tests.rs`).
 
 ## Module overview
 
@@ -160,13 +160,14 @@ Note: `crates/media-sort-gui/src/update.rs` is a 1-line stub (`// Update logic i
 
 | Module | Purpose |
 |--------|---------|
-| `state.rs` | `VideoState` (observable state + command methods, `select()` load-or-reset, `reset()`, auto-`Deactivate` on drop), `PlayerMessage`/`PlayerHandle`/`VideoPlayerEvent` |
-| `subscription.rs` | `video_player_subscription(_with)` — spawns the worker with a `PlayerConfig` (max frame size), delivers `PlayerHandle` + events as iced messages |
-| `player.rs` (`ui` feature) | `VideoPlayer` — self-contained state+subscription+view wrapper (`subscription_with_config` etc.) |
-| `widget/` | `controls.rs` (`media_controls_view`, transport-agnostic — also drives audio), `player.rs` (`video_player_view`), `shader.rs` (wgpu `VideoPipeline`/`VideoPrimitive`/`video_shader_view`) |
+| `state.rs` | `VideoState` (observable state + command methods, `select()` load-or-reset, `reset()`, auto-`Deactivate` on drop), `PlayerMessage`/`PlayerHandle`, `VideoEvent` domain events (`LoadFailed`, `PlayExternally`, one-shot `FrameReady`) |
+| `subscription.rs` | `video_player_subscription(_with)` — spawns the worker with a `PlayerConfig` (max frame size), delivers `PlayerHandle` + raw `WorkerEvent`s as iced messages |
+| `player.rs` | `VideoPlayer` — self-contained state+subscription wrapper (`subscription_with_config` etc.); `view()` (with the `ui` feature) maps `VideoAction` into your message type |
+| `widget/` | `controls.rs` (`media_controls_view`, transport-agnostic `MediaControlsState` snapshot — also drives audio), `player.rs` (`video_player_view`, hides controls until the worker connects), `shader.rs` (wgpu `VideoPipeline`/`VideoPrimitive`/`video_shader_view`, `wgpu` feature) |
 | `action.rs` | `VideoAction` enum — user intent emitted by the widgets |
+| `testing.rs` | `testing::ready()` — test-utils helpers for driving `VideoState` without a worker |
 
-The raw tokio command channel is hidden behind the opaque `PlayerHandle`; callers never name `tokio::sync::mpsc::Sender<VideoCommand>`. The `ui` feature (default) only adds the `lucide-icons`-based widgets — `--no-default-features` builds the subscription/state core without them.
+The raw tokio command channel is hidden behind the opaque `PlayerHandle`; production callers never name `tokio::sync::mpsc::Sender<VideoCommand>`, and tests use `iced_mpv::testing::ready()` instead (enabled via the `test-utils` feature in `[dev-dependencies]`). The crate's features: `ui` (default) adds the `lucide-icons` widgets, `wgpu` (default) adds the shader stack, `test-utils` adds the test helpers — `--no-default-features` builds the subscription/state core with no wgpu dependency at all. All user intents flow through `PlayerMessage::Action(VideoAction)`; `VideoState::update` applies them and returns `VideoEvent`s the app must handle.
 
 ### iced-automation (generic, no system deps)
 
@@ -231,14 +232,14 @@ To add a new persisted setting:
 The video playback path is complex and worth understanding before touching:
 
 1. **Startup** — `main.rs` queries mpv via `MpvContext::query_supported_extensions()` (from `mpv-utils`, re-exported by iced-mpv) and initializes the global `MediaRegistry`
-2. **Subscription** — `video_player_subscription()` (iced-mpv) spawns a tokio `VideoWorker` task (in `mpv-utils`) that owns the `MpvContext` and runs an mpv event loop
-3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `VideoEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused). The worker's render cap is configurable via `PlayerConfig` (`video_player_subscription_with` / `VideoPlayer::subscription_with_config*`; default 960×540).
-4. **Rendering** — Frame RGBA data arrives as `VideoEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height, rotation: Rotation }`, stored in `VideoState`. The `video_player_view` widget (`widgets/video_player.rs` in the GUI) renders it via a custom wgpu shader (`widgets/video_shader.rs` in iced-mpv) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
-5. **Lifecycle** — When the user navigates away from a video (`VideoState::reset()`), closes the application (`CloseRequested`/`Quit`) or the state is dropped, `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
+2. **Subscription** — `video_player_subscription()` (iced-mpv) spawns a tokio `VideoWorker` task (in `mpv-utils`) that owns the `MpvContext` and runs an mpv event loop. Raw worker events are re-exported as `WorkerEvent` (distinct from the crate's `VideoEvent` domain events)
+3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `WorkerEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused). All user intents flow through `PlayerMessage::Action(VideoAction)` — the GUI's `Message::Video(PlayerMessage)` carries them straight into `VideoState::update`, which returns `VideoEvent` domain events (`LoadFailed`, `PlayExternally`, one-shot `FrameReady`) that the app must handle. The worker's render cap is configurable via `PlayerConfig` (`video_player_subscription_with` / `VideoPlayer::subscription_with_config*`; default 960×540).
+4. **Rendering** — Frame RGBA data arrives as `WorkerEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height, rotation: Rotation }`, stored in `VideoState`. The `video_player_view` widget (`widgets/video_player.rs` in the GUI) renders it via a custom wgpu shader (`widgets/video_shader.rs` in iced-mpv) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
+5. **Lifecycle** — When the user navigates away from a video (`VideoState::select(None)`), closes the application (`CloseRequested`/`Quit`) or the state is dropped, `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 
-The `FrameReady` handler in `VideoState` only commits frames whose `path` matches `selected_path` and whose `ready` flag is set — the O(1) "is this still the selected entry" check — so a late frame from a previously selected video can never repopulate the state.
+The `FrameReady` handler in `VideoState` only commits frames whose `path` matches `selected_path` and whose `ready` flag is set — the O(1) "is this still the selected entry" check — so a late frame from a previously selected video can never repopulate the state. The first committed frame of each load cycle surfaces as the one-shot `VideoEvent::FrameReady` domain event (the GUI uses it to clear `media_errors`).
 
-The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`).
+The entire pipeline depends on `libmpv-sys` at build time and a working `libmpv` installation at runtime. Without it, video playback silently does nothing (the sender is `None`) — `video_player_view` hides the transport controls until the worker connects, so the dead-controls trap is not visible to users. The headless demo export runs `app::demo_subscription` (everything except the video worker) so parallel renders don't spawn one `MpvContext` per instance.
 
 **Video thumbnails** do NOT use mpv by default anymore: `prefetch::generate_thumbnail()` first tries `media::ffmpeg_pipe::extract_frame()` (backend) — an ffmpeg subprocess piping the first frame as PNG (auto-rotated, no ffprobe needed) — which is ~3× faster than the mpv poll loop. The mpv worker pool remains as fallback when no ffmpeg binary is found (or when ffmpeg rejects the file); each fallback frame goes through `MpvContext::capture_frame(path, 128, 128, 1s)` (mpv-utils), which wraps the old hand-rolled poll loop (load → pause → poll `has_frame_ready` → render → `rotate_rgba`) — the `VIDEO_THUMBNAIL_WORKER` threads in `subscriptions/prefetch.rs` just call it. `ffmpeg_pipe::find_ffmpeg()` looks next to the running executable first (release bundles), then PATH, and **caches the result in a process-global `OnceLock<Option<PathBuf>>`** — the first call runs the PATH scan + `ffmpeg -version` verify spawn and all subsequent calls return the cached `PathBuf::clone()` with no scan, no spawn, and no syscall. The cache lives for the lifetime of the process and is never invalidated. Windows packages bundle the static `ffmpeg.exe` from the shinchiro/mpv-winbuild-cmake release assets; macOS bundles `brew` ffmpeg into `Contents/MacOS/` via dylibbundler; Linux uses host ffmpeg (optional). The same `extract_frame()` also serves as the AVIF fallback in `format_pipeline.rs`.
 

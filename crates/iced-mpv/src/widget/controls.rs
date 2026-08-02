@@ -1,3 +1,4 @@
+use crate::state::VideoState;
 use iced::widget::{button, row, slider, text};
 use iced::{Alignment, Element, Font, Length};
 
@@ -6,25 +7,55 @@ use iced::{Alignment, Element, Font, Length};
 /// play-externally), so the same bar can drive audio playback too.
 #[derive(Debug, Clone, PartialEq)]
 pub enum MediaControl {
+    /// Toggle between playing and paused.
     PlayPause,
+    /// Stop playback.
     Stop,
+    /// Seek to the given position in seconds.
     Seek(f64),
+    /// Set the volume in percent (0–100).
     SetVolume(f64),
+    /// Toggle mute.
     ToggleMute,
 }
 
+/// An immutable snapshot of transport state for [`media_controls_view`].
+///
+/// The bar is transport-agnostic: build this from [`VideoState`] (via
+/// `From<&VideoState>` or field-by-field) or from your own audio player state.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct MediaControlsState {
+    /// The playback position in seconds.
+    pub position: f64,
+    /// The media duration in seconds (0 until known).
+    pub duration: f64,
+    /// The volume in percent (0–100).
+    pub volume: f64,
+    /// Whether the output is muted.
+    pub muted: bool,
+    /// Whether playback is currently playing (not paused).
+    pub playing: bool,
+}
+
+impl From<&VideoState> for MediaControlsState {
+    fn from(state: &VideoState) -> Self {
+        Self {
+            position: state.position(),
+            duration: state.duration(),
+            volume: state.volume(),
+            muted: state.muted(),
+            playing: !state.paused(),
+        }
+    }
+}
+
 /// A transport-agnostic media control bar (play/pause, stop, seekbar, mute
-/// and volume) that emits [`MediaControl`] messages. It only reads plain
-/// values, so it can render video playback state *or* audio player state.
-pub fn media_controls_view(
-    position: f64,
-    duration: f64,
-    volume: f64,
-    muted: bool,
-    playing: bool,
-) -> Element<'static, MediaControl> {
+/// and volume) that emits [`MediaControl`] messages. It only reads a
+/// [`MediaControlsState`] snapshot, so it can render video playback state *or*
+/// audio player state.
+pub fn media_controls_view(state: MediaControlsState) -> Element<'static, MediaControl> {
     let play_pause_btn = button(
-        text(char::from(if playing {
+        text(char::from(if state.playing {
             lucide_icons::Icon::Pause
         } else {
             lucide_icons::Icon::Play
@@ -43,14 +74,22 @@ pub fn media_controls_view(
     .padding(8)
     .on_press(MediaControl::Stop);
 
-    let time_str = format!("{} / {}", format_time(position), format_time(duration));
+    let time_str = format!(
+        "{} / {}",
+        format_time(state.position),
+        format_time(state.duration)
+    );
     let time_label = text(time_str).size(13);
 
-    let seek_max = if duration > 0.0 { duration } else { 1.0 };
-    let seekbar = slider(0.0..=seek_max, position, MediaControl::Seek).width(Length::Fill);
+    let seek_max = if state.duration > 0.0 {
+        state.duration
+    } else {
+        1.0
+    };
+    let seekbar = slider(0.0..=seek_max, state.position, MediaControl::Seek).width(Length::Fill);
 
     let mute_btn = button(
-        text(char::from(if muted {
+        text(char::from(if state.muted {
             lucide_icons::Icon::VolumeX
         } else {
             lucide_icons::Icon::Volume2
@@ -62,7 +101,7 @@ pub fn media_controls_view(
     .on_press(MediaControl::ToggleMute);
 
     let volume_slider =
-        slider(0.0..=100.0, volume, MediaControl::SetVolume).width(Length::Fixed(80.0));
+        slider(0.0..=100.0, state.volume, MediaControl::SetVolume).width(Length::Fixed(80.0));
 
     row![
         play_pause_btn,

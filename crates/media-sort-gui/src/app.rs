@@ -1,6 +1,6 @@
 use iced::{Element, Subscription, Task};
 
-use crate::message::{Message, VideoMessage};
+use crate::message::Message;
 use crate::state::AppState;
 use crate::view;
 
@@ -48,15 +48,25 @@ pub fn theme(state: &AppState) -> iced::Theme {
 }
 
 pub fn subscription(_state: &AppState) -> Subscription<Message> {
-    let tick_sub = iced::time::every(std::time::Duration::from_millis(16)).map(Message::Tick);
+    Subscription::batch([base_subscription(), video_subscription()])
+}
 
-    let keyboard_sub = crate::subscriptions::keyboard::keyboard_subscription();
+fn base_subscription() -> Subscription<Message> {
+    Subscription::batch([
+        iced::time::every(std::time::Duration::from_millis(16)).map(Message::Tick),
+        crate::subscriptions::keyboard::keyboard_subscription(),
+        iced::event::listen().map(Message::EventOccurred),
+    ])
+}
 
-    let event_sub = iced::event::listen().map(Message::EventOccurred);
+fn video_subscription() -> Subscription<Message> {
+    iced_mpv::VideoPlayer::subscription_with(Message::Video)
+}
 
-    let video_sub = iced_mpv::VideoPlayer::subscription_with(|player_msg| {
-        Message::Video(VideoMessage::Player(player_msg))
-    });
-
-    Subscription::batch(vec![tick_sub, keyboard_sub, event_sub, video_sub])
+/// Like [`subscription`], but without the video worker. The headless demo
+/// export renders many app instances in parallel and never plays videos, so
+/// skipping the worker avoids spawning one libmpv `MpvContext` per render.
+#[cfg(feature = "demo")]
+pub(crate) fn demo_subscription(_state: &AppState) -> Subscription<Message> {
+    base_subscription()
 }

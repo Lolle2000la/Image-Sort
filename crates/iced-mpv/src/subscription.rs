@@ -2,7 +2,7 @@ use crate::start_video_worker_with;
 use crate::state::PlayerHandle;
 use iced::Subscription;
 use iced::futures::SinkExt;
-use mpv_utils::{PlayerConfig, VideoEvent};
+use mpv_utils::{PlayerConfig, VideoEvent as WorkerEvent};
 
 #[derive(Clone)]
 struct Handlers<FReady, FEvent> {
@@ -28,10 +28,22 @@ impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEve
 /// - `on_ready` receives the opaque [`PlayerHandle`] once, when the worker is
 ///   up (deliver it to your [`crate::VideoState`] via
 ///   [`crate::PlayerMessage::Ready`]).
-/// - `on_event` receives every raw [`VideoEvent`].
+/// - `on_event` receives every raw worker event ([`crate::WorkerEvent`]).
 ///
 /// Prefer [`crate::VideoPlayer::subscription`] / `subscription_with` unless
 /// you need the raw closures or a custom config.
+///
+/// # Subscription identity
+///
+/// iced deduplicates subscriptions by hashing their state. Closures are not
+/// hashable, so this subscription's identity is the closure *types* (via
+/// `TypeId`). Consequences to be aware of:
+///
+/// - Captured values do **not** restart the stream when they change — the
+///   worker keeps running as long as the same closure types are passed.
+/// - Two subscriptions with identical closure types (e.g. the same function
+///   item used twice) are deduplicated into **one** stream by iced. If your
+///   app embeds multiple video players, give each a distinct closure type.
 pub fn video_player_subscription<Message, FReady, FEvent>(
     on_ready: FReady,
     on_event: FEvent,
@@ -39,7 +51,7 @@ pub fn video_player_subscription<Message, FReady, FEvent>(
 where
     Message: Send + 'static,
     FReady: Fn(PlayerHandle) -> Message + Send + Sync + 'static + Clone,
-    FEvent: Fn(VideoEvent) -> Message + Send + Sync + 'static + Clone,
+    FEvent: Fn(WorkerEvent) -> Message + Send + Sync + 'static + Clone,
 {
     video_player_subscription_with(PlayerConfig::default(), on_ready, on_event)
 }
@@ -54,7 +66,7 @@ pub fn video_player_subscription_with<Message, FReady, FEvent>(
 where
     Message: Send + 'static,
     FReady: Fn(PlayerHandle) -> Message + Send + Sync + 'static + Clone,
-    FEvent: Fn(VideoEvent) -> Message + Send + Sync + 'static + Clone,
+    FEvent: Fn(WorkerEvent) -> Message + Send + Sync + 'static + Clone,
 {
     Subscription::run_with(
         Handlers {
@@ -80,7 +92,7 @@ fn video_stream<Message, FReady, FEvent>(
 where
     Message: Send + 'static,
     FReady: Fn(PlayerHandle) -> Message + Send + Sync + 'static,
-    FEvent: Fn(VideoEvent) -> Message + Send + Sync + 'static,
+    FEvent: Fn(WorkerEvent) -> Message + Send + Sync + 'static,
 {
     iced::stream::channel(
         32,
@@ -91,7 +103,7 @@ where
             start_video_worker_with(cmd_rx, event_tx, config);
 
             if output
-                .send(on_ready(PlayerHandle::new(cmd_tx)))
+                .send(on_ready(PlayerHandle::from_sender(cmd_tx)))
                 .await
                 .is_err()
             {

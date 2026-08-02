@@ -100,13 +100,11 @@ pub fn handle_key_captured(
             return Task::none();
         }
         Key::AudioVolumeUp => {
-            let new_vol = (state.video.volume() + 5.0).min(100.0);
-            state.video.set_volume(new_vol);
+            state.video.set_volume(state.video.volume() + 5.0);
             return Task::none();
         }
         Key::AudioVolumeDown => {
-            let new_vol = (state.video.volume() - 5.0).max(0.0);
-            state.video.set_volume(new_vol);
+            state.video.set_volume(state.video.volume() - 5.0);
             return Task::none();
         }
         Key::AudioVolumeMute => {

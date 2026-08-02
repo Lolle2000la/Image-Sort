@@ -1,4 +1,4 @@
-use mpv_utils::{Rotation, VideoCommand, VideoEvent};
+use mpv_utils::{Rotation, VideoCommand, VideoEvent as WorkerEvent};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -9,6 +9,10 @@ use std::time::{Duration, Instant};
 /// [`PlayerMessage::Ready`]; [`VideoState`] stores it so playback commands can
 /// be sent. The underlying tokio channel is not exposed — to send commands,
 /// call the [`VideoState`] methods (e.g. `state.video.seek(10.0)`).
+///
+/// The `new` constructor is only available with the `test-utils` feature (or
+/// in this crate's own tests) — production code never constructs a handle
+/// itself.
 #[derive(Debug, Clone)]
 pub struct PlayerHandle {
     sender: tokio::sync::mpsc::Sender<VideoCommand>,
@@ -19,8 +23,13 @@ impl PlayerHandle {
     ///
     /// In normal use the subscription constructs this for you. This
     /// constructor exists for tests that want to drive [`VideoState`] without
-    /// a running worker.
+    /// a running worker — prefer [`crate::testing::ready`].
+    #[cfg(any(test, feature = "test-utils"))]
     pub fn new(sender: tokio::sync::mpsc::Sender<VideoCommand>) -> Self {
+        Self { sender }
+    }
+
+    pub(crate) fn from_sender(sender: tokio::sync::mpsc::Sender<VideoCommand>) -> Self {
         Self { sender }
     }
 
@@ -36,20 +45,24 @@ pub enum PlayerMessage {
     /// The worker is up; carry the opaque command [`PlayerHandle`].
     Ready(PlayerHandle),
     /// A raw worker event (rendered frame, progress, ...).
-    Event(VideoEvent),
+    Event(WorkerEvent),
     /// An action originating from a widget (see [`VideoAction`](crate::VideoAction)).
     Action(crate::VideoAction),
 }
 
 /// Domain events that need application-level handling, produced by
-/// [`VideoState::update`] (as opposed to [`VideoEvent`], which is the raw
-/// worker event stream).
+/// [`VideoState::update`] (as opposed to [`WorkerEvent`], the raw worker
+/// event stream).
 #[derive(Debug, Clone, PartialEq)]
-pub enum VideoPlayerEvent {
+pub enum VideoEvent {
     /// Loading a file failed. `error` is a human-readable description.
     LoadFailed { path: PathBuf, error: String },
     /// The user asked to open the video in an external player.
     PlayExternally(PathBuf),
+    /// The first frame of the current selection was committed, i.e. playback
+    /// actually started for the selected file. Fired at most once per
+    /// [`VideoState::load`] / [`VideoState::select`] cycle.
+    FrameReady { path: PathBuf },
 }
 
 /// The observable video playback state and command interface.
@@ -108,6 +121,8 @@ impl VideoState {
 
     /// Returns `true` once the subscription has delivered its
     /// [`PlayerMessage::Ready`] handle, i.e. commands will reach a worker.
+    /// The composite [`crate::video_player_view`] hides the transport controls
+    /// until this is true.
     pub fn is_connected(&self) -> bool {
         self.sender.is_some()
     }
@@ -141,7 +156,8 @@ impl VideoState {
     }
 
     /// A pending seek target in seconds, if the user is currently dragging
-    /// the seekbar (throttled seeks are not yet applied to mpv).
+    /// the seekbar (throttled seeks are not yet applied to mpv). Cleared once
+    /// the worker confirms playback at the target position.
     pub fn seek_position(&self) -> Option<f64> {
         self.seek_position
     }
@@ -189,9 +205,12 @@ impl VideoState {
     }
 
     /// Feeds one [`PlayerMessage`] from the subscription into the state
-    /// machine. Returns a [`VideoPlayerEvent`] when the app needs to react
-    /// (load failure, play-externally request).
-    pub fn update(&mut self, message: PlayerMessage) -> Option<VideoPlayerEvent> {
+    /// machine. Returns a [`VideoEvent`] when the app needs to react (load
+    /// failure, play-externally request, first committed frame). The result is
+    /// `#[must_use]` — silently dropping these events loses application
+    /// behavior.
+    #[must_use = "returned VideoEvent (LoadFailed / PlayExternally / FrameReady) requires application handling"]
+    pub fn update(&mut self, message: PlayerMessage) -> Option<VideoEvent> {
         match message {
             PlayerMessage::Ready(handle) => {
                 self.sender = Some(handle);
@@ -222,16 +241,14 @@ impl VideoState {
                     self.toggle_mute();
                     None
                 }
-                crate::VideoAction::PlayExternally(path) => {
-                    Some(VideoPlayerEvent::PlayExternally(path))
-                }
+                crate::VideoAction::PlayExternally(path) => Some(VideoEvent::PlayExternally(path)),
             },
         }
     }
 
-    fn handle_event(&mut self, event: &VideoEvent) -> Option<VideoPlayerEvent> {
+    fn handle_event(&mut self, event: &WorkerEvent) -> Option<VideoEvent> {
         match event {
-            VideoEvent::FrameReady {
+            WorkerEvent::FrameReady {
                 path,
                 width,
                 height,
@@ -243,32 +260,47 @@ impl VideoState {
                 // guards against a stale frame from a previously selected
                 // video repopulating the state after a fast selection change.
                 if self.selected_path.as_deref() == Some(path.as_path()) && self.ready {
+                    let first_frame = self.rgba.is_none();
                     self.rgba = Some(rgba.clone());
                     self.width = *width;
                     self.height = *height;
                     self.rotation = *rotation;
+                    if first_frame {
+                        Some(VideoEvent::FrameReady { path: path.clone() })
+                    } else {
+                        None
+                    }
+                } else {
+                    None
                 }
-                None
             }
-            VideoEvent::PlaybackProgress { position, duration } => {
+            WorkerEvent::PlaybackProgress { position, duration } => {
                 self.position = *position;
                 self.duration = *duration;
                 self.ready = true;
+                // A pending seek counts as applied once playback reaches it
+                // (within a second's slack for keyframe snapping), so the
+                // seekbar stops pinning the drag target.
+                if let Some(target) = self.seek_position
+                    && (*position - target).abs() <= 1.0
+                {
+                    self.seek_position = None;
+                }
                 None
             }
-            VideoEvent::Muted(muted) => {
+            WorkerEvent::Muted(muted) => {
                 self.muted = *muted;
                 None
             }
-            VideoEvent::Volume(vol) => {
+            WorkerEvent::Volume(vol) => {
                 self.volume = *vol;
                 None
             }
-            VideoEvent::Paused(paused) => {
+            WorkerEvent::Paused(paused) => {
                 self.paused = *paused;
                 None
             }
-            VideoEvent::LoadFailed { path, error } => Some(VideoPlayerEvent::LoadFailed {
+            WorkerEvent::LoadFailed { path, error } => Some(VideoEvent::LoadFailed {
                 path: path.clone(),
                 error: error.clone(),
             }),
@@ -289,7 +321,8 @@ impl VideoState {
     /// Loads `path` and starts playback.
     ///
     /// Also marks `path` as the selected video so that only frames belonging
-    /// to it are committed ([`VideoEvent::FrameReady`] matching).
+    /// to it are committed ([`WorkerEvent::FrameReady`] matching). The next
+    /// committed frame reports a [`VideoEvent::FrameReady`] domain event.
     pub fn load(&mut self, path: PathBuf) {
         self.selected_path = Some(path.clone());
         self.rgba = None;
@@ -297,21 +330,25 @@ impl VideoState {
         self.send(VideoCommand::Load(path));
     }
 
-    pub fn play(&mut self) {
+    /// Resumes playback.
+    pub fn play(&self) {
         self.send(VideoCommand::Play);
     }
 
-    pub fn pause(&mut self) {
+    /// Pauses playback.
+    pub fn pause(&self) {
         self.send(VideoCommand::Pause);
     }
 
-    pub fn toggle_pause(&mut self) {
+    /// Toggles between playing and paused.
+    pub fn toggle_pause(&self) {
         self.send(VideoCommand::TogglePause);
     }
 
     /// Seeks to `pos` seconds. Repeated calls within 333 ms are coalesced to
     /// avoid flooding mpv while the user drags a seekbar; the pending position
-    /// is reflected immediately in the UI via `seek_position`.
+    /// is reflected immediately in the UI via `seek_position` and cleared once
+    /// playback reaches it.
     pub fn seek(&mut self, pos: f64) {
         self.seek_position = Some(pos);
         let should_seek = self
@@ -323,15 +360,18 @@ impl VideoState {
         }
     }
 
-    pub fn set_volume(&mut self, vol: f64) {
-        self.send(VideoCommand::SetVolume(vol));
+    /// Sets the volume in percent, clamped to 0–100.
+    pub fn set_volume(&self, vol: f64) {
+        self.send(VideoCommand::SetVolume(vol.clamp(0.0, 100.0)));
     }
 
-    pub fn toggle_mute(&mut self) {
+    /// Toggles mute.
+    pub fn toggle_mute(&self) {
         self.send(VideoCommand::SetMute(!self.muted));
     }
 
-    pub fn stop(&mut self) {
+    /// Stops playback.
+    pub fn stop(&self) {
         self.send(VideoCommand::Stop);
     }
 
@@ -340,15 +380,15 @@ impl VideoState {
     /// Also called automatically when the state is dropped. To additionally
     /// clear the visual state (frame, position, selection), use
     /// [`VideoState::reset`].
-    pub fn deactivate(&mut self) {
+    pub fn deactivate(&self) {
         self.send(VideoCommand::Deactivate);
     }
 
     /// Stops playback and resets all observable state (frame, size, position,
     /// selection). Use when navigating away from a video, e.g. selecting an
     /// image or opening a different folder — this prevents a late
-    /// [`VideoEvent::FrameReady`] from the previous video from repopulating
-    /// the frame.
+    /// [`WorkerEvent::FrameReady`] from the previous video from repopulating
+    /// the frame. Prefer [`VideoState::select`] over calling this directly.
     pub fn reset(&mut self) {
         self.deactivate();
         self.rgba = None;
@@ -373,13 +413,28 @@ impl Drop for VideoState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testing;
     use std::path::Path;
 
     fn connected_state() -> VideoState {
-        let (tx, _rx) = tokio::sync::mpsc::channel(8);
+        let (msg, _rx) = testing::ready(8);
         let mut state = VideoState::new();
-        state.update(PlayerMessage::Ready(PlayerHandle::new(tx)));
+        let _ = state.update(msg);
         state
+    }
+
+    fn progress_event(position: f64, duration: f64) -> WorkerEvent {
+        WorkerEvent::PlaybackProgress { position, duration }
+    }
+
+    fn frame_event(path: &str, rotation: Rotation) -> WorkerEvent {
+        WorkerEvent::FrameReady {
+            path: PathBuf::from(path),
+            width: 640,
+            height: 360,
+            rotation,
+            rgba: Arc::new(vec![0u8; 640 * 360 * 4]),
+        }
     }
 
     #[test]
@@ -397,10 +452,7 @@ mod tests {
     fn test_select_none_resets() {
         let mut state = connected_state();
         state.load(PathBuf::from("/videos/one.mp4"));
-        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
-            position: 5.0,
-            duration: 10.0,
-        }));
+        let _ = state.update(PlayerMessage::Event(progress_event(5.0, 10.0)));
         assert!(state.ready());
 
         state.select(None);
@@ -414,17 +466,11 @@ mod tests {
     fn test_reset_clears_all_state() {
         let mut state = connected_state();
         state.load(PathBuf::from("/videos/one.mp4"));
-        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
-            position: 5.0,
-            duration: 10.0,
-        }));
-        state.update(PlayerMessage::Event(VideoEvent::FrameReady {
-            path: PathBuf::from("/videos/one.mp4"),
-            width: 640,
-            height: 360,
-            rotation: Rotation::R90,
-            rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
-        }));
+        let _ = state.update(PlayerMessage::Event(progress_event(5.0, 10.0)));
+        let _ = state.update(PlayerMessage::Event(frame_event(
+            "/videos/one.mp4",
+            Rotation::R90,
+        )));
         assert!(state.ready());
         assert!(state.rgba().is_some());
         assert_eq!(state.width(), 640);
@@ -442,20 +488,87 @@ mod tests {
     fn test_stale_frame_ignored_after_reset() {
         let mut state = connected_state();
         state.load(PathBuf::from("/videos/one.mp4"));
-        state.update(PlayerMessage::Event(VideoEvent::PlaybackProgress {
-            position: 0.0,
-            duration: 10.0,
-        }));
+        let _ = state.update(PlayerMessage::Event(progress_event(0.0, 10.0)));
 
         // A frame for a *different* path (or after selection changed) is dropped.
         state.select(None);
-        state.update(PlayerMessage::Event(VideoEvent::FrameReady {
-            path: PathBuf::from("/videos/one.mp4"),
-            width: 640,
-            height: 360,
-            rotation: Rotation::R0,
-            rgba: std::sync::Arc::new(vec![0u8; 640 * 360 * 4]),
-        }));
+        let _ = state.update(PlayerMessage::Event(frame_event(
+            "/videos/one.mp4",
+            Rotation::R0,
+        )));
         assert!(state.rgba().is_none());
+    }
+
+    #[test]
+    fn test_first_frame_emits_domain_event_once() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+        let _ = state.update(PlayerMessage::Event(progress_event(0.0, 10.0)));
+
+        let first = state.update(PlayerMessage::Event(frame_event(
+            "/videos/one.mp4",
+            Rotation::R0,
+        )));
+        assert_eq!(
+            first,
+            Some(VideoEvent::FrameReady {
+                path: PathBuf::from("/videos/one.mp4")
+            })
+        );
+
+        let second = state.update(PlayerMessage::Event(frame_event(
+            "/videos/one.mp4",
+            Rotation::R0,
+        )));
+        assert_eq!(second, None);
+
+        // Reloading the same file counts as a new load cycle.
+        state.load(PathBuf::from("/videos/one.mp4"));
+        let _ = state.update(PlayerMessage::Event(progress_event(0.0, 10.0)));
+        let reloaded = state.update(PlayerMessage::Event(frame_event(
+            "/videos/one.mp4",
+            Rotation::R0,
+        )));
+        assert_eq!(
+            reloaded,
+            Some(VideoEvent::FrameReady {
+                path: PathBuf::from("/videos/one.mp4")
+            })
+        );
+    }
+
+    #[test]
+    fn test_seek_position_cleared_when_reached() {
+        let mut state = connected_state();
+        state.load(PathBuf::from("/videos/one.mp4"));
+
+        state.seek(42.0);
+        assert_eq!(state.seek_position(), Some(42.0));
+
+        // Progress while still far from the target keeps the pending seek.
+        let _ = state.update(PlayerMessage::Event(progress_event(10.0, 120.0)));
+        assert_eq!(state.seek_position(), Some(42.0));
+
+        // Progress at the target clears it.
+        let _ = state.update(PlayerMessage::Event(progress_event(42.0, 120.0)));
+        assert_eq!(state.seek_position(), None);
+    }
+
+    #[test]
+    fn test_set_volume_clamps() {
+        let (msg, mut rx) = testing::ready(8);
+        let mut state = VideoState::new();
+        let _ = state.update(msg);
+
+        state.set_volume(150.0);
+        match rx.try_recv() {
+            Ok(VideoCommand::SetVolume(v)) => assert_eq!(v, 100.0),
+            other => panic!("expected SetVolume(100.0), got {other:?}"),
+        }
+        state.set_volume(-20.0);
+        match rx.try_recv() {
+            Ok(VideoCommand::SetVolume(v)) => assert_eq!(v, 0.0),
+            other => panic!("expected SetVolume(0.0), got {other:?}"),
+        }
     }
 }

@@ -149,7 +149,7 @@ impl AppState {
         self.folder.selected_folder_idx = None;
         self.cache.selected_image = None;
         self.cache.image_cache.clear();
-        self.video.reset();
+        self.video.select(None);
         self.cache.media_errors.clear();
         if let Some(ref player) = self.audio.player {
             player.stop();
@@ -182,7 +182,7 @@ impl AppState {
         // Clear video state so a late FrameReady from the previously-selected
         // video can't repopulate the video state during the rescan (the
         // previously-selected path would otherwise match a stale mpv frame).
-        self.video.reset();
+        self.video.select(None);
         self.media_grid.scan_receiver = Some(
             media_sort_backend::filesystem::scanner::scan_media_files(&folder),
         );

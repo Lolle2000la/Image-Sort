@@ -264,7 +264,7 @@ pub fn export_demo_video_with_locale(
         },
         |state: &AppState, _window| crate::app::view(state),
         |state: &AppState, _window| Some(crate::app::theme(state)),
-        |state: &AppState| crate::app::subscription(state),
+        |state: &AppState| crate::app::demo_subscription(state),
     );
 
     let mut video_config = iced_automation::ExportVideoConfig::standard(output_path.to_path_buf());

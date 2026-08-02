@@ -1,6 +1,6 @@
 use super::tasks::{calculate_scroll_into_view_1d, relative_position_for};
 use super::*;
-use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage, VideoMessage};
+use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::{AppState, SettingsUiState};
 use crate::update::keyboard::handle_key_captured;
 use media_sort_core::actions::rename_action::RenameAction;
@@ -898,30 +898,24 @@ fn test_pinned_folder_drag_and_drop() {
 
 #[test]
 fn test_video_player_ready_stores_sender() {
-    use tokio::sync::mpsc;
     let mut state = AppState::new(SettingsStore::default());
-    let (tx, _rx) = mpsc::channel::<iced_mpv::VideoCommand>(8);
-    let _task = update(
-        &mut state,
-        Message::Video(VideoMessage::Player(iced_mpv::PlayerMessage::Ready(
-            iced_mpv::PlayerHandle::new(tx),
-        ))),
-    );
+    let (msg, _rx) = iced_mpv::testing::ready(8);
+    let _task = update(&mut state, Message::Video(msg));
     assert!(state.video.is_connected());
 }
 
 #[test]
-fn test_video_volume_sends_command() {
-    use tokio::sync::mpsc;
+fn test_video_action_sends_command() {
     let mut state = AppState::new(SettingsStore::default());
-    let (tx, mut rx) = mpsc::channel::<iced_mpv::VideoCommand>(8);
-    state
-        .video
-        .update(iced_mpv::PlayerMessage::Ready(iced_mpv::PlayerHandle::new(
-            tx,
-        )));
+    let (msg, mut rx) = iced_mpv::testing::ready(8);
+    let _ = state.video.update(msg);
     assert!(state.video.is_connected());
-    let _task = update(&mut state, Message::Video(VideoMessage::Volume(50.0)));
+    let _task = update(
+        &mut state,
+        Message::Video(iced_mpv::PlayerMessage::Action(
+            iced_mpv::VideoAction::SetVolume(50.0),
+        )),
+    );
     match rx.try_recv() {
         Ok(iced_mpv::VideoCommand::SetVolume(v)) => {
             assert_eq!(v, 50.0);
@@ -935,7 +929,12 @@ fn test_video_volume_sends_command() {
 fn test_video_play_pause_no_sender() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(!state.video.is_connected());
-    let _task = update(&mut state, Message::Video(VideoMessage::PlayPause));
+    let _task = update(
+        &mut state,
+        Message::Video(iced_mpv::PlayerMessage::Action(
+            iced_mpv::VideoAction::PlayPause,
+        )),
+    );
     assert!(!state.video.is_connected());
 }
 
@@ -943,22 +942,25 @@ fn test_video_play_pause_no_sender() {
 fn test_video_stop_no_sender() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(!state.video.is_connected());
-    let _task = update(&mut state, Message::Video(VideoMessage::Stop));
+    let _task = update(
+        &mut state,
+        Message::Video(iced_mpv::PlayerMessage::Action(iced_mpv::VideoAction::Stop)),
+    );
     assert!(!state.video.is_connected());
 }
 
 #[test]
 fn test_video_event_playback_progress() {
-    use iced_mpv::VideoEvent;
+    use iced_mpv::WorkerEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
-        Message::Video(VideoMessage::Player(iced_mpv::PlayerMessage::Event(
-            VideoEvent::PlaybackProgress {
+        Message::Video(iced_mpv::PlayerMessage::Event(
+            WorkerEvent::PlaybackProgress {
                 position: 10.0,
                 duration: 120.0,
             },
-        ))),
+        )),
     );
     assert_eq!(state.video.position(), 10.0);
     assert_eq!(state.video.duration(), 120.0);
@@ -967,39 +969,33 @@ fn test_video_event_playback_progress() {
 
 #[test]
 fn test_video_event_muted() {
-    use iced_mpv::VideoEvent;
+    use iced_mpv::WorkerEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
-        Message::Video(VideoMessage::Player(iced_mpv::PlayerMessage::Event(
-            VideoEvent::Muted(true),
-        ))),
+        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Muted(true))),
     );
     assert!(state.video.muted());
 }
 
 #[test]
 fn test_video_event_volume() {
-    use iced_mpv::VideoEvent;
+    use iced_mpv::WorkerEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
-        Message::Video(VideoMessage::Player(iced_mpv::PlayerMessage::Event(
-            VideoEvent::Volume(75.0),
-        ))),
+        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Volume(75.0))),
     );
     assert_eq!(state.video.volume(), 75.0);
 }
 
 #[test]
 fn test_video_event_paused() {
-    use iced_mpv::VideoEvent;
+    use iced_mpv::WorkerEvent;
     let mut state = AppState::new(SettingsStore::default());
     let _task = update(
         &mut state,
-        Message::Video(VideoMessage::Player(iced_mpv::PlayerMessage::Event(
-            VideoEvent::Paused(true),
-        ))),
+        Message::Video(iced_mpv::PlayerMessage::Event(WorkerEvent::Paused(true))),
     );
     assert!(state.video.paused());
 }
@@ -1007,7 +1003,12 @@ fn test_video_event_paused() {
 #[test]
 fn test_video_seek_stores_position() {
     let mut state = AppState::new(SettingsStore::default());
-    let _task = update(&mut state, Message::Video(VideoMessage::Seek(42.0)));
+    let _task = update(
+        &mut state,
+        Message::Video(iced_mpv::PlayerMessage::Action(
+            iced_mpv::VideoAction::Seek(42.0),
+        )),
+    );
     assert_eq!(state.video.seek_position(), Some(42.0));
 }
 
@@ -1015,7 +1016,12 @@ fn test_video_seek_stores_position() {
 fn test_video_seek_without_sender() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(!state.video.is_connected());
-    let _task = update(&mut state, Message::Video(VideoMessage::Seek(10.0)));
+    let _task = update(
+        &mut state,
+        Message::Video(iced_mpv::PlayerMessage::Action(
+            iced_mpv::VideoAction::Seek(10.0),
+        )),
+    );
     assert_eq!(state.video.seek_position(), Some(10.0));
 }
 

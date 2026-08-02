@@ -1,17 +1,20 @@
 use crate::state::{PlayerMessage, VideoState};
 use crate::subscription::video_player_subscription_with;
-use crate::widget::player::video_player_view;
-use iced::{Element, Subscription};
+use iced::Subscription;
 use mpv_utils::PlayerConfig;
 use std::path::PathBuf;
 
+#[cfg(feature = "ui")]
+use crate::action::VideoAction;
+#[cfg(feature = "ui")]
+use iced::Element;
+
 /// A self-contained video player: state, subscription and view in one type.
 ///
-/// This is the most ergonomic entry point when you want the crate's own
-/// widgets: subscribe with [`VideoPlayer::subscription`], feed messages into
-/// [`VideoPlayer::update`], and render with [`VideoPlayer::view`]. The app
-/// message type must be [`PlayerMessage`] for `view` to wire the built-in
-/// controls — if your app has its own message enum, embed a
+/// Subscribe with [`VideoPlayer::subscription`] / `subscription_with`, feed
+/// messages into [`VideoPlayer::update`], and render with
+/// [`VideoPlayer::view`] (which maps each [`VideoAction`] into your message
+/// type via a closure). If you prefer to own the pieces yourself, embed a
 /// [`VideoState`] and use the free [`crate::video_player_view`] instead.
 #[derive(Debug)]
 pub struct VideoPlayer {
@@ -42,6 +45,7 @@ impl VideoPlayer {
         self.thumb_handle = handle;
     }
 
+    /// Loads `path` and starts playback (see [`VideoState::load`]).
     pub fn load(&mut self, path: impl Into<PathBuf>) {
         self.state.load(path.into());
     }
@@ -86,28 +90,45 @@ impl VideoPlayer {
         )
     }
 
-    pub fn update(&mut self, message: PlayerMessage) -> Option<crate::VideoPlayerEvent> {
+    /// Feeds one [`PlayerMessage`] into the state machine; returns a
+    /// [`crate::VideoEvent`] when the app needs to react.
+    pub fn update(&mut self, message: PlayerMessage) -> Option<crate::VideoEvent> {
         self.state.update(message)
     }
 
-    pub fn view(&self) -> Element<'_, PlayerMessage> {
-        video_player_view(
+    /// Renders the video frame (or thumbnail / "Loading..." placeholder) and
+    /// the transport controls, mapping each user action via `on_action`.
+    #[cfg(feature = "ui")]
+    pub fn view<'a, Message, F>(&'a self, on_action: F) -> Element<'a, Message>
+    where
+        Message: 'a,
+        F: Fn(VideoAction) -> Message + 'a + Clone,
+    {
+        crate::widget::player::video_player_view(
             &self.state,
             self.thumb_handle.clone(),
             None,
-            PlayerMessage::Action,
+            on_action,
         )
     }
 
-    pub fn view_with_placeholder<'a>(
+    /// Like [`VideoPlayer::view`], with a custom element shown while neither
+    /// a frame nor a thumbnail is available.
+    #[cfg(feature = "ui")]
+    pub fn view_with_placeholder<'a, Message, F>(
         &'a self,
-        placeholder: Element<'a, PlayerMessage>,
-    ) -> Element<'a, PlayerMessage> {
-        video_player_view(
+        placeholder: Element<'a, Message>,
+        on_action: F,
+    ) -> Element<'a, Message>
+    where
+        Message: 'a,
+        F: Fn(VideoAction) -> Message + 'a + Clone,
+    {
+        crate::widget::player::video_player_view(
             &self.state,
             self.thumb_handle.clone(),
             Some(placeholder),
-            PlayerMessage::Action,
+            on_action,
         )
     }
 }

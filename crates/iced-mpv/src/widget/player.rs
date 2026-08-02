@@ -1,6 +1,6 @@
 use crate::action::VideoAction;
 use crate::state::VideoState;
-use crate::widget::controls::{MediaControl, media_controls_view};
+use crate::widget::controls::{MediaControl, MediaControlsState, media_controls_view};
 use crate::widget::shader::video_shader_view;
 use iced::widget::{column, container};
 use iced::{Element, Length};
@@ -13,6 +13,10 @@ use iced::{Element, Length};
 /// - `placeholder` — a custom element shown when neither a frame nor a
 ///   thumbnail is available (falls back to a "Loading video..." label)
 /// - `on_action` — maps user interaction ([`VideoAction`]) to your message
+///
+/// The transport controls are only rendered once the worker is connected
+/// ([`VideoState::is_connected`]); until then the placeholder/thumbnail area
+/// is shown without a dead-looking control bar.
 pub fn video_player_view<'a, Message: 'a, F>(
     state: &VideoState,
     thumb_handle: Option<iced::widget::image::Handle>,
@@ -45,17 +49,20 @@ where
             .into()
     };
 
-    let display_position = state.seek_position().unwrap_or(state.position());
+    if !state.is_connected() {
+        return container(video_content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x(Length::Fill)
+            .center_y(Length::Fill)
+            .into();
+    }
+
+    let mut controls = MediaControlsState::from(state);
+    controls.position = state.seek_position().unwrap_or(controls.position);
 
     let on_action_clone = on_action.clone();
-    let controls_row = media_controls_view(
-        display_position,
-        state.duration(),
-        state.volume(),
-        state.muted(),
-        !state.paused(),
-    )
-    .map(move |msg| match msg {
+    let controls_row = media_controls_view(controls).map(move |msg| match msg {
         MediaControl::PlayPause => on_action_clone(VideoAction::PlayPause),
         MediaControl::Stop => on_action_clone(VideoAction::Stop),
         MediaControl::Seek(v) => on_action_clone(VideoAction::Seek(v)),

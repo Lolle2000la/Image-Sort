@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use iced::widget::{button, column, container, row, text};
 use iced::{Alignment, Element, Font, Length};
 
-use crate::message::{Message, VideoMessage};
+use crate::message::{MediaMessage, Message};
 use crate::state::AppState;
 
 pub fn video_player<'a>(
@@ -15,16 +15,7 @@ pub fn video_player<'a>(
         &state.video,
         thumb_handle,
         Some(placeholder(path, &state.l10n)),
-        |action| match action {
-            iced_mpv::VideoAction::PlayPause => Message::Video(VideoMessage::PlayPause),
-            iced_mpv::VideoAction::Stop => Message::Video(VideoMessage::Stop),
-            iced_mpv::VideoAction::Seek(v) => Message::Video(VideoMessage::Seek(v)),
-            iced_mpv::VideoAction::SetVolume(v) => Message::Video(VideoMessage::Volume(v)),
-            iced_mpv::VideoAction::ToggleMute => Message::Video(VideoMessage::Mute),
-            iced_mpv::VideoAction::PlayExternally(p) => {
-                Message::Video(VideoMessage::PlayExternally(p))
-            }
-        },
+        |action| Message::Video(iced_mpv::PlayerMessage::Action(action)),
     )
 }
 
@@ -46,7 +37,7 @@ fn placeholder(
                 .align_y(Alignment::Center)
             )
             .padding([8, 16])
-            .on_press(Message::Video(VideoMessage::PlayExternally(path))),
+            .on_press(Message::Media(MediaMessage::OpenExternal(path))),
         ]
         .spacing(12)
         .align_x(Alignment::Center),

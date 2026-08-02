@@ -57,3 +57,4 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 toml.workspace = true
+iced-mpv = { path = "../iced-mpv", features = ["test-utils"] }

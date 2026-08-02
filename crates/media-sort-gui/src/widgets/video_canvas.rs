@@ -35,13 +35,13 @@ pub fn audio_controls_view(
         .into()
     };
 
-    let controls = media_controls_view(
-        state.audio.position,
-        state.audio.duration,
-        state.audio.volume,
-        state.audio.muted,
+    let controls = media_controls_view(iced_mpv::MediaControlsState {
+        position: state.audio.position,
+        duration: state.audio.duration,
+        volume: state.audio.volume,
+        muted: state.audio.muted,
         playing,
-    )
+    })
     .map(|msg| match msg {
         MediaControl::PlayPause => Message::Media(MediaMessage::AudioPlayPause),
         MediaControl::Stop => Message::Media(MediaMessage::StopAudio),

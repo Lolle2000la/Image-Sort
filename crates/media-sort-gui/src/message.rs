@@ -31,7 +31,7 @@ pub enum Message {
     #[automation(dispatch)]
     Media(MediaMessage),
     #[serde(skip_deserializing)]
-    Video(VideoMessage),
+    Video(iced_mpv::PlayerMessage),
     #[serde(skip_deserializing)]
     DragDrop(DragDropMessage),
 
@@ -157,17 +157,6 @@ pub enum MediaMessage {
     AudioSetVolume(f64),
     AudioToggleMute,
     AudioPlayPause,
-}
-
-#[derive(Debug, Clone)]
-pub enum VideoMessage {
-    Player(iced_mpv::PlayerMessage),
-    Seek(f64),
-    Volume(f64),
-    Mute,
-    PlayPause,
-    Stop,
-    PlayExternally(PathBuf),
 }
 
 #[cfg(feature = "velopack")]
