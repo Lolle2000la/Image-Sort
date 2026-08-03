@@ -79,14 +79,6 @@ jobs:
         run: |
           pip install meson ninja
           choco install -y nasm pkgconfiglite
-          
-          # Locate Chocolatey's pkg-config.exe and set PKG_CONFIG explicitly
-          PKG_CONFIG_BIN=$(where.exe pkg-config | grep -i "chocolatey" | head -n 1)
-          if [ -z "$PKG_CONFIG_BIN" ]; then
-            PKG_CONFIG_BIN="C:\\ProgramData\\chocolatey\\bin\\pkg-config.exe"
-          fi
-          
-          echo "PKG_CONFIG=$PKG_CONFIG_BIN" >> "$GITHUB_ENV"
           echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
