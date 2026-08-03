@@ -142,7 +142,20 @@ impl SettingsStore {
             .map(|m| m.file_type().is_symlink())
             .unwrap_or(false)
         {
-            std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone())
+            // Resolve with read_link, not canonicalize: a dangling symlink
+            // (target not created yet, common when setting up dotfiles)
+            // makes canonicalize fail, and falling back to the link path
+            // would replace the user's symlink with a regular file on the
+            // next rename. read_link works even when the target does not
+            // exist yet.
+            let link_target = std::fs::read_link(&path).unwrap_or_else(|_| path.clone());
+            if link_target.is_absolute() {
+                link_target
+            } else if let Some(parent) = path.parent() {
+                parent.join(link_target)
+            } else {
+                link_target
+            }
         } else {
             path.clone()
         };
@@ -757,5 +770,51 @@ mod tests {
         assert_eq!(loaded.general.theme, "Slate");
         assert!(!loaded.general.animate_gifs);
         assert_eq!(loaded.general.folder_tree_width, 300);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_save_via_dangling_symlink_preserves_link() {
+        use std::os::unix::fs::symlink;
+
+        // A dangling symlink (target not created yet) must survive a save:
+        // the write has to land on the target path, not replace the link.
+        let dir = test_temp_subdir();
+        let config_path = dir.join("config.toml");
+        let dotfiles_dir = dir.join("dotfiles");
+        std::fs::create_dir_all(&dotfiles_dir).unwrap();
+        let real_target = dotfiles_dir.join("config.toml");
+        symlink(&real_target, &config_path).unwrap();
+        assert!(
+            config_path
+                .symlink_metadata()
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
+
+        let mut settings = SettingsStore {
+            custom_path: Some(config_path.clone()),
+            ..Default::default()
+        };
+        settings.general.theme = "Dark".to_string();
+        settings.save().unwrap();
+
+        // The symlink must still be a symlink...
+        assert!(
+            config_path
+                .symlink_metadata()
+                .unwrap()
+                .file_type()
+                .is_symlink(),
+            "save must not replace the user's symlink"
+        );
+        // ...and the settings must have landed on the (now existing) target.
+        assert!(real_target.exists(), "target file must have been created");
+        let loaded: SettingsStore =
+            toml::from_str(&std::fs::read_to_string(&real_target).unwrap()).unwrap();
+        assert_eq!(loaded.general.theme, "Dark");
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

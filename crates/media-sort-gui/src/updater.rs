@@ -278,7 +278,11 @@ pub async fn download_and_apply_async(
     }
 
     // Atomic write into the packages dir: a crash must never leave a
-    // partial package at the final path velopack would apply.
+    // partial package at the final path velopack would apply. Note: on
+    // Windows std::fs::rename maps to MoveFileExW with
+    // MOVEFILE_REPLACE_EXISTING, so replacing a stale package from an
+    // interrupted previous run works; if that fails (destination in use or
+    // read-only), remove the stale file and retry once.
     let partial_path = package_path.with_extension("nupkg.partial");
     tokio::task::spawn_blocking({
         let partial_path = partial_path.clone();
@@ -286,7 +290,13 @@ pub async fn download_and_apply_async(
         let package_bytes = package_bytes.to_vec();
         move || -> Result<(), String> {
             fs::write(&partial_path, &package_bytes).map_err(|e| e.to_string())?;
-            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
+            match fs::rename(&partial_path, &package_path) {
+                Ok(()) => Ok(()),
+                Err(_) => {
+                    fs::remove_file(&package_path).map_err(|e| e.to_string())?;
+                    fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
+                }
+            }
         }
     })
     .await

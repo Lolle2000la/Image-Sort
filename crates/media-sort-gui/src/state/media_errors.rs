@@ -26,8 +26,9 @@ pub struct MediaErrorTracker {
 
 /// Upper bound on tracked entries: a folder of a million undecodable files
 /// must not turn into a multi-hundred-MB in-memory map. When the cap is
-/// hit the map is reset (oldest entries lose their detail, the "has error"
-/// flag for the current selection is preserved by re-recording it).
+/// hit, the map is cleared and only the currently recorded entry survives;
+/// cards that previously showed an error badge lose it until their next
+/// failed load re-records it.
 const MAX_TRACKED_ERRORS: usize = 10_000;
 
 #[allow(dead_code)]
