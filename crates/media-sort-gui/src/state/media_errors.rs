@@ -24,6 +24,12 @@ pub struct MediaErrorTracker {
     errors: HashMap<PathBuf, MediaReadError>,
 }
 
+/// Upper bound on tracked entries: a folder of a million undecodable files
+/// must not turn into a multi-hundred-MB in-memory map. When the cap is
+/// hit the map is reset (oldest entries lose their detail, the "has error"
+/// flag for the current selection is preserved by re-recording it).
+const MAX_TRACKED_ERRORS: usize = 10_000;
+
 #[allow(dead_code)]
 impl MediaErrorTracker {
     /// Creates a new, empty `MediaErrorTracker`.
@@ -37,6 +43,9 @@ impl MediaErrorTracker {
     pub fn record(&mut self, path: impl Into<PathBuf>, error: impl Into<String>) {
         let p = path.into();
         let msg = error.into();
+        if self.errors.len() >= MAX_TRACKED_ERRORS && !self.errors.contains_key(&p) {
+            self.errors.clear();
+        }
         self.errors.insert(p.clone(), MediaReadError::new(p, msg));
     }
 

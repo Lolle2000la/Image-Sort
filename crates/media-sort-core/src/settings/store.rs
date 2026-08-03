@@ -131,7 +131,24 @@ impl SettingsStore {
             Self::config_path()
         };
         let data = toml::to_string_pretty(self)?;
-        std::fs::write(&path, data)?;
+
+        // Atomic write: temp file + rename, so a crash mid-write can never
+        // truncate the config. If the config path is a symlink (common on
+        // Linux where dotfiles are symlinked into ~/.config), resolve it
+        // first so the rename lands on the real target and the user's
+        // symlink stays intact.
+        let target = if path
+            .symlink_metadata()
+            .map(|m| m.file_type().is_symlink())
+            .unwrap_or(false)
+        {
+            std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone())
+        } else {
+            path.clone()
+        };
+        let tmp = target.with_extension("toml.tmp");
+        std::fs::write(&tmp, data)?;
+        std::fs::rename(&tmp, &target)?;
         self.dirty = false;
         Ok(())
     }

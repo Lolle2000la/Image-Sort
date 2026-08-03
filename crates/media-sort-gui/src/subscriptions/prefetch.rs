@@ -7,10 +7,19 @@ use tracing;
 type ThumbnailResult = Result<(u32, u32, Vec<u8>), String>;
 type VideoThumbnailRequest = (PathBuf, std::sync::mpsc::Sender<ThumbnailResult>);
 
+/// Bounded work-queue capacity per pool. A scroll-storm through a folder of
+/// video files used to feed unbounded `mpsc::channel` queues (and if every
+/// mpv worker failed to start, requesters blocked forever on `recv()`);
+/// `sync_channel` applies backpressure and the response timeouts below
+/// un-hang requesters when a pool is dead.
+const THUMBNAIL_QUEUE_CAPACITY: usize = 256;
+const FFMPEG_RESPONSE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
+const MPV_RESPONSE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+
 static VIDEO_THUMBNAIL_WORKER: LazyLock<
-    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
+    std::sync::Mutex<std::sync::mpsc::SyncSender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
-    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
+    let (tx, rx) = std::sync::mpsc::sync_channel::<VideoThumbnailRequest>(THUMBNAIL_QUEUE_CAPACITY);
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
@@ -53,9 +62,9 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
 // video files can spawn N simultaneous ffmpeg processes (default tokio
 // blocking pool ceiling is 512). See `benches/perf_candidates.rs` Group G.
 static FFMPEG_THUMBNAIL_WORKER: LazyLock<
-    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
+    std::sync::Mutex<std::sync::mpsc::SyncSender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
-    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
+    let (tx, rx) = std::sync::mpsc::sync_channel::<VideoThumbnailRequest>(THUMBNAIL_QUEUE_CAPACITY);
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
@@ -139,7 +148,7 @@ pub fn generate_thumbnail(
         {
             return Err("Failed to queue ffmpeg video thumbnail request".to_string());
         }
-        match response_rx.recv() {
+        match response_rx.recv_timeout(FFMPEG_RESPONSE_TIMEOUT) {
             Ok(Ok(parts)) => return Ok(parts),
             Ok(Err(_ffmpeg_err)) => {
                 // ffmpeg rejected the file; try the mpv pool as a fallback.
@@ -152,11 +161,26 @@ pub fn generate_thumbnail(
                     .send((path.to_path_buf(), mpv_tx))
                     .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
                 return mpv_rx
-                    .recv()
-                    .map_err(|e| format!("Failed to receive video thumbnail result: {e}"))?;
+                    .recv_timeout(MPV_RESPONSE_TIMEOUT)
+                    .map_err(|e| match e {
+                        std::sync::mpsc::RecvTimeoutError::Timeout => {
+                            format!(
+                                "Video thumbnail request timed out after {MPV_RESPONSE_TIMEOUT:?}"
+                            )
+                        }
+                        std::sync::mpsc::RecvTimeoutError::Disconnected => {
+                            "Failed to receive video thumbnail result".to_string()
+                        }
+                    })
+                    .map_err(|e| format!("Video thumbnail error: {e}"))?;
             }
-            Err(e) => {
-                return Err(format!("Failed to receive ffmpeg thumbnail result: {e}"));
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                return Err(format!(
+                    "ffmpeg thumbnail request timed out after {FFMPEG_RESPONSE_TIMEOUT:?}"
+                ));
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                return Err("Failed to receive ffmpeg thumbnail result".to_string());
             }
         }
     }

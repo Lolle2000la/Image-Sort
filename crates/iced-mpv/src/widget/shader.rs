@@ -303,6 +303,27 @@ impl Primitive for VideoPrimitive {
             && let Some(rgba) = &self.rgba
             && !rgba.is_empty()
         {
+            // Defense in depth: the state's FrameReady handler validates the
+            // buffer, but never let a mismatched buffer reach the GPU upload
+            // (wgpu panics on undersized sources, and width*4 is u32 math).
+            let Some(bytes_per_row) = self.width.checked_mul(4) else {
+                return;
+            };
+            let Some(required) = bytes_per_row
+                .checked_mul(self.height)
+                .and_then(|n| usize::try_from(n).ok())
+            else {
+                return;
+            };
+            if rgba.len() < required {
+                tracing::error!(
+                    "frame buffer too small: {} bytes for {}x{}; skipping upload",
+                    rgba.len(),
+                    self.width,
+                    self.height
+                );
+                return;
+            }
             queue.write_texture(
                 wgpu::TexelCopyTextureInfo {
                     texture,
@@ -313,7 +334,7 @@ impl Primitive for VideoPrimitive {
                 rgba,
                 wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(self.width * 4),
+                    bytes_per_row: Some(bytes_per_row),
                     rows_per_image: Some(self.height),
                 },
                 wgpu::Extent3d {

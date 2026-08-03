@@ -673,12 +673,18 @@ impl Drop for MpvContext {
 
             mpv_render_context_set_update_callback(self.render_ctx, None, ptr::null_mut());
 
+            // Free the render context BEFORE releasing the wakeup sender:
+            // mpv_render_context_free waits for in-flight render work, so a
+            // callback already running on mpv's render thread has finished
+            // by the time the Box is freed (freeing it first would leave a
+            // small use-after-free window for that in-flight invocation).
+            mpv_render_context_free(self.render_ctx);
+
             if !self.callback_context_raw.is_null() {
                 let _sender_box =
                     Box::from_raw(self.callback_context_raw as *mut tokio::sync::mpsc::Sender<()>);
             }
 
-            mpv_render_context_free(self.render_ctx);
             mpv_terminate_destroy(self.handle);
         }
     }

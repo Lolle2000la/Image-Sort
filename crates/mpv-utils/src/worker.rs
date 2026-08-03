@@ -76,16 +76,43 @@ pub enum VideoEvent {
 
 /// Rotates raw RGBA bytes by the given [`Rotation`].
 ///
-/// Returns `(new_width, new_height, new_rgba_bytes)`.
+/// Returns `(new_width, new_height, new_rgba_bytes)`. Degenerate or hostile
+/// dimensions (zero, or large enough to overflow the u32 size math) yield an
+/// empty buffer instead of a panic.
 pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u32, u32, Vec<u8>) {
     use rayon::prelude::*;
+    let (dst_w, dst_h) = match rotation {
+        Rotation::R90 | Rotation::R270 => (src_h, src_w),
+        Rotation::R0 | Rotation::R180 => (src_w, src_h),
+    };
+    // Zero dimensions would make `par_chunks_exact_mut` panic on a zero
+    // chunk size; hostile dimensions would overflow the u32 math below.
+    if dst_w == 0 || dst_h == 0 {
+        return (0, 0, Vec::new());
+    }
+    let Some(dst_size) = (dst_w as u64)
+        .checked_mul(dst_h as u64)
+        .and_then(|n| n.checked_mul(4))
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return (0, 0, Vec::new());
+    };
+    let mut dst = vec![0u8; dst_size];
+    let dst_stride = (dst_w as usize) * 4;
+
+    // `src_idx` uses saturating math: with hostile dims the u32 product can
+    // overflow; the `<= src.len()` guard below then drops the read.
+    macro_rules! src_idx {
+        ($y:expr, $x:expr) => {
+            ($y as usize)
+                .saturating_mul(src_w as usize)
+                .saturating_add($x as usize)
+                .saturating_mul(4)
+        };
+    }
+
     match rotation {
         Rotation::R90 => {
-            let dst_w = src_h;
-            let dst_h = src_w;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -94,8 +121,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = src_h - 1 - dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
@@ -104,11 +131,6 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
             (dst_w, dst_h, dst)
         }
         Rotation::R180 => {
-            let dst_w = src_w;
-            let dst_h = src_h;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -117,8 +139,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_x = src_w - 1 - dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
@@ -127,11 +149,6 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
             (dst_w, dst_h, dst)
         }
         Rotation::R270 => {
-            let dst_w = src_h;
-            let dst_h = src_w;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -140,8 +157,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
