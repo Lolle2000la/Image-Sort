@@ -100,10 +100,7 @@ jobs:
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
           RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        # profile.dev.package."*" is opt-level=3 for local GUI dev
-        # responsiveness; CI doesn't need that and compiles 2-3x faster
-        # without it.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Run Workspace Tests
         if: matrix.os != 'windows-latest'
@@ -111,7 +108,7 @@ jobs:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
         # --tests, not --all-targets: bench targets are harness=false, so
         # "testing" them would execute the full divan benchmark suite.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests
+        run: cargo test --workspace --tests
 
       - name: Run Workspace Tests (Windows, excluding GUI)
         if: matrix.os == 'windows-latest'
@@ -120,7 +117,7 @@ jobs:
         # NOTE: keep the default shell here. Under git-bash, /usr/bin precedes
         # the MSVC dirs in PATH and rustc invokes GNU coreutils' `link`
         # instead of MSVC link.exe.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' test --workspace --tests --exclude media-sort-gui
+        run: cargo test --workspace --tests --exclude media-sort-gui
 
       - name: Run GUI Tests (Windows, serial)
         if: matrix.os == 'windows-latest'
@@ -130,7 +127,7 @@ jobs:
         # COM, rodio/WASAPI) are suspects in a parallel access-violation
         # crash on headless runners; if it still crashes, nocapture names
         # the culprit test in the log.
-        run: cargo --config 'profile.dev.package."*".opt-level=0' test -p media-sort-gui --tests -- --test-threads=1 --nocapture
+        run: cargo test -p media-sort-gui --tests -- --test-threads=1 --nocapture
 
   verify-contributors:
     name: Verify Contributors List
