@@ -32,3 +32,37 @@ pub fn modal_overlay<'a>(
     ]
     .into()
 }
+
+/// Transient status banner pinned to the top center. Non-blocking: it does
+/// not intercept clicks and disappears by itself (see the tick expiry in
+/// `update::handle_tick`).
+pub fn status_toast<'a>(message: &'a str) -> Element<'a, Message> {
+    use iced::widget::{container, text};
+
+    container(
+        container(
+            text(message)
+                .size(13)
+                .width(Length::Shrink)
+                .height(Length::Shrink),
+        )
+        .padding([8, 16])
+        .style(|theme: &iced::Theme| {
+            let palette = theme.palette();
+            container::Style {
+                background: Some(iced::Background::Color(Color::from_rgba(
+                    palette.background.r,
+                    palette.background.g,
+                    palette.background.b,
+                    0.95,
+                ))),
+                border: iced::Border::default().color(palette.text).width(1),
+                ..Default::default()
+            }
+        }),
+    )
+    .width(Length::Fill)
+    .align_x(iced::Alignment::Center)
+    .padding([12, 0])
+    .into()
+}

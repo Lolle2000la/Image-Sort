@@ -180,3 +180,8 @@ drag-drop-denied-title = Ablegen nicht möglich
 drag-drop-denied-no-folder = Öffne zuerst einen Ordner in Media Sort, bevor du Dateien kopierst oder verschiebst.
 drag-drop-denied-mixed = Gleichzeitiges Ablegen von Dateien und Ordnern wird nicht unterstützt.
 drag-drop-denied-multiple-folders = Das Ablegen mehrerer Ordner gleichzeitig wird nicht unterstützt.
+
+# Sicherheit / Status-Meldungen
+status-symlinks-skipped = {$count} symbolische Verknüpfung(en) übersprungen: {$names}. Symbolische Verknüpfungen werden niemals verschoben oder kopiert.
+status-symlink-refused = {$name} abgelehnt: Der Eintrag ist eine symbolische Verknüpfung.
+status-folder-name-invalid = Ordner "{$name}" konnte nicht erstellt werden: ungültiger Ordnername.

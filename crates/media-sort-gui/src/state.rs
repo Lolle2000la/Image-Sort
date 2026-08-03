@@ -46,6 +46,10 @@ pub struct AppState {
     pub settings_ui: SettingsUiState,
     pub drag_drop: DragDropState,
 
+    /// Transient user-facing status banner (text, expiry instant). Rendered
+    /// by the main layout, cleared on the next tick after expiry.
+    pub status_message: Option<(String, std::time::Instant)>,
+
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
     #[cfg(feature = "velopack")]
@@ -127,6 +131,7 @@ impl AppState {
             metadata,
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
+            status_message: None,
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -134,6 +139,16 @@ impl AppState {
             #[cfg(feature = "demo")]
             automation: Default::default(),
         }
+    }
+
+    /// Show a transient status banner that auto-expires after 5 seconds
+    /// (cleared on the next tick). Used to surface refused actions such as
+    /// symbolic-link drops, which previously failed silently.
+    pub fn set_status(&mut self, text: String) {
+        self.status_message = Some((
+            text,
+            std::time::Instant::now() + std::time::Duration::from_secs(5),
+        ));
     }
 
     pub fn open_folder(&mut self, path: &Path) {

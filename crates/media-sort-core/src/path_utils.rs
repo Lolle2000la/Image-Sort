@@ -13,8 +13,22 @@ pub fn rename_or_copy_and_delete(src: &Path, dst: &Path) -> io::Result<()> {
     }
 }
 
+/// Whether `e` is a cross-device (EXDEV) error, i.e. a rename that failed
+/// only because source and destination live on different filesystems.
+///
+/// On unix this is errno 18 (EXDEV on Linux and the BSDs alike). On Windows
+/// `std::fs::rename` already passes `MOVEFILE_COPY_ALLOWED`, so a
+/// cross-volume rename never produces an error and no fallback is needed.
 pub fn cross_device_error(e: &io::Error) -> bool {
-    e.raw_os_error() == Some(18)
+    #[cfg(unix)]
+    {
+        e.raw_os_error() == Some(18)
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = e;
+        false
+    }
 }
 
 pub fn paths_equal(a: &Path, b: &Path) -> bool {

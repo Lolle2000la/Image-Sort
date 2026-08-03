@@ -11,6 +11,7 @@ pub struct CopyAction {
 
 impl CopyAction {
     pub fn new(file: &Path, to_folder: &Path) -> Result<Self, ActionError> {
+        crate::actions::reversible::reject_symlink_source(file)?;
         let file = file
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;

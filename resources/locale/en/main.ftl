@@ -179,3 +179,8 @@ drag-drop-denied-title = Drop Not Allowed
 drag-drop-denied-no-folder = Open a folder in Media Sort first before copying or moving files.
 drag-drop-denied-mixed = Dragging a mix of files and folders is not supported.
 drag-drop-denied-multiple-folders = Dragging multiple folders at once is not supported.
+
+# Security / status banners
+status-symlinks-skipped = Skipped {$count} symbolic link(s): {$names}. Symbolic links are never moved or copied.
+status-symlink-refused = Refused {$name}: the entry is a symbolic link.
+status-folder-name-invalid = Cannot create folder "{$name}": invalid folder name.

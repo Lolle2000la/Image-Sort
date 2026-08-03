@@ -182,3 +182,8 @@ drag-drop-denied-mixed = ファイルとフォルダの混在ドロップには�
 drag-drop-denied-multiple-folders = 複数のフォルダの同時ドロップには対応していません。
 
 
+
+# セキュリティ / ステータス表示
+status-symlinks-skipped = シンボリックリンクを {$count} 個スキップしました: {$names}。シンボリックリンクは移動・コピーされません。
+status-symlink-refused = {$name} を拒否しました: シンボリックリンクです。
+status-folder-name-invalid = フォルダー「{$name}」を作成できません: フォルダー名が無効です。

@@ -432,14 +432,17 @@ pub fn reveal_in_file_manager(path: &std::path::Path) {
             .spawn()
             .map(|_| ())
     } else {
+        // Percent-encode everything except RFC 3986 unreserved characters
+        // plus '/' and ':' so dbus-send's `array:string:` argument cannot be
+        // split or mangled by commas, quotes, ampersands or control chars.
         let mut uri = String::from("file://");
         for ch in path.to_string_lossy().chars() {
-            match ch {
-                ' ' => uri.push_str("%20"),
-                '%' => uri.push_str("%25"),
-                '#' => uri.push_str("%23"),
-                '?' => uri.push_str("%3f"),
-                _ => uri.push(ch),
+            if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | '~' | '/' | ':') {
+                uri.push(ch);
+            } else {
+                for byte in ch.to_string().as_bytes() {
+                    uri.push_str(&format!("%{:02X}", byte));
+                }
             }
         }
         let mut success = false;

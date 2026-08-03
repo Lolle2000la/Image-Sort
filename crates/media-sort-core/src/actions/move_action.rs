@@ -10,6 +10,7 @@ pub struct MoveAction {
 
 impl MoveAction {
     pub fn new(file: &Path, to_folder: &Path) -> Result<Self, ActionError> {
+        crate::actions::reversible::reject_symlink_source(file)?;
         let file = file
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;
@@ -21,6 +22,14 @@ impl MoveAction {
             .file_name()
             .ok_or_else(|| ActionError::SourceNotFound(file.clone()))?;
         let new_path = to_folder.join(file_name);
+
+        // A plain rename(2) silently REPLACES an existing destination, so a
+        // move into a populated folder would destroy the pre-existing file
+        // with no warning (rollback cannot restore it). Refuse instead,
+        // matching CopyAction/RenameAction.
+        if new_path.exists() {
+            return Err(ActionError::TargetExists(new_path));
+        }
 
         Ok(Self {
             old_path: file,

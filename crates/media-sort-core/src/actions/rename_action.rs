@@ -26,6 +26,13 @@ impl RenameAction {
                 character: '\0', // sentinel: empty stem
             });
         }
+        // `.` and `..` would escape the current directory when joined.
+        if trimmed == "." || trimmed == ".." {
+            return Err(ActionError::IllegalCharacters {
+                stem: trimmed.to_string(),
+                character: '.',
+            });
+        }
         if let Some(c) = trimmed.chars().find(|c| Self::ILLEGAL_CHARS.contains(c)) {
             return Err(ActionError::IllegalCharacters {
                 stem: trimmed.to_string(),
@@ -36,6 +43,7 @@ impl RenameAction {
     }
 
     pub fn new(path: &Path, new_stem: &str) -> Result<Self, ActionError> {
+        crate::actions::reversible::reject_symlink_source(path)?;
         let path = path
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(path.to_path_buf()))?;

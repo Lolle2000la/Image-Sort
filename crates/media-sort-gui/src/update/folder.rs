@@ -131,12 +131,26 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
         FolderMessage::SubmitCreate(_parent) => {
             if let Some(parent) = state.create_folder.creating_folder_parent.take() {
                 let folder_name = state.create_folder.create_folder_input.trim().to_string();
-                if !folder_name.is_empty() {
-                    let new_dir = parent.join(&folder_name);
-                    if let Err(e) = std::fs::create_dir_all(&new_dir) {
-                        tracing::error!("Failed to create folder: {e}");
-                    } else if state.folder.current_folder.is_some() {
-                        state.build_folder_tree();
+                match media_sort_core::actions::rename_action::RenameAction::validate_stem(
+                    &folder_name,
+                ) {
+                    Ok(()) => {
+                        let new_dir = parent.join(&folder_name);
+                        if let Err(e) = std::fs::create_dir_all(&new_dir) {
+                            tracing::error!("Failed to create folder: {e}");
+                        } else if state.folder.current_folder.is_some() {
+                            state.build_folder_tree();
+                        }
+                    }
+                    Err(e) => {
+                        // Rejects traversal (../, ., ..) and OS-illegal
+                        // characters; the rename flow validates the same way.
+                        tracing::warn!("Rejected folder name {folder_name:?}: {e}");
+                        state.set_status(
+                            state
+                                .l10n
+                                .get("status-folder-name-invalid", &[("name", &folder_name)]),
+                        );
                     }
                 }
                 state.create_folder.create_folder_input.clear();

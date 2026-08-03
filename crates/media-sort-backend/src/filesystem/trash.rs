@@ -59,9 +59,21 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
         // C:\Users\RUNNER~1\... on CI runners). Canonicalize while the file
         // still exists so the stored path matches what the trash metadata
         // records, stripping the \\?\ verbatim prefix canonicalize yields.
+        // Symlinks are exempt: canonicalize would resolve the link and trash
+        // the TARGET file instead of the link itself.
         #[cfg(target_os = "windows")]
         let original_path = {
-            let canon = original_path.canonicalize().unwrap_or(original_path);
+            let is_symlink = original_path
+                .symlink_metadata()
+                .map(|m| m.file_type().is_symlink())
+                .unwrap_or(false);
+            let canon = if is_symlink {
+                original_path.clone()
+            } else {
+                original_path
+                    .canonicalize()
+                    .unwrap_or(original_path.clone())
+            };
             match canon.to_string_lossy().strip_prefix(r"\\?\") {
                 Some(stripped) => PathBuf::from(stripped.to_owned()),
                 None => canon,
