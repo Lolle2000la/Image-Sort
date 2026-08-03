@@ -153,8 +153,15 @@ mod tests {
 
     #[test]
     fn test_cross_device_error_linux_exdev() {
+        // EXDEV (18) is the unix cross-filesystem rename error; on Windows
+        // std::fs::rename already passes MOVEFILE_COPY_ALLOWED so a
+        // cross-volume rename never errors, and raw error 18 means something
+        // else entirely — the fallback must stay off there.
         let err = std::io::Error::from_raw_os_error(18);
+        #[cfg(unix)]
         assert!(cross_device_error(&err));
+        #[cfg(not(unix))]
+        assert!(!cross_device_error(&err));
     }
 
     #[test]

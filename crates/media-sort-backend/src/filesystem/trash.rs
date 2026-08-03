@@ -200,7 +200,22 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     parent_matches && id_ext == ext
                 })
                 .collect();
-            candidates.sort_by_key(|i| (i.time_deleted - self.delete_time).abs());
+            // Among same-name candidates pick the entry whose deletion time
+            // is closest to this handle's delete (correct undo order: newest
+            // delete is undone first). Both timestamps have second
+            // granularity, and a slow delete that straddles a second
+            // boundary makes our captured delete_time one second LATER than
+            // the shell's timestamp for the very item we deleted. That
+            // creates an exact distance tie with a newer same-name item, and
+            // the recycle-bin enumeration happens to list newer items first
+            // — so break ties by preferring the OLDER entry (the item this
+            // handle deleted can never carry a later shell timestamp than
+            // the one captured after the delete call returned).
+            candidates.sort_by(|a, b| {
+                let da = (a.time_deleted - self.delete_time).abs();
+                let db = (b.time_deleted - self.delete_time).abs();
+                da.cmp(&db).then(a.time_deleted.cmp(&b.time_deleted))
+            });
 
             let Some(mut item) = candidates.into_iter().next() else {
                 return Err(ActionError::RestorationFailed(
