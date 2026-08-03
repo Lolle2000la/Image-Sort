@@ -163,17 +163,22 @@ async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error 
 }
 
 /// Rejects feed-supplied file names that could escape the packages
-/// directory (absolute paths, multi-component paths, `\` or `/` separators).
+/// directory. Requires exactly one plain file-name component: absolute
+/// paths, parent/current-directory components (`..`, `.`), Windows drive
+/// prefixes (`C:`), separators and multi-component paths are all rejected.
+/// The separator/colon checks are platform-independent on purpose — a name
+/// that is harmless on unix (where `\` and `:` are ordinary characters)
+/// must not become dangerous if the packages dir is ever processed on
+/// Windows, and vice versa.
 fn validate_release_file_name(file_name: &str) -> Result<(), String> {
-    let path_check = Path::new(file_name);
-    if path_check.is_absolute()
-        || path_check.components().count() != 1
-        || file_name.contains('/')
-        || file_name.contains('\\')
-    {
+    if file_name.contains('/') || file_name.contains('\\') || file_name.contains(':') {
         return Err(format!("Invalid update package file name: {file_name:?}"));
     }
-    Ok(())
+    let mut components = Path::new(file_name).components();
+    match components.next() {
+        Some(std::path::Component::Normal(_)) if components.next().is_none() => Ok(()),
+        _ => Err(format!("Invalid update package file name: {file_name:?}")),
+    }
 }
 
 async fn purge_packages_dir(packages_dir: &Path) {
@@ -478,5 +483,35 @@ mod tests {
             result.is_err(),
             "Verification should have failed for invalid signature"
         );
+    }
+
+    #[test]
+    fn test_validate_release_file_name_accepts_plain_name() {
+        assert!(validate_release_file_name("MediaSort-1.2.3-win-x64-full.nupkg").is_ok());
+        assert!(validate_release_file_name("package.nupkg").is_ok());
+    }
+
+    #[test]
+    fn test_validate_release_file_name_rejects_traversal_and_prefixes() {
+        // ParentDir/CurDir/Prefix are single components: the old
+        // components().count() == 1 check let these through, and
+        // packages_dir.join("..") escapes the packages directory.
+        for bad in [
+            "..",
+            ".",
+            "../evil.nupkg",
+            "C:",
+            "C:evil.nupkg",
+            "/etc/passwd",
+            r"\server\share\evil.nupkg",
+            "a/b.nupkg",
+            "a\\b.nupkg",
+            "",
+        ] {
+            assert!(
+                validate_release_file_name(bad).is_err(),
+                "{bad:?} must be rejected"
+            );
+        }
     }
 }
