@@ -303,3 +303,43 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 }
+
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    /// Two-box construction that wraps the u64 next-position arithmetic:
+    /// box A (size 32) walks 0 -> 32, then an extended-size box with
+    /// size64 = 2^64 - 32 maps 32 -> 2^64, which wraps to 0 in release
+    /// (infinite loop) or overflows in debug. Must terminate with None.
+    #[test]
+    fn test_mp4_box_walker_overflow_terminates() {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&32u32.to_be_bytes());
+        bytes.extend_from_slice(b"free");
+        bytes.extend_from_slice(&[0u8; 24]);
+        bytes.extend_from_slice(&1u32.to_be_bytes());
+        bytes.extend_from_slice(b"tkhd");
+        bytes.extend_from_slice(&(u64::MAX - 31).to_be_bytes()); // 2^64 - 32
+
+        let dir = std::env::temp_dir().join(format!(
+            "mpv_utils_rotation_overflow_{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("overflow.mp4");
+        std::fs::write(&path, &bytes).unwrap();
+
+        let started = std::time::Instant::now();
+        let result = detect_video_rotation(&path);
+        let elapsed = started.elapsed();
+
+        assert_eq!(result, None, "overflow payload must not loop");
+        assert!(
+            elapsed < std::time::Duration::from_secs(1),
+            "box walk took {elapsed:?}"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}

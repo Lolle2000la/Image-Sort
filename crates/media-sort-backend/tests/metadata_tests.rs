@@ -711,3 +711,33 @@ fn test_thumbnail_exif_orientation() {
 
     std::fs::remove_file(&tmp_path).ok();
 }
+
+#[test]
+fn test_is_animated_gif_bomb_header_returns_fast() {
+    // 15-byte GIF claiming a 65535x65535 logical screen: the old
+    // decode-based check attempted a ~16 GiB allocation on the first frame
+    // read (GifDecoder uses Limits::no_limits()). The header scan must
+    // answer without allocating anything.
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_bomb_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("bomb.gif");
+
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"GIF89a");
+    // Logical screen descriptor: 65535x65535, no global color table.
+    bytes.extend_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]);
+    bytes.extend_from_slice(&[0x00, 0x00]);
+    std::fs::write(&path, &bytes).unwrap();
+
+    let started = std::time::Instant::now();
+    let result = image_decoder::is_animated_gif(&path);
+    let elapsed = started.elapsed();
+
+    assert_eq!(result, Some(false), "bomb has no image descriptors");
+    assert!(
+        elapsed < std::time::Duration::from_secs(1),
+        "header scan took {elapsed:?}"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}

@@ -188,3 +188,69 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    fn temp_dir() -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!("media-sort-sec-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).ok();
+        dir
+    }
+
+    fn temp_subdir() -> std::path::PathBuf {
+        let dir = temp_dir().join(format!("sub-{}", rand()));
+        std::fs::create_dir_all(&dir).ok();
+        dir
+    }
+
+    fn rand() -> u32 {
+        use std::time::{SystemTime, UNIX_EPOCH};
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .subsec_nanos()
+    }
+
+    #[test]
+    fn test_move_target_exists_refused() {
+        let src_dir = temp_subdir();
+        let dst_dir = temp_subdir();
+        let src_file = src_dir.join("overwrite_me.txt");
+        std::fs::write(&src_file, b"new contents").unwrap();
+        std::fs::write(dst_dir.join("overwrite_me.txt"), b"precious old").unwrap();
+
+        let result = MoveAction::new(&src_file, &dst_dir);
+        assert!(
+            matches!(result, Err(ActionError::TargetExists(_))),
+            "move into an existing file must be refused"
+        );
+        // The pre-existing file must be untouched.
+        let old = std::fs::read_to_string(dst_dir.join("overwrite_me.txt")).unwrap();
+        assert_eq!(old, "precious old");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_move_symlink_source_refused() {
+        let root = temp_subdir();
+        let src_dir = root.join("src");
+        let dst_dir = root.join("dst");
+        let outside = root.join("outside");
+        std::fs::create_dir_all(&src_dir).unwrap();
+        std::fs::create_dir_all(&dst_dir).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+
+        let victim = outside.join("victim.doc");
+        std::fs::write(&victim, b"secret").unwrap();
+        let link = src_dir.join("photo.jpg");
+        std::os::unix::fs::symlink(&victim, &link).unwrap();
+
+        let result = MoveAction::new(&link, &dst_dir);
+        assert!(matches!(result, Err(ActionError::SourceIsSymlink(_))));
+        // The victim must remain untouched.
+        assert!(victim.exists());
+        assert_eq!(std::fs::read_to_string(&victim).unwrap(), "secret");
+    }
+}
