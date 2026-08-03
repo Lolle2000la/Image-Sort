@@ -71,7 +71,14 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
     let file_len = file.metadata().ok()?.len();
 
     let mut buf = [0u8; 8];
+    let mut boxes_visited: u32 = 0;
     while file.stream_position().unwrap_or(file_len) + 8 <= file_len {
+        boxes_visited += 1;
+        if boxes_visited > 10_000 {
+            // A hostile file can declare an unbounded number of tiny boxes
+            // (16 bytes each); cap the walk so it cannot spin on CPU/IO.
+            break;
+        }
         if file.read_exact(&mut buf).is_err() {
             break;
         }
@@ -140,10 +147,17 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
             }
         }
 
-        if file
-            .seek(SeekFrom::Start(content_start + payload_len))
-            .is_err()
-        {
+        let Some(next) = content_start.checked_add(payload_len) else {
+            // u64 overflow (e.g. an extended-size box declaring a length of
+            // 2^64 - k wraps the walk position) - never trust it.
+            break;
+        };
+        // A declared box must lie within the file; anything beyond EOF is
+        // invalid input, not a sparse-file feature worth following.
+        if next > file_len {
+            break;
+        }
+        if file.seek(SeekFrom::Start(next)).is_err() {
             break;
         }
     }

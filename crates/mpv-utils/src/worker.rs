@@ -211,11 +211,6 @@ async fn run_video_worker(
     let mut current_video_path = PathBuf::new();
     let mut canonical_video_path: Option<PathBuf> = None;
     let mut cached_video_params: Option<(i32, i32, Rotation)> = None;
-    // The rotation re-check (below) must not run per frame: it calls
-    // `get_video_rotation()`, which opens and parses the file on every call.
-    // Rotation is static per file, so re-checking once per second is enough
-    // to catch a late mpv-reported rotation after load.
-    let mut last_rotation_recheck = std::time::Instant::now();
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -347,32 +342,11 @@ async fn run_video_worker(
                             }
                         }
 
-                        if let Some((_, _, cached_rot)) = cached_video_params
-                            && last_rotation_recheck.elapsed() >= std::time::Duration::from_secs(1)
-                        {
-                            last_rotation_recheck = std::time::Instant::now();
-                            let current_rot = player.get_video_rotation();
-                            if current_rot != cached_rot {
-                                let (w, h) = player.get_video_size();
-                                if w > 0 && h > 0 {
-                                    let (eff_w, eff_h) = if current_rot.is_swapped() {
-                                        (h, w)
-                                    } else {
-                                        (w, h)
-                                    };
-
-                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
-                                        .min(config.max_frame_height as f64 / eff_h as f64)
-                                        .min(1.0);
-                                    let render_unrot_w = ((w as f64 * scale) as i32) & !1;
-                                    let render_unrot_h = ((h as f64 * scale) as i32) & !1;
-
-                                    if render_unrot_w > 0 && render_unrot_h > 0 {
-                                        cached_video_params = Some((render_unrot_w, render_unrot_h, current_rot));
-                                    }
-                                }
-                            }
-                        }
+                        // Rotation is detected once per load above: a file's
+                        // rotation cannot change during playback, and the
+                        // per-second recheck used to re-parse the container
+                        // (read_mp4_tkhd_rotation) for every second of video,
+                        // turning crafted files into per-second CPU burn.
 
                         if let Some((render_unrot_w, render_unrot_h, rotation)) = cached_video_params {
                             let unrot_size = (render_unrot_w * render_unrot_h * 4) as usize;

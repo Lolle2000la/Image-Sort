@@ -57,13 +57,35 @@ fn find_ffmpeg_uncached() -> Option<PathBuf> {
 pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::DecodedImage, String> {
     let ffmpeg = find_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
 
+    // A file named "-" (or starting with "-") would be parsed as an ffmpeg
+    // option, misaligning the whole argument list. The scanner only produces
+    // absolute paths, but guard the API against direct misuse.
+    if let Some(name) = path.file_name().and_then(|n| n.to_str())
+        && (name == "-" || name.starts_with('-'))
+    {
+        return Err(format!(
+            "cannot extract frame: file name {name:?} starts with '-'"
+        ));
+    }
+
     let vf = format!(
         "scale={}:{}:force_original_aspect_ratio=decrease,setsar=1",
         max_w, max_h
     );
 
-    let output = std::process::Command::new(&ffmpeg)
-        .args(["-hide_banner", "-loglevel", "error", "-i"])
+    // `-analyzeduration`/`-probesize` bound how far ffmpeg will scan a
+    // pathological demuxer before giving up.
+    let mut child = std::process::Command::new(&ffmpeg)
+        .args([
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-analyzeduration",
+            "5000000",
+            "-probesize",
+            "5000000",
+            "-i",
+        ])
         .arg(path)
         .args([
             "-frames:v",
@@ -78,22 +100,57 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
         ])
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
-        .output()
+        .spawn()
         .map_err(|e| format!("ffmpeg spawn: {e}"))?;
 
+    let mut stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "ffmpeg stdout".to_string())?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "ffmpeg stderr".to_string())?;
+    let stdout_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        std::io::Read::read_to_end(&mut stdout, &mut buf).map(|_| buf)
+    });
+    let stderr_thread = std::thread::spawn(move || {
+        let mut buf = Vec::new();
+        std::io::Read::read_to_end(&mut stderr, &mut buf).map(|_| buf)
+    });
+
+    // A corrupt or hostile input must not hang a worker thread forever.
+    let deadline = std::time::Instant::now() + FFMPEG_TIMEOUT;
+    let status = loop {
+        match child.try_wait().map_err(|e| format!("ffmpeg wait: {e}"))? {
+            Some(status) => break status,
+            None if std::time::Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(format!("ffmpeg timed out after {FFMPEG_TIMEOUT:?}"));
+            }
+            None => std::thread::sleep(std::time::Duration::from_millis(10)),
+        }
+    };
+    let stdout = stdout_thread
+        .join()
+        .map_err(|_| "ffmpeg stdout thread panicked".to_string())?
+        .map_err(|e| format!("ffmpeg stdout read: {e}"))?;
+    let stderr = stderr_thread
+        .join()
+        .map_err(|_| "ffmpeg stderr thread panicked".to_string())?
+        .map_err(|e| format!("ffmpeg stderr read: {e}"))?;
+
     let stderr_tail = || {
-        let s = String::from_utf8_lossy(&output.stderr);
+        let s = String::from_utf8_lossy(&stderr);
         s.trim().chars().take(500).collect::<String>()
     };
-    if !output.status.success() {
-        return Err(format!(
-            "ffmpeg exited with {}: {}",
-            output.status,
-            stderr_tail()
-        ));
+    if !status.success() {
+        return Err(format!("ffmpeg exited with {}: {}", status, stderr_tail()));
     }
 
-    let bytes = output.stdout;
+    let bytes = stdout;
     if bytes.is_empty() {
         return Err(format!("ffmpeg produced empty output: {}", stderr_tail()));
     }
@@ -104,6 +161,8 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
     let (w, h) = rgba.dimensions();
     Ok(super::DecodedImage::new(w, h, rgba.into_raw()))
 }
+
+const FFMPEG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 
 /// Decode PNG bytes from the ffmpeg pipe under the shared decode budget so a
 /// hostile stream (e.g. a PNG bomb served by ffmpeg) cannot force oversized
