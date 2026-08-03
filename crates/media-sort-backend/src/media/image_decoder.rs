@@ -1,10 +1,27 @@
 use std::path::Path;
 
+use std::io::SeekFrom;
+
 use fast_image_resize::images::Image;
 use fast_image_resize::{FilterType, IntoImageView, ResizeAlg, ResizeOptions, Resizer};
-use image::AnimationDecoder;
 
 use super::thumbnail::calculate_thumbnail_dimensions;
+
+/// Decode budget applied to every full image decode: no header dimension
+/// above 16384 px per side and no more than 256 MiB of decoder allocation is
+/// ever materialized, regardless of what a hostile header claims. The image
+/// crate's own default (`Limits::default()`) has no dimension caps at all
+/// and a non-strict 512 MiB allocation cap, so crafted headers can drive
+/// multi-GB transient allocations in parallel thumbnail generation.
+pub fn image_decode_limits() -> image::Limits {
+    // `Limits` is #[non_exhaustive]; build via Default and mutate the
+    // public fields.
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(16_384);
+    limits.max_image_height = Some(16_384);
+    limits.max_alloc = Some(256 * 1024 * 1024);
+    limits
+}
 
 pub fn is_animated_gif(path: &Path) -> Option<bool> {
     if path
@@ -16,26 +33,129 @@ pub fn is_animated_gif(path: &Path) -> Option<bool> {
         return None;
     }
 
-    let file = match std::fs::File::open(path) {
-        Ok(f) => f,
-        Err(_) => return None,
+    let file = std::fs::File::open(path).ok()?;
+    let mut reader = std::io::BufReader::new(file);
+    is_animated_gif_reader(&mut reader)
+}
+
+/// Header-only GIF scan: counts image descriptors (0x2C) without decoding
+/// any frame data. A GIF is "animated" when it contains at least two images.
+///
+/// Decoding frames to answer this question is unsafe: `GifDecoder` allocates
+/// `logical_screen_width * logical_screen_height * 4` on the first frame
+/// read (image 0.25.10 gif.rs:279-291) with no size limit, so a crafted
+/// 65535x65535 screen descriptor in a 15-byte file forces a ~16 GiB
+/// allocation. The header scan below allocates nothing and only seeks.
+fn is_animated_gif_reader<R: std::io::Read + std::io::Seek>(reader: &mut R) -> Option<bool> {
+    let mut header = [0u8; 13];
+    reader.read_exact(&mut header).ok()?;
+    if &header[0..6] != b"GIF87a" && &header[0..6] != b"GIF89a" {
+        return None;
+    }
+
+    // Logical screen descriptor: width(2) height(2) packed(1) bg(1) aspect(1).
+    // Skip the global color table when the packed byte says one is present.
+    let packed = header[10];
+    let gct_bytes = if packed & 0x80 != 0 {
+        3usize << ((packed & 0x07) + 1)
+    } else {
+        0
     };
 
-    let reader = std::io::BufReader::new(file);
-    let decoder = match image::codecs::gif::GifDecoder::new(reader) {
-        Ok(d) => d,
-        Err(_) => return None,
-    };
+    let file_len = reader.seek(SeekFrom::End(0)).ok()?;
+    let start = 13u64.checked_add(gct_bytes as u64)?;
+    if start > file_len {
+        return None;
+    }
+    reader.seek(SeekFrom::Start(start)).ok()?;
 
-    let mut frames = decoder.into_frames();
-    let animated = frames.next().is_some() && frames.next().is_some();
-    Some(animated)
+    let mut images = 0u32;
+    let mut blocks = 0u32;
+    let mut block = [0u8; 1];
+    loop {
+        blocks += 1;
+        if blocks > 10_000 {
+            break;
+        }
+        if reader.read_exact(&mut block).is_err() {
+            break;
+        }
+        match block[0] {
+            0x3B => break, // trailer: end of image data
+            0x2C => {
+                // image descriptor: left(2) top(2) width(2) height(2) packed(1)
+                images += 1;
+                if images >= 2 {
+                    return Some(true);
+                }
+                let mut descriptor = [0u8; 9];
+                if reader.read_exact(&mut descriptor).is_err() {
+                    break;
+                }
+                // local color table, then the LZW minimum code size byte,
+                // then the sub-block data stream
+                let lct_bytes = if descriptor[8] & 0x80 != 0 {
+                    3usize << ((descriptor[8] & 0x07) + 1)
+                } else {
+                    0
+                };
+                if reader
+                    .seek(SeekFrom::Current(lct_bytes as i64 + 1))
+                    .is_err()
+                {
+                    break;
+                }
+                if !skip_sub_blocks(reader) {
+                    break;
+                }
+            }
+            0x21 => {
+                // extension: 1-byte label, then the sub-block data stream.
+                // The plain-text extension (label 0x01) carries a 12-byte
+                // header before its sub-blocks.
+                let mut label = [0u8; 1];
+                if reader.read_exact(&mut label).is_err() {
+                    break;
+                }
+                if label[0] == 0x01 && reader.seek(SeekFrom::Current(12)).is_err() {
+                    break;
+                }
+                if !skip_sub_blocks(reader) {
+                    break;
+                }
+            }
+            _ => break, // unknown block start: stop scanning
+        }
+    }
+    Some(images >= 2)
+}
+
+/// Skip a chain of GIF sub-blocks (length-prefixed chunks terminated by a
+/// zero-length chunk), returning `false` on malformed or pathological input.
+fn skip_sub_blocks<R: std::io::Read + std::io::Seek>(reader: &mut R) -> bool {
+    let mut len = [0u8; 1];
+    let mut chunks = 0u32;
+    loop {
+        chunks += 1;
+        if chunks > 1_000_000 {
+            return false;
+        }
+        if reader.read_exact(&mut len).is_err() {
+            return false;
+        }
+        if len[0] == 0 {
+            return true;
+        }
+        if reader.seek(SeekFrom::Current(len[0] as i64)).is_err() {
+            return false;
+        }
+    }
 }
 
 pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
-    let img = image::ImageReader::open(path)?
-        .with_guessed_format()?
-        .decode()?;
+    let mut reader = image::ImageReader::open(path)?;
+    reader.limits(image_decode_limits());
+    let img = reader.with_guessed_format()?.decode()?;
     Ok(apply_orientation(img, path))
 }
 

@@ -98,10 +98,19 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
         return Err(format!("ffmpeg produced empty output: {}", stderr_tail()));
     }
 
-    let img = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png)
-        .map_err(|e| format!("png decode: {e}"))?;
+    let img = decode_png_with_limits(&bytes)?;
 
     let rgba = img.to_rgba8();
     let (w, h) = rgba.dimensions();
     Ok(super::DecodedImage::new(w, h, rgba.into_raw()))
+}
+
+/// Decode PNG bytes from the ffmpeg pipe under the shared decode budget so a
+/// hostile stream (e.g. a PNG bomb served by ffmpeg) cannot force oversized
+/// allocations.
+fn decode_png_with_limits(bytes: &[u8]) -> Result<image::DynamicImage, String> {
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes));
+    reader.limits(super::image_decoder::image_decode_limits());
+    reader.set_format(image::ImageFormat::Png);
+    reader.decode().map_err(|e| format!("png decode: {e}"))
 }

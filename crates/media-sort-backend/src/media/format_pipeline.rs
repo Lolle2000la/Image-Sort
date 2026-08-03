@@ -77,7 +77,11 @@ fn audio_cover_image(
     max_height: u32,
 ) -> Result<DecodedImage, image::ImageError> {
     let img = match super::thumbnail::extract_audio_cover(path) {
-        Some(bytes) => image::load_from_memory(&bytes)?,
+        Some(bytes) => {
+            let mut reader = image::ImageReader::new(Cursor::new(bytes.as_slice()));
+            reader.limits(super::image_decoder::image_decode_limits());
+            reader.with_guessed_format()?.decode()?
+        }
         None => super::image_decoder::load_image(path)?,
     };
     resize_with_fir(&img.to_rgba8(), max_width, max_height)
@@ -88,9 +92,9 @@ fn decode_fir_image(
     max_width: u32,
     max_height: u32,
 ) -> Result<DecodedImage, image::ImageError> {
-    let img = image::ImageReader::open(path)?
-        .with_guessed_format()?
-        .decode()?;
+    let mut reader = image::ImageReader::open(path)?;
+    reader.limits(super::image_decoder::image_decode_limits());
+    let img = reader.with_guessed_format()?.decode()?;
     resize_with_fir(&img.to_rgba8(), max_width, max_height)
 }
 
@@ -387,6 +391,14 @@ struct ScaledDecode {
     target_height: u32,
 }
 
+/// Hard ceiling for JPEG header dimensions. turbojpeg accepts up to 65500px
+/// per side from the SOF marker, and the app allocated the scaled buffer
+/// from those header dims BEFORE decompressing - so a 222-byte file claiming
+/// 65500x65500 forced a 268 MB allocation per decode, multiplied across the
+/// parallel thumbnail pipeline. Rejecting anything beyond a realistic image
+/// size (far above any monitor) prevents the allocation entirely.
+const MAX_JPEG_DIMENSION: usize = 16_384;
+
 fn decode_jpeg_turbojpeg_scaled(
     bytes: &[u8],
     orientation: Option<u32>,
@@ -398,6 +410,12 @@ fn decode_jpeg_turbojpeg_scaled(
     let header = decompressor
         .read_header(bytes)
         .map_err(|e| format!("turbojpeg header: {e}"))?;
+    if header.width > MAX_JPEG_DIMENSION || header.height > MAX_JPEG_DIMENSION {
+        return Err(format!(
+            "JPEG dimensions {}x{} exceed the {}px limit",
+            header.width, header.height, MAX_JPEG_DIMENSION
+        ));
+    }
     // Required decode resolution and final output dims, both computed from
     // the TRUE header dims (not the rounded DCT-scaled decode dims).
     let (eff_w, eff_h) = oriented_src_dims(header.width as u32, header.height as u32, orientation);
@@ -417,9 +435,16 @@ fn decode_jpeg_turbojpeg_scaled(
     decompressor
         .set_scaling_factor(factor)
         .map_err(|e| format!("turbojpeg set_scale: {e}"))?;
-    let pitch = scaled.width * 4;
+    let pitch = scaled
+        .width
+        .checked_mul(4)
+        .ok_or_else(|| "JPEG pitch overflow".to_string())?;
+    let buffer_size = scaled
+        .height
+        .checked_mul(pitch)
+        .ok_or_else(|| "JPEG buffer size overflow".to_string())?;
     let mut image = turbojpeg::Image {
-        pixels: vec![0u8; scaled.height * pitch],
+        pixels: vec![0u8; buffer_size],
         width: scaled.width,
         pitch,
         height: scaled.height,

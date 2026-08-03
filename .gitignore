@@ -23,3 +23,8 @@ website/.astro/
 website/public/demos/
 
 ui_test_config.toml
+# Security PoC suite (standalone harness; own target dir)
+poc/harness/target/
+
+# Security PoC suite (kept on disk for PR attachment, never committed)
+poc/
