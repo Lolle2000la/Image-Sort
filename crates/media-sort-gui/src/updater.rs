@@ -162,6 +162,29 @@ async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error 
     Ok(metadata.html_url)
 }
 
+/// Rejects feed-supplied file names that could escape the packages
+/// directory (absolute paths, multi-component paths, `\` or `/` separators).
+fn validate_release_file_name(file_name: &str) -> Result<(), String> {
+    let path_check = Path::new(file_name);
+    if path_check.is_absolute()
+        || path_check.components().count() != 1
+        || file_name.contains('/')
+        || file_name.contains('\\')
+    {
+        return Err(format!("Invalid update package file name: {file_name:?}"));
+    }
+    Ok(())
+}
+
+async fn purge_packages_dir(packages_dir: &Path) {
+    let dir = packages_dir.to_path_buf();
+    let _ = tokio::task::spawn_blocking(move || {
+        let _ = fs::remove_dir_all(&dir);
+        let _ = fs::create_dir_all(&dir);
+    })
+    .await;
+}
+
 pub async fn check_for_update_async(
     settings: &media_sort_core::settings::general::GeneralSettings,
 ) -> Result<Option<UpdateInfo>, String> {
@@ -195,33 +218,81 @@ pub async fn download_and_apply_async(
         velopack::locator::auto_locate_app_manifest(velopack::locator::LocationContext::Unknown)
             .map_err(|e| format!("Failed to locate app manifest: {}", e))?;
     let packages_dir = locator.get_packages_dir();
-    let file_name = info.TargetFullRelease.FileName.clone();
 
-    let path_check = Path::new(&file_name);
-    if path_check.is_absolute()
-        || path_check.components().count() != 1
-        || file_name.contains('/')
-        || file_name.contains('\\')
-    {
-        return Err("Invalid update package file name".to_string());
+    // Validate every feed-supplied file name before it can influence the
+    // packages directory (full package, base release and delta files).
+    let file_name = info.TargetFullRelease.FileName.clone();
+    validate_release_file_name(&file_name)?;
+    if let Some(ref base) = info.BaseRelease {
+        validate_release_file_name(&base.FileName)?;
+    }
+    for delta in &info.DeltasToTarget {
+        validate_release_file_name(&delta.FileName)?;
     }
 
     let package_path = packages_dir.join(&file_name);
     let sig_path = packages_dir.join(format!("{}.sig", file_name));
     let version = info.TargetFullRelease.Version.clone();
 
-    let info_clone = info.clone();
-    let repo_url_clone = repo_url.clone();
-    tokio::task::spawn_blocking(move || {
-        let source = GithubSource::new(&repo_url_clone, None, allow_prerelease);
-        let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
-        um.download_updates(&info_clone, None)
-            .map_err(|e| e.to_string())?;
-        Ok::<(), String>(())
+    // 1. Download the package BEFORE velopack touches anything. velopack's
+    // `download_updates()` extracts the embedded Squirrel.exe over the live
+    // Update.exe (Windows) as part of the download step; running it on
+    // unverified content would leave a malicious updater behind even when
+    // the PGP check afterwards fails. Downloading + verifying here first
+    // makes `download_updates()` below a no-op (it early-returns when the
+    // package file already exists), so unverified content never reaches
+    // velopack's extraction path.
+    let client = reqwest::Client::builder()
+        .user_agent("media-sort-gui-updater")
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let package_url = format!("{}/releases/download/v{}/{}", repo_url, version, file_name);
+    let package_url_fallback = format!("{}/releases/download/{}/{}", repo_url, version, file_name);
+
+    let response = match client.get(&package_url).send().await {
+        Ok(res) if res.status().is_success() => res,
+        _ => client
+            .get(&package_url_fallback)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to download update package: {e}"))?,
+    };
+    if !response.status().is_success() {
+        purge_packages_dir(&packages_dir).await;
+        return Err(format!(
+            "Failed to download update package: HTTP {}",
+            response.status()
+        ));
+    }
+    let package_bytes = response.bytes().await.map_err(|e| e.to_string())?;
+    if package_bytes.len() as u64 != info.TargetFullRelease.Size {
+        purge_packages_dir(&packages_dir).await;
+        return Err(format!(
+            "Update package size mismatch: expected {}, got {}",
+            info.TargetFullRelease.Size,
+            package_bytes.len()
+        ));
+    }
+
+    // Atomic write into the packages dir: a crash must never leave a
+    // partial package at the final path velopack would apply.
+    let partial_path = package_path.with_extension("nupkg.partial");
+    tokio::task::spawn_blocking({
+        let partial_path = partial_path.clone();
+        let package_path = package_path.clone();
+        let package_bytes = package_bytes.to_vec();
+        move || -> Result<(), String> {
+            fs::write(&partial_path, &package_bytes).map_err(|e| e.to_string())?;
+            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
+        }
     })
     .await
-    .map_err(|e| e.to_string())??;
+    .map_err(|e| format!("Task join error: {e}"))??;
 
+    // 2. Fetch and verify the detached PGP signature over the package.
     {
         let client = reqwest::Client::builder()
             .user_agent("media-sort-gui-updater")
@@ -250,12 +321,7 @@ pub async fn download_and_apply_async(
         };
 
         if !response.status().is_success() {
-            let packages_dir_clone = packages_dir.clone();
-            let _ = tokio::task::spawn_blocking(move || {
-                let _ = fs::remove_dir_all(&packages_dir_clone);
-                let _ = fs::create_dir_all(&packages_dir_clone);
-            })
-            .await;
+            purge_packages_dir(&packages_dir).await;
             return Err(format!(
                 "Failed to download signature file for verification: HTTP {}",
                 response.status()
@@ -267,8 +333,8 @@ pub async fn download_and_apply_async(
         let sig_bytes_clone = sig_bytes.clone();
         tokio::task::spawn_blocking(move || fs::write(&sig_path_clone, sig_bytes_clone))
             .await
-            .map_err(|e| format!("Task join error: {}", e))?
-            .map_err(|e| format!("Failed to write signature file: {}", e))?;
+            .map_err(|e| format!("Task join error: {e}"))?
+            .map_err(|e| format!("Failed to write signature file: {e}"))?;
 
         let verify_res = tokio::task::spawn_blocking({
             let package_path = package_path.clone();
@@ -276,20 +342,36 @@ pub async fn download_and_apply_async(
             move || verify_package_signature(&package_path, &sig_path)
         })
         .await
-        .map_err(|e| format!("Task join error: {}", e))?;
+        .map_err(|e| format!("Task join error: {e}"))?;
 
         if let Err(e) = verify_res {
-            let packages_dir_clone = packages_dir.clone();
-            let _ = tokio::task::spawn_blocking(move || {
-                let _ = fs::remove_dir_all(&packages_dir_clone);
-                let _ = fs::create_dir_all(&packages_dir_clone);
-            })
-            .await;
-            return Err(format!("GPG signature verification failed: {}", e));
+            purge_packages_dir(&packages_dir).await;
+            return Err(format!("GPG signature verification failed: {e}"));
         }
     }
 
+    // 3. velopack apply: the package already exists in the packages dir, so
+    // `download_updates()` early-returns and never extracts anything from
+    // content that was not PGP-verified above.
+    tokio::task::spawn_blocking({
+        let info_clone = info.clone();
+        let repo_url_clone = repo_url.clone();
+        move || {
+            let source = GithubSource::new(&repo_url_clone, None, allow_prerelease);
+            let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
+            um.download_updates(&info_clone, None)
+                .map_err(|e| e.to_string())?;
+            Ok::<(), String>(())
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    // 4. Re-verify immediately before the apply step to narrow the local
+    // TOCTOU window between the earlier verification and execution.
     tokio::task::spawn_blocking(move || {
+        verify_package_signature(&package_path, &sig_path)
+            .map_err(|e| format!("Re-verification before apply failed: {e}"))?;
         let source = GithubSource::new(&repo_url, None, allow_prerelease);
         let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
         um.apply_updates_and_restart(&info)

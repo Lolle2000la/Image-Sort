@@ -223,7 +223,10 @@ jobs:
 
       - name: Import GPG Key
         if: success()
-        uses: crazy-max/ghaction-import-gpg@v7
+        # Pinned to the commit behind the v7 tag (2dc316de) so a retagged
+        # mutable tag cannot silently change what the release pipeline runs
+        # with the signing key in scope. Update deliberately after review.
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
