@@ -73,18 +73,21 @@ jobs:
           brew install mpv dav1d
           echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
-      - name: Setup libmpv Link Libraries (Windows)
+      - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: matrix.os == 'windows-latest'
         shell: bash
         run: |
-          mkdir -p libs
-          if [ ! -f mpv-dev.7z ]; then
-            curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+          pip install meson ninja
+          choco install -y nasm pkgconfiglite
+          
+          # Locate Chocolatey's pkg-config.exe and set PKG_CONFIG explicitly
+          PKG_CONFIG_BIN=$(where.exe pkg-config | grep -i "chocolatey" | head -n 1)
+          if [ -z "$PKG_CONFIG_BIN" ]; then
+            PKG_CONFIG_BIN="C:\\ProgramData\\chocolatey\\bin\\pkg-config.exe"
           fi
-          7z e mpv-dev.7z libmpv-2.dll -olibs -y
-          7z e mpv-dev.7z libmpv.dll.a -olibs -y
-          mv libs/libmpv.dll.a libs/mpv.lib
-          echo "$(cygpath -w "$PWD")\\libs" >> "$GITHUB_PATH"
+          
+          echo "PKG_CONFIG=$PKG_CONFIG_BIN" >> "$GITHUB_ENV"
+          echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: matrix.os == 'windows-latest'
