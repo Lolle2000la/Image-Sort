@@ -404,17 +404,13 @@ pub fn load_thumbnail(
 }
 
 pub fn open_externally(path: &std::path::Path) {
-    let res = if cfg!(target_os = "windows") {
-        std::process::Command::new("cmd")
-            .args(["/C", "start", ""])
-            .arg(path)
-            .spawn()
-    } else if cfg!(target_os = "macos") {
-        std::process::Command::new("open").arg(path).spawn()
-    } else {
-        std::process::Command::new("xdg-open").arg(path).spawn()
-    };
-    if let Err(e) = res {
+    // The `open` crate uses ShellExecuteW on Windows (a single typed
+    // parameter, no cmd.exe re-tokenization), `open` on macOS and xdg-open
+    // on Linux. The previous Windows branch ran `cmd /C start "" <path>`
+    // with the path as a raw argv element: cmd.exe re-tokenizes the /C tail,
+    // so a filename containing `&`, `|`, `<`, `>` or `^` executed a second
+    // command. ShellExecuteW passes the path as-is.
+    if let Err(e) = open::that(path) {
         tracing::error!("Failed to open file externally: {e}");
     }
 }
