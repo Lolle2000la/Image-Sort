@@ -17,9 +17,8 @@ fn temp_dir() -> PathBuf {
 /// A uniquely-named directory under the crate's per-process temp root.
 ///
 /// A process-global monotonic counter guarantees uniqueness across parallel
-/// test threads; the nanos-derived `rand()` the individual test modules used
-/// before could collide when tests ran in quick succession, sharing (and
-/// then cross-contaminating) directories.
+/// test threads; a time-derived random suffix can collide when tests run in
+/// quick succession, sharing (and then cross-contaminating) directories.
 pub(crate) fn temp_subdir() -> PathBuf {
     static COUNTER: AtomicU64 = AtomicU64::new(0);
     let dir = temp_dir().join(format!("sub-{}", COUNTER.fetch_add(1, Ordering::Relaxed)));

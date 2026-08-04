@@ -202,14 +202,14 @@ impl TrashRestoreHandle for NativeTrashRestore {
             // Among same-name candidates pick the entry whose deletion time
             // is closest to this handle's delete (correct undo order: newest
             // delete is undone first). Both timestamps have second
-            // granularity, and a slow delete that straddles a second
-            // boundary makes our captured delete_time one second LATER than
-            // the shell's timestamp for the very item we deleted. That
-            // creates an exact distance tie with a newer same-name item —
-            // the explicit tiebreak below prefers the OLDER entry (the item
-            // this handle deleted can never carry a later shell timestamp
-            // than the one captured after the delete call returned), so the
-            // sort outcome is deterministic regardless of enumeration order.
+            // granularity, so a delete that straddles a second boundary
+            // yields a captured delete_time one second LATER than the
+            // shell's timestamp for the same item, creating an exact
+            // distance tie with a newer same-name item — the tiebreak below
+            // prefers the OLDER entry (the item this handle deleted can
+            // never carry a later shell timestamp than the one captured
+            // after the delete call returned), so the sort outcome is
+            // deterministic regardless of enumeration order.
             candidates.sort_by(|a, b| {
                 let da = (a.time_deleted - self.delete_time).abs();
                 let db = (b.time_deleted - self.delete_time).abs();

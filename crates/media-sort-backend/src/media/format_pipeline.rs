@@ -387,9 +387,9 @@ struct ScaledDecode {
 
 /// Reject JPEGs whose SOF header dimensions exceed the shared decode budget's
 /// dimension cap. turbojpeg accepts up to 65500px per side from the SOF
-/// marker, and the app allocated the scaled buffer from those header dims
-/// BEFORE decompressing - so a 222-byte file claiming 65500x65500 forced a
-/// 268 MB allocation per decode, multiplied across the parallel thumbnail
+/// marker, and the scaled buffer is allocated from those header dims BEFORE
+/// decompressing - so a crafted file claiming 65500x65500 would force a
+/// ~268 MB allocation per decode, multiplied across the parallel thumbnail
 /// pipeline. Rejecting beyond `MAX_DECODE_DIMENSION` (far above any monitor)
 /// prevents the allocation entirely; the allocation-site guard below
 /// additionally enforces `max_alloc` on the scaled buffer itself.

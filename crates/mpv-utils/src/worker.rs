@@ -248,9 +248,9 @@ async fn run_video_worker(
     // 1). The pool payload stays `Arc<Vec<u8>>` rather than `Arc<[u8]>`
     // precisely because the pool must resize in place via `Arc::get_mut`; an
     // immutable slice payload would force a fresh allocation per frame. The
-    // initial size is only an allocation hint (per-frame `resize` handles the
-    // real size), so an overflowing config degrades to empty pool buffers
-    // instead of panicking on the unchecked product.
+    // initial size is only an allocation hint (per-frame `resize` sets the
+    // real size), so a max-frame-size config that overflows usize degrades to
+    // empty pool buffers instead of panicking.
     let max_buffer_size = match rgba_frame_size(config.max_frame_width, config.max_frame_height) {
         Some(n) => n,
         None => {
@@ -424,10 +424,10 @@ async fn run_video_worker(
                         // Rotation is detected once per load above, plus a
                         // single property-only recheck ~2 s later (see the
                         // progress tick): a file's rotation cannot change
-                        // during playback, and the per-second recheck used to
-                        // re-parse the container (read_mp4_tkhd_rotation) for
-                        // every second of video, turning crafted files into
-                        // per-second CPU burn.
+                        // during playback, and re-detection must not be
+                        // repeated per tick — `get_video_rotation` re-opens
+                        // and re-parses the container (read_mp4_tkhd_rotation),
+                        // which a crafted file could turn into CPU burn.
 
                         if let Some((render_unrot_w, render_unrot_h, rotation)) = cached_video_params {
                             // Checked size math: hostile dims (e.g. an mpv
@@ -485,13 +485,14 @@ async fn run_video_worker(
                     // `video-params/rotate` / `track-list/*/demux-rotation`
                     // only AFTER `video-out-params` first appears — a file
                     // whose rotation is not yet known then is reported as R0
-                    // for the whole load. The old code rechecked every
-                    // second, which re-ran the hostile-file box walk; this
-                    // probes exactly once, ~2 s into the load, and only
-                    // through the mpv property path (`probe_rotation_properties`):
-                    // properties come from mpv's already-parsed state, so a
-                    // single recheck performs no file I/O and cannot be
-                    // abused into per-second container re-parses.
+                    // for the whole load. The recheck fires exactly once,
+                    // ~2 s into the load, and only through the property path
+                    // (`probe_rotation_properties`): properties come from
+                    // mpv's already-parsed state, so a single recheck does no
+                    // file I/O. It must never fall back to the file-based
+                    // `get_video_rotation`, which re-opens and re-parses the
+                    // container — repeating that would let a crafted file
+                    // burn CPU per recheck.
                     if let Some(deadline) = rotation_recheck_deadline
                         && std::time::Instant::now() >= deadline
                     {

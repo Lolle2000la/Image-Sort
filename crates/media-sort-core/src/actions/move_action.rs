@@ -5,8 +5,8 @@ use crate::actions::reversible::{ActionError, ReversibleAction};
 /// Moves `old_path` into `to_folder` without ever replacing an existing
 /// destination.
 ///
-/// The `TargetExists` refusal is enforced not only at construction but again
-/// in [`execute`](ReversibleAction::execute) and
+/// The `TargetExists` refusal is enforced at construction and re-checked in
+/// [`execute`](ReversibleAction::execute) and
 /// [`rollback`](ReversibleAction::rollback): Undo/Redo re-run those paths on
 /// paths that were freed by the action itself, and a file that appeared at
 /// either path in the meantime must not be silently clobbered by `rename(2)`.

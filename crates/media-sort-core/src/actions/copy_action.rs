@@ -16,8 +16,8 @@ impl CopyAction {
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;
         // Defense in depth: re-check the resolved path in case canonicalize
-        // ever stops short of a final link. The authoritative re-check for
-        // links swapped in later happens inside execute().
+        // ever stops short of a final link; links swapped in after
+        // construction are caught again inside execute().
         crate::actions::reversible::reject_symlink_source(&file)?;
         let to_folder = to_folder
             .canonicalize()
@@ -72,9 +72,8 @@ impl ReversibleAction for CopyAction {
         // fs::copy FOLLOWS the source: re-check right before copying so a
         // link swapped in after construction cannot exfiltrate its target.
         crate::actions::reversible::reject_symlink_source(&self.source)?;
-        // Deliberately no destination-existence guard: overwriting the
-        // destination produced by the action's own previous execute() is the
-        // established CopyAction semantic (see
+        // No destination-existence guard: re-execute() legitimately
+        // overwrites the destination the action itself produced (see
         // test_copy_execute_then_double_execute_then_rollback), which a
         // TargetExists check here could not distinguish from a clobber.
         fs::copy(&self.source, &self.destination)?;
