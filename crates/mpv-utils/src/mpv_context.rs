@@ -317,9 +317,9 @@ impl MpvContext {
     /// The effective rotation of the currently loaded video.
     ///
     /// Prefers the file-based detection in [`detect_video_rotation`] (mp4
-    /// `tkhd` matrix / EXIF / mp4ameta) and falls back to probing up to five
-    /// mpv rotation properties. Returns [`Rotation::R0`] when nothing is
-    /// loaded or no rotation is known.
+    /// `tkhd` matrix / EXIF / mp4ameta) and falls back to
+    /// [`Self::probe_rotation_properties`]. Returns [`Rotation::R0`] when
+    /// nothing is loaded or no rotation is known.
     pub fn get_video_rotation(&self) -> Rotation {
         if let Some(path_str) = self.get_current_path()
             && let Some(rot) = detect_video_rotation(Path::new(&path_str))
@@ -328,6 +328,20 @@ impl MpvContext {
             return rot;
         }
 
+        self.probe_rotation_properties()
+    }
+
+    /// Probes mpv's already-parsed rotation state through properties only —
+    /// no file I/O.
+    ///
+    /// Checks `video-params/rotate`, `video-out-params/rotate`, the
+    /// track-list demux/user rotation properties and metadata tags, in that
+    /// order. Unlike [`detect_video_rotation`] this never touches the file,
+    /// so it is safe to call repeatedly (e.g. the worker's delayed one-shot
+    /// recheck, since mpv may populate these properties only after
+    /// `video-out-params` first appears). Returns [`Rotation::R0`] when no
+    /// property carries a rotation.
+    pub(crate) fn probe_rotation_properties(&self) -> Rotation {
         unsafe {
             // 1. Check video-params/rotate
             let mut rotate: i64 = 0;
@@ -409,17 +423,36 @@ impl MpvContext {
     ///
     /// `buffer` must be at least `width * height * 4` bytes long.
     pub fn render_frame(&self, width: i32, height: i32, buffer: &mut [u8]) -> Result<(), MpvError> {
-        let required = (width as usize) * (height as usize) * 4;
+        if width <= 0 || height <= 0 {
+            return Err(MpvError::Other(format!(
+                "invalid frame size {width}x{height}"
+            )));
+        }
+        // Checked size math: an unchecked i32/usize product would panic in
+        // debug builds and wrap in release, turning hostile dims into a
+        // giant `required` that vacuously passes the length check.
+        let Some(required) = crate::worker::rgba_frame_size(width as u32, height as u32) else {
+            return Err(MpvError::Other(format!(
+                "frame size {width}x{height} overflows the buffer size math"
+            )));
+        };
         if buffer.len() < required {
             return Err(MpvError::BufferTooSmall {
                 required,
                 available: buffer.len(),
             });
         }
+        // Same checked math for the row stride (an unchecked `width * 4` in
+        // i32 would panic for widths above i32::MAX / 4).
+        let mut stride = (width as u64)
+            .checked_mul(4)
+            .and_then(|n| usize::try_from(n).ok())
+            .ok_or_else(|| {
+                MpvError::Other(format!("frame stride for width {width} overflows usize"))
+            })?;
         unsafe {
             let format = CString::new("rgba").map_err(|_| MpvError::InvalidCString)?;
             let mut size: [c_int; 2] = [width, height];
-            let mut stride = (width * 4) as usize;
 
             let mut params = [
                 mpv_render_param {
@@ -612,7 +645,15 @@ impl MpvContext {
                         let render_h = ((h as f64 * scale) as i32) & !1;
 
                         if render_w > 0 && render_h > 0 {
-                            let mut buffer = vec![0u8; (render_w * render_h * 4) as usize];
+                            // Checked size math: hostile video-params dims
+                            // would overflow the i32 product; skip the frame
+                            // instead of allocating a giant buffer.
+                            let Some(buf_size) =
+                                crate::worker::rgba_frame_size(render_w as u32, render_h as u32)
+                            else {
+                                continue;
+                            };
+                            let mut buffer = vec![0u8; buf_size];
                             if self.render_frame(render_w, render_h, &mut buffer).is_ok() {
                                 let (final_w, final_h, final_rgba) = crate::rotate_rgba(
                                     render_w as u32,
@@ -850,5 +891,36 @@ mod tests {
         );
 
         player.stop();
+    }
+
+    /// Hostile dimensions must be rejected by `render_frame` as errors, not
+    /// panics: the i32/usize size math is checked (an unchecked
+    /// `i32::MAX * i32::MAX * 4` would panic in debug and wrap in release).
+    #[test]
+    fn test_render_frame_hostile_dims_return_error_not_panic() {
+        let Some(player) = thumbnail_player() else {
+            return;
+        };
+        let mut buffer = vec![0u8; 1024];
+        assert!(
+            player
+                .render_frame(i32::MAX, i32::MAX, &mut buffer)
+                .is_err(),
+            "huge dims must fail with an error, not panic or succeed"
+        );
+        assert!(
+            matches!(
+                player.render_frame(0, 100, &mut buffer),
+                Err(MpvError::Other(_))
+            ),
+            "zero dims must be rejected"
+        );
+        assert!(
+            matches!(
+                player.render_frame(100, 100, &mut buffer),
+                Err(MpvError::BufferTooSmall { .. })
+            ),
+            "a too-small buffer must keep reporting BufferTooSmall"
+        );
     }
 }
