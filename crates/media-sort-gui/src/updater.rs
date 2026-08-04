@@ -272,10 +272,12 @@ pub async fn download_and_apply_async(
             response.status()
         ));
     }
-    // Stream the package into memory with a hard cap instead of buffering
-    // the whole response: the feed controls content length, so a lying or
-    // compromised feed must not be able to drive unbounded RSS. The
-    // expected size is also enforced incrementally (abort as soon as the
+    // Read the package incrementally with a hard cap rather than trusting
+    // response.bytes() to buffer an unbounded amount: the feed controls
+    // content length, so a lying or compromised feed must not be able to
+    // drive unbounded RSS. The bytes are accumulated in memory (capped at
+    // the expected size / 1 GiB) and written to disk atomically below;
+    // the expected size is enforced incrementally (abort as soon as the
     // download exceeds it) and once more at the end.
     let mut response = response;
     let mut package_bytes: Vec<u8> = Vec::new();
