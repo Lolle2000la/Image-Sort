@@ -150,8 +150,10 @@ pub fn generate_thumbnail(
         }
         match response_rx.recv_timeout(FFMPEG_RESPONSE_TIMEOUT) {
             Ok(Ok(parts)) => return Ok(parts),
-            Ok(Err(_ffmpeg_err)) => {
-                // ffmpeg rejected the file; try the mpv pool as a fallback.
+            Ok(Err(_)) | Err(_) => {
+                // ffmpeg rejected the file, timed out on it, or its pool
+                // is gone (disconnected workers). The mpv pool may still
+                // extract a frame, so try it before giving up.
                 let (mpv_tx, mpv_rx) = std::sync::mpsc::channel();
                 let sender = VIDEO_THUMBNAIL_WORKER
                     .lock()
@@ -173,14 +175,6 @@ pub fn generate_thumbnail(
                         }
                     })
                     .map_err(|e| format!("Video thumbnail error: {e}"))?;
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                return Err(format!(
-                    "ffmpeg thumbnail request timed out after {FFMPEG_RESPONSE_TIMEOUT:?}"
-                ));
-            }
-            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                return Err("Failed to receive ffmpeg thumbnail result".to_string());
             }
         }
     }

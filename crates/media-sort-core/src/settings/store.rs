@@ -147,8 +147,14 @@ impl SettingsStore {
             // makes canonicalize fail, and falling back to the link path
             // would replace the user's symlink with a regular file on the
             // next rename. read_link works even when the target does not
-            // exist yet.
-            let link_target = std::fs::read_link(&path).unwrap_or_else(|_| path.clone());
+            // exist yet. If read_link itself fails (race, permission),
+            // abort the save rather than clobber the symlink.
+            let link_target = std::fs::read_link(&path).map_err(|e| {
+                SettingsError::Io(std::io::Error::new(
+                    e.kind(),
+                    format!("config symlink {path:?} target could not be resolved: {e}"),
+                ))
+            })?;
             if link_target.is_absolute() {
                 link_target
             } else if let Some(parent) = path.parent() {

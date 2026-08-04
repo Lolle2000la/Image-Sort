@@ -272,13 +272,36 @@ pub async fn download_and_apply_async(
             response.status()
         ));
     }
-    let package_bytes = response.bytes().await.map_err(|e| e.to_string())?;
-    if package_bytes.len() as u64 != info.TargetFullRelease.Size {
+    // Stream the package into memory with a hard cap instead of buffering
+    // the whole response: the feed controls content length, so a lying or
+    // compromised feed must not be able to drive unbounded RSS. The
+    // expected size is also enforced incrementally (abort as soon as the
+    // download exceeds it) and once more at the end.
+    let mut response = response;
+    let mut package_bytes: Vec<u8> = Vec::new();
+    let mut total: u64 = 0;
+    const MAX_PACKAGE_BYTES: u64 = 1 << 30; // 1 GiB hard cap
+    loop {
+        let chunk = response
+            .chunk()
+            .await
+            .map_err(|e| format!("Failed to download update package: {e}"))?;
+        let Some(chunk) = chunk else { break };
+        total += chunk.len() as u64;
+        if total > MAX_PACKAGE_BYTES || total > info.TargetFullRelease.Size {
+            purge_packages_dir(&packages_dir).await;
+            return Err(format!(
+                "Update package too large: expected {} bytes",
+                info.TargetFullRelease.Size
+            ));
+        }
+        package_bytes.extend_from_slice(&chunk);
+    }
+    if total != info.TargetFullRelease.Size {
         purge_packages_dir(&packages_dir).await;
         return Err(format!(
-            "Update package size mismatch: expected {}, got {}",
-            info.TargetFullRelease.Size,
-            package_bytes.len()
+            "Update package size mismatch: expected {}, got {total}",
+            info.TargetFullRelease.Size
         ));
     }
 
@@ -292,14 +315,25 @@ pub async fn download_and_apply_async(
     tokio::task::spawn_blocking({
         let partial_path = partial_path.clone();
         let package_path = package_path.clone();
-        let package_bytes = package_bytes.to_vec();
         move || -> Result<(), String> {
             fs::write(&partial_path, &package_bytes).map_err(|e| e.to_string())?;
             match fs::rename(&partial_path, &package_path) {
                 Ok(()) => Ok(()),
-                Err(_) => {
-                    fs::remove_file(&package_path).map_err(|e| e.to_string())?;
-                    fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
+                Err(rename_err) => {
+                    // Windows: rename fails when a stale package already
+                    // occupies the destination. Remove the stale file and
+                    // retry once. If the destination turned out not to
+                    // exist, the rename failed for another reason — the
+                    // original error is propagated so it is never masked.
+                    match fs::remove_file(&package_path) {
+                        Ok(()) => {
+                            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
+                        }
+                        Err(remove_err) if remove_err.kind() == std::io::ErrorKind::NotFound => {
+                            Err(rename_err.to_string())
+                        }
+                        Err(remove_err) => Err(remove_err.to_string()),
+                    }
                 }
             }
         }
