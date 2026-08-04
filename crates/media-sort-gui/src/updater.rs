@@ -321,7 +321,7 @@ pub async fn download_and_apply_async(
             fs::write(&partial_path, &package_bytes).map_err(|e| e.to_string())?;
             match fs::rename(&partial_path, &package_path) {
                 Ok(()) => Ok(()),
-                Err(rename_err) => {
+                Err(_rename_err) => {
                     // Windows: rename fails when a stale package already
                     // occupies the destination. Remove the stale file and
                     // retry once. If the destination turned out not to
