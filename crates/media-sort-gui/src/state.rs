@@ -175,6 +175,12 @@ impl AppState {
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
+        // The scroll snapshot belongs to the previous folder's content
+        // (possibly thousands of cards); without a reset the first render
+        // of the new, smaller folder would slice the entry list past its
+        // end. `GridScrolled` events keep it in sync afterwards, and
+        // `viewport_window` clamps defensively either way.
+        self.media_grid.scroll.offset_x = 0.0;
         self.metadata.current = None;
         self.folder.selected_folder = None;
         self.folder.selected_folder_idx = None;

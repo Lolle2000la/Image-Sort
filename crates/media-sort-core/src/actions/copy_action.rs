@@ -15,7 +15,7 @@ impl CopyAction {
         let file = file
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;
-        // Defense in depth: re-check the resolved path in case canonicalize
+        // Re-check the resolved path in case canonicalize
         // ever stops short of a final link; links swapped in after
         // construction are caught again inside execute().
         crate::actions::reversible::reject_symlink_source(&file)?;

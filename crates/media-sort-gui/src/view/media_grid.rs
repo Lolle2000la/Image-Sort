@@ -18,6 +18,19 @@ pub const MEDIA_GRID_CARD_SPACING: f32 = 8.0;
 /// thumbnail.
 const MEDIA_GRID_SCROLLBAR_CLEARANCE: f32 = 12.0;
 
+/// The half-open index range `[start, end)` of cards to render for the
+/// given scroll snapshot. Both bounds are clamped to `total` so a STALE
+/// snapshot (the `on_scroll` callback has not fired yet for the current
+/// content — e.g. right after switching to a smaller folder, or when a
+/// search query shrinks `filtered`) can never slice past the entry list.
+/// Shared with `thumbnail_tracker::update_viewport`.
+pub fn viewport_window(offset_x: f32, viewport_width: f32, total: usize) -> (usize, usize) {
+    const CARD_STRIDE: f32 = MEDIA_GRID_CARD_WIDTH + MEDIA_GRID_CARD_SPACING;
+    let s = ((offset_x / CARD_STRIDE).floor() as usize).min(total);
+    let e = ((offset_x + viewport_width) / CARD_STRIDE).ceil() as usize;
+    (s.saturating_sub(5), (e + 5).min(total))
+}
+
 pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     let filtered = state.media_grid.filtered_entries();
 
@@ -70,11 +83,11 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     // snapshot is still 0 (before the first `on_scroll` callback fires),
     // render the full list so the initial frame is never blank.
     let (start, end) = if state.media_grid.scroll.viewport_width > 0.0 {
-        let s = (state.media_grid.scroll.offset_x / CARD_STRIDE).floor() as usize;
-        let e = ((state.media_grid.scroll.offset_x + state.media_grid.scroll.viewport_width)
-            / CARD_STRIDE)
-            .ceil() as usize;
-        (s.saturating_sub(5), (e + 5).min(total))
+        viewport_window(
+            state.media_grid.scroll.offset_x,
+            state.media_grid.scroll.viewport_width,
+            total,
+        )
     } else {
         (0, total)
     };
@@ -317,4 +330,61 @@ pub fn media_grid_view(state: &AppState) -> Element<'_, Message> {
     )
     .width(Length::Fill)
     .into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const STRIDE: f32 = MEDIA_GRID_CARD_WIDTH + MEDIA_GRID_CARD_SPACING;
+
+    #[test]
+    fn test_viewport_window_normal_range() {
+        // offset = card 100, viewport ~6 cards wide -> buffer of 5 both sides.
+        let (start, end) = viewport_window(100.0 * STRIDE, 6.0 * STRIDE, 1000);
+        assert_eq!(start, 95);
+        assert_eq!(end, 111);
+        assert!(start < end);
+    }
+
+    #[test]
+    fn test_viewport_window_clamped_to_zero() {
+        let (start, end) = viewport_window(0.0, 10.0 * STRIDE, 100);
+        assert_eq!(start, 0);
+        assert_eq!(end, 15);
+    }
+
+    #[test]
+    fn test_viewport_window_stale_offset_beyond_small_list() {
+        // Regression: switching from a ~4400-card folder to an 8-card one
+        // leaves a stale offset_x snapshot until the next GridScrolled
+        // event. The window must clamp to `total` instead of panicking on
+        // `filtered[4399..]`.
+        let (start, end) = viewport_window(4404.0 * STRIDE, 6.0 * STRIDE, 8);
+        assert_eq!(start, 3);
+        assert_eq!(end, 8);
+        assert!(start <= end, "window must be a valid slice range");
+    }
+
+    #[test]
+    fn test_viewport_window_offset_exactly_at_end() {
+        let (start, end) = viewport_window(8.0 * STRIDE, 6.0 * STRIDE, 8);
+        assert_eq!(start, 3);
+        assert_eq!(end, 8);
+    }
+
+    #[test]
+    fn test_viewport_window_search_shrink() {
+        // A query that shrinks the filtered list must not panic either.
+        let (start, end) = viewport_window(200.0 * STRIDE, 8.0 * STRIDE, 12);
+        assert_eq!(start, 7);
+        assert_eq!(end, 12);
+    }
+
+    #[test]
+    fn test_viewport_window_zero_total() {
+        let (start, end) = viewport_window(50.0 * STRIDE, 5.0 * STRIDE, 0);
+        assert_eq!(start, 0);
+        assert_eq!(end, 0);
+    }
 }
