@@ -1,10 +1,12 @@
 use pgp::composed::{Deserializable, DetachedSignature, SignedPublicKey};
 use std::fs;
 use std::io::{Cursor, Write};
-use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::path::Path;
 use velopack::sources::GithubSource;
 use velopack::{UpdateCheck, UpdateInfo, UpdateManager};
+
+use media_sort_core::path_utils::unique_temp_path;
+use tokio::io::AsyncWriteExt;
 
 const PUBKEY_ASC_BYTES: &[u8] = include_bytes!("../../../packaging/linux/pubkey.asc");
 
@@ -17,9 +19,6 @@ const MAX_PACKAGE_BYTES: u64 = 1 << 30; // 1 GiB
 /// Hard cap on a single signature download. Signatures are a few KiB at
 /// most; a feed must not be able to make us buffer arbitrarily more.
 const MAX_SIGNATURE_SIZE: u64 = 1 << 20; // 1 MiB
-
-/// Process-global counter for per-run temp file names (`unique_temp_path`).
-static TEMP_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 fn verify_signature(
     public_key: &SignedPublicKey,
@@ -282,17 +281,11 @@ async fn collect_capped<S: ChunkSource>(
     Ok(bytes)
 }
 
-/// Unique temp path for a file that will be renamed onto `final_path`:
-/// `{stem}.{label}.{pid}.{n}`. The pid + process-global counter keep two
-/// app instances downloading the same release from racing on a shared temp
-/// name. The temp deliberately does NOT carry the `.nupkg` extension, so
+/// Unique temp path for a file that will be renamed onto `final_path`.
+/// Shared with the settings store via `media-sort-core`'s `path_utils`. The
+/// temp deliberately does NOT carry the `.nupkg` extension, so
 /// `pre_startup_verify_packages` never mistakes a leftover temp for an
 /// unverified staged package.
-fn unique_temp_path(final_path: &Path, label: &str) -> PathBuf {
-    let stem = final_path.file_stem().unwrap_or_default().to_string_lossy();
-    let n = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
-    final_path.with_file_name(format!("{stem}.{label}.{}.{n}", std::process::id()))
-}
 
 /// Removes only the temp artifacts this run created, leaving previously
 /// staged PGP-verified packages alone. A no-op when a download aborted
@@ -435,7 +428,7 @@ pub async fn download_and_apply_async(
     let package_url = format!("{}/releases/download/v{}/{}", repo_url, version, file_name);
     let package_url_fallback = format!("{}/releases/download/{}/{}", repo_url, version, file_name);
 
-    let response = match client.get(&package_url).send().await {
+    let mut response = match client.get(&package_url).send().await {
         Ok(res) if res.status().is_success() => res,
         _ => client
             .get(&package_url_fallback)
@@ -444,55 +437,67 @@ pub async fn download_and_apply_async(
             .map_err(|e| format!("Failed to download update package: {e}"))?,
     };
     if !response.status().is_success() {
-        // Nothing has been written yet (the bytes are still buffered in
-        // memory), so there are no run artifacts to clean up.
+        // Nothing has been written yet, so there are no run artifacts to
+        // clean up.
         return Err(format!(
             "Failed to download update package: HTTP {}",
             response.status()
         ));
     }
+    let expected_size = Some(info.TargetFullRelease.Size);
     // Read the package incrementally with a hard cap rather than trusting
     // response.bytes() to buffer an unbounded amount: the feed controls
     // content length, so a lying or compromised feed must not be able to
-    // drive unbounded RSS. The bytes are accumulated in memory (capped at
-    // the expected size / 1 GiB) and written to disk atomically below;
-    // the expected size is enforced incrementally (abort as soon as the
-    // download exceeds it) and once more at the end.
-    let mut response = response;
-    let package_bytes = collect_capped(
-        &mut response,
-        Some(info.TargetFullRelease.Size),
-        MAX_PACKAGE_BYTES,
-        "Update package",
-    )
-    .await
-    // No disk artifacts exist yet; only the previous run's staged files
-    // could be present, and those must be left alone on a size failure.
-    .map_err(|e| format!("Failed to download update package: {e}"))?;
-
-    // Staged write: the package lands at THIS RUN'S unique temp path only,
-    // never at the final `package_path`, which may hold a previously
-    // staged, PGP-verified package. Unverified content is promoted into
-    // place only after the signature check below succeeds, so a crash
-    // between download and verification leaves nothing but a `.partial`-
-    // named temp (which `pre_startup_verify_packages` ignores), and a
-    // transient signature failure cannot clobber a verified package. The
-    // bytes are fsynced before verification so the file is durable once
-    // it is renamed into place.
-    let write_res: Result<(), String> = tokio::task::spawn_blocking({
-        let partial_path = partial_path.clone();
-        move || -> Result<(), String> {
-            let mut file = fs::File::create(&partial_path).map_err(|e| e.to_string())?;
-            file.write_all(&package_bytes).map_err(|e| e.to_string())?;
-            file.sync_all().map_err(|e| e.to_string())?;
-            Ok(())
+    // drive unbounded RSS. The chunks are streamed straight into this
+    // run's unique staged temp file — never buffered whole in memory, so
+    // a package near the 1 GiB cap does not cost 1 GiB of RAM on top of
+    // the file — while the expected size is enforced incrementally
+    // (abort as soon as the download exceeds it) and once more at the
+    // end, and the file is fsynced before verification so it is durable
+    // once renamed into place.
+    let staged_write: Result<(), String> = async {
+        let mut file = tokio::fs::File::create(&partial_path)
+            .await
+            .map_err(|e| e.to_string())?;
+        let mut total: u64 = 0;
+        while let Some(chunk) = response
+            .chunk()
+            .await
+            .map_err(|e| format!("Failed to read update package: {e}"))?
+        {
+            total += chunk.len() as u64;
+            if total > MAX_PACKAGE_BYTES || expected_size.is_some_and(|e| total > e) {
+                return Err(match expected_size {
+                    Some(expected) => {
+                        format!("Update package too large: expected {expected} bytes")
+                    }
+                    None => format!(
+                        "Update package too large: exceeded hard cap of {MAX_PACKAGE_BYTES} bytes"
+                    ),
+                });
+            }
+            file.write_all(&chunk)
+                .await
+                .map_err(|e| format!("Failed to write update package: {e}"))?;
         }
-    })
-    .await
-    .map_err(|e| format!("Task join error: {e}"))?;
-    if let Err(e) = write_res {
+        if let Some(expected) = expected_size
+            && total != expected
+        {
+            return Err(format!(
+                "Update package size mismatch: expected {expected}, got {total}"
+            ));
+        }
+        file.sync_all()
+            .await
+            .map_err(|e| format!("Failed to write update package: {e}"))
+    }
+    .await;
+    if let Err(e) = staged_write {
+        // Only this run's temp artifacts are removed: the final paths
+        // (possibly a previously verified package) and other runs' temps
+        // are left alone.
         cleanup_run_artifacts(&partial_path, &sig_temp_path);
-        return Err(format!("Failed to write update package: {e}"));
+        return Err(e);
     }
 
     // 2. Fetch and verify the detached PGP signature over the package.

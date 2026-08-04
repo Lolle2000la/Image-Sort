@@ -162,8 +162,7 @@ impl SettingsStore {
         } else {
             path.clone()
         };
-        let tmp = target.with_extension("toml.tmp");
-        path_utils::atomic_write(&tmp, &target, data.as_bytes()).map_err(SettingsError::Io)?;
+        path_utils::atomic_write(&target, data.as_bytes()).map_err(SettingsError::Io)?;
         self.dirty = false;
         Ok(())
     }

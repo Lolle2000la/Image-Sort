@@ -136,10 +136,27 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
                 ) {
                     Ok(()) => {
                         let new_dir = parent.join(&folder_name);
-                        if let Err(e) = std::fs::create_dir_all(&new_dir) {
-                            tracing::error!("Failed to create folder: {e}");
-                        } else if state.folder.current_folder.is_some() {
-                            state.build_folder_tree();
+                        match std::fs::create_dir(&new_dir) {
+                            Ok(()) => {
+                                if state.folder.current_folder.is_some() {
+                                    state.build_folder_tree();
+                                }
+                            }
+                            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+                                // `create_dir` (not `create_dir_all`) fails
+                                // on an existing directory, so a no-op
+                                // "create" is surfaced instead of silently
+                                // succeeding. `validate_stem` guarantees a
+                                // single path component, so a plain
+                                // `create_dir` cannot fail on a missing
+                                // parent mid-path.
+                                state.set_status(
+                                    state
+                                        .l10n
+                                        .get("status-target-exists", &[("name", &folder_name)]),
+                                );
+                            }
+                            Err(e) => tracing::error!("Failed to create folder: {e}"),
                         }
                     }
                     Err(e) => {

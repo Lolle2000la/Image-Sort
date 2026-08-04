@@ -70,7 +70,7 @@ iced = { version = "0.14", features = [
     "advanced-shaping",
 ] }
 iced_wgpu = "0.14"
-tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "fs"] }
 lru = "0.18"
 rfd = "0.17"
 ico = "0.5"

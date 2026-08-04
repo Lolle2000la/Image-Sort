@@ -1,5 +1,9 @@
 use std::io::{self, Write};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
+
+/// Process-global counter for [`unique_temp_path`] names.
+static TEMP_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 pub fn rename_or_copy_and_delete(src: &Path, dst: &Path) -> io::Result<()> {
     match std::fs::rename(src, dst) {
@@ -43,20 +47,37 @@ pub fn is_symlink(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Atomically replace `dest` with `bytes`: write to `tmp` (same directory,
-/// so the rename stays on one filesystem), sync to disk, then rename over
-/// `dest`. A crash mid-write can never truncate `dest`.
+/// Unique temp path in the destination directory for a file that will be
+/// renamed onto `final_path`: `{stem}.{label}.{pid}.{n}`. The pid +
+/// process-global counter keep concurrent writers (two app instances, or
+/// a future second thread) from racing on a shared temp name: with a
+/// fixed temp name, one writer's `File::create` truncates the file another
+/// writer is mid-fsync on, and the interleaved rename can land a
+/// partial/corrupt config. With unique names only last-writer-wins
+/// applies, which is the benign outcome. Stale temps on a crash are
+/// harmless leftovers and are never picked up as staged content.
+pub fn unique_temp_path(final_path: &Path, label: &str) -> PathBuf {
+    let stem = final_path.file_stem().unwrap_or_default().to_string_lossy();
+    let n = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    final_path.with_file_name(format!("{stem}.{label}.{}.{n}", std::process::id()))
+}
+
+/// Atomically replace `dest` with `bytes`: write to a unique temp file in
+/// the same directory (so the rename stays on one filesystem), sync to
+/// disk, then rename over `dest`. A crash mid-write can never truncate
+/// `dest`, and the unique temp name (see [`unique_temp_path`]) keeps two
+/// concurrent writers from clobbering each other's in-flight file.
 ///
-/// Callers are responsible for `tmp` being on the same filesystem as `dest`
-/// and for any symlink resolution they need before the rename (the rename
-/// replaces the path itself, it does not follow links).
-pub fn atomic_write(tmp: &Path, dest: &Path, bytes: &[u8]) -> io::Result<()> {
+/// Callers are responsible for any symlink resolution they need before the
+/// rename (the rename replaces the path itself, it does not follow links).
+pub fn atomic_write(dest: &Path, bytes: &[u8]) -> io::Result<()> {
+    let tmp = unique_temp_path(dest, "tmp");
     {
-        let mut file = std::fs::File::create(tmp)?;
+        let mut file = std::fs::File::create(&tmp)?;
         file.write_all(bytes)?;
         file.sync_all()?;
     }
-    std::fs::rename(tmp, dest)
+    std::fs::rename(&tmp, dest)
 }
 
 pub fn paths_equal(a: &Path, b: &Path) -> bool {
