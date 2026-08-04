@@ -76,9 +76,12 @@ fn handle_tick(state: &mut AppState, instant: std::time::Instant) -> Task<Messag
         return iced::window::latest().and_then(iced::window::close);
     }
 
-    // Expire the transient status banner.
-    if let Some((_, expires_at)) = state.status_message
-        && instant >= expires_at
+    // Expire the transient status banner. `expires_at` was stamped by
+    // `set_status` with the same monotonic clock the tick stream uses, so a
+    // suspended process can't keep a stale banner alive: the comparison is
+    // against the tick's own `Instant`, not a wall-clock read at set time.
+    if let Some(ref status) = state.status_message
+        && instant >= status.expires_at
     {
         state.status_message = None;
     }
@@ -349,6 +352,11 @@ fn handle_update_message(
         }
         UpdateMessage::UpdateFailed(e) => {
             tracing::error!("Update failed: {e}");
+            // Surface the failure through the status banner. The banner
+            // text stays short and localized; the raw error is appended at
+            // debug level only, never shown in the UI.
+            tracing::debug!(details = %e, "update failure details");
+            state.set_status(state.l10n.get("status-update-failed", &[]));
             Task::none()
         }
         UpdateMessage::DismissUpdatePrompt => {

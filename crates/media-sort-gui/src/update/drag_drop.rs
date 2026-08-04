@@ -67,11 +67,9 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
             // would resolve the link and relocate the link's TARGET instead
             // of the entry the user sees. Report the refusal via the status
             // banner instead of failing silently.
-            let (symlink_paths, regular_paths): (Vec<_>, Vec<_>) = paths.iter().partition(|p| {
-                p.symlink_metadata()
-                    .map(|m| m.file_type().is_symlink())
-                    .unwrap_or(false)
-            });
+            let (symlink_paths, regular_paths): (Vec<_>, Vec<_>) = paths
+                .iter()
+                .partition(|p| media_sort_core::path_utils::is_symlink(p));
             if !symlink_paths.is_empty() {
                 // Cap the banner text: a drop with thousands of symlinks
                 // must not allocate an unbounded string for the toast.
@@ -168,9 +166,10 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
     }
 }
 
-/// Surfaces a refused action to the user. Symbolic-link refusals get a
-/// status banner (the entry may have become a link between scan and action);
-/// everything else is logged as before.
+/// Surfaces a refused action to the user. Symbolic-link refusals and
+/// target-exists conflicts get a status banner (the entry may have become a
+/// link between scan and action; a same-named file in the destination is a
+/// user-visible conflict); everything else is logged as before.
 fn report_refused_action(
     state: &mut AppState,
     src: &std::path::Path,
@@ -183,6 +182,13 @@ fn report_refused_action(
                 .map(|n| n.to_string_lossy().into_owned())
                 .unwrap_or_else(|| src.display().to_string());
             state.set_status(state.l10n.get("status-symlink-refused", &[("name", &name)]));
+        }
+        media_sort_core::actions::reversible::ActionError::TargetExists(target) => {
+            let name = target
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| target.display().to_string());
+            state.set_status(state.l10n.get("status-target-exists", &[("name", &name)]));
         }
         other => {
             tracing::error!("Cannot create action for dropped file {src:?}: {other}");

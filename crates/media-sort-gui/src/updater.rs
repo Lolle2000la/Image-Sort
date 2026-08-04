@@ -1,11 +1,25 @@
 use pgp::composed::{Deserializable, DetachedSignature, SignedPublicKey};
 use std::fs;
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU32, Ordering};
 use velopack::sources::GithubSource;
 use velopack::{UpdateCheck, UpdateInfo, UpdateManager};
 
 const PUBKEY_ASC_BYTES: &[u8] = include_bytes!("../../../packaging/linux/pubkey.asc");
+
+/// Hard cap on a single update package download. The feed controls the
+/// declared content length, so a lying or compromised feed must not be able
+/// to drive unbounded buffering; the declared size is enforced
+/// incrementally as well (see `collect_capped`).
+const MAX_PACKAGE_BYTES: u64 = 1 << 30; // 1 GiB
+
+/// Hard cap on a single signature download. Signatures are a few KiB at
+/// most; a feed must not be able to make us buffer arbitrarily more.
+const MAX_SIGNATURE_SIZE: u64 = 1 << 20; // 1 MiB
+
+/// Process-global counter for per-run temp file names (`unique_temp_path`).
+static TEMP_COUNTER: AtomicU32 = AtomicU32::new(0);
 
 fn verify_signature(
     public_key: &SignedPublicKey,
@@ -181,6 +195,24 @@ fn validate_release_file_name(file_name: &str) -> Result<(), String> {
     }
 }
 
+/// Rejects feed-supplied version strings before they are interpolated into
+/// the release URL. Path separators or whitespace would escape the
+/// intended download path or break the URL, and a bare `.`/`..` would
+/// resolve as a path component in the no-`v` fallback URL. The checks are
+/// platform-independent on purpose, mirroring `validate_release_file_name`.
+fn validate_version(version: &str) -> Result<(), String> {
+    if version.is_empty()
+        || version.contains('/')
+        || version.contains('\\')
+        || version.chars().any(char::is_whitespace)
+        || version == "."
+        || version == ".."
+    {
+        return Err(format!("Invalid update version: {version:?}"));
+    }
+    Ok(())
+}
+
 async fn purge_packages_dir(packages_dir: &Path) {
     let dir = packages_dir.to_path_buf();
     let _ = tokio::task::spawn_blocking(move || {
@@ -188,6 +220,127 @@ async fn purge_packages_dir(packages_dir: &Path) {
         let _ = fs::create_dir_all(&dir);
     })
     .await;
+}
+
+/// Streaming chunk source abstraction so `collect_capped` can be unit
+/// tested with a mock source: production uses `reqwest::Response` (whose
+/// `chunk()` method drives the same incremental read), tests use a queue
+/// of pre-made chunks.
+trait ChunkSource {
+    async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String>;
+}
+
+impl ChunkSource for reqwest::Response {
+    async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+        self.chunk()
+            .await
+            .map(|opt| opt.map(|bytes| bytes.to_vec()))
+            .map_err(|e| e.to_string())
+    }
+}
+
+/// Accumulates the chunk stream under a hard `cap` and — when `expected`
+/// is set — under the feed-declared size, returning the buffered payload.
+/// Aborts as soon as the running total exceeds either limit, rejects a
+/// final size mismatch, and propagates stream errors as `Err`. `what`
+/// names the payload in error messages.
+async fn collect_capped<S: ChunkSource>(
+    source: &mut S,
+    expected: Option<u64>,
+    cap: u64,
+    what: &str,
+) -> Result<Vec<u8>, String> {
+    let mut total: u64 = 0;
+    let mut bytes: Vec<u8> = Vec::new();
+    loop {
+        let chunk = source.next_chunk().await?;
+        let Some(chunk) = chunk else { break };
+        total += chunk.len() as u64;
+        if total > cap || expected.is_some_and(|expected| total > expected) {
+            return Err(match expected {
+                Some(expected) => format!("{what} too large: expected {expected} bytes"),
+                None => format!("{what} too large: exceeded hard cap of {cap} bytes"),
+            });
+        }
+        bytes.extend_from_slice(&chunk);
+    }
+    if let Some(expected) = expected
+        && total != expected
+    {
+        return Err(format!(
+            "{what} size mismatch: expected {expected}, got {total}"
+        ));
+    }
+    Ok(bytes)
+}
+
+/// Unique temp path for a file that will be renamed onto `final_path`:
+/// `{stem}.{label}.{pid}.{n}`. The pid + process-global counter keep two
+/// app instances downloading the same release from racing on a shared temp
+/// name. The temp deliberately does NOT carry the `.nupkg` extension, so
+/// `pre_startup_verify_packages` never mistakes a leftover temp for an
+/// unverified staged package.
+fn unique_temp_path(final_path: &Path, label: &str) -> PathBuf {
+    let stem = final_path.file_stem().unwrap_or_default().to_string_lossy();
+    let n = TEMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    final_path.with_file_name(format!("{stem}.{label}.{}.{n}", std::process::id()))
+}
+
+/// Removes only the artifacts this run created, leaving previously staged
+/// PGP-verified packages alone: the unique temp files are always removed
+/// (a no-op when a download aborted before the write), and `package_path`
+/// only when this run's (still unverified) write replaced it.
+fn cleanup_run_artifacts(
+    partial_path: &Path,
+    sig_temp_path: &Path,
+    package_path: &Path,
+    wrote_package: bool,
+) {
+    let _ = fs::remove_file(partial_path);
+    let _ = fs::remove_file(sig_temp_path);
+    if wrote_package {
+        let _ = fs::remove_file(package_path);
+    }
+}
+
+/// Whether a rename failure is worth the remove-destination-and-retry pass
+/// of `rename_with_retry`. On Windows `std::fs::rename` maps to
+/// MoveFileExW with MOVEFILE_REPLACE_EXISTING, so only a locked or
+/// read-only destination fails — surfaced as `PermissionDenied`. On unix
+/// `rename(2)` silently replaces an existing destination, so the retry
+/// should never fire; `AlreadyExists` is included for parity with the
+/// platform's error kinds but is unreachable in practice. Every other
+/// error kind propagates unchanged: removing a verified package because
+/// of an unrelated failure (e.g. a transient I/O error) must never happen.
+fn is_stale_destination_error(err: &std::io::Error) -> bool {
+    match err.kind() {
+        std::io::ErrorKind::PermissionDenied => true,
+        #[cfg(unix)]
+        std::io::ErrorKind::AlreadyExists => true,
+        _ => false,
+    }
+}
+
+/// Renames `partial` onto `dest`, retrying once after removing `dest` when
+/// the failure signals a stale/locked destination (see
+/// `is_stale_destination_error`). On any other error kind the ORIGINAL
+/// error is propagated immediately and nothing is removed; a failed retry
+/// keeps the original error visible in the returned message.
+fn rename_with_retry(partial: &Path, dest: &Path) -> Result<(), String> {
+    let original = match fs::rename(partial, dest) {
+        Ok(()) => return Ok(()),
+        Err(e) => e,
+    };
+    if !is_stale_destination_error(&original) {
+        return Err(original.to_string());
+    }
+    match fs::remove_file(dest) {
+        Ok(()) => fs::rename(partial, dest)
+            .map_err(|retry_err| format!("{original}; retry failed: {retry_err}")),
+        Err(remove_err) => Err(format!(
+            "{original}; failed to remove stale destination: {remove_err}"
+        )),
+    }
 }
 
 pub async fn check_for_update_async(
@@ -239,6 +392,17 @@ pub async fn download_and_apply_async(
     let sig_path = packages_dir.join(format!("{}.sig", file_name));
     let version = info.TargetFullRelease.Version.clone();
 
+    // The version is feed-supplied like the file name: reject separators
+    // and whitespace (and the `.`/`..` components they would otherwise
+    // allow) before the string is interpolated into the release URL.
+    validate_version(&version)?;
+
+    // This run's unique temp paths, computed up front so failure cleanup
+    // below can remove exactly the files this run created — and nothing a
+    // previous run staged and PGP-verified.
+    let partial_path = unique_temp_path(&package_path, "partial");
+    let sig_temp_path = unique_temp_path(&sig_path, "sig");
+
     // 1. Download the package BEFORE velopack touches anything. velopack's
     // `download_updates()` extracts the embedded Squirrel.exe over the live
     // Update.exe (Windows) as part of the download step; running it on
@@ -266,7 +430,8 @@ pub async fn download_and_apply_async(
             .map_err(|e| format!("Failed to download update package: {e}"))?,
     };
     if !response.status().is_success() {
-        purge_packages_dir(&packages_dir).await;
+        // Nothing has been written yet (the bytes are still buffered in
+        // memory), so there are no run artifacts to clean up.
         return Err(format!(
             "Failed to download update package: HTTP {}",
             response.status()
@@ -280,69 +445,63 @@ pub async fn download_and_apply_async(
     // the expected size is enforced incrementally (abort as soon as the
     // download exceeds it) and once more at the end.
     let mut response = response;
-    let mut package_bytes: Vec<u8> = Vec::new();
-    let mut total: u64 = 0;
-    const MAX_PACKAGE_BYTES: u64 = 1 << 30; // 1 GiB hard cap
-    loop {
-        let chunk = response
-            .chunk()
-            .await
-            .map_err(|e| format!("Failed to download update package: {e}"))?;
-        let Some(chunk) = chunk else { break };
-        total += chunk.len() as u64;
-        if total > MAX_PACKAGE_BYTES || total > info.TargetFullRelease.Size {
-            purge_packages_dir(&packages_dir).await;
-            return Err(format!(
-                "Update package too large: expected {} bytes",
-                info.TargetFullRelease.Size
-            ));
-        }
-        package_bytes.extend_from_slice(&chunk);
-    }
-    if total != info.TargetFullRelease.Size {
-        purge_packages_dir(&packages_dir).await;
-        return Err(format!(
-            "Update package size mismatch: expected {}, got {total}",
-            info.TargetFullRelease.Size
-        ));
-    }
+    let package_bytes = collect_capped(
+        &mut response,
+        Some(info.TargetFullRelease.Size),
+        MAX_PACKAGE_BYTES,
+        "Update package",
+    )
+    .await
+    // No disk artifacts exist yet; only the previous run's staged files
+    // could be present, and those must be left alone on a size failure.
+    .map_err(|e| format!("Failed to download update package: {e}"))?;
 
     // Atomic write into the packages dir: a crash must never leave a
-    // partial package at the final path velopack would apply. Note: on
-    // Windows std::fs::rename maps to MoveFileExW with
-    // MOVEFILE_REPLACE_EXISTING, so replacing a stale package from an
-    // interrupted previous run works; if that fails (destination in use or
-    // read-only), remove the stale file and retry once.
-    let partial_path = package_path.with_extension("nupkg.partial");
-    tokio::task::spawn_blocking({
+    // partial package at the final path velopack would apply. The bytes
+    // land in this run's unique temp path first (fsync + rename via
+    // `media_sort_core::path_utils::atomic_write`), then rename onto the
+    // final package path. On Windows std::fs::rename maps to MoveFileExW
+    // with MOVEFILE_REPLACE_EXISTING, so replacing a stale package from an
+    // interrupted previous run works; if the rename fails with a
+    // stale/locked-destination error, remove the stale file and retry once
+    // (see `rename_with_retry`). Any other write failure propagates
+    // unchanged — it must never remove a previously staged package.
+    let write_res: Result<bool, String> = tokio::task::spawn_blocking({
         let partial_path = partial_path.clone();
         let package_path = package_path.clone();
-        move || -> Result<(), String> {
-            fs::write(&partial_path, &package_bytes).map_err(|e| e.to_string())?;
-            match fs::rename(&partial_path, &package_path) {
-                Ok(()) => Ok(()),
-                Err(_rename_err) => {
-                    // Windows: rename fails when a stale package already
-                    // occupies the destination. Remove the stale file and
-                    // retry once. If the destination turned out not to
-                    // exist, the failure was transient — retry the rename
-                    // without deleting anything. A destination that exists
-                    // but cannot be removed is propagated unchanged.
-                    match fs::remove_file(&package_path) {
-                        Ok(()) => {
-                            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
-                        }
-                        Err(remove_err) if remove_err.kind() == std::io::ErrorKind::NotFound => {
-                            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
-                        }
-                        Err(remove_err) => Err(remove_err.to_string()),
-                    }
+        move || -> Result<bool, String> {
+            match media_sort_core::path_utils::atomic_write(
+                &partial_path,
+                &package_path,
+                &package_bytes,
+            ) {
+                Ok(()) => Ok(true),
+                Err(write_err) if is_stale_destination_error(&write_err) => {
+                    // The temp file is already written and fsynced; only
+                    // the final rename hit a stale/locked destination.
+                    // Re-attempt the rename, removing the stale destination
+                    // when the error still signals one.
+                    rename_with_retry(&partial_path, &package_path)
+                        .map(|()| true)
+                        .map_err(|e| {
+                            format!("Failed to write update package: {write_err}; retry: {e}")
+                        })
                 }
+                Err(write_err) => Err(format!("Failed to write update package: {write_err}")),
             }
         }
     })
     .await
-    .map_err(|e| format!("Task join error: {e}"))??;
+    .map_err(|e| format!("Task join error: {e}"))?;
+    let wrote_package = match write_res {
+        Ok(wrote) => wrote,
+        Err(e) => {
+            // The temp file may exist (a write or rename failure), but the
+            // final package path was not modified by this run.
+            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, false);
+            return Err(e);
+        }
+    };
 
     // 2. Fetch and verify the detached PGP signature over the package.
     {
@@ -362,31 +521,49 @@ pub async fn download_and_apply_async(
             repo_url, version, file_name
         );
 
-        let response = client.get(&sig_url).send().await;
-        let response = match response {
+        let mut response = match client.get(&sig_url).send().await {
             Ok(res) if res.status().is_success() => res,
-            _ => client
-                .get(&sig_url_fallback)
-                .send()
-                .await
-                .map_err(|e| format!("Failed to fetch signature: {}", e))?,
+            _ => client.get(&sig_url_fallback).send().await.map_err(|e| {
+                // This run's package write already replaced anything at
+                // `package_path`; it is still unverified, so it must be
+                // cleaned up. Previously staged files are untouched.
+                cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+                format!("Failed to fetch signature: {e}")
+            })?,
         };
 
         if !response.status().is_success() {
-            purge_packages_dir(&packages_dir).await;
+            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
             return Err(format!(
                 "Failed to download signature file for verification: HTTP {}",
                 response.status()
             ));
         }
 
-        let sig_bytes = response.bytes().await.map_err(|e| e.to_string())?;
-        let sig_path_clone = sig_path.clone();
-        let sig_bytes_clone = sig_bytes.clone();
-        tokio::task::spawn_blocking(move || fs::write(&sig_path_clone, sig_bytes_clone))
+        // The signature is tiny but feed-supplied: stream it under a hard
+        // cap instead of trusting response.bytes() to buffer an unbounded
+        // amount, and only write it to disk once it is fully received.
+        let sig_bytes = collect_capped(&mut response, None, MAX_SIGNATURE_SIZE, "Signature file")
             .await
-            .map_err(|e| format!("Task join error: {e}"))?
-            .map_err(|e| format!("Failed to write signature file: {e}"))?;
+            .map_err(|e| {
+                cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+                format!("Failed to download signature file: {e}")
+            })?;
+
+        // Atomic write to this run's unique temp: a crash must never leave
+        // a partial signature at the path `pre_startup_verify_packages`
+        // would parse on the next boot.
+        let sig_write_res = tokio::task::spawn_blocking({
+            let sig_temp_path = sig_temp_path.clone();
+            let sig_path = sig_path.clone();
+            move || media_sort_core::path_utils::atomic_write(&sig_temp_path, &sig_path, &sig_bytes)
+        })
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?;
+        if let Err(e) = sig_write_res {
+            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+            return Err(format!("Failed to write signature file: {e}"));
+        }
 
         let verify_res = tokio::task::spawn_blocking({
             let package_path = package_path.clone();
@@ -397,6 +574,10 @@ pub async fn download_and_apply_async(
         .map_err(|e| format!("Task join error: {e}"))?;
 
         if let Err(e) = verify_res {
+            // The staged package failed PGP verification: it may be
+            // malicious. Purge the whole packages dir rather than leaving
+            // poisoned content for `pre_startup_verify_packages` or a
+            // later run to trip over.
             purge_packages_dir(&packages_dir).await;
             return Err(format!("GPG signature verification failed: {e}"));
         }
@@ -420,10 +601,25 @@ pub async fn download_and_apply_async(
     .map_err(|e| e.to_string())??;
 
     // 4. Re-verify immediately before the apply step to narrow the local
-    // TOCTOU window between the earlier verification and execution.
+    // TOCTOU window between the earlier verification and execution. A
+    // failure here purges the whole packages dir, like the earlier
+    // verification failure, so poisoned content is never left staged.
+    let reverify_res = tokio::task::spawn_blocking({
+        let package_path = package_path.clone();
+        let sig_path = sig_path.clone();
+        move || verify_package_signature(&package_path, &sig_path)
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    if let Err(e) = reverify_res {
+        purge_packages_dir(&packages_dir).await;
+        return Err(format!("Re-verification before apply failed: {e}"));
+    }
+
+    // 5. Apply. Everything below this point operates on PGP-verified
+    // content only.
     tokio::task::spawn_blocking(move || {
-        verify_package_signature(&package_path, &sig_path)
-            .map_err(|e| format!("Re-verification before apply failed: {e}"))?;
         let source = GithubSource::new(&repo_url, None, allow_prerelease);
         let um = UpdateManager::new(source, None, None).map_err(|e| e.to_string())?;
         um.apply_updates_and_restart(&info)
@@ -550,5 +746,221 @@ mod tests {
                 "{bad:?} must be rejected"
             );
         }
+    }
+
+    #[test]
+    fn test_validate_version_accepts_plain_version() {
+        assert!(validate_version("1.2.3").is_ok());
+        assert!(validate_version("1.2.3-beta.1").is_ok());
+        assert!(validate_version("2.0.0.0").is_ok());
+    }
+
+    #[test]
+    fn test_validate_version_rejects_separators_and_whitespace() {
+        // `.`/`..` would resolve as path components in the no-`v` fallback
+        // URL and are rejected alongside separators and whitespace.
+        for bad in ["", ".", "..", "1/2", "1\\2", "1.2 3", "1.2\n3", "1.2\t3"] {
+            assert!(validate_version(bad).is_err(), "{bad:?} must be rejected");
+        }
+    }
+
+    #[test]
+    fn test_unique_temp_path_shape_and_uniqueness() {
+        let pkg = Path::new("pkg-dir/MediaSort-1.2.3-full.nupkg");
+        let a = unique_temp_path(pkg, "partial");
+        let b = unique_temp_path(pkg, "partial");
+        let sig = unique_temp_path(Path::new("pkg-dir/MediaSort-1.2.3-full.nupkg.sig"), "sig");
+
+        assert_ne!(a, b, "each run must get a distinct temp name");
+        let pid = std::process::id().to_string();
+        let name = |p: &Path| p.file_name().unwrap().to_string_lossy().into_owned();
+        assert!(name(&a).starts_with(&format!("MediaSort-1.2.3-full.partial.{pid}.")));
+        assert!(name(&b).starts_with(&format!("MediaSort-1.2.3-full.partial.{pid}.")));
+        assert!(name(&sig).starts_with(&format!("MediaSort-1.2.3-full.nupkg.sig.{pid}.")));
+        // Temps must not look like staged packages to the startup scanner.
+        assert_ne!(a.extension(), Some(std::ffi::OsStr::new("nupkg")));
+    }
+
+    fn test_dir(prefix: &str) -> std::path::PathBuf {
+        let id = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        let dir = std::env::temp_dir().join(format!(
+            "media_sort_retry_{}_{}_{}",
+            prefix,
+            std::process::id(),
+            id
+        ));
+        fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    #[test]
+    fn test_rename_with_retry_success() {
+        let dir = test_dir("success");
+        let partial = dir.join("pkg.partial.0.0");
+        let dest = dir.join("pkg.nupkg");
+        fs::write(&partial, b"data").unwrap();
+
+        rename_with_retry(&partial, &dest).unwrap();
+
+        assert!(!partial.exists());
+        assert_eq!(fs::read(&dest).unwrap(), b"data");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_rename_with_retry_replaces_existing_dest() {
+        // unix: rename(2) replaces the destination outright; Windows:
+        // MoveFileExW passes MOVEFILE_REPLACE_EXISTING. Either way the new
+        // content wins and the retry is not needed.
+        let dir = test_dir("replace");
+        let partial = dir.join("pkg.partial.0.0");
+        let dest = dir.join("pkg.nupkg");
+        fs::write(&partial, b"new").unwrap();
+        fs::write(&dest, b"old").unwrap();
+
+        rename_with_retry(&partial, &dest).unwrap();
+
+        assert_eq!(fs::read(&dest).unwrap(), b"new");
+        assert!(!partial.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_rename_with_retry_non_retryable_error_propagates() {
+        // Renaming a file onto an existing DIRECTORY fails with a
+        // non-retryable error kind (EISDIR on unix): the ORIGINAL error
+        // must be propagated, the destination must not be removed and the
+        // partial must be left alone.
+        let dir = test_dir("direrr");
+        let partial = dir.join("pkg.partial.0.0");
+        let dest = dir.join("dest_dir");
+        fs::write(&partial, b"data").unwrap();
+        fs::create_dir(&dest).unwrap();
+
+        let result = rename_with_retry(&partial, &dest);
+
+        let err = result.unwrap_err();
+        assert!(!err.is_empty());
+        assert!(
+            dest.is_dir(),
+            "non-retryable failure must not remove the destination"
+        );
+        assert!(
+            partial.exists(),
+            "non-retryable failure must not remove the partial"
+        );
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_is_stale_destination_error_classification() {
+        use std::io::ErrorKind;
+        assert!(is_stale_destination_error(&std::io::Error::from(
+            ErrorKind::PermissionDenied
+        )));
+        #[cfg(unix)]
+        assert!(is_stale_destination_error(&std::io::Error::from(
+            ErrorKind::AlreadyExists
+        )));
+        #[cfg(not(unix))]
+        assert!(!is_stale_destination_error(&std::io::Error::from(
+            ErrorKind::AlreadyExists
+        )));
+        assert!(!is_stale_destination_error(&std::io::Error::from(
+            ErrorKind::NotFound
+        )));
+        assert!(!is_stale_destination_error(&std::io::Error::from(
+            ErrorKind::Other
+        )));
+    }
+
+    struct MockChunkSource {
+        chunks: std::collections::VecDeque<Result<Option<Vec<u8>>, String>>,
+    }
+
+    impl MockChunkSource {
+        fn new(chunks: Vec<Result<Option<Vec<u8>>, String>>) -> Self {
+            Self {
+                chunks: chunks.into(),
+            }
+        }
+    }
+
+    impl ChunkSource for MockChunkSource {
+        async fn next_chunk(&mut self) -> Result<Option<Vec<u8>>, String> {
+            self.chunks.pop_front().unwrap_or(Ok(None))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_ok() {
+        let mut src = MockChunkSource::new(vec![
+            Ok(Some(b"hel".to_vec())),
+            Ok(Some(b"lo".to_vec())),
+            Ok(None),
+        ]);
+
+        let bytes = collect_capped(&mut src, Some(5), 1024, "Update package")
+            .await
+            .unwrap();
+
+        assert_eq!(bytes, b"hello");
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_no_expected_size() {
+        let mut src = MockChunkSource::new(vec![Ok(Some(vec![0u8; 5])), Ok(None)]);
+
+        let bytes = collect_capped(&mut src, None, 1024, "Signature file")
+            .await
+            .unwrap();
+
+        assert_eq!(bytes.len(), 5);
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_size_mismatch() {
+        let mut src = MockChunkSource::new(vec![Ok(Some(b"hello".to_vec())), Ok(None)]);
+
+        let err = collect_capped(&mut src, Some(6), 1024, "Update package")
+            .await
+            .unwrap_err();
+
+        assert!(err.contains("size mismatch"), "{err}");
+        assert!(err.contains("expected 6"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_exceeds_expected_size() {
+        let mut src = MockChunkSource::new(vec![Ok(Some(b"hello".to_vec())), Ok(None)]);
+
+        let err = collect_capped(&mut src, Some(4), 1024, "Update package")
+            .await
+            .unwrap_err();
+
+        assert!(err.contains("too large"), "{err}");
+        assert!(err.contains("expected 4"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_exceeds_hard_cap() {
+        let mut src = MockChunkSource::new(vec![Ok(Some(vec![0u8; 10])), Ok(None)]);
+
+        let err = collect_capped(&mut src, None, 8, "Signature file")
+            .await
+            .unwrap_err();
+
+        assert!(err.contains("hard cap"), "{err}");
+    }
+
+    #[tokio::test]
+    async fn test_collect_capped_stream_error_propagates() {
+        let mut src = MockChunkSource::new(vec![Err("boom".to_string())]);
+
+        let err = collect_capped(&mut src, None, 8, "Signature file")
+            .await
+            .unwrap_err();
+
+        assert!(err.contains("boom"), "{err}");
     }
 }

@@ -133,4 +133,26 @@ mod tests {
         tracker.clear();
         assert!(tracker.is_empty());
     }
+
+    #[test]
+    fn test_media_error_tracker_cap_bounds_map() {
+        let mut tracker = MediaErrorTracker::new();
+        let paths: Vec<PathBuf> = (0..MAX_TRACKED_ERRORS + 5)
+            .map(|i| PathBuf::from(format!("/tmp/bad_{i}.jpg")))
+            .collect();
+        for (i, p) in paths.iter().enumerate() {
+            tracker.record(p.clone(), format!("Error {i}"));
+        }
+
+        // Documented behavior: once the cap is hit, the map is cleared and
+        // only the entry that triggered the clear survives (plus whatever
+        // was recorded after it). The first recorded paths were wiped...
+        assert!(!tracker.has_error(&paths[0]));
+        // ...the cap-triggering entry (index MAX_TRACKED_ERRORS) survived...
+        assert!(tracker.has_error(&paths[MAX_TRACKED_ERRORS]));
+        // ...and the map stays bounded — never above MAX_TRACKED_ERRORS.
+        assert_eq!(tracker.len(), paths.len() - MAX_TRACKED_ERRORS);
+        assert!(tracker.len() <= MAX_TRACKED_ERRORS);
+        assert!(tracker.has_error(paths.last().unwrap()));
+    }
 }

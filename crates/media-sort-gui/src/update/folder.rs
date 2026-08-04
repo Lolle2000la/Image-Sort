@@ -182,7 +182,20 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
                                 }
                             }
                             Err(e) => {
-                                tracing::error!("Cannot create move action: {e}");
+                                if let media_sort_core::actions::reversible::ActionError::TargetExists(
+                                    target,
+                                ) = &e
+                                {
+                                    let name = target
+                                        .file_name()
+                                        .map(|n| n.to_string_lossy().into_owned())
+                                        .unwrap_or_else(|| target.display().to_string());
+                                    state.set_status(
+                                        state.l10n.get("status-target-exists", &[("name", &name)]),
+                                    );
+                                } else {
+                                    tracing::error!("Cannot create move action: {e}");
+                                }
                             }
                         }
                     }

@@ -184,3 +184,5 @@ drag-drop-denied-multiple-folders = Dragging multiple folders at once is not sup
 status-symlinks-skipped = Skipped {$count} symbolic link(s): {$names}. Symbolic links are never moved or copied.
 status-symlink-refused = Refused {$name}: the entry is a symbolic link.
 status-folder-name-invalid = Cannot create folder "{$name}": invalid folder name.
+status-target-exists = Refused {$name}: a file or folder with that name already exists.
+status-update-failed = Update failed. Please try again later.

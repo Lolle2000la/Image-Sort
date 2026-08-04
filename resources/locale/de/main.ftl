@@ -185,3 +185,5 @@ drag-drop-denied-multiple-folders = Das Ablegen mehrerer Ordner gleichzeitig wir
 status-symlinks-skipped = {$count} symbolische Verknüpfung(en) übersprungen: {$names}. Symbolische Verknüpfungen werden niemals verschoben oder kopiert.
 status-symlink-refused = {$name} abgelehnt: Der Eintrag ist eine symbolische Verknüpfung.
 status-folder-name-invalid = Ordner "{$name}" konnte nicht erstellt werden: ungültiger Ordnername.
+status-target-exists = {$name} abgelehnt: Eine Datei oder ein Ordner mit diesem Namen existiert bereits.
+status-update-failed = Update fehlgeschlagen. Bitte versuche es später erneut.

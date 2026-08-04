@@ -27,6 +27,17 @@ use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::{FolderNode, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
+/// A transient user-facing status banner: text plus a monotonic expiry
+/// stamp. Rendered by the main layout, cleared on the next tick whose
+/// `Instant` is past `expires_at` — the comparison uses the tick's own
+/// monotonic clock, so a suspended process cannot keep a stale banner alive
+/// for the leftover duration.
+#[derive(Debug, Clone)]
+pub struct StatusMessage {
+    pub text: String,
+    pub expires_at: std::time::Instant,
+}
+
 #[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
 pub struct AppState {
     pub history: History,
@@ -46,9 +57,10 @@ pub struct AppState {
     pub settings_ui: SettingsUiState,
     pub drag_drop: DragDropState,
 
-    /// Transient user-facing status banner (text, expiry instant). Rendered
-    /// by the main layout, cleared on the next tick after expiry.
-    pub status_message: Option<(String, std::time::Instant)>,
+    /// Transient user-facing status banner (text + monotonic expiry
+    /// instant). Rendered by the main layout, cleared on the next tick
+    /// after expiry.
+    pub status_message: Option<StatusMessage>,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -142,13 +154,14 @@ impl AppState {
     }
 
     /// Show a transient status banner that auto-expires after 5 seconds
-    /// (cleared on the next tick). Used to surface refused actions such as
-    /// symbolic-link drops, which previously failed silently.
+    /// (cleared on the next tick whose `Instant` has passed). Used to
+    /// surface refused actions such as symbolic-link drops, which
+    /// previously failed silently.
     pub fn set_status(&mut self, text: String) {
-        self.status_message = Some((
+        self.status_message = Some(StatusMessage {
             text,
-            std::time::Instant::now() + std::time::Duration::from_secs(5),
-        ));
+            expires_at: std::time::Instant::now() + std::time::Duration::from_secs(5),
+        });
     }
 
     pub fn open_folder(&mut self, path: &Path) {
@@ -156,6 +169,9 @@ impl AppState {
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         self.settings.mark_dirty();
         self.history.clear();
+        // A banner set by a drop (or a refused action) must not linger
+        // across the folder switch.
+        self.status_message = None;
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;

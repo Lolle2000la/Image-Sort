@@ -52,7 +52,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                             }
                         }
                         Err(e) => {
-                            tracing::error!("Cannot create move action: {e}");
+                            report_action_error(state, e);
                         }
                     }
                 }
@@ -109,7 +109,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                     }
                 }
                 Err(e) => {
-                    tracing::error!("Cannot create copy action: {e}");
+                    report_action_error(state, e);
                 }
             }
             Task::none()
@@ -137,15 +137,16 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                         }
                     }
                 }
-                Err(e) => {
-                    if let ActionError::IllegalCharacters { character, .. } = &e {
+                Err(e) => match &e {
+                    ActionError::IllegalCharacters { character, .. } => {
                         state.rename.error = Some(state.l10n.get(
                             "ui-rename-illegal-char",
                             &[("char", &character.to_string())],
                         ));
+                        tracing::error!("Cannot create rename action: {e}");
                     }
-                    tracing::error!("Cannot create rename action: {e}");
-                }
+                    _ => report_action_error(state, e),
+                },
             }
             Task::none()
         }
@@ -226,7 +227,26 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             Task::none()
         }
         MediaMessage::ThumbnailFailed(path, err) => {
-            state.cache.media_errors.record(path, err);
+            match err {
+                crate::subscriptions::prefetch::ThumbnailError::Transient(rest) => {
+                    // Transient failure (queue timeout, dead worker pool),
+                    // not a decode failure: do NOT record it in
+                    // `media_errors`. `load_visible_thumbnails` filters on
+                    // `media_errors.has_error` (tasks.rs), so a recorded
+                    // path would be skipped for the whole folder session
+                    // with a permanent "failed" badge and never retried.
+                    // Left unrecorded, the card simply stays without a
+                    // thumbnail and the next viewport change / scroll pass
+                    // re-queues it through `load_visible_thumbnails`.
+                    tracing::debug!(
+                        "Thumbnail transient failure for {} (retried on next viewport pass): {rest}",
+                        path.display()
+                    );
+                }
+                crate::subscriptions::prefetch::ThumbnailError::Decode(msg) => {
+                    state.cache.media_errors.record(path, msg);
+                }
+            }
             Task::none()
         }
         MediaMessage::ThumbnailCancelled(_path) => Task::none(),
@@ -304,7 +324,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                             }
                         }
                         Err(e) => {
-                            tracing::error!("Cannot create move action: {e}");
+                            report_action_error(state, e);
                         }
                     }
                 }
@@ -326,7 +346,7 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                             }
                         }
                         Err(e) => {
-                            tracing::error!("Cannot create copy action: {e}");
+                            report_action_error(state, e);
                         }
                     }
                 }
@@ -405,6 +425,22 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             }
             Task::none()
         }
+    }
+}
+
+/// Surfaces refused actions to the user. `TargetExists` gets a status
+/// banner (a same-named file/folder in the destination is a user-visible
+/// conflict — previously it only produced a log line and the action
+/// silently did nothing); everything else is logged as before.
+fn report_action_error(state: &mut AppState, e: ActionError) {
+    if let ActionError::TargetExists(target) = e {
+        let name = target
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| target.display().to_string());
+        state.set_status(state.l10n.get("status-target-exists", &[("name", &name)]));
+    } else {
+        tracing::error!("Cannot create action: {e}");
     }
 }
 

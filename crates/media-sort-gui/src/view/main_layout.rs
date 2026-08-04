@@ -213,8 +213,8 @@ pub fn main_layout_view(state: &AppState) -> Element<'_, Message> {
         if state.drag_drop.hovering {
             stack = stack.push(crate::view::drag_drop::drag_drop_overlay_view(state));
         }
-        if let Some((text, _)) = &state.status_message {
-            stack = stack.push(crate::view::overlay::status_toast(text));
+        if let Some(status) = &state.status_message {
+            stack = stack.push(crate::view::overlay::status_toast(&status.text));
         }
         return stack.into();
     }
