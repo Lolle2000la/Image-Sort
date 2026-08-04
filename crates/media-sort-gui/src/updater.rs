@@ -323,14 +323,15 @@ pub async fn download_and_apply_async(
                     // Windows: rename fails when a stale package already
                     // occupies the destination. Remove the stale file and
                     // retry once. If the destination turned out not to
-                    // exist, the rename failed for another reason — the
-                    // original error is propagated so it is never masked.
+                    // exist, the failure was transient — retry the rename
+                    // without deleting anything. A destination that exists
+                    // but cannot be removed is propagated unchanged.
                     match fs::remove_file(&package_path) {
                         Ok(()) => {
                             fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
                         }
                         Err(remove_err) if remove_err.kind() == std::io::ErrorKind::NotFound => {
-                            Err(rename_err.to_string())
+                            fs::rename(&partial_path, &package_path).map_err(|e| e.to_string())
                         }
                         Err(remove_err) => Err(remove_err.to_string()),
                     }
