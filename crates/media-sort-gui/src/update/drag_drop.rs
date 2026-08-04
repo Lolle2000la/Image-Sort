@@ -73,11 +73,19 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                     .unwrap_or(false)
             });
             if !symlink_paths.is_empty() {
+                // Cap the banner text: a drop with thousands of symlinks
+                // must not allocate an unbounded string for the toast.
+                const MAX_SHOWN_NAMES: usize = 3;
                 let names = symlink_paths
                     .iter()
                     .filter_map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
-                    .collect::<Vec<_>>()
-                    .join(", ");
+                    .collect::<Vec<_>>();
+                let names = if names.len() > MAX_SHOWN_NAMES {
+                    let shown = names[..MAX_SHOWN_NAMES].join(", ");
+                    format!("{shown}, …")
+                } else {
+                    names.join(", ")
+                };
                 state.set_status(state.l10n.get(
                     "status-symlinks-skipped",
                     &[

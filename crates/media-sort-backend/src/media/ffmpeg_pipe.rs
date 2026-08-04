@@ -128,6 +128,11 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
             None if std::time::Instant::now() >= deadline => {
                 let _ = child.kill();
                 let _ = child.wait();
+                // The stdout/stderr threads are intentionally left detached:
+                // kill+wait closes the child's write ends, so the reader
+                // threads reach EOF and exit on their own. Joining them
+                // here could instead hang forever if a hostile ffmpeg
+                // spawned a grandchild that inherited the pipe.
                 return Err(format!("ffmpeg timed out after {FFMPEG_TIMEOUT:?}"));
             }
             None => std::thread::sleep(std::time::Duration::from_millis(10)),

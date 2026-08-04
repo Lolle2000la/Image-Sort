@@ -90,6 +90,19 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
     if dst_w == 0 || dst_h == 0 {
         return (0, 0, Vec::new());
     }
+    // A caller passing dimensions much larger than the source slice would
+    // otherwise allocate dst_w*dst_h*4 bytes of zeros. Require the source
+    // to actually hold a full frame before allocating.
+    let Some(src_size) = (src_w as u64)
+        .checked_mul(src_h as u64)
+        .and_then(|n| n.checked_mul(4))
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return (0, 0, Vec::new());
+    };
+    if src.len() < src_size {
+        return (0, 0, Vec::new());
+    }
     let Some(dst_size) = (dst_w as u64)
         .checked_mul(dst_h as u64)
         .and_then(|n| n.checked_mul(4))
@@ -484,5 +497,13 @@ mod tests {
         // 270 deg CW: (0,0) Red -> (0,1); (1,0) Green -> (0,0)
         assert_eq!(&dst[0..4], &[0, 255, 0, 255]);
         assert_eq!(&dst[4..8], &[255, 0, 0, 255]);
+    }
+
+    #[test]
+    fn test_rotate_rgba_rejects_undersized_src() {
+        let src = vec![0u8; 4];
+        let (w, h, dst) = rotate_rgba(1024, 1024, &src, Rotation::R90);
+        assert_eq!((w, h), (0, 0));
+        assert!(dst.is_empty());
     }
 }
