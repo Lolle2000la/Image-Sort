@@ -75,13 +75,18 @@ fn is_animated_gif_reader<R: std::io::Read + std::io::Seek>(reader: &mut R) -> O
     loop {
         blocks += 1;
         if blocks > 10_000 {
-            break;
+            return None;
         }
         if reader.read_exact(&mut block).is_err() {
-            break;
+            return None;
         }
         match block[0] {
-            0x3B => break, // trailer: end of image data
+            // Trailer: end of image data. Only a scan that reaches the
+            // trailer (or positively detects a second image descriptor)
+            // yields Some; any other termination — malformed input, block
+            // cap, unexpected EOF — returns None so a corrupt GIF is never
+            // misclassified as a known-static one.
+            0x3B => return Some(images >= 2),
             0x2C => {
                 // image descriptor: left(2) top(2) width(2) height(2) packed(1)
                 images += 1;
@@ -90,7 +95,7 @@ fn is_animated_gif_reader<R: std::io::Read + std::io::Seek>(reader: &mut R) -> O
                 }
                 let mut descriptor = [0u8; 9];
                 if reader.read_exact(&mut descriptor).is_err() {
-                    break;
+                    return None;
                 }
                 // local color table, then the LZW minimum code size byte,
                 // then the sub-block data stream
@@ -103,10 +108,10 @@ fn is_animated_gif_reader<R: std::io::Read + std::io::Seek>(reader: &mut R) -> O
                     .seek(SeekFrom::Current(lct_bytes as i64 + 1))
                     .is_err()
                 {
-                    break;
+                    return None;
                 }
                 if !skip_sub_blocks(reader) {
-                    break;
+                    return None;
                 }
             }
             0x21 => {
@@ -115,19 +120,18 @@ fn is_animated_gif_reader<R: std::io::Read + std::io::Seek>(reader: &mut R) -> O
                 // header before its sub-blocks.
                 let mut label = [0u8; 1];
                 if reader.read_exact(&mut label).is_err() {
-                    break;
+                    return None;
                 }
                 if label[0] == 0x01 && reader.seek(SeekFrom::Current(12)).is_err() {
-                    break;
+                    return None;
                 }
                 if !skip_sub_blocks(reader) {
-                    break;
+                    return None;
                 }
             }
-            _ => break, // unknown block start: stop scanning
+            _ => return None, // unknown block start: not a parseable GIF
         }
     }
-    Some(images >= 2)
 }
 
 /// Skip a chain of GIF sub-blocks (length-prefixed chunks terminated by a

@@ -89,15 +89,15 @@ mod tests {
         std::fs::create_dir_all(&dir).ok();
         dir
     }
-    fn rand_u32() -> u32 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos()
-    }
     fn temp_subdir() -> std::path::PathBuf {
-        let dir = temp_dir().join(format!("sub-{}", rand_u32()));
+        // Monotonic per-process counter: a timestamp-derived rand() can
+        // collide when tests run in quick succession (parallel test
+        // threads), sharing directories across tests.
+        static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let dir = temp_dir().join(format!(
+            "sub-{}",
+            COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
         std::fs::create_dir_all(&dir).ok();
         dir
     }
@@ -200,17 +200,16 @@ mod security_tests {
     }
 
     fn temp_subdir() -> std::path::PathBuf {
-        let dir = temp_dir().join(format!("sub-{}", rand()));
+        // Monotonic per-process counter: a timestamp-derived rand() can
+        // collide when tests run in quick succession (parallel test
+        // threads), sharing directories across tests.
+        static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        let dir = temp_dir().join(format!(
+            "sub-{}",
+            COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
         std::fs::create_dir_all(&dir).ok();
         dir
-    }
-
-    fn rand() -> u32 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos()
     }
 
     #[test]

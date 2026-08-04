@@ -733,10 +733,45 @@ fn test_is_animated_gif_bomb_header_returns_fast() {
     let result = image_decoder::is_animated_gif(&path);
     let elapsed = started.elapsed();
 
-    assert_eq!(result, Some(false), "bomb has no image descriptors");
+    // No trailer and no image descriptors: the file is not a parseable
+    // GIF, so the answer is None (unknown), never Some(false) — a corrupt
+    // GIF must not be misclassified as a known-static one.
+    assert_eq!(result, None, "bomb has no trailer or image descriptors");
     assert!(
         elapsed < std::time::Duration::from_secs(1),
         "header scan took {elapsed:?}"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_is_animated_gif_truncated_returns_none() {
+    // A single-frame GIF whose data is cut off before the trailer is not
+    // a parseable GIF: the scan must answer None (unknown), not Some(false).
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_trunc_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("truncated.gif");
+
+    let img = image::RgbaImage::from_pixel(4, 4, image::Rgba([255, 0, 0, 255]));
+    let file = std::fs::File::create(&path).unwrap();
+    {
+        let mut encoder = image::codecs::gif::GifEncoder::new(file);
+        encoder
+            .encode(&img, 4, 4, image::ExtendedColorType::Rgba8)
+            .unwrap();
+    }
+    let mut bytes = std::fs::read(&path).unwrap();
+    // Drop the trailer byte (and any trailing bytes) to simulate truncation.
+    while bytes.last() == Some(&0x3B) {
+        bytes.pop();
+    }
+    std::fs::write(&path, &bytes).unwrap();
+
+    let result = image_decoder::is_animated_gif(&path);
+    assert_eq!(
+        result, None,
+        "truncated GIF (no trailer) must not be classified as static"
     );
 
     std::fs::remove_dir_all(&dir).ok();
