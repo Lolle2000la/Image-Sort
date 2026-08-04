@@ -51,20 +51,44 @@ fn find_ffmpeg_uncached() -> Option<PathBuf> {
     None
 }
 
+/// Whether the path's first byte/code unit is `-`, i.e. the argument would be
+/// handed to ffmpeg as an option rather than a plain value.
+///
+/// Checked on the raw OS string, not `to_str()`: a non-UTF8 path (or, on
+/// Windows, a path with an unpaired surrogate) whose first byte is `-` would
+/// otherwise bypass a UTF-8-only check even though `Command::arg` passes the
+/// exact raw bytes to ffmpeg.
+fn path_starts_with_dash(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+        path.as_os_str().as_bytes().first() == Some(&b'-')
+    }
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        path.as_os_str().encode_wide().next() == Some(0x002D)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        path.to_str().is_some_and(|s| s.starts_with('-'))
+    }
+}
+
 /// Extract the first video frame, scaled to fit max_w×max_h (aspect preserved),
 /// as RGBA. Uses `-vf scale=W:H:force_original_aspect_ratio=decrease,setsar=1`
 /// piped as PNG (`-f image2pipe -vcodec png -`), decoded via the image crate.
 pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::DecodedImage, String> {
     let ffmpeg = find_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
 
-    // Any argument string starting with '-' is parsed as an ffmpeg option,
+    // Any argument starting with '-' is parsed as an ffmpeg option,
     // misaligning the whole argument list — a `-`-prefixed DIRECTORY
     // component in a relative path (e.g. `-evil/x.jpg`) is just as dangerous
-    // as a file literally named `-`. The whole path string is checked so the
-    // guard rejects any argument that could be parsed as an ffmpeg option.
-    // The scanner only produces absolute paths, but guard the API against
-    // direct misuse.
-    if path.to_str().is_some_and(|s| s.starts_with('-')) {
+    // as a file literally named `-`. The whole path is checked (not just the
+    // file name) so any argument that could be parsed as an option is
+    // rejected. The scanner only produces absolute paths, but the API is
+    // guarded against direct misuse.
+    if path_starts_with_dash(path) {
         return Err(format!(
             "cannot extract frame: path {:?} starts with '-'",
             path
@@ -181,4 +205,35 @@ const FFMPEG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 /// allocations.
 fn decode_png_with_limits(bytes: &[u8]) -> Result<image::DynamicImage, String> {
     super::image_decoder::decode_bytes_with_limits(bytes).map_err(|e| format!("png decode: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_path_starts_with_dash_utf8() {
+        assert!(path_starts_with_dash(Path::new("-evil/x.jpg")));
+        assert!(path_starts_with_dash(Path::new("-")));
+        assert!(!path_starts_with_dash(Path::new("/tmp/-evil/x.jpg")));
+        assert!(!path_starts_with_dash(Path::new("x.jpg")));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_path_starts_with_dash_non_utf8() {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        // A raw path whose first byte is '-' but which is not valid UTF-8
+        // must still be rejected (to_str() returns None, the raw-byte check
+        // does not).
+        let raw = vec![b'-', 0xFF, b'e'];
+        assert!(path_starts_with_dash(Path::new(
+            OsString::from_vec(raw).as_os_str()
+        )));
+        let raw = vec![0xFF, b'-'];
+        assert!(!path_starts_with_dash(Path::new(
+            OsString::from_vec(raw).as_os_str()
+        )));
+    }
 }
