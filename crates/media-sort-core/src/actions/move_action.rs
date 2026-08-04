@@ -2,6 +2,14 @@ use std::path::{Path, PathBuf};
 
 use crate::actions::reversible::{ActionError, ReversibleAction};
 
+/// Moves `old_path` into `to_folder` without ever replacing an existing
+/// destination.
+///
+/// The `TargetExists` refusal is enforced not only at construction but again
+/// in [`execute`](ReversibleAction::execute) and
+/// [`rollback`](ReversibleAction::rollback): Undo/Redo re-run those paths on
+/// paths that were freed by the action itself, and a file that appeared at
+/// either path in the meantime must not be silently clobbered by `rename(2)`.
 pub struct MoveAction {
     old_path: PathBuf,
     new_path: PathBuf,
@@ -14,6 +22,9 @@ impl MoveAction {
         let file = file
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;
+        // Defense in depth: re-check the resolved path in case canonicalize
+        // ever stops short of a final link.
+        crate::actions::reversible::reject_symlink_source(&file)?;
         let to_folder = to_folder
             .canonicalize()
             .map_err(|_| ActionError::DirectoryNotFound(to_folder.to_path_buf()))?;
@@ -26,8 +37,9 @@ impl MoveAction {
         // A plain rename(2) silently REPLACES an existing destination, so a
         // move into a populated folder would destroy the pre-existing file
         // with no warning (rollback cannot restore it). Refuse instead,
-        // matching CopyAction/RenameAction.
-        if new_path.exists() {
+        // matching CopyAction/RenameAction. symlink_metadata (not exists())
+        // so a dangling destination symlink also counts as taken.
+        if new_path.symlink_metadata().is_ok() {
             return Err(ActionError::TargetExists(new_path));
         }
 
@@ -66,12 +78,22 @@ impl ReversibleAction for MoveAction {
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
+        // Redo re-runs this after rollback freed `new_path`; a file that
+        // appeared there in the meantime must not be replaced by rename(2).
+        if self.new_path.symlink_metadata().is_ok() {
+            return Err(ActionError::TargetExists(self.new_path.clone()));
+        }
         crate::path_utils::rename_or_copy_and_delete(&self.old_path, &self.new_path)?;
         self.executed = true;
         Ok(())
     }
 
     fn rollback(&mut self) -> Result<(), ActionError> {
+        // Undo renames back onto `old_path`, which may have been repopulated
+        // since the move — refuse rather than silently replace it.
+        if self.old_path.symlink_metadata().is_ok() {
+            return Err(ActionError::TargetExists(self.old_path.clone()));
+        }
         crate::path_utils::rename_or_copy_and_delete(&self.new_path, &self.old_path)?;
         self.executed = false;
         Ok(())
@@ -82,25 +104,8 @@ impl ReversibleAction for MoveAction {
 mod tests {
     use super::*;
     use crate::actions::reversible::{ActionError, ReversibleAction};
+    use crate::actions::test_utils::temp_subdir;
     use std::path::PathBuf;
-
-    fn temp_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("media-sort-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
-    fn temp_subdir() -> std::path::PathBuf {
-        // Monotonic per-process counter: a timestamp-derived rand() can
-        // collide when tests run in quick succession (parallel test
-        // threads), sharing directories across tests.
-        static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-        let dir = temp_dir().join(format!(
-            "sub-{}",
-            COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-        ));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
 
     #[test]
     fn test_move_execute() {
@@ -192,25 +197,7 @@ mod tests {
 #[cfg(test)]
 mod security_tests {
     use super::*;
-
-    fn temp_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("media-sort-sec-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
-
-    fn temp_subdir() -> std::path::PathBuf {
-        // Monotonic per-process counter: a timestamp-derived rand() can
-        // collide when tests run in quick succession (parallel test
-        // threads), sharing directories across tests.
-        static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
-        let dir = temp_dir().join(format!(
-            "sub-{}",
-            COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-        ));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
+    use crate::actions::test_utils::temp_subdir;
 
     #[test]
     fn test_move_target_exists_refused() {
@@ -228,6 +215,9 @@ mod security_tests {
         // The pre-existing file must be untouched.
         let old = std::fs::read_to_string(dst_dir.join("overwrite_me.txt")).unwrap();
         assert_eq!(old, "precious old");
+
+        std::fs::remove_dir_all(&src_dir).ok();
+        std::fs::remove_dir_all(&dst_dir).ok();
     }
 
     #[cfg(unix)]
@@ -251,5 +241,82 @@ mod security_tests {
         // The victim must remain untouched.
         assert!(victim.exists());
         assert_eq!(std::fs::read_to_string(&victim).unwrap(), "secret");
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_move_dangling_symlink_destination_refused() {
+        let src_dir = temp_subdir();
+        let dst_dir = temp_subdir();
+        let src_file = src_dir.join("dangling_target.txt");
+        std::fs::write(&src_file, b"data").unwrap();
+        std::os::unix::fs::symlink(
+            src_dir.join("missing.txt"),
+            dst_dir.join("dangling_target.txt"),
+        )
+        .unwrap();
+
+        let result = MoveAction::new(&src_file, &dst_dir);
+        assert!(
+            matches!(result, Err(ActionError::TargetExists(_))),
+            "a dangling symlink at the destination must still refuse the move"
+        );
+
+        std::fs::remove_dir_all(&src_dir).ok();
+        std::fs::remove_dir_all(&dst_dir).ok();
+    }
+
+    #[test]
+    fn test_move_rollback_refuses_clobber() {
+        let src_dir = temp_subdir();
+        let dst_dir = temp_subdir();
+        let src_file = src_dir.join("rollback_clobber.txt");
+        std::fs::write(&src_file, b"moved contents").unwrap();
+
+        let mut action = MoveAction::new(&src_file, &dst_dir).unwrap();
+        action.execute().unwrap();
+        assert!(!src_file.exists());
+
+        // A new file appears at the original location while the action sits
+        // in the done stack: rollback must refuse to replace it.
+        std::fs::write(&src_file, b"interloper").unwrap();
+
+        let err = action.rollback().unwrap_err();
+        assert!(matches!(&err, ActionError::TargetExists(_)));
+        // The interloper survives and the moved file stays in the target
+        // folder.
+        assert_eq!(std::fs::read_to_string(&src_file).unwrap(), "interloper");
+        assert!(dst_dir.join("rollback_clobber.txt").exists());
+
+        std::fs::remove_dir_all(&src_dir).ok();
+        std::fs::remove_dir_all(&dst_dir).ok();
+    }
+
+    #[test]
+    fn test_move_redo_refuses_clobber() {
+        let src_dir = temp_subdir();
+        let dst_dir = temp_subdir();
+        let src_file = src_dir.join("redo_clobber.txt");
+        std::fs::write(&src_file, b"moved contents").unwrap();
+
+        let mut action = MoveAction::new(&src_file, &dst_dir).unwrap();
+        action.execute().unwrap();
+        action.rollback().unwrap();
+        assert!(src_file.exists());
+
+        // A new file appears at the destination while the action sits in the
+        // undone stack: redo must refuse to replace it.
+        let dst_file = dst_dir.join("redo_clobber.txt");
+        std::fs::write(&dst_file, b"interloper").unwrap();
+
+        let err = action.execute().unwrap_err();
+        assert!(matches!(&err, ActionError::TargetExists(_)));
+        assert_eq!(std::fs::read_to_string(&dst_file).unwrap(), "interloper");
+        assert!(src_file.exists());
+
+        std::fs::remove_dir_all(&src_dir).ok();
+        std::fs::remove_dir_all(&dst_dir).ok();
     }
 }

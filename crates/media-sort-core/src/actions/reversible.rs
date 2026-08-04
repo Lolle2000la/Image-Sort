@@ -17,11 +17,7 @@ pub trait ReversibleAction: Send + Sync {
 /// behind; copying it exfiltrates the target's contents. The in-app scanner
 /// skips symlinks, but drag & drop and external paths do not.
 pub fn reject_symlink_source(path: &Path) -> Result<(), ActionError> {
-    if path
-        .symlink_metadata()
-        .map(|m| m.file_type().is_symlink())
-        .unwrap_or(false)
-    {
+    if crate::path_utils::is_symlink(path) {
         Err(ActionError::SourceIsSymlink(path.to_path_buf()))
     } else {
         Ok(())

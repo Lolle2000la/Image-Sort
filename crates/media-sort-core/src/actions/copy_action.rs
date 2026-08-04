@@ -15,6 +15,10 @@ impl CopyAction {
         let file = file
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(file.to_path_buf()))?;
+        // Defense in depth: re-check the resolved path in case canonicalize
+        // ever stops short of a final link. The authoritative re-check for
+        // links swapped in later happens inside execute().
+        crate::actions::reversible::reject_symlink_source(&file)?;
         let to_folder = to_folder
             .canonicalize()
             .map_err(|_| ActionError::DirectoryNotFound(to_folder.to_path_buf()))?;
@@ -24,7 +28,9 @@ impl CopyAction {
             .ok_or_else(|| ActionError::SourceNotFound(file.clone()))?;
         let destination = to_folder.join(file_name);
 
-        if destination.exists() {
+        // symlink_metadata (not exists()) so a dangling destination symlink
+        // also counts as taken and is not silently replaced.
+        if destination.symlink_metadata().is_ok() {
             return Err(ActionError::TargetExists(destination));
         }
 
@@ -63,6 +69,14 @@ impl ReversibleAction for CopyAction {
     }
 
     fn execute(&mut self) -> Result<(), ActionError> {
+        // fs::copy FOLLOWS the source: re-check right before copying so a
+        // link swapped in after construction cannot exfiltrate its target.
+        crate::actions::reversible::reject_symlink_source(&self.source)?;
+        // Deliberately no destination-existence guard: overwriting the
+        // destination produced by the action's own previous execute() is the
+        // established CopyAction semantic (see
+        // test_copy_execute_then_double_execute_then_rollback), which a
+        // TargetExists check here could not distinguish from a clobber.
         fs::copy(&self.source, &self.destination)?;
         self.executed = true;
         Ok(())
@@ -84,26 +98,7 @@ mod tests {
 
     use crate::actions::copy_action::CopyAction;
     use crate::actions::reversible::{ActionError, ReversibleAction};
-
-    fn temp_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("media-sort-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
-
-    fn rand_u32() -> u32 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos()
-    }
-
-    fn temp_subdir() -> std::path::PathBuf {
-        let dir = temp_dir().join(format!("sub-{}", rand_u32()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
+    use crate::actions::test_utils::temp_subdir;
 
     #[test]
     fn test_copy_execute() {
@@ -275,5 +270,56 @@ mod tests {
         assert!(!dest_path.exists());
         assert!(src_file.exists(), "source should survive rollback");
         assert_eq!(std::fs::read_to_string(&src_file).unwrap(), "modified");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_copy_execute_refuses_swapped_symlink_source() {
+        let root = temp_subdir();
+        let src_dir = root.join("src");
+        let dst_dir = root.join("dst");
+        let victim = root.join("victim.txt");
+        std::fs::create_dir_all(&src_dir).unwrap();
+        std::fs::create_dir_all(&dst_dir).unwrap();
+        std::fs::write(&victim, b"secret").unwrap();
+
+        let real = src_dir.join("real.txt");
+        std::fs::write(&real, b"original").unwrap();
+
+        let mut action = CopyAction::new(&real, &dst_dir).unwrap();
+
+        // Swap the canonical source path for a symlink to the victim between
+        // construction and execution: fs::copy would follow it.
+        let src = action.source().to_path_buf();
+        std::fs::rename(&src, src_dir.join("real.orig")).unwrap();
+        std::os::unix::fs::symlink(&victim, &src).unwrap();
+
+        let err = action.execute().unwrap_err();
+        assert!(matches!(&err, ActionError::SourceIsSymlink(_)));
+        // The victim is untouched and nothing was copied into dst.
+        assert_eq!(std::fs::read_to_string(&victim).unwrap(), "secret");
+        assert!(!dst_dir.join("real.txt").exists());
+
+        std::fs::remove_dir_all(&root).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_copy_dangling_symlink_destination_refused() {
+        let src_dir = temp_subdir();
+        let dst_dir = temp_subdir();
+        let src_file = src_dir.join("dangling_target.txt");
+        std::fs::write(&src_file, b"data").unwrap();
+        std::os::unix::fs::symlink(
+            src_dir.join("missing.txt"),
+            dst_dir.join("dangling_target.txt"),
+        )
+        .unwrap();
+
+        let result = CopyAction::new(&src_file, &dst_dir);
+        assert!(
+            matches!(result, Err(ActionError::TargetExists(_))),
+            "a dangling symlink at the destination must still refuse the copy"
+        );
     }
 }

@@ -47,6 +47,9 @@ impl RenameAction {
         let path = path
             .canonicalize()
             .map_err(|_| ActionError::SourceNotFound(path.to_path_buf()))?;
+        // Defense in depth: re-check the resolved path in case canonicalize
+        // ever stops short of a final link.
+        crate::actions::reversible::reject_symlink_source(&path)?;
 
         Self::validate_stem(new_stem)?;
 
@@ -58,7 +61,9 @@ impl RenameAction {
             parent.join(format!("{}.{}", new_stem, ext.to_string_lossy()))
         };
 
-        if new_path.exists() {
+        // symlink_metadata (not exists()) so a dangling destination symlink
+        // also counts as taken and is not silently replaced.
+        if new_path.symlink_metadata().is_ok() {
             return Err(ActionError::TargetExists(new_path));
         }
 
@@ -112,26 +117,7 @@ impl ReversibleAction for RenameAction {
 mod tests {
     use super::RenameAction;
     use crate::actions::reversible::{ActionError, ReversibleAction};
-
-    fn temp_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("media-sort-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
-
-    fn rand_u32() -> u32 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos()
-    }
-
-    fn temp_subdir() -> std::path::PathBuf {
-        let dir = temp_dir().join(format!("sub-{}", rand_u32()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
+    use crate::actions::test_utils::temp_subdir;
 
     #[test]
     fn test_rename_execute() {
@@ -186,6 +172,21 @@ mod tests {
         let result = RenameAction::new(&file1, "second");
         assert!(result.is_err());
         assert!(matches!(&result, Err(ActionError::TargetExists(_))));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_rename_dangling_symlink_destination_refused() {
+        let dir = temp_subdir();
+        let file = dir.join("legal.txt");
+        std::fs::write(&file, b"data").unwrap();
+        std::os::unix::fs::symlink(dir.join("missing.txt"), dir.join("dangling.txt")).unwrap();
+
+        let result = RenameAction::new(&file, "dangling");
+        assert!(
+            matches!(result, Err(ActionError::TargetExists(_))),
+            "a dangling symlink at the destination must still refuse the rename"
+        );
     }
 
     #[test]

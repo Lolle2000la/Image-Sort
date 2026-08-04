@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 
 pub fn rename_or_copy_and_delete(src: &Path, dst: &Path) -> io::Result<()> {
@@ -31,6 +31,34 @@ pub fn cross_device_error(e: &io::Error) -> bool {
     }
 }
 
+/// Whether `path` is a symbolic link, without following it. Non-existent
+/// paths and metadata errors are treated as `false`.
+///
+/// Single source of truth for the symlink-refusal policy shared by the
+/// actions layer (`reversible::reject_symlink_source`), drag & drop, the
+/// Windows trash implementation and the settings store.
+pub fn is_symlink(path: &Path) -> bool {
+    path.symlink_metadata()
+        .map(|m| m.file_type().is_symlink())
+        .unwrap_or(false)
+}
+
+/// Atomically replace `dest` with `bytes`: write to `tmp` (same directory,
+/// so the rename stays on one filesystem), sync to disk, then rename over
+/// `dest`. A crash mid-write can never truncate `dest`.
+///
+/// Callers are responsible for `tmp` being on the same filesystem as `dest`
+/// and for any symlink resolution they need before the rename (the rename
+/// replaces the path itself, it does not follow links).
+pub fn atomic_write(tmp: &Path, dest: &Path, bytes: &[u8]) -> io::Result<()> {
+    {
+        let mut file = std::fs::File::create(tmp)?;
+        file.write_all(bytes)?;
+        file.sync_all()?;
+    }
+    std::fs::rename(tmp, dest)
+}
+
 pub fn paths_equal(a: &Path, b: &Path) -> bool {
     a == b
         || a.canonicalize()
@@ -46,26 +74,7 @@ pub fn normalize_path(path: &Path) -> PathBuf {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn temp_dir() -> std::path::PathBuf {
-        let dir = std::env::temp_dir().join(format!("media-sort-test-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
-
-    fn rand_u32() -> u32 {
-        use std::time::{SystemTime, UNIX_EPOCH};
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .subsec_nanos()
-    }
-
-    fn temp_subdir() -> std::path::PathBuf {
-        let dir = temp_dir().join(format!("sub-{}", rand_u32()));
-        std::fs::create_dir_all(&dir).ok();
-        dir
-    }
+    use crate::actions::test_utils::temp_subdir;
 
     #[test]
     fn test_paths_equal_same() {

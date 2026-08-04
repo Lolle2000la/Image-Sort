@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use media_sort_core::actions::delete_action::TrashRestoreHandle;
 use media_sort_core::actions::reversible::ActionError;
+#[cfg(target_os = "windows")]
+use media_sort_core::path_utils;
 
 #[cfg(target_os = "macos")]
 fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
@@ -63,10 +65,7 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
         // the TARGET file instead of the link itself.
         #[cfg(target_os = "windows")]
         let original_path = {
-            let is_symlink = original_path
-                .symlink_metadata()
-                .map(|m| m.file_type().is_symlink())
-                .unwrap_or(false);
+            let is_symlink = path_utils::is_symlink(&original_path);
             let canon = if is_symlink {
                 original_path.clone()
             } else {
@@ -206,11 +205,11 @@ impl TrashRestoreHandle for NativeTrashRestore {
             // granularity, and a slow delete that straddles a second
             // boundary makes our captured delete_time one second LATER than
             // the shell's timestamp for the very item we deleted. That
-            // creates an exact distance tie with a newer same-name item, and
-            // the recycle-bin enumeration happens to list newer items first
-            // — so break ties by preferring the OLDER entry (the item this
-            // handle deleted can never carry a later shell timestamp than
-            // the one captured after the delete call returned).
+            // creates an exact distance tie with a newer same-name item —
+            // the explicit tiebreak below prefers the OLDER entry (the item
+            // this handle deleted can never carry a later shell timestamp
+            // than the one captured after the delete call returned), so the
+            // sort outcome is deterministic regardless of enumeration order.
             candidates.sort_by(|a, b| {
                 let da = (a.time_deleted - self.delete_time).abs();
                 let db = (b.time_deleted - self.delete_time).abs();

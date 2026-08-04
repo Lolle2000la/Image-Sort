@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
+use crate::path_utils;
 use crate::settings::general::GeneralSettings;
 use crate::settings::keybindings::KeyBindings;
 use crate::settings::metadata_panel::MetadataPanelSettings;
@@ -137,11 +138,7 @@ impl SettingsStore {
         // Linux where dotfiles are symlinked into ~/.config), resolve it
         // first so the rename lands on the real target and the user's
         // symlink stays intact.
-        let target = if path
-            .symlink_metadata()
-            .map(|m| m.file_type().is_symlink())
-            .unwrap_or(false)
-        {
+        let target = if path_utils::is_symlink(&path) {
             // Resolve with read_link, not canonicalize: a dangling symlink
             // (target not created yet, common when setting up dotfiles)
             // makes canonicalize fail, and falling back to the link path
@@ -166,8 +163,7 @@ impl SettingsStore {
             path.clone()
         };
         let tmp = target.with_extension("toml.tmp");
-        std::fs::write(&tmp, data)?;
-        std::fs::rename(&tmp, &target)?;
+        path_utils::atomic_write(&tmp, &target, data.as_bytes()).map_err(SettingsError::Io)?;
         self.dirty = false;
         Ok(())
     }
