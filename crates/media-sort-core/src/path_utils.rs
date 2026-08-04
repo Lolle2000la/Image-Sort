@@ -66,18 +66,26 @@ pub fn unique_temp_path(final_path: &Path, label: &str) -> PathBuf {
 /// the same directory (so the rename stays on one filesystem), sync to
 /// disk, then rename over `dest`. A crash mid-write can never truncate
 /// `dest`, and the unique temp name (see [`unique_temp_path`]) keeps two
-/// concurrent writers from clobbering each other's in-flight file.
+/// concurrent writers from clobbering each other's in-flight file. If the
+/// rename fails, the temp file is removed so failures do not litter the
+/// directory with `*.tmp.<pid>.<n>` files.
 ///
 /// Callers are responsible for any symlink resolution they need before the
 /// rename (the rename replaces the path itself, it does not follow links).
 pub fn atomic_write(dest: &Path, bytes: &[u8]) -> io::Result<()> {
     let tmp = unique_temp_path(dest, "tmp");
-    {
-        let mut file = std::fs::File::create(&tmp)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
+    let result = (|| {
+        {
+            let mut file = std::fs::File::create(&tmp)?;
+            file.write_all(bytes)?;
+            file.sync_all()?;
+        }
+        std::fs::rename(&tmp, dest)
+    })();
+    if result.is_err() {
+        let _ = std::fs::remove_file(&tmp);
     }
-    std::fs::rename(&tmp, dest)
+    result
 }
 
 pub fn paths_equal(a: &Path, b: &Path) -> bool {
@@ -204,6 +212,48 @@ mod tests {
     fn test_cross_device_error_permission_denied() {
         let err = std::io::Error::from_raw_os_error(13);
         assert!(!cross_device_error(&err));
+    }
+
+    #[test]
+    fn test_atomic_write_replaces_dest() {
+        let dir = temp_subdir();
+        let dest = dir.join("config.toml");
+        std::fs::write(&dest, b"old").unwrap();
+
+        atomic_write(&dest, b"new").unwrap();
+
+        assert_eq!(std::fs::read(&dest).unwrap(), b"new");
+        // No temp files must be left behind after a successful write.
+        let leftovers: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.contains(".tmp."))
+            .collect();
+        assert!(leftovers.is_empty(), "leftover temps: {leftovers:?}");
+    }
+
+    #[test]
+    fn test_atomic_write_removes_temp_on_rename_failure() {
+        // A destination DIRECTORY makes the final rename fail (EISDIR on
+        // unix): the temp file must be removed and the destination left
+        // untouched, so a failed save does not litter `*.tmp.<pid>.<n>`
+        // files next to the config.
+        let dir = temp_subdir();
+        let dest = dir.join("config.toml");
+        std::fs::create_dir(&dest).unwrap();
+
+        let result = atomic_write(&dest, b"data");
+
+        assert!(result.is_err());
+        assert!(dest.is_dir(), "destination must be untouched");
+        let leftovers: Vec<_> = std::fs::read_dir(&dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .filter(|n| n.contains(".tmp."))
+            .collect();
+        assert!(leftovers.is_empty(), "leftover temps: {leftovers:?}");
     }
 
     #[test]

@@ -340,14 +340,33 @@ fn rename_with_retry(partial: &Path, dest: &Path) -> Result<(), String> {
 /// Moves the PGP-verified staged files onto their final paths: the package
 /// first, then its signature. Only called after the signature check passed,
 /// so `package_path`/`sig_path` only ever receive verified content.
+///
+/// The two renames are not atomic as a pair: if the signature rename fails
+/// after the package rename succeeded, the package rename is rolled back
+/// (back onto `partial_path`, which the caller's cleanup then removes), so
+/// an error path ends with neither file promoted instead of a new `.nupkg`
+/// next to a stale/missing `.sig` — a mismatched pair that startup
+/// verification would purge the whole packages dir for. The old signature
+/// file is never touched, so the failure is indistinguishable from "nothing
+/// staged". (A crash between the two renames still leaves a mismatched pair
+/// — that window is inherent to two plain renames.)
 fn promote_staged_package(
     partial_path: &Path,
     sig_temp_path: &Path,
     package_path: &Path,
     sig_path: &Path,
 ) -> Result<(), String> {
-    rename_with_retry(partial_path, package_path)
-        .and_then(|()| rename_with_retry(sig_temp_path, sig_path))
+    rename_with_retry(partial_path, package_path)?;
+    if let Err(sig_err) = rename_with_retry(sig_temp_path, sig_path) {
+        let rollback_err = rename_with_retry(package_path, partial_path).err();
+        return Err(match rollback_err {
+            None => sig_err,
+            Some(rollback_err) => format!(
+                "{sig_err}; additionally failed to roll back the package rename: {rollback_err}"
+            ),
+        });
+    }
+    Ok(())
 }
 
 pub async fn check_for_update_async(
@@ -918,6 +937,44 @@ mod tests {
         assert!(sig_temp.exists(), "the signature must not be moved either");
         assert_eq!(fs::read(&package_path).unwrap(), b"old verified");
         assert!(!sig_path.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_promote_staged_package_rolls_back_on_sig_failure() {
+        // The signature destination is a DIRECTORY, so the sig rename fails
+        // non-retryably AFTER the package rename succeeded: the package
+        // rename must be rolled back (back onto the partial path) so the
+        // error path ends with neither file promoted — a new .nupkg next to
+        // a stale/missing .sig would be a mismatched pair that startup
+        // verification purges the whole dir for.
+        let dir = test_dir("promote_rollback");
+        let partial = dir.join("pkg.partial.0.0");
+        let sig_temp = dir.join("pkg.sig.0.0");
+        let package_path = dir.join("pkg.nupkg");
+        let sig_path = dir.join("pkg.nupkg.sig");
+        fs::write(&partial, b"pkg").unwrap();
+        fs::write(&sig_temp, b"sig").unwrap();
+        fs::create_dir(&sig_path).unwrap();
+
+        let err =
+            promote_staged_package(&partial, &sig_temp, &package_path, &sig_path).unwrap_err();
+
+        assert!(!err.is_empty());
+        assert_eq!(
+            fs::read(&partial).unwrap(),
+            b"pkg",
+            "the package rename must be rolled back onto the partial path"
+        );
+        assert!(
+            !package_path.exists(),
+            "the final package path must be empty"
+        );
+        assert!(sig_temp.exists(), "the signature must not be moved either");
+        assert!(
+            sig_path.is_dir(),
+            "the failed signature destination is untouched"
+        );
         let _ = fs::remove_dir_all(&dir);
     }
 
