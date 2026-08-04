@@ -1,6 +1,6 @@
 use pgp::composed::{Deserializable, DetachedSignature, SignedPublicKey};
 use std::fs;
-use std::io::Cursor;
+use std::io::{Cursor, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use velopack::sources::GithubSource;
@@ -294,21 +294,14 @@ fn unique_temp_path(final_path: &Path, label: &str) -> PathBuf {
     final_path.with_file_name(format!("{stem}.{label}.{}.{n}", std::process::id()))
 }
 
-/// Removes only the artifacts this run created, leaving previously staged
-/// PGP-verified packages alone: the unique temp files are always removed
-/// (a no-op when a download aborted before the write), and `package_path`
-/// only when this run's (still unverified) write replaced it.
-fn cleanup_run_artifacts(
-    partial_path: &Path,
-    sig_temp_path: &Path,
-    package_path: &Path,
-    wrote_package: bool,
-) {
+/// Removes only the temp artifacts this run created, leaving previously
+/// staged PGP-verified packages alone. A no-op when a download aborted
+/// before the write. The final `package_path`/`sig_path` are never
+/// touched: unverified content lives only in the uniquely-named temps,
+/// so nothing a previous run staged and verified can be deleted here.
+fn cleanup_run_artifacts(partial_path: &Path, sig_temp_path: &Path) {
     let _ = fs::remove_file(partial_path);
     let _ = fs::remove_file(sig_temp_path);
-    if wrote_package {
-        let _ = fs::remove_file(package_path);
-    }
 }
 
 /// Whether a rename failure is worth the remove-destination-and-retry pass
@@ -349,6 +342,19 @@ fn rename_with_retry(partial: &Path, dest: &Path) -> Result<(), String> {
             "{original}; failed to remove stale destination: {remove_err}"
         )),
     }
+}
+
+/// Moves the PGP-verified staged files onto their final paths: the package
+/// first, then its signature. Only called after the signature check passed,
+/// so `package_path`/`sig_path` only ever receive verified content.
+fn promote_staged_package(
+    partial_path: &Path,
+    sig_temp_path: &Path,
+    package_path: &Path,
+    sig_path: &Path,
+) -> Result<(), String> {
+    rename_with_retry(partial_path, package_path)
+        .and_then(|()| rename_with_retry(sig_temp_path, sig_path))
 }
 
 pub async fn check_for_update_async(
@@ -464,52 +470,30 @@ pub async fn download_and_apply_async(
     // could be present, and those must be left alone on a size failure.
     .map_err(|e| format!("Failed to download update package: {e}"))?;
 
-    // Atomic write into the packages dir: a crash must never leave a
-    // partial package at the final path velopack would apply. The bytes
-    // land in this run's unique temp path first (fsync + rename via
-    // `media_sort_core::path_utils::atomic_write`), then rename onto the
-    // final package path. On Windows std::fs::rename maps to MoveFileExW
-    // with MOVEFILE_REPLACE_EXISTING, so replacing a stale package from an
-    // interrupted previous run works; if the rename fails with a
-    // stale/locked-destination error, remove the stale file and retry once
-    // (see `rename_with_retry`). Any other write failure propagates
-    // unchanged — it must never remove a previously staged package.
-    let write_res: Result<bool, String> = tokio::task::spawn_blocking({
+    // Staged write: the package lands at THIS RUN'S unique temp path only,
+    // never at the final `package_path`, which may hold a previously
+    // staged, PGP-verified package. Unverified content is promoted into
+    // place only after the signature check below succeeds, so a crash
+    // between download and verification leaves nothing but a `.partial`-
+    // named temp (which `pre_startup_verify_packages` ignores), and a
+    // transient signature failure cannot clobber a verified package. The
+    // bytes are fsynced before verification so the file is durable once
+    // it is renamed into place.
+    let write_res: Result<(), String> = tokio::task::spawn_blocking({
         let partial_path = partial_path.clone();
-        let package_path = package_path.clone();
-        move || -> Result<bool, String> {
-            match media_sort_core::path_utils::atomic_write(
-                &partial_path,
-                &package_path,
-                &package_bytes,
-            ) {
-                Ok(()) => Ok(true),
-                Err(write_err) if is_stale_destination_error(&write_err) => {
-                    // The temp file is already written and fsynced; only
-                    // the final rename hit a stale/locked destination.
-                    // Re-attempt the rename, removing the stale destination
-                    // when the error still signals one.
-                    rename_with_retry(&partial_path, &package_path)
-                        .map(|()| true)
-                        .map_err(|e| {
-                            format!("Failed to write update package: {write_err}; retry: {e}")
-                        })
-                }
-                Err(write_err) => Err(format!("Failed to write update package: {write_err}")),
-            }
+        move || -> Result<(), String> {
+            let mut file = fs::File::create(&partial_path).map_err(|e| e.to_string())?;
+            file.write_all(&package_bytes).map_err(|e| e.to_string())?;
+            file.sync_all().map_err(|e| e.to_string())?;
+            Ok(())
         }
     })
     .await
     .map_err(|e| format!("Task join error: {e}"))?;
-    let wrote_package = match write_res {
-        Ok(wrote) => wrote,
-        Err(e) => {
-            // The temp file may exist (a write or rename failure), but the
-            // final package path was not modified by this run.
-            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, false);
-            return Err(e);
-        }
-    };
+    if let Err(e) = write_res {
+        cleanup_run_artifacts(&partial_path, &sig_temp_path);
+        return Err(format!("Failed to write update package: {e}"));
+    }
 
     // 2. Fetch and verify the detached PGP signature over the package.
     {
@@ -532,16 +516,15 @@ pub async fn download_and_apply_async(
         let mut response = match client.get(&sig_url).send().await {
             Ok(res) if res.status().is_success() => res,
             _ => client.get(&sig_url_fallback).send().await.map_err(|e| {
-                // This run's package write already replaced anything at
-                // `package_path`; it is still unverified, so it must be
-                // cleaned up. Previously staged files are untouched.
-                cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+                // This run's package is still staged at its temp path;
+                // previously verified files are untouched.
+                cleanup_run_artifacts(&partial_path, &sig_temp_path);
                 format!("Failed to fetch signature: {e}")
             })?,
         };
 
         if !response.status().is_success() {
-            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+            cleanup_run_artifacts(&partial_path, &sig_temp_path);
             return Err(format!(
                 "Failed to download signature file for verification: HTTP {}",
                 response.status()
@@ -554,29 +537,35 @@ pub async fn download_and_apply_async(
         let sig_bytes = collect_capped(&mut response, None, MAX_SIGNATURE_SIZE, "Signature file")
             .await
             .map_err(|e| {
-                cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+                cleanup_run_artifacts(&partial_path, &sig_temp_path);
                 format!("Failed to download signature file: {e}")
             })?;
 
-        // Atomic write to this run's unique temp: a crash must never leave
-        // a partial signature at the path `pre_startup_verify_packages`
-        // would parse on the next boot.
-        let sig_write_res = tokio::task::spawn_blocking({
+        // Staged write to this run's unique temp: the signature only
+        // reaches its final path together with the verified package (see
+        // `promote_staged_package`), so a crash mid-run never leaves a
+        // `.nupkg`/`.sig` pair that `pre_startup_verify_packages` would
+        // verify or purge against.
+        let sig_write_res: Result<(), String> = tokio::task::spawn_blocking({
             let sig_temp_path = sig_temp_path.clone();
-            let sig_path = sig_path.clone();
-            move || media_sort_core::path_utils::atomic_write(&sig_temp_path, &sig_path, &sig_bytes)
+            move || -> Result<(), String> {
+                let mut file = fs::File::create(&sig_temp_path).map_err(|e| e.to_string())?;
+                file.write_all(&sig_bytes).map_err(|e| e.to_string())?;
+                file.sync_all().map_err(|e| e.to_string())?;
+                Ok(())
+            }
         })
         .await
         .map_err(|e| format!("Task join error: {e}"))?;
         if let Err(e) = sig_write_res {
-            cleanup_run_artifacts(&partial_path, &sig_temp_path, &package_path, wrote_package);
+            cleanup_run_artifacts(&partial_path, &sig_temp_path);
             return Err(format!("Failed to write signature file: {e}"));
         }
 
         let verify_res = tokio::task::spawn_blocking({
-            let package_path = package_path.clone();
-            let sig_path = sig_path.clone();
-            move || verify_package_signature(&package_path, &sig_path)
+            let partial_path = partial_path.clone();
+            let sig_temp_path = sig_temp_path.clone();
+            move || verify_package_signature(&partial_path, &sig_temp_path)
         })
         .await
         .map_err(|e| format!("Task join error: {e}"))?;
@@ -591,7 +580,31 @@ pub async fn download_and_apply_async(
         }
     }
 
-    // 3. velopack apply: the package already exists in the packages dir, so
+    // 3. Promote the verified content into place: the package and its
+    // signature are renamed onto their final paths only now that the
+    // signature check passed. Until this point `package_path`/`sig_path`
+    // still hold whatever a previous run verified (or nothing), so a
+    // failure below never leaves unverified content where velopack or
+    // `pre_startup_verify_packages` would apply it. The stale/locked
+    // destination retry of `rename_with_retry` covers a package replaced
+    // mid-flight on Windows.
+    let promote_res = tokio::task::spawn_blocking({
+        let partial_path = partial_path.clone();
+        let sig_temp_path = sig_temp_path.clone();
+        let package_path = package_path.clone();
+        let sig_path = sig_path.clone();
+        move || promote_staged_package(&partial_path, &sig_temp_path, &package_path, &sig_path)
+    })
+    .await
+    .map_err(|e| format!("Task join error: {e}"))?;
+    if let Err(e) = promote_res {
+        // Only this run's temps can remain (a partial promote); the final
+        // paths are either untouched or hold verified content.
+        cleanup_run_artifacts(&partial_path, &sig_temp_path);
+        return Err(format!("Failed to stage verified update package: {e}"));
+    }
+
+    // 4. velopack apply: the package already exists in the packages dir, so
     // `download_updates()` early-returns and never extracts anything from
     // content that was not PGP-verified above.
     tokio::task::spawn_blocking({
@@ -608,7 +621,7 @@ pub async fn download_and_apply_async(
     .await
     .map_err(|e| e.to_string())??;
 
-    // 4. Re-verify immediately before the apply step to narrow the local
+    // 5. Re-verify immediately before the apply step to narrow the local
     // TOCTOU window between the earlier verification and execution. A
     // failure here purges the whole packages dir, like the earlier
     // verification failure, so poisoned content is never left staged.
@@ -625,7 +638,7 @@ pub async fn download_and_apply_async(
         return Err(format!("Re-verification before apply failed: {e}"));
     }
 
-    // 5. Apply. Everything below this point operates on PGP-verified
+    // 6. Apply. Everything below this point operates on PGP-verified
     // content only.
     tokio::task::spawn_blocking(move || {
         let source = GithubSource::new(&repo_url, None, allow_prerelease);
@@ -858,6 +871,48 @@ mod tests {
 
         assert_eq!(fs::read(&dest).unwrap(), b"new");
         assert!(!partial.exists());
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_promote_staged_package_moves_both_files() {
+        let dir = test_dir("promote_ok");
+        let partial = dir.join("pkg.partial.0.0");
+        let sig_temp = dir.join("pkg.sig.0.0");
+        let package_path = dir.join("pkg.nupkg");
+        let sig_path = dir.join("pkg.nupkg.sig");
+        fs::write(&partial, b"pkg").unwrap();
+        fs::write(&sig_temp, b"sig").unwrap();
+
+        promote_staged_package(&partial, &sig_temp, &package_path, &sig_path).unwrap();
+
+        assert!(!partial.exists());
+        assert!(!sig_temp.exists());
+        assert_eq!(fs::read(&package_path).unwrap(), b"pkg");
+        assert_eq!(fs::read(&sig_path).unwrap(), b"sig");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn test_promote_staged_package_failure_leaves_finals_untouched() {
+        // A missing staged package fails the promote: nothing must be
+        // renamed and the final paths (possibly a previously verified
+        // package) must stay intact.
+        let dir = test_dir("promote_fail");
+        let partial = dir.join("pkg.partial.0.0");
+        let sig_temp = dir.join("pkg.sig.0.0");
+        let package_path = dir.join("pkg.nupkg");
+        let sig_path = dir.join("pkg.nupkg.sig");
+        fs::write(&sig_temp, b"sig").unwrap();
+        fs::write(&package_path, b"old verified").unwrap();
+
+        let err =
+            promote_staged_package(&partial, &sig_temp, &package_path, &sig_path).unwrap_err();
+
+        assert!(!err.is_empty());
+        assert!(sig_temp.exists(), "the signature must not be moved either");
+        assert_eq!(fs::read(&package_path).unwrap(), b"old verified");
+        assert!(!sig_path.exists());
         let _ = fs::remove_dir_all(&dir);
     }
 
