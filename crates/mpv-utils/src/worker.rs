@@ -107,9 +107,11 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
         return (0, 0, Vec::new());
     }
     // The common no-rotation case must not pay for the dst allocation,
-    // which is only needed for the in-place rotated copies below.
+    // which is only needed for the in-place rotated copies below. Slice to
+    // the validated frame size so a source buffer with an unused tail (e.g.
+    // a pooled buffer) does not leak into the result.
     if rotation == Rotation::R0 {
-        return (src_w, src_h, src.to_vec());
+        return (src_w, src_h, src[..src_size].to_vec());
     }
     let Some(dst_size) = (dst_w as u64)
         .checked_mul(dst_h as u64)
@@ -633,6 +635,18 @@ mod tests {
         let (w, h, dst) = rotate_rgba(1024, 1024, &src, Rotation::R0);
         assert_eq!((w, h), (0, 0));
         assert!(dst.is_empty());
+    }
+
+    #[test]
+    fn test_rotate_rgba_r0_slices_oversized_src_to_frame() {
+        // A source buffer larger than the declared frame (pooled buffer
+        // with an unused tail) must yield exactly the w*h*4 frame, not the
+        // whole slice.
+        let src = vec![7u8; 2 * 2 * 4 + 16];
+        let (w, h, dst) = rotate_rgba(2, 2, &src, Rotation::R0);
+        assert_eq!((w, h), (2, 2));
+        assert_eq!(dst.len(), 2 * 2 * 4);
+        assert!(dst.iter().all(|&b| b == 7));
     }
 
     #[test]
