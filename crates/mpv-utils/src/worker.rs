@@ -106,6 +106,11 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
     if src.len() < src_size {
         return (0, 0, Vec::new());
     }
+    // The common no-rotation case must not pay for the dst allocation,
+    // which is only needed for the in-place rotated copies below.
+    if rotation == Rotation::R0 {
+        return (src_w, src_h, src.to_vec());
+    }
     let Some(dst_size) = (dst_w as u64)
         .checked_mul(dst_h as u64)
         .and_then(|n| n.checked_mul(4))
@@ -182,7 +187,7 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
 
             (dst_w, dst_h, dst)
         }
-        Rotation::R0 => (src_w, src_h, src.to_vec()),
+        Rotation::R0 => unreachable!("handled by the early return above"),
     }
 }
 
@@ -274,6 +279,11 @@ async fn run_video_worker(
     // Load-scoped one-shot deadline for the late rotation recheck (see the
     // progress tick below). Reset alongside `cached_video_params`.
     let mut rotation_recheck_deadline: Option<std::time::Instant> = None;
+    // The mpv-reported `path` string that passed the initial paths_match
+    // check for this load. The recheck compares against this string instead
+    // of re-running `canonicalize()` (which is file I/O); mpv's `path`
+    // property is stable within a load, so string equality is sufficient.
+    let mut rotation_matched_path: Option<PathBuf> = None;
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -309,6 +319,7 @@ async fn run_video_worker(
                                 current_video_path = path;
                                 cached_video_params = None;
                                 rotation_recheck_deadline = None;
+                                rotation_matched_path = None;
                             }
                             Err(err) => {
                                 let _ = event_tx
@@ -346,11 +357,13 @@ async fn run_video_worker(
                         player.seek_absolute(0.0);
                         cached_video_params = None;
                         rotation_recheck_deadline = None;
+                        rotation_matched_path = None;
                     }
                     VideoCommand::Deactivate => {
                         player.set_paused(true);
                         cached_video_params = None;
                         rotation_recheck_deadline = None;
+                        rotation_matched_path = None;
                         // SAFETY: send "stop" command to release the current file handle and
                         // flush internal mpv caches, preventing file locks that would block
                         // rename/move/delete operations on the last-played video.
@@ -404,6 +417,7 @@ async fn run_video_worker(
                                     if render_unrot_w > 0 && render_unrot_h > 0 {
                                         cached_video_params =
                                             Some((render_unrot_w, render_unrot_h, rotation));
+                                        rotation_matched_path = Some(current_p.clone());
                                         // Schedule the one-shot late-rotation
                                         // recheck (handled in the progress
                                         // tick): mpv can populate
@@ -486,37 +500,34 @@ async fn run_video_worker(
                     // only AFTER `video-out-params` first appears — a file
                     // whose rotation is not yet known then is reported as R0
                     // for the whole load. The recheck fires exactly once,
-                    // ~2 s into the load, and only through the property path
-                    // (`probe_rotation_properties`): properties come from
-                    // mpv's already-parsed state, so a single recheck does no
-                    // file I/O. It must never fall back to the file-based
-                    // `get_video_rotation`, which re-opens and re-parses the
-                    // container — repeating that would let a crafted file
-                    // burn CPU per recheck.
+                    // ~2 s into the load, and does ZERO file I/O: the
+                    // property probe reads mpv's already-parsed state, and
+                    // the same-load guard is a pure string comparison
+                    // against the path that already passed the initial
+                    // detection (mpv's `path` property is stable within a
+                    // load — a file switch without a Load command changes
+                    // the string and skips the probe). It must never fall
+                    // back to the file-based `get_video_rotation`, which
+                    // re-opens and re-parses the container — repeating that
+                    // would let a crafted file burn CPU per recheck.
                     if let Some(deadline) = rotation_recheck_deadline
                         && std::time::Instant::now() >= deadline
                     {
                         rotation_recheck_deadline = None;
                         if let Some((w, h, rot)) = cached_video_params
                             && let Some(current_p_str) = player.get_current_path()
+                            && let Some(matched) = rotation_matched_path.as_deref()
+                            && matched.as_os_str() == std::ffi::OsStr::new(&current_p_str)
+                            && player.is_video_ready()
                         {
-                            // Same-load guard, mirroring the initial detection.
-                            let current_p = PathBuf::from(current_p_str);
-                            let paths_match = current_p == current_video_path
-                                || canonical_video_path.as_ref().is_some_and(|cp| {
-                                    current_p == *cp
-                                        || current_p.canonicalize().ok().as_ref() == Some(cp)
-                                });
-                            if paths_match && player.is_video_ready() {
-                                let prop_rot = player.probe_rotation_properties();
-                                // R0 here means "no property known": never
-                                // downgrade the file-parse result.
-                                if prop_rot != Rotation::R0 && prop_rot != rot {
-                                    cached_video_params = Some((w, h, prop_rot));
-                                    tracing::debug!(
-                                        "rotation recheck corrected {rot:?} -> {prop_rot:?}"
-                                    );
-                                }
+                            let prop_rot = player.probe_rotation_properties();
+                            // R0 here means "no property known": never
+                            // downgrade the file-parse result.
+                            if prop_rot != Rotation::R0 && prop_rot != rot {
+                                cached_video_params = Some((w, h, prop_rot));
+                                tracing::debug!(
+                                    "rotation recheck corrected {rot:?} -> {prop_rot:?}"
+                                );
                             }
                         }
                     }

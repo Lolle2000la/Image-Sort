@@ -185,7 +185,14 @@ async fn fetch_canonical_repo_url() -> Result<String, Box<dyn std::error::Error 
 /// must not become dangerous if the packages dir is ever processed on
 /// Windows, and vice versa.
 fn validate_release_file_name(file_name: &str) -> Result<(), String> {
-    if file_name.contains('/') || file_name.contains('\\') || file_name.contains(':') {
+    // `/`/`\` escape the packages dir; `:` is a Windows drive prefix. The
+    // URL-reserved `%`, `#`, `?` and whitespace would change the request
+    // target when the name is interpolated into the release download URL
+    // (`#` starts a fragment, `?` a query, `%` enables escape smuggling) —
+    // velopack asset names never contain them.
+    if file_name.contains(['/', '\\', ':', '%', '#', '?'])
+        || file_name.chars().any(char::is_whitespace)
+    {
         return Err(format!("Invalid update package file name: {file_name:?}"));
     }
     let mut components = Path::new(file_name).components();
@@ -197,13 +204,14 @@ fn validate_release_file_name(file_name: &str) -> Result<(), String> {
 
 /// Rejects feed-supplied version strings before they are interpolated into
 /// the release URL. Path separators or whitespace would escape the
-/// intended download path or break the URL, and a bare `.`/`..` would
-/// resolve as a path component in the no-`v` fallback URL. The checks are
+/// intended download path or break the URL, the URL-reserved `%`/`#`/`?`
+/// would change the request target (`#` starts a fragment, `?` a query,
+/// `%` enables escape smuggling), and a bare `.`/`..` would resolve as a
+/// path component in the no-`v` fallback URL. The checks are
 /// platform-independent on purpose, mirroring `validate_release_file_name`.
 fn validate_version(version: &str) -> Result<(), String> {
     if version.is_empty()
-        || version.contains('/')
-        || version.contains('\\')
+        || version.contains(['/', '\\', '%', '#', '?'])
         || version.chars().any(char::is_whitespace)
         || version == "."
         || version == ".."
@@ -749,6 +757,25 @@ mod tests {
     }
 
     #[test]
+    fn test_validate_release_file_name_rejects_url_reserved() {
+        // Interpolated into the release download URL: `#` starts a
+        // fragment, `?` a query, `%` enables escape smuggling (e.g. %2F),
+        // whitespace changes the request target.
+        for bad in [
+            "a%2F..",
+            "a#frag.nupkg",
+            "a?x=1.nupkg",
+            "a b.nupkg",
+            "a\tb.nupkg",
+        ] {
+            assert!(
+                validate_release_file_name(bad).is_err(),
+                "{bad:?} must be rejected"
+            );
+        }
+    }
+
+    #[test]
     fn test_validate_version_accepts_plain_version() {
         assert!(validate_version("1.2.3").is_ok());
         assert!(validate_version("1.2.3-beta.1").is_ok());
@@ -760,6 +787,15 @@ mod tests {
         // `.`/`..` would resolve as path components in the no-`v` fallback
         // URL and are rejected alongside separators and whitespace.
         for bad in ["", ".", "..", "1/2", "1\\2", "1.2 3", "1.2\n3", "1.2\t3"] {
+            assert!(validate_version(bad).is_err(), "{bad:?} must be rejected");
+        }
+    }
+
+    #[test]
+    fn test_validate_version_rejects_url_reserved() {
+        // Interpolated into the release URL: `#` starts a fragment, `?` a
+        // query, `%` enables escape smuggling (e.g. %2F as a separator).
+        for bad in ["1.2%2F3", "1.2#x", "1.2?x=1"] {
             assert!(validate_version(bad).is_err(), "{bad:?} must be rejected");
         }
     }
