@@ -747,8 +747,12 @@ fn test_is_animated_gif_bomb_header_returns_fast() {
 
 #[test]
 fn test_is_animated_gif_truncated_returns_none() {
-    // A single-frame GIF whose data is cut off before the trailer is not
-    // a parseable GIF: the scan must answer None (unknown), not Some(false).
+    // A single-frame GIF whose data is cut off before the trailer. The
+    // pre-fix code (v3.0) counted truncated/corrupt items as frames via
+    // GifFrameIterator, so a file like this was misclassified as ANIMATED
+    // (`Some(true)`). The header scan must answer None (unknown) instead —
+    // a truncated GIF is not a parseable GIF and must never be classified
+    // as animated.
     let dir = std::env::temp_dir().join(format!("mediasort_gif_trunc_{}", std::process::id()));
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join("truncated.gif");

@@ -7,20 +7,40 @@ use fast_image_resize::{FilterType, IntoImageView, ResizeAlg, ResizeOptions, Res
 
 use super::thumbnail::calculate_thumbnail_dimensions;
 
+/// Maximum image dimension (per side) accepted by any decode path.
+pub const MAX_DECODE_DIMENSION: u32 = 16_384;
+
 /// Decode budget applied to every full image decode: no header dimension
-/// above 16384 px per side and no more than 256 MiB of decoder allocation is
-/// ever materialized, regardless of what a hostile header claims. The image
-/// crate's own default (`Limits::default()`) has no dimension caps at all
-/// and a non-strict 512 MiB allocation cap, so crafted headers can drive
-/// multi-GB transient allocations in parallel thumbnail generation.
+/// above `MAX_DECODE_DIMENSION` px per side. image-crate decode paths are
+/// additionally capped at 256 MiB of decoder allocation (`max_alloc`), so a
+/// crafted header claiming a huge canvas cannot drive multi-GB transient
+/// allocations in parallel thumbnail generation — the image crate's own
+/// default (`Limits::default()`) has no dimension caps at all and only a
+/// non-strict 512 MiB allocation cap. The turbojpeg path never consults
+/// `max_alloc`; it is bounded by the dimension cap plus an explicit
+/// allocation-site guard in `format_pipeline::decode_jpeg_turbojpeg_scaled`.
 pub fn image_decode_limits() -> image::Limits {
     // `Limits` is #[non_exhaustive]; build via Default and mutate the
     // public fields.
     let mut limits = image::Limits::default();
-    limits.max_image_width = Some(16_384);
-    limits.max_image_height = Some(16_384);
+    limits.max_image_width = Some(MAX_DECODE_DIMENSION);
+    limits.max_image_height = Some(MAX_DECODE_DIMENSION);
     limits.max_alloc = Some(256 * 1024 * 1024);
     limits
+}
+
+/// Open `path`, guess its format, apply the shared decode budget and decode.
+pub fn decode_path_with_limits(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
+    let mut reader = image::ImageReader::open(path)?;
+    reader.limits(image_decode_limits());
+    reader.with_guessed_format()?.decode()
+}
+
+/// Decode in-memory image bytes under the shared decode budget.
+pub fn decode_bytes_with_limits(bytes: &[u8]) -> Result<image::DynamicImage, image::ImageError> {
+    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes));
+    reader.limits(image_decode_limits());
+    reader.with_guessed_format()?.decode()
 }
 
 pub fn is_animated_gif(path: &Path) -> Option<bool> {
@@ -157,9 +177,7 @@ fn skip_sub_blocks<R: std::io::Read + std::io::Seek>(reader: &mut R) -> bool {
 }
 
 pub fn load_image(path: &Path) -> Result<image::DynamicImage, image::ImageError> {
-    let mut reader = image::ImageReader::open(path)?;
-    reader.limits(image_decode_limits());
-    let img = reader.with_guessed_format()?.decode()?;
+    let img = decode_path_with_limits(path)?;
     Ok(apply_orientation(img, path))
 }
 
@@ -198,9 +216,7 @@ pub fn generate_thumbnail(
     max_width: u32,
     max_height: u32,
 ) -> Result<image::DynamicImage, image::ImageError> {
-    let img = image::ImageReader::open(path)?
-        .with_guessed_format()?
-        .decode()?;
+    let img = decode_path_with_limits(path)?;
     let img = apply_orientation(img, path);
 
     let img_rgba = img.to_rgba8();

@@ -57,14 +57,17 @@ fn find_ffmpeg_uncached() -> Option<PathBuf> {
 pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::DecodedImage, String> {
     let ffmpeg = find_ffmpeg().ok_or_else(|| "ffmpeg not found".to_string())?;
 
-    // A file named "-" (or starting with "-") would be parsed as an ffmpeg
-    // option, misaligning the whole argument list. The scanner only produces
-    // absolute paths, but guard the API against direct misuse.
-    if let Some(name) = path.file_name().and_then(|n| n.to_str())
-        && (name == "-" || name.starts_with('-'))
-    {
+    // Any argument string starting with '-' is parsed as an ffmpeg option,
+    // misaligning the whole argument list — a `-`-prefixed DIRECTORY
+    // component in a relative path (e.g. `-evil/x.jpg`) is just as dangerous
+    // as a file literally named `-`. The whole path string is checked so the
+    // guard rejects any argument that could be parsed as an ffmpeg option.
+    // The scanner only produces absolute paths, but guard the API against
+    // direct misuse.
+    if path.to_str().is_some_and(|s| s.starts_with('-')) {
         return Err(format!(
-            "cannot extract frame: file name {name:?} starts with '-'"
+            "cannot extract frame: path {:?} starts with '-'",
+            path
         ));
     }
 
@@ -73,8 +76,12 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
         max_w, max_h
     );
 
-    // `-analyzeduration`/`-probesize` bound how far ffmpeg will scan a
-    // pathological demuxer before giving up.
+    // `-analyzeduration`/`-probesize` are pinned to explicit values rather
+    // than relying on ffmpeg's built-in defaults, so a future ffmpeg release
+    // changing its own defaults cannot silently change how far a demuxer is
+    // scanned. The values match ffmpeg's current defaults — this is a
+    // stability pin (explicit is better than implicit), not a behavior
+    // change for legitimate media.
     let mut child = std::process::Command::new(&ffmpeg)
         .args([
             "-hide_banner",
@@ -173,8 +180,5 @@ const FFMPEG_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
 /// hostile stream (e.g. a PNG bomb served by ffmpeg) cannot force oversized
 /// allocations.
 fn decode_png_with_limits(bytes: &[u8]) -> Result<image::DynamicImage, String> {
-    let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes));
-    reader.limits(super::image_decoder::image_decode_limits());
-    reader.set_format(image::ImageFormat::Png);
-    reader.decode().map_err(|e| format!("png decode: {e}"))
+    super::image_decoder::decode_bytes_with_limits(bytes).map_err(|e| format!("png decode: {e}"))
 }

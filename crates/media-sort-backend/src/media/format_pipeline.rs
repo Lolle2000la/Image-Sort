@@ -77,11 +77,7 @@ fn audio_cover_image(
     max_height: u32,
 ) -> Result<DecodedImage, image::ImageError> {
     let img = match super::thumbnail::extract_audio_cover(path) {
-        Some(bytes) => {
-            let mut reader = image::ImageReader::new(Cursor::new(bytes.as_slice()));
-            reader.limits(super::image_decoder::image_decode_limits());
-            reader.with_guessed_format()?.decode()?
-        }
+        Some(bytes) => super::image_decoder::decode_bytes_with_limits(bytes.as_slice())?,
         None => super::image_decoder::load_image(path)?,
     };
     resize_with_fir(&img.to_rgba8(), max_width, max_height)
@@ -92,9 +88,7 @@ fn decode_fir_image(
     max_width: u32,
     max_height: u32,
 ) -> Result<DecodedImage, image::ImageError> {
-    let mut reader = image::ImageReader::open(path)?;
-    reader.limits(super::image_decoder::image_decode_limits());
-    let img = reader.with_guessed_format()?.decode()?;
+    let img = super::image_decoder::decode_path_with_limits(path)?;
     resize_with_fir(&img.to_rgba8(), max_width, max_height)
 }
 
@@ -391,14 +385,14 @@ struct ScaledDecode {
     target_height: u32,
 }
 
-/// Hard ceiling for JPEG header dimensions. turbojpeg accepts up to 65500px
-/// per side from the SOF marker, and the app allocated the scaled buffer
-/// from those header dims BEFORE decompressing - so a 222-byte file claiming
-/// 65500x65500 forced a 268 MB allocation per decode, multiplied across the
-/// parallel thumbnail pipeline. Rejecting anything beyond a realistic image
-/// size (far above any monitor) prevents the allocation entirely.
-const MAX_JPEG_DIMENSION: usize = 16_384;
-
+/// Reject JPEGs whose SOF header dimensions exceed the shared decode budget's
+/// dimension cap. turbojpeg accepts up to 65500px per side from the SOF
+/// marker, and the app allocated the scaled buffer from those header dims
+/// BEFORE decompressing - so a 222-byte file claiming 65500x65500 forced a
+/// 268 MB allocation per decode, multiplied across the parallel thumbnail
+/// pipeline. Rejecting beyond `MAX_DECODE_DIMENSION` (far above any monitor)
+/// prevents the allocation entirely; the allocation-site guard below
+/// additionally enforces `max_alloc` on the scaled buffer itself.
 fn decode_jpeg_turbojpeg_scaled(
     bytes: &[u8],
     orientation: Option<u32>,
@@ -410,10 +404,11 @@ fn decode_jpeg_turbojpeg_scaled(
     let header = decompressor
         .read_header(bytes)
         .map_err(|e| format!("turbojpeg header: {e}"))?;
-    if header.width > MAX_JPEG_DIMENSION || header.height > MAX_JPEG_DIMENSION {
+    let max_dimension = super::image_decoder::MAX_DECODE_DIMENSION as usize;
+    if header.width > max_dimension || header.height > max_dimension {
         return Err(format!(
             "JPEG dimensions {}x{} exceed the {}px limit",
-            header.width, header.height, MAX_JPEG_DIMENSION
+            header.width, header.height, max_dimension
         ));
     }
     // Required decode resolution and final output dims, both computed from
@@ -443,6 +438,18 @@ fn decode_jpeg_turbojpeg_scaled(
         .height
         .checked_mul(pitch)
         .ok_or_else(|| "JPEG buffer size overflow".to_string())?;
+    // The scaled buffer is allocated from header-derived dims before
+    // decompressing; enforce the shared decode budget's `max_alloc` here at
+    // the allocation site itself (turbojpeg never consults it internally).
+    let max_alloc_bytes = super::image_decoder::image_decode_limits()
+        .max_alloc
+        .unwrap_or(u64::MAX);
+    if buffer_size as u64 > max_alloc_bytes {
+        return Err(format!(
+            "JPEG scaled buffer of {buffer_size} bytes exceeds the {} MiB decode allocation cap",
+            max_alloc_bytes / (1024 * 1024)
+        ));
+    }
     let mut image = turbojpeg::Image {
         pixels: vec![0u8; buffer_size],
         width: scaled.width,

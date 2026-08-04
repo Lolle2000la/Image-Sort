@@ -109,12 +109,8 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         if media_type == media_sort_core::media_type::MediaType::Audio
             && let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path)
         {
-            let mut reader = image::ImageReader::new(std::io::Cursor::new(bytes.as_slice()));
-            reader.limits(media_sort_backend::media::image_decoder::image_decode_limits());
-            let img = match reader.with_guessed_format() {
-                Ok(reader) => reader.decode().ok(),
-                Err(_) => None,
-            };
+            let img =
+                media_sort_backend::media::image_decoder::decode_bytes_with_limits(&bytes).ok();
             if let Some(img) = img {
                 let rgba = img.to_rgba8();
                 let (w, h) = rgba.dimensions();
