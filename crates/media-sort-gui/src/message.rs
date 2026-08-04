@@ -143,7 +143,7 @@ pub enum MediaMessage {
     #[serde(skip_deserializing)]
     ThumbnailReady(PathBuf, u32, u32, Vec<u8>),
     #[serde(skip_deserializing)]
-    ThumbnailFailed(PathBuf, String),
+    ThumbnailFailed(PathBuf, crate::subscriptions::prefetch::ThumbnailError),
     #[serde(skip_deserializing)]
     ThumbnailCancelled(PathBuf),
     #[serde(skip_deserializing)]

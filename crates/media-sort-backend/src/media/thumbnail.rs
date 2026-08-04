@@ -27,7 +27,7 @@ pub fn generate_thumbnail(
 
 pub fn thumbnail_dimensions(path: &Path) -> Result<(u32, u32), image::ImageError> {
     let img = match extract_audio_cover(path) {
-        Some(bytes) => image::load_from_memory(&bytes)?,
+        Some(bytes) => super::image_decoder::decode_bytes_with_limits(bytes.as_slice())?,
         None => super::image_decoder::load_image(path)?,
     };
     Ok(img.dimensions())

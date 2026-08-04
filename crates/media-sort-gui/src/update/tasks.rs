@@ -108,15 +108,18 @@ pub fn select_and_load_entry(state: &mut AppState, index: usize) -> Task<Message
         state.audio.selected_cover = None;
         if media_type == media_sort_core::media_type::MediaType::Audio
             && let Some(bytes) = media_sort_backend::media::thumbnail::extract_audio_cover(&path)
-            && let Ok(img) = image::load_from_memory(&bytes)
         {
-            let rgba = img.to_rgba8();
-            let (w, h) = rgba.dimensions();
-            state.audio.selected_cover = Some(iced::widget::image::Handle::from_rgba(
-                w,
-                h,
-                rgba.into_raw(),
-            ));
+            let img =
+                media_sort_backend::media::image_decoder::decode_bytes_with_limits(&bytes).ok();
+            if let Some(img) = img {
+                let rgba = img.to_rgba8();
+                let (w, h) = rgba.dimensions();
+                state.audio.selected_cover = Some(iced::widget::image::Handle::from_rgba(
+                    w,
+                    h,
+                    rgba.into_raw(),
+                ));
+            }
         }
 
         if let Some(handle) = state.cache.image_cache.get(&path) {
@@ -397,17 +400,13 @@ pub fn load_thumbnail(
 }
 
 pub fn open_externally(path: &std::path::Path) {
-    let res = if cfg!(target_os = "windows") {
-        std::process::Command::new("cmd")
-            .args(["/C", "start", ""])
-            .arg(path)
-            .spawn()
-    } else if cfg!(target_os = "macos") {
-        std::process::Command::new("open").arg(path).spawn()
-    } else {
-        std::process::Command::new("xdg-open").arg(path).spawn()
-    };
-    if let Err(e) = res {
+    // The `open` crate uses ShellExecuteW on Windows (a single typed
+    // parameter, no cmd.exe re-tokenization), `open` on macOS and xdg-open
+    // on Linux. The previous Windows branch ran `cmd /C start "" <path>`
+    // with the path as a raw argv element: cmd.exe re-tokenizes the /C tail,
+    // so a filename containing `&`, `|`, `<`, `>` or `^` executed a second
+    // command. ShellExecuteW passes the path as-is.
+    if let Err(e) = open::that(path) {
         tracing::error!("Failed to open file externally: {e}");
     }
 }
@@ -425,14 +424,17 @@ pub fn reveal_in_file_manager(path: &std::path::Path) {
             .spawn()
             .map(|_| ())
     } else {
+        // Percent-encode everything except RFC 3986 unreserved characters
+        // plus '/' and ':' so dbus-send's `array:string:` argument cannot be
+        // split or mangled by commas, quotes, ampersands or control chars.
         let mut uri = String::from("file://");
         for ch in path.to_string_lossy().chars() {
-            match ch {
-                ' ' => uri.push_str("%20"),
-                '%' => uri.push_str("%25"),
-                '#' => uri.push_str("%23"),
-                '?' => uri.push_str("%3f"),
-                _ => uri.push(ch),
+            if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | '.' | '~' | '/' | ':') {
+                uri.push(ch);
+            } else {
+                for byte in ch.to_string().as_bytes() {
+                    uri.push_str(&format!("%{:02X}", byte));
+                }
             }
         }
         let mut success = false;

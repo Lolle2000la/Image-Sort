@@ -259,6 +259,30 @@ impl VideoState {
                 // video, and only after the worker confirmed readiness. This
                 // guards against a stale frame from a previously selected
                 // video repopulating the state after a fast selection change.
+                //
+                // Never trust the frame dims: a producer bug or hostile
+                // payload could hand a buffer that is too small for
+                // w*h*4, which would make the wgpu upload below panic.
+                let expected = match (*width as u64)
+                    .checked_mul(*height as u64)
+                    .and_then(|n| n.checked_mul(4))
+                    .and_then(|n| usize::try_from(n).ok())
+                {
+                    Some(n) => n,
+                    None => {
+                        tracing::error!(
+                            "FrameReady with impossible dimensions {width}x{height}; dropping"
+                        );
+                        return None;
+                    }
+                };
+                if rgba.len() < expected {
+                    tracing::error!(
+                        "FrameReady buffer too small: {} bytes for {width}x{height}x4; dropping",
+                        rgba.len()
+                    );
+                    return None;
+                }
                 if self.selected_path.as_deref() == Some(path.as_path()) && self.ready {
                     let first_frame = self.rgba.is_none();
                     self.rgba = Some(rgba.clone());

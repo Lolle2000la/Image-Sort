@@ -26,7 +26,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
     }
 
     match message {
-        Message::Tick(_instant) => handle_tick(state, _instant),
+        Message::Tick(instant) => handle_tick(state, instant),
         Message::Video(video_msg) => video::handle_video_message(state, video_msg),
         Message::Folder(folder_msg) => folder::handle_folder_message(state, folder_msg),
         Message::Media(media_msg) => media::handle_media_message(state, media_msg),
@@ -69,16 +69,26 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
     }
 }
 
-fn handle_tick(state: &mut AppState, _instant: std::time::Instant) -> Task<Message> {
+fn handle_tick(state: &mut AppState, instant: std::time::Instant) -> Task<Message> {
     if state.should_exit {
         let _ = state.settings.save();
         state.video.deactivate();
         return iced::window::latest().and_then(iced::window::close);
     }
 
+    // Expire the transient status banner. `expires_at` was stamped by
+    // `set_status` with the same monotonic clock the tick stream uses, so a
+    // suspended process can't keep a stale banner alive: the comparison is
+    // against the tick's own `Instant`, not a wall-clock read at set time.
+    if let Some(ref status) = state.status_message
+        && instant >= status.expires_at
+    {
+        state.status_message = None;
+    }
+
     #[cfg(feature = "demo")]
     let automation_task =
-        iced_automation::try_tick_state(state, _instant, update, Message::AutomationBounds);
+        iced_automation::try_tick_state(state, instant, update, Message::AutomationBounds);
     #[cfg(not(feature = "demo"))]
     let automation_task = Task::none();
 
@@ -342,6 +352,11 @@ fn handle_update_message(
         }
         UpdateMessage::UpdateFailed(e) => {
             tracing::error!("Update failed: {e}");
+            // Surface the failure through the status banner. The banner
+            // text stays short and localized; the raw error is appended at
+            // debug level only, never shown in the UI.
+            tracing::debug!(details = %e, "update failure details");
+            state.set_status(state.l10n.get("status-update-failed", &[]));
             Task::none()
         }
         UpdateMessage::DismissUpdatePrompt => {

@@ -24,6 +24,13 @@ pub struct MediaErrorTracker {
     errors: HashMap<PathBuf, MediaReadError>,
 }
 
+/// Upper bound on tracked entries: a folder of a million undecodable files
+/// must not turn into a multi-hundred-MB in-memory map. When the cap is
+/// hit, the map is cleared and only the currently recorded entry survives;
+/// cards that previously showed an error badge lose it until their next
+/// failed load re-records it.
+const MAX_TRACKED_ERRORS: usize = 10_000;
+
 #[allow(dead_code)]
 impl MediaErrorTracker {
     /// Creates a new, empty `MediaErrorTracker`.
@@ -37,6 +44,9 @@ impl MediaErrorTracker {
     pub fn record(&mut self, path: impl Into<PathBuf>, error: impl Into<String>) {
         let p = path.into();
         let msg = error.into();
+        if self.errors.len() >= MAX_TRACKED_ERRORS && !self.errors.contains_key(&p) {
+            self.errors.clear();
+        }
         self.errors.insert(p.clone(), MediaReadError::new(p, msg));
     }
 
@@ -122,5 +132,27 @@ mod tests {
 
         tracker.clear();
         assert!(tracker.is_empty());
+    }
+
+    #[test]
+    fn test_media_error_tracker_cap_bounds_map() {
+        let mut tracker = MediaErrorTracker::new();
+        let paths: Vec<PathBuf> = (0..MAX_TRACKED_ERRORS + 5)
+            .map(|i| PathBuf::from(format!("/tmp/bad_{i}.jpg")))
+            .collect();
+        for (i, p) in paths.iter().enumerate() {
+            tracker.record(p.clone(), format!("Error {i}"));
+        }
+
+        // Documented behavior: once the cap is hit, the map is cleared and
+        // only the entry that triggered the clear survives (plus whatever
+        // was recorded after it). The first recorded paths were wiped...
+        assert!(!tracker.has_error(&paths[0]));
+        // ...the cap-triggering entry (index MAX_TRACKED_ERRORS) survived...
+        assert!(tracker.has_error(&paths[MAX_TRACKED_ERRORS]));
+        // ...and the map stays bounded — never above MAX_TRACKED_ERRORS.
+        assert_eq!(tracker.len(), paths.len() - MAX_TRACKED_ERRORS);
+        assert!(tracker.len() <= MAX_TRACKED_ERRORS);
+        assert!(tracker.has_error(paths.last().unwrap()));
     }
 }

@@ -2,6 +2,8 @@ use std::path::{Path, PathBuf};
 
 use media_sort_core::actions::delete_action::TrashRestoreHandle;
 use media_sort_core::actions::reversible::ActionError;
+#[cfg(target_os = "windows")]
+use media_sort_core::path_utils;
 
 #[cfg(target_os = "macos")]
 fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
@@ -59,9 +61,18 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
         // C:\Users\RUNNER~1\... on CI runners). Canonicalize while the file
         // still exists so the stored path matches what the trash metadata
         // records, stripping the \\?\ verbatim prefix canonicalize yields.
+        // Symlinks are exempt: canonicalize would resolve the link and trash
+        // the TARGET file instead of the link itself.
         #[cfg(target_os = "windows")]
         let original_path = {
-            let canon = original_path.canonicalize().unwrap_or(original_path);
+            let is_symlink = path_utils::is_symlink(&original_path);
+            let canon = if is_symlink {
+                original_path.clone()
+            } else {
+                original_path
+                    .canonicalize()
+                    .unwrap_or(original_path.clone())
+            };
             match canon.to_string_lossy().strip_prefix(r"\\?\") {
                 Some(stripped) => PathBuf::from(stripped.to_owned()),
                 None => canon,
@@ -188,7 +199,22 @@ impl TrashRestoreHandle for NativeTrashRestore {
                     parent_matches && id_ext == ext
                 })
                 .collect();
-            candidates.sort_by_key(|i| (i.time_deleted - self.delete_time).abs());
+            // Among same-name candidates pick the entry whose deletion time
+            // is closest to this handle's delete (correct undo order: newest
+            // delete is undone first). Both timestamps have second
+            // granularity, so a delete that straddles a second boundary
+            // yields a captured delete_time one second LATER than the
+            // shell's timestamp for the same item, creating an exact
+            // distance tie with a newer same-name item — the tiebreak below
+            // prefers the OLDER entry (the item this handle deleted can
+            // never carry a later shell timestamp than the one captured
+            // after the delete call returned), so the sort outcome is
+            // deterministic regardless of enumeration order.
+            candidates.sort_by(|a, b| {
+                let da = (a.time_deleted - self.delete_time).abs();
+                let db = (b.time_deleted - self.delete_time).abs();
+                da.cmp(&db).then(a.time_deleted.cmp(&b.time_deleted))
+            });
 
             let Some(mut item) = candidates.into_iter().next() else {
                 return Err(ActionError::RestorationFailed(

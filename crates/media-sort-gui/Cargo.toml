@@ -47,6 +47,7 @@ pollster = { version = "0.4", optional = true }
 serde_json = { workspace = true, optional = true }
 iced_runtime = { version = "0.14", optional = true }
 iced_test = { version = "0.14", optional = true }
+open = { version = "5.4.0", features = ["shellexecute-on-windows"] }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 embed-resource = "3.0.11"

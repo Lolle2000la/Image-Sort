@@ -306,3 +306,56 @@ fn test_extract_video_frame() {
         "aspect ratio not preserved: expected {expected_ratio:.3}, got {actual_ratio:.3}"
     );
 }
+
+#[test]
+fn test_jpeg_sof_bomb_dimension_cap() {
+    // A tiny JPEG whose SOF header claims 65500x65500 used to drive a
+    // 268 MB buffer allocation from the turbojpeg path before decompression
+    // (per file, in parallel across the grid). The dimension cap must
+    // reject it before any allocation.
+    let dir = std::env::temp_dir().join(format!("mediasort_jpeg_bomb_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("bomb.jpg");
+
+    // Encode a real 1x1 JPEG, then patch the SOF width/height to the
+    // turbojpeg maximum (65500).
+    let img = image::RgbImage::from_pixel(1, 1, image::Rgb([255, 0, 0]));
+    let mut jpeg_bytes = Vec::new();
+    img.write_to(
+        &mut std::io::Cursor::new(&mut jpeg_bytes),
+        ImageFormat::Jpeg,
+    )
+    .unwrap();
+    let mut i = 2;
+    while i < jpeg_bytes.len() - 1 {
+        let marker = jpeg_bytes[i + 1];
+        if matches!(marker, 0xC0..=0xC2) {
+            // SOF payload: precision(1) height(2) width(2) ...
+            let payload = i + 4;
+            jpeg_bytes[payload + 1..payload + 3].copy_from_slice(&65500u16.to_be_bytes());
+            jpeg_bytes[payload + 3..payload + 5].copy_from_slice(&65500u16.to_be_bytes());
+            break;
+        }
+        let seg_len = u16::from_be_bytes([jpeg_bytes[i + 2], jpeg_bytes[i + 3]]) as usize;
+        i += 2 + seg_len;
+    }
+
+    std::fs::write(&path, &jpeg_bytes).unwrap();
+
+    let started = std::time::Instant::now();
+    let result = thumbnail::generate_thumbnail(&path, 128, 128);
+    let elapsed = started.elapsed();
+
+    assert!(result.is_err(), "oversized JPEG must be rejected");
+    let msg = result.unwrap_err().to_string();
+    assert!(
+        msg.contains("exceed the 16384px limit"),
+        "error should name the dimension cap, got: {msg}"
+    );
+    assert!(
+        elapsed < std::time::Duration::from_secs(1),
+        "oversized JPEG took {elapsed:?}"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}

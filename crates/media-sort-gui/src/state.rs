@@ -27,6 +27,17 @@ use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::{FolderNode, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
+/// A transient user-facing status banner: text plus a monotonic expiry
+/// stamp. Rendered by the main layout, cleared on the next tick whose
+/// `Instant` is past `expires_at` — the comparison uses the tick's own
+/// monotonic clock, so a suspended process cannot keep a stale banner alive
+/// for the leftover duration.
+#[derive(Debug, Clone)]
+pub struct StatusMessage {
+    pub text: String,
+    pub expires_at: std::time::Instant,
+}
+
 #[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
 pub struct AppState {
     pub history: History,
@@ -45,6 +56,11 @@ pub struct AppState {
     pub metadata: MetadataPanelState,
     pub settings_ui: SettingsUiState,
     pub drag_drop: DragDropState,
+
+    /// Transient user-facing status banner (text + monotonic expiry
+    /// instant). Rendered by the main layout, cleared on the next tick
+    /// after expiry.
+    pub status_message: Option<StatusMessage>,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -127,6 +143,7 @@ impl AppState {
             metadata,
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
+            status_message: None,
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -136,14 +153,34 @@ impl AppState {
         }
     }
 
+    /// Show a transient status banner that auto-expires after 5 seconds
+    /// (cleared on the next tick whose `Instant` has passed). Used to
+    /// surface refused actions such as symbolic-link drops, which
+    /// previously failed silently.
+    pub fn set_status(&mut self, text: String) {
+        self.status_message = Some(StatusMessage {
+            text,
+            expires_at: std::time::Instant::now() + std::time::Duration::from_secs(5),
+        });
+    }
+
     pub fn open_folder(&mut self, path: &Path) {
         self.folder.current_folder = Some(path.to_path_buf());
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         self.settings.mark_dirty();
         self.history.clear();
+        // A banner set by a drop (or a refused action) must not linger
+        // across the folder switch.
+        self.status_message = None;
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
+        // The scroll snapshot belongs to the previous folder's content
+        // (possibly thousands of cards); without a reset the first render
+        // of the new, smaller folder would slice the entry list past its
+        // end. `GridScrolled` events keep it in sync afterwards, and
+        // `viewport_window` clamps defensively either way.
+        self.media_grid.scroll.offset_x = 0.0;
         self.metadata.current = None;
         self.folder.selected_folder = None;
         self.folder.selected_folder_idx = None;

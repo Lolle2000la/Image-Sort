@@ -68,20 +68,14 @@ impl ThumbnailVisibilityTracker {
             return load_queue;
         }
 
-        const CARD_STRIDE: f32 = crate::view::media_grid::MEDIA_GRID_CARD_WIDTH
-            + crate::view::media_grid::MEDIA_GRID_CARD_SPACING;
-
         let visible_width = if scroll.viewport_width > 0.0 {
             scroll.viewport_width
         } else {
             window_width as f32
         };
 
-        let (start_idx, end_idx) = {
-            let s = (scroll.offset_x / CARD_STRIDE).floor() as usize;
-            let e = ((scroll.offset_x + visible_width) / CARD_STRIDE).ceil() as usize;
-            (s.saturating_sub(5), (e + 5).min(total_items))
-        };
+        let (start_idx, end_idx) =
+            crate::view::media_grid::viewport_window(scroll.offset_x, visible_width, total_items);
 
         if start_idx < total_items && start_idx < end_idx {
             let slice = &entry_paths[start_idx..end_idx];

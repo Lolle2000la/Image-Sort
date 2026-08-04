@@ -76,16 +76,66 @@ pub enum VideoEvent {
 
 /// Rotates raw RGBA bytes by the given [`Rotation`].
 ///
-/// Returns `(new_width, new_height, new_rgba_bytes)`.
+/// Returns `(new_width, new_height, new_rgba_bytes)`. `src` must hold a
+/// complete `src_w × src_h × 4` frame for **every** rotation, including
+/// [`Rotation::R0`]: the front guard rejects an undersized source before any
+/// rotation is applied, so R0 is not a pure passthrough and yields an empty
+/// buffer too. Degenerate or hostile dimensions (zero, or large enough to
+/// overflow the u32 size math) also yield an empty buffer instead of a panic.
 pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u32, u32, Vec<u8>) {
     use rayon::prelude::*;
+    let (dst_w, dst_h) = match rotation {
+        Rotation::R90 | Rotation::R270 => (src_h, src_w),
+        Rotation::R0 | Rotation::R180 => (src_w, src_h),
+    };
+    // Zero dimensions would make `par_chunks_exact_mut` panic on a zero
+    // chunk size; hostile dimensions would overflow the u32 math below.
+    if dst_w == 0 || dst_h == 0 {
+        return (0, 0, Vec::new());
+    }
+    // A caller passing dimensions much larger than the source slice would
+    // otherwise allocate dst_w*dst_h*4 bytes of zeros. Require the source
+    // to actually hold a full frame before allocating.
+    let Some(src_size) = (src_w as u64)
+        .checked_mul(src_h as u64)
+        .and_then(|n| n.checked_mul(4))
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return (0, 0, Vec::new());
+    };
+    if src.len() < src_size {
+        return (0, 0, Vec::new());
+    }
+    // The common no-rotation case must not pay for the dst allocation,
+    // which is only needed for the in-place rotated copies below. Slice to
+    // the validated frame size so a source buffer with an unused tail (e.g.
+    // a pooled buffer) does not leak into the result.
+    if rotation == Rotation::R0 {
+        return (src_w, src_h, src[..src_size].to_vec());
+    }
+    let Some(dst_size) = (dst_w as u64)
+        .checked_mul(dst_h as u64)
+        .and_then(|n| n.checked_mul(4))
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return (0, 0, Vec::new());
+    };
+    let mut dst = vec![0u8; dst_size];
+    let dst_stride = (dst_w as usize) * 4;
+
+    // `src_idx` uses saturating math: with hostile dims the u32 product can
+    // overflow; the `<= src.len()` guard below then drops the read.
+    macro_rules! src_idx {
+        ($y:expr, $x:expr) => {
+            ($y as usize)
+                .saturating_mul(src_w as usize)
+                .saturating_add($x as usize)
+                .saturating_mul(4)
+        };
+    }
+
     match rotation {
         Rotation::R90 => {
-            let dst_w = src_h;
-            let dst_h = src_w;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -94,8 +144,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = src_h - 1 - dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
@@ -104,11 +154,6 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
             (dst_w, dst_h, dst)
         }
         Rotation::R180 => {
-            let dst_w = src_w;
-            let dst_h = src_h;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -117,8 +162,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_x = src_w - 1 - dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
@@ -127,11 +172,6 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
             (dst_w, dst_h, dst)
         }
         Rotation::R270 => {
-            let dst_w = src_h;
-            let dst_h = src_w;
-            let mut dst = vec![0u8; (dst_w * dst_h * 4) as usize];
-            let dst_stride = (dst_w * 4) as usize;
-
             dst.par_chunks_exact_mut(dst_stride)
                 .enumerate()
                 .for_each(|(dst_y, row)| {
@@ -140,8 +180,8 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = dst_x as u32;
-                            let src_idx = ((src_y * src_w + src_x) * 4) as usize;
-                            if src_idx + 4 <= src.len() {
+                            let src_idx = src_idx!(src_y, src_x);
+                            if src_idx.saturating_add(4) <= src.len() {
                                 pixel.copy_from_slice(&src[src_idx..src_idx + 4]);
                             }
                         });
@@ -149,8 +189,22 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
 
             (dst_w, dst_h, dst)
         }
-        Rotation::R0 => (src_w, src_h, src.to_vec()),
+        Rotation::R0 => unreachable!("handled by the early return above"),
     }
+}
+
+/// Computes the byte size of a `w × h` RGBA frame (`w * h * 4`) with checked
+/// math. Returns `None` when the product overflows `usize`.
+///
+/// All allocation sites in the render path use this helper: an unchecked
+/// `i32`/`u32` product would panic in debug builds and wrap in release, and a
+/// wrapped value `as usize` becomes a giant length that drives a huge
+/// allocation via `Vec::resize`/`vec![0u8; len]`.
+pub(crate) fn rgba_frame_size(w: u32, h: u32) -> Option<usize> {
+    (w as u64)
+        .checked_mul(h as u64)
+        .and_then(|n| n.checked_mul(4))
+        .and_then(|n| usize::try_from(n).ok())
 }
 
 /// Spawns the background video worker on the current tokio runtime with the
@@ -200,8 +254,21 @@ async fn run_video_worker(
     // slot is reusable only when the worker is its sole owner (strong_count ==
     // 1). The pool payload stays `Arc<Vec<u8>>` rather than `Arc<[u8]>`
     // precisely because the pool must resize in place via `Arc::get_mut`; an
-    // immutable slice payload would force a fresh allocation per frame.
-    let max_buffer_size = (config.max_frame_width * config.max_frame_height * 4) as usize;
+    // immutable slice payload would force a fresh allocation per frame. The
+    // initial size is only an allocation hint (per-frame `resize` sets the
+    // real size), so a max-frame-size config that overflows usize degrades to
+    // empty pool buffers instead of panicking.
+    let max_buffer_size = match rgba_frame_size(config.max_frame_width, config.max_frame_height) {
+        Some(n) => n,
+        None => {
+            tracing::warn!(
+                "PlayerConfig max frame size {}x{} overflows usize; starting with empty pool buffers",
+                config.max_frame_width,
+                config.max_frame_height
+            );
+            0
+        }
+    };
     let mut pool = [
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
@@ -211,11 +278,14 @@ async fn run_video_worker(
     let mut current_video_path = PathBuf::new();
     let mut canonical_video_path: Option<PathBuf> = None;
     let mut cached_video_params: Option<(i32, i32, Rotation)> = None;
-    // The rotation re-check (below) must not run per frame: it calls
-    // `get_video_rotation()`, which opens and parses the file on every call.
-    // Rotation is static per file, so re-checking once per second is enough
-    // to catch a late mpv-reported rotation after load.
-    let mut last_rotation_recheck = std::time::Instant::now();
+    // Load-scoped one-shot deadline for the late rotation recheck (see the
+    // progress tick below). Reset alongside `cached_video_params`.
+    let mut rotation_recheck_deadline: Option<std::time::Instant> = None;
+    // The mpv-reported `path` string that passed the initial paths_match
+    // check for this load. The recheck compares against this string instead
+    // of re-running `canonicalize()` (which is file I/O); mpv's `path`
+    // property is stable within a load, so string equality is sufficient.
+    let mut rotation_matched_path: Option<PathBuf> = None;
     let mut last_position = -1.0;
     let mut last_muted = false;
     let mut last_volume = -1.0;
@@ -250,6 +320,8 @@ async fn run_video_worker(
                                 canonical_video_path = path.canonicalize().ok();
                                 current_video_path = path;
                                 cached_video_params = None;
+                                rotation_recheck_deadline = None;
+                                rotation_matched_path = None;
                             }
                             Err(err) => {
                                 let _ = event_tx
@@ -286,10 +358,14 @@ async fn run_video_worker(
                         player.set_paused(true);
                         player.seek_absolute(0.0);
                         cached_video_params = None;
+                        rotation_recheck_deadline = None;
+                        rotation_matched_path = None;
                     }
                     VideoCommand::Deactivate => {
                         player.set_paused(true);
                         cached_video_params = None;
+                        rotation_recheck_deadline = None;
+                        rotation_matched_path = None;
                         // SAFETY: send "stop" command to release the current file handle and
                         // flush internal mpv caches, preventing file locks that would block
                         // rename/move/delete operations on the last-played video.
@@ -341,41 +417,51 @@ async fn run_video_worker(
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
                                     if render_unrot_w > 0 && render_unrot_h > 0 {
-                                        cached_video_params = Some((render_unrot_w, render_unrot_h, rotation));
+                                        cached_video_params =
+                                            Some((render_unrot_w, render_unrot_h, rotation));
+                                        rotation_matched_path = Some(current_p.clone());
+                                        // Schedule the one-shot late-rotation
+                                        // recheck (handled in the progress
+                                        // tick): mpv can populate
+                                        // video-params/rotate or the
+                                        // track-list demux-rotation AFTER
+                                        // video-out-params first appears, so a
+                                        // rotation probed at first-frame time
+                                        // may still be stale.
+                                        rotation_recheck_deadline = Some(
+                                            std::time::Instant::now()
+                                                + std::time::Duration::from_secs(2),
+                                        );
                                     }
                                 }
                             }
                         }
 
-                        if let Some((_, _, cached_rot)) = cached_video_params
-                            && last_rotation_recheck.elapsed() >= std::time::Duration::from_secs(1)
-                        {
-                            last_rotation_recheck = std::time::Instant::now();
-                            let current_rot = player.get_video_rotation();
-                            if current_rot != cached_rot {
-                                let (w, h) = player.get_video_size();
-                                if w > 0 && h > 0 {
-                                    let (eff_w, eff_h) = if current_rot.is_swapped() {
-                                        (h, w)
-                                    } else {
-                                        (w, h)
-                                    };
-
-                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
-                                        .min(config.max_frame_height as f64 / eff_h as f64)
-                                        .min(1.0);
-                                    let render_unrot_w = ((w as f64 * scale) as i32) & !1;
-                                    let render_unrot_h = ((h as f64 * scale) as i32) & !1;
-
-                                    if render_unrot_w > 0 && render_unrot_h > 0 {
-                                        cached_video_params = Some((render_unrot_w, render_unrot_h, current_rot));
-                                    }
-                                }
-                            }
-                        }
+                        // Rotation is detected once per load above, plus a
+                        // single property-only recheck ~2 s later (see the
+                        // progress tick): a file's rotation cannot change
+                        // during playback, and re-detection must not be
+                        // repeated per tick — `get_video_rotation` re-opens
+                        // and re-parses the container (read_mp4_tkhd_rotation),
+                        // which a crafted file could turn into CPU burn.
 
                         if let Some((render_unrot_w, render_unrot_h, rotation)) = cached_video_params {
-                            let unrot_size = (render_unrot_w * render_unrot_h * 4) as usize;
+                            // Checked size math: hostile dims (e.g. an mpv
+                            // video-params reporting a giant size) would
+                            // overflow the i32 product — panicking in debug,
+                            // wrapping in release, and a wrapped negative
+                            // `as usize` becomes a giant length that drives
+                            // `resize`/`vec![0u8; _]` into a huge allocation.
+                            // Drop the frame like the FrameReady validation
+                            // drops inconsistent frames.
+                            let Some(unrot_size) =
+                                rgba_frame_size(render_unrot_w as u32, render_unrot_h as u32)
+                            else {
+                                tracing::warn!(
+                                    "render size {render_unrot_w}x{render_unrot_h} overflows usize; skipping frame"
+                                );
+                                break;
+                            };
 
                             // Find a free buffer in the pool (where we are the sole owner)
                             let free_buffer = pool
@@ -410,6 +496,44 @@ async fn run_video_worker(
 
             _ = progress_interval.tick() => {
                 if is_active {
+                    // One-shot late-rotation recheck. The initial detection
+                    // runs at first-frame time, but mpv can populate
+                    // `video-params/rotate` / `track-list/*/demux-rotation`
+                    // only AFTER `video-out-params` first appears — a file
+                    // whose rotation is not yet known then is reported as R0
+                    // for the whole load. The recheck fires exactly once,
+                    // ~2 s into the load, and does ZERO file I/O: the
+                    // property probe reads mpv's already-parsed state, and
+                    // the same-load guard is a pure string comparison
+                    // against the path that already passed the initial
+                    // detection (mpv's `path` property is stable within a
+                    // load — a file switch without a Load command changes
+                    // the string and skips the probe). It must never fall
+                    // back to the file-based `get_video_rotation`, which
+                    // re-opens and re-parses the container — repeating that
+                    // would let a crafted file burn CPU per recheck.
+                    if let Some(deadline) = rotation_recheck_deadline
+                        && std::time::Instant::now() >= deadline
+                    {
+                        rotation_recheck_deadline = None;
+                        if let Some((w, h, rot)) = cached_video_params
+                            && let Some(current_p_str) = player.get_current_path()
+                            && let Some(matched) = rotation_matched_path.as_deref()
+                            && matched.as_os_str() == std::ffi::OsStr::new(&current_p_str)
+                            && player.is_video_ready()
+                        {
+                            let prop_rot = player.probe_rotation_properties();
+                            // R0 here means "no property known": never
+                            // downgrade the file-parse result.
+                            if prop_rot != Rotation::R0 && prop_rot != rot {
+                                cached_video_params = Some((w, h, prop_rot));
+                                tracing::debug!(
+                                    "rotation recheck corrected {rot:?} -> {prop_rot:?}"
+                                );
+                            }
+                        }
+                    }
+
                     let mut pos: f64 = 0.0;
                     unsafe {
                         mpv_get_property(
@@ -493,5 +617,59 @@ mod tests {
         // 270 deg CW: (0,0) Red -> (0,1); (1,0) Green -> (0,0)
         assert_eq!(&dst[0..4], &[0, 255, 0, 255]);
         assert_eq!(&dst[4..8], &[255, 0, 0, 255]);
+    }
+
+    #[test]
+    fn test_rotate_rgba_rejects_undersized_src() {
+        let src = vec![0u8; 4];
+        let (w, h, dst) = rotate_rgba(1024, 1024, &src, Rotation::R90);
+        assert_eq!((w, h), (0, 0));
+        assert!(dst.is_empty());
+    }
+
+    #[test]
+    fn test_rotate_rgba_rejects_undersized_src_even_for_r0() {
+        // The front guard rejects an undersized source for EVERY rotation,
+        // including R0: it is not a pure passthrough.
+        let src = vec![0u8; 4];
+        let (w, h, dst) = rotate_rgba(1024, 1024, &src, Rotation::R0);
+        assert_eq!((w, h), (0, 0));
+        assert!(dst.is_empty());
+    }
+
+    #[test]
+    fn test_rotate_rgba_r0_slices_oversized_src_to_frame() {
+        // A source buffer larger than the declared frame (pooled buffer
+        // with an unused tail) must yield exactly the w*h*4 frame, not the
+        // whole slice.
+        let src = vec![7u8; 2 * 2 * 4 + 16];
+        let (w, h, dst) = rotate_rgba(2, 2, &src, Rotation::R0);
+        assert_eq!((w, h), (2, 2));
+        assert_eq!(dst.len(), 2 * 2 * 4);
+        assert!(dst.iter().all(|&b| b == 7));
+    }
+
+    #[test]
+    fn test_rgba_frame_size_computes_valid_sizes() {
+        assert_eq!(rgba_frame_size(2, 1), Some(8));
+        assert_eq!(rgba_frame_size(960, 540), Some(960 * 540 * 4));
+        assert_eq!(rgba_frame_size(10_000, 10_000), Some(400_000_000));
+        assert_eq!(rgba_frame_size(0, 0), Some(0));
+    }
+
+    #[test]
+    fn test_rgba_frame_size_overflow_returns_none() {
+        // u32::MAX^2 * 4 overflows u64 -> None on every platform.
+        assert_eq!(rgba_frame_size(u32::MAX, u32::MAX), None);
+        // The worker render-path scenario: i32::MAX render dims overflow the
+        // old i32 intermediate (panic in debug, negative wrap in release).
+        // The helper must never wrap: it returns the exact u64 product when
+        // it fits usize, and None otherwise.
+        let dim = i32::MAX as u32;
+        let exact = (dim as u64) * (dim as u64) * 4;
+        match rgba_frame_size(dim, dim) {
+            Some(n) => assert_eq!(n as u64, exact, "helper must not wrap"),
+            None => assert!(exact > usize::MAX as u64),
+        }
     }
 }

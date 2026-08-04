@@ -711,3 +711,72 @@ fn test_thumbnail_exif_orientation() {
 
     std::fs::remove_file(&tmp_path).ok();
 }
+
+#[test]
+fn test_is_animated_gif_bomb_header_returns_fast() {
+    // 15-byte GIF claiming a 65535x65535 logical screen: the old
+    // decode-based check attempted a ~16 GiB allocation on the first frame
+    // read (GifDecoder uses Limits::no_limits()). The header scan must
+    // answer without allocating anything.
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_bomb_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("bomb.gif");
+
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(b"GIF89a");
+    // Logical screen descriptor: 65535x65535, no global color table.
+    bytes.extend_from_slice(&[0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00]);
+    bytes.extend_from_slice(&[0x00, 0x00]);
+    std::fs::write(&path, &bytes).unwrap();
+
+    let started = std::time::Instant::now();
+    let result = image_decoder::is_animated_gif(&path);
+    let elapsed = started.elapsed();
+
+    // No trailer and no image descriptors: the file is not a parseable
+    // GIF, so the answer is None (unknown), never Some(false) — a corrupt
+    // GIF must not be misclassified as a known-static one.
+    assert_eq!(result, None, "bomb has no trailer or image descriptors");
+    assert!(
+        elapsed < std::time::Duration::from_secs(1),
+        "header scan took {elapsed:?}"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}
+
+#[test]
+fn test_is_animated_gif_truncated_returns_none() {
+    // A single-frame GIF whose data is cut off before the trailer. The
+    // pre-fix code (v3.0) counted truncated/corrupt items as frames via
+    // GifFrameIterator, so a file like this was misclassified as ANIMATED
+    // (`Some(true)`). The header scan must answer None (unknown) instead —
+    // a truncated GIF is not a parseable GIF and must never be classified
+    // as animated.
+    let dir = std::env::temp_dir().join(format!("mediasort_gif_trunc_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("truncated.gif");
+
+    let img = image::RgbaImage::from_pixel(4, 4, image::Rgba([255, 0, 0, 255]));
+    let file = std::fs::File::create(&path).unwrap();
+    {
+        let mut encoder = image::codecs::gif::GifEncoder::new(file);
+        encoder
+            .encode(&img, 4, 4, image::ExtendedColorType::Rgba8)
+            .unwrap();
+    }
+    let mut bytes = std::fs::read(&path).unwrap();
+    // Drop the trailer byte (and any trailing bytes) to simulate truncation.
+    while bytes.last() == Some(&0x3B) {
+        bytes.pop();
+    }
+    std::fs::write(&path, &bytes).unwrap();
+
+    let result = image_decoder::is_animated_gif(&path);
+    assert_eq!(
+        result, None,
+        "truncated GIF (no trailer) must not be classified as static"
+    );
+
+    std::fs::remove_dir_all(&dir).ok();
+}

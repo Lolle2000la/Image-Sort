@@ -71,7 +71,14 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
     let file_len = file.metadata().ok()?.len();
 
     let mut buf = [0u8; 8];
+    let mut boxes_visited: u32 = 0;
     while file.stream_position().unwrap_or(file_len) + 8 <= file_len {
+        boxes_visited += 1;
+        if boxes_visited > 10_000 {
+            // A hostile file can declare an unbounded number of tiny boxes
+            // (16 bytes each); cap the walk so it cannot spin on CPU/IO.
+            break;
+        }
         if file.read_exact(&mut buf).is_err() {
             break;
         }
@@ -140,10 +147,17 @@ fn read_mp4_tkhd_rotation(path: &Path) -> Option<Rotation> {
             }
         }
 
-        if file
-            .seek(SeekFrom::Start(content_start + payload_len))
-            .is_err()
-        {
+        let Some(next) = content_start.checked_add(payload_len) else {
+            // u64 overflow (e.g. an extended-size box declaring a length of
+            // 2^64 - k wraps the walk position) - never trust it.
+            break;
+        };
+        // A declared box must lie within the file; anything beyond EOF is
+        // invalid input, not a sparse-file feature worth following.
+        if next > file_len {
+            break;
+        }
+        if file.seek(SeekFrom::Start(next)).is_err() {
             break;
         }
     }
@@ -284,6 +298,46 @@ mod tests {
             detect_video_rotation(&path),
             Some(Rotation::R90),
             "the size64 mdat must not desync the box walk"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}
+
+#[cfg(test)]
+mod security_tests {
+    use super::*;
+
+    /// Two-box construction that wraps the u64 next-position arithmetic:
+    /// box A (size 32) walks 0 -> 32, then an extended-size box with
+    /// size64 = 2^64 - 32 maps 32 -> 2^64, which wraps to 0 in release
+    /// (infinite loop) or overflows in debug. Must terminate with None.
+    #[test]
+    fn test_mp4_box_walker_overflow_terminates() {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&32u32.to_be_bytes());
+        bytes.extend_from_slice(b"free");
+        bytes.extend_from_slice(&[0u8; 24]);
+        bytes.extend_from_slice(&1u32.to_be_bytes());
+        bytes.extend_from_slice(b"tkhd");
+        bytes.extend_from_slice(&(u64::MAX - 31).to_be_bytes()); // 2^64 - 32
+
+        let dir = std::env::temp_dir().join(format!(
+            "mpv_utils_rotation_overflow_{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("overflow.mp4");
+        std::fs::write(&path, &bytes).unwrap();
+
+        let started = std::time::Instant::now();
+        let result = detect_video_rotation(&path);
+        let elapsed = started.elapsed();
+
+        assert_eq!(result, None, "overflow payload must not loop");
+        assert!(
+            elapsed < std::time::Duration::from_secs(1),
+            "box walk took {elapsed:?}"
         );
 
         std::fs::remove_dir_all(&dir).ok();

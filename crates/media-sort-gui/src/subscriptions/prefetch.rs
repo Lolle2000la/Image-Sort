@@ -4,13 +4,74 @@ use std::sync::LazyLock;
 
 use tracing;
 
-type ThumbnailResult = Result<(u32, u32, Vec<u8>), String>;
+type ThumbnailResult = Result<(u32, u32, Vec<u8>), ThumbnailError>;
 type VideoThumbnailRequest = (PathBuf, std::sync::mpsc::Sender<ThumbnailResult>);
 
+/// Failure of a thumbnail generation request.
+///
+/// [`Decode`](Self::Decode) is a real file problem (corrupt data, unsupported
+/// codec) and gets recorded in `media_errors` as a persistent "failed" badge.
+/// [`Transient`](Self::Transient) is a queue/worker-pool problem (queue
+/// timeout, dead pool, ffmpeg/mpv request timeout) — the file itself is
+/// fine, so it is NOT recorded; the card just stays without a thumbnail and
+/// the next `load_visible_thumbnails` pass re-queues it.
+#[derive(Debug, Clone)]
+pub enum ThumbnailError {
+    Decode(String),
+    Transient(String),
+}
+
+impl ThumbnailError {
+    fn transient(message: impl Into<String>) -> Self {
+        Self::Transient(message.into())
+    }
+}
+
+/// Bounded work-queue capacity per pool. A scroll-storm through a folder of
+/// video files used to feed unbounded `mpsc::channel` queues (and if every
+/// mpv worker failed to start, requesters blocked forever on `recv()`);
+/// `sync_channel` applies backpressure and the response timeouts below
+/// un-hang requesters when a pool is dead.
+const THUMBNAIL_QUEUE_CAPACITY: usize = 256;
+const FFMPEG_RESPONSE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(60);
+const MPV_RESPONSE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
+/// How long a producer may block on the bounded worker-pool queue before
+/// giving up. A scroll-storm can fill the 256-slot queue; without this cap
+/// a request would block indefinitely while every worker is busy.
+const THUMBNAIL_QUEUE_SEND_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(5);
+
+/// Bounded send with a deadline: blocks up to `timeout`, then gives up
+/// (returning `Err(value)`). `SyncSender::send_timeout` is not stable on
+/// the MSRV toolchain (`std_internals`), so this is a `try_send` poll loop.
+/// Callers must NOT hold the pool's `Mutex` across this call — clone the
+/// sender out of the lock first.
+fn send_with_timeout<T>(
+    sender: &std::sync::mpsc::SyncSender<T>,
+    mut value: T,
+    timeout: std::time::Duration,
+) -> Result<(), T> {
+    let deadline = std::time::Instant::now() + timeout;
+    loop {
+        match sender.try_send(value) {
+            Ok(()) => return Ok(()),
+            Err(std::sync::mpsc::TrySendError::Full(full_value)) => {
+                if std::time::Instant::now() >= deadline {
+                    return Err(full_value);
+                }
+                value = full_value;
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            Err(std::sync::mpsc::TrySendError::Disconnected(full_value)) => {
+                return Err(full_value);
+            }
+        }
+    }
+}
+
 static VIDEO_THUMBNAIL_WORKER: LazyLock<
-    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
+    std::sync::Mutex<std::sync::mpsc::SyncSender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
-    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
+    let (tx, rx) = std::sync::mpsc::sync_channel::<VideoThumbnailRequest>(THUMBNAIL_QUEUE_CAPACITY);
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
@@ -53,9 +114,9 @@ static VIDEO_THUMBNAIL_WORKER: LazyLock<
 // video files can spawn N simultaneous ffmpeg processes (default tokio
 // blocking pool ceiling is 512). See `benches/perf_candidates.rs` Group G.
 static FFMPEG_THUMBNAIL_WORKER: LazyLock<
-    std::sync::Mutex<std::sync::mpsc::Sender<VideoThumbnailRequest>>,
+    std::sync::Mutex<std::sync::mpsc::SyncSender<VideoThumbnailRequest>>,
 > = LazyLock::new(|| {
-    let (tx, rx) = std::sync::mpsc::channel::<VideoThumbnailRequest>();
+    let (tx, rx) = std::sync::mpsc::sync_channel::<VideoThumbnailRequest>(THUMBNAIL_QUEUE_CAPACITY);
     let rx = std::sync::Arc::new(std::sync::Mutex::new(rx));
     let num_workers = std::thread::available_parallelism()
         .map(|n| n.get())
@@ -76,7 +137,7 @@ static FFMPEG_THUMBNAIL_WORKER: LazyLock<
                 let result =
                     match media_sort_backend::media::ffmpeg_pipe::extract_frame(&path, 128, 128) {
                         Ok(decoded) => Ok(decoded.into_parts()),
-                        Err(e) => Err(e),
+                        Err(e) => Err(ThumbnailError::Decode(e)),
                     };
                 if response.send(result).is_err() {
                     tracing::warn!(
@@ -96,7 +157,7 @@ fn generate_video_thumbnail_frame(
 ) -> ThumbnailResult {
     player
         .capture_frame(path, 128, 128, std::time::Duration::from_millis(1000))
-        .map_err(|e| e.to_string())
+        .map_err(|e| ThumbnailError::Decode(e.to_string()))
 }
 
 /// Generate a thumbnail for the given file. Takes the entry's cached
@@ -119,7 +180,7 @@ pub fn generate_thumbnail(
     if media_type == MediaType::Audio {
         return media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
             .map(|d| d.into_parts())
-            .map_err(|e| format!("Audio cover thumbnail error: {e}"));
+            .map_err(|e| ThumbnailError::Decode(format!("Audio cover thumbnail error: {e}")));
     }
 
     if media_type == MediaType::Video {
@@ -131,32 +192,66 @@ pub fn generate_thumbnail(
         // existing mpv worker pool — same semantics as before, just with a
         // bounded upper bound on concurrency.
         let (response_tx, response_rx) = std::sync::mpsc::channel();
-        if FFMPEG_THUMBNAIL_WORKER
+        // Clone the sender and drop the mutex guard BEFORE the bounded
+        // send: holding the pool's mutex across a blocked send would stall
+        // every other thumbnail producer behind this request's backpressure.
+        let sender = FFMPEG_THUMBNAIL_WORKER
             .lock()
             .expect("FFMPEG_THUMBNAIL_WORKER lock is not poisoned")
-            .send((path.to_path_buf(), response_tx))
-            .is_err()
+            .clone();
+        if send_with_timeout(
+            &sender,
+            (path.to_path_buf(), response_tx),
+            THUMBNAIL_QUEUE_SEND_TIMEOUT,
+        )
+        .is_err()
         {
-            return Err("Failed to queue ffmpeg video thumbnail request".to_string());
+            // Queue stayed full for 5 s or the pool is gone — the file
+            // itself is fine. Report as transient so `ThumbnailFailed`
+            // does NOT record it in `media_errors` (that would permanently
+            // badge the card and block all retries for the session).
+            return Err(ThumbnailError::transient(
+                "failed to queue ffmpeg video thumbnail request",
+            ));
         }
-        match response_rx.recv() {
+        match response_rx.recv_timeout(FFMPEG_RESPONSE_TIMEOUT) {
             Ok(Ok(parts)) => return Ok(parts),
-            Ok(Err(_ffmpeg_err)) => {
-                // ffmpeg rejected the file; try the mpv pool as a fallback.
+            Ok(Err(_)) | Err(_) => {
+                // ffmpeg rejected the file, timed out on it, or its pool
+                // is gone (disconnected workers). The mpv pool may still
+                // extract a frame, so try it before giving up.
                 let (mpv_tx, mpv_rx) = std::sync::mpsc::channel();
                 let sender = VIDEO_THUMBNAIL_WORKER
                     .lock()
                     .expect("VIDEO_THUMBNAIL_WORKER lock is not poisoned")
                     .clone();
-                sender
-                    .send((path.to_path_buf(), mpv_tx))
-                    .map_err(|e| format!("Failed to queue video thumbnail request: {e}"))?;
-                return mpv_rx
-                    .recv()
-                    .map_err(|e| format!("Failed to receive video thumbnail result: {e}"))?;
-            }
-            Err(e) => {
-                return Err(format!("Failed to receive ffmpeg thumbnail result: {e}"));
+                if send_with_timeout(
+                    &sender,
+                    (path.to_path_buf(), mpv_tx),
+                    THUMBNAIL_QUEUE_SEND_TIMEOUT,
+                )
+                .is_err()
+                {
+                    return Err(ThumbnailError::transient(
+                        "failed to queue video thumbnail request",
+                    ));
+                }
+                match mpv_rx.recv_timeout(MPV_RESPONSE_TIMEOUT) {
+                    Ok(Ok(parts)) => return Ok(parts),
+                    Ok(Err(e)) => return Err(e),
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                        return Err(ThumbnailError::transient(format!(
+                            "video thumbnail request timed out after {MPV_RESPONSE_TIMEOUT:?}"
+                        )));
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        // Pool gone: a queue failure, not a decode failure —
+                        // retry later.
+                        return Err(ThumbnailError::transient(
+                            "video thumbnail worker pool disconnected",
+                        ));
+                    }
+                }
             }
         }
     }
@@ -167,13 +262,14 @@ pub fn generate_thumbnail(
 
     media_sort_backend::media::thumbnail::generate_thumbnail(path, 128, 128)
         .map(|d| d.into_parts())
-        .map_err(|e| format!("Image decoding failed: {e}"))
+        .map_err(|e| ThumbnailError::Decode(format!("Image decoding failed: {e}")))
 }
 
 fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
-    let file = std::fs::File::open(path).map_err(|e| format!("Failed to open ICO file: {e}"))?;
-    let icon_dir =
-        ico::IconDir::read(file).map_err(|e| format!("Failed to parse ICO structure: {e}"))?;
+    let file = std::fs::File::open(path)
+        .map_err(|e| ThumbnailError::Decode(format!("Failed to open ICO file: {e}")))?;
+    let icon_dir = ico::IconDir::read(file)
+        .map_err(|e| ThumbnailError::Decode(format!("Failed to parse ICO structure: {e}")))?;
 
     let entry = icon_dir
         .entries()
@@ -181,11 +277,13 @@ fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
         .filter(|e| e.width() <= 128 && e.height() <= 128)
         .max_by_key(|e| e.width())
         .or_else(|| icon_dir.entries().iter().max_by_key(|e| e.width()))
-        .ok_or_else(|| "No valid image entries found in ICO file".to_string())?;
+        .ok_or_else(|| {
+            ThumbnailError::Decode("No valid image entries found in ICO file".to_string())
+        })?;
 
     let decoded = entry
         .decode()
-        .map_err(|e| format!("Failed to decode ICO entry: {e}"))?;
+        .map_err(|e| ThumbnailError::Decode(format!("Failed to decode ICO entry: {e}")))?;
     let width = decoded.width();
     let height = decoded.height();
     let rgba = decoded.rgba_data().to_vec();

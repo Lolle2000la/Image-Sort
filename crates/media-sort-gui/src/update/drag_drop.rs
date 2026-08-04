@@ -63,10 +63,43 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                 return Task::none();
             };
 
+            // Symbolic links are refused up front: MoveAction/CopyAction
+            // would resolve the link and relocate the link's TARGET instead
+            // of the entry the user sees. Report the refusal via the status
+            // banner instead of failing silently.
+            let (symlink_paths, regular_paths): (Vec<_>, Vec<_>) = paths
+                .iter()
+                .partition(|p| media_sort_core::path_utils::is_symlink(p));
+            if !symlink_paths.is_empty() {
+                // Cap the banner text: a drop with thousands of symlinks
+                // must not allocate an unbounded string for the toast.
+                // Collect at most MAX_SHOWN_NAMES + 1 names — one extra
+                // only to detect that there are more to ellipsize.
+                const MAX_SHOWN_NAMES: usize = 3;
+                let names = symlink_paths
+                    .iter()
+                    .filter_map(|p| p.file_name().map(|n| n.to_string_lossy().into_owned()))
+                    .take(MAX_SHOWN_NAMES + 1)
+                    .collect::<Vec<_>>();
+                let names = if names.len() > MAX_SHOWN_NAMES {
+                    let shown = names[..MAX_SHOWN_NAMES].join(", ");
+                    format!("{shown}, …")
+                } else {
+                    names.join(", ")
+                };
+                state.set_status(state.l10n.get(
+                    "status-symlinks-skipped",
+                    &[
+                        ("count", &symlink_paths.len().to_string()),
+                        ("names", &names),
+                    ],
+                ));
+            }
+
             match target_zone {
                 DragZone::Copy => {
                     let mut count = 0;
-                    for src in &paths {
+                    for src in &regular_paths {
                         match CopyAction::new(src, &dest_dir) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
@@ -77,9 +110,7 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                                 }
                             }
                             Err(e) => {
-                                tracing::error!(
-                                    "Cannot create CopyAction for dropped file {src:?}: {e}"
-                                );
+                                report_refused_action(state, src, e);
                             }
                         }
                     }
@@ -91,7 +122,7 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                 }
                 DragZone::Move => {
                     let mut moved_count = 0;
-                    for src in &paths {
+                    for src in &regular_paths {
                         match MoveAction::new(src, &dest_dir) {
                             Ok(mut action) => {
                                 if let Err(e) = action.execute() {
@@ -102,9 +133,7 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
                                 }
                             }
                             Err(e) => {
-                                tracing::error!(
-                                    "Cannot create MoveAction for dropped file {src:?}: {e}"
-                                );
+                                report_refused_action(state, src, e);
                             }
                         }
                     }
@@ -134,5 +163,35 @@ pub fn execute_drop(state: &mut AppState) -> Task<Message> {
             Task::none()
         }
         _ => Task::none(),
+    }
+}
+
+/// Surfaces a refused action to the user. Symbolic-link refusals and
+/// target-exists conflicts get a status banner (the entry may have become a
+/// link between scan and action; a same-named file in the destination is a
+/// user-visible conflict); everything else is logged as before.
+fn report_refused_action(
+    state: &mut AppState,
+    src: &std::path::Path,
+    e: media_sort_core::actions::reversible::ActionError,
+) {
+    match e {
+        media_sort_core::actions::reversible::ActionError::SourceIsSymlink(_) => {
+            let name = src
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| src.display().to_string());
+            state.set_status(state.l10n.get("status-symlink-refused", &[("name", &name)]));
+        }
+        media_sort_core::actions::reversible::ActionError::TargetExists(target) => {
+            let name = target
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_else(|| target.display().to_string());
+            state.set_status(state.l10n.get("status-target-exists", &[("name", &name)]));
+        }
+        other => {
+            tracing::error!("Cannot create action for dropped file {src:?}: {other}");
+        }
     }
 }
