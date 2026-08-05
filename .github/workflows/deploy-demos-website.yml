@@ -47,13 +47,22 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install System Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools ffmpeg mesa-vulkan-drivers
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools ffmpeg mesa-vulkan-drivers
 
       - name: Install Website Dependencies
-        run: npm ci
-        working-directory: website
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: cd website && npm ci
 
       - name: Render Demo Flows
         run: npm run render-demos

@@ -69,30 +69,45 @@ jobs:
 
       - name: Install System Dependencies (Linux Only)
         if: startsWith(matrix.os, 'ubuntu')
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev squashfs-tools
-          if [ "${{ matrix.target }}" = "x86_64-unknown-linux-gnu" ]; then
-            sudo apt-get install -y nasm
-          fi
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev squashfs-tools
+            if [ "${{ matrix.target }}" = "x86_64-unknown-linux-gnu" ]; then
+              sudo apt-get install -y nasm
+            fi
 
       - name: Install System Dependencies (macOS Only)
         if: startsWith(matrix.os, 'macos')
-        run: |
-          brew install mpv ffmpeg dylibbundler dav1d
-          echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            brew install mpv ffmpeg dylibbundler dav1d
+            echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
       - name: Setup libmpv Link Libraries (Windows)
         if: startsWith(matrix.os, 'windows')
-        shell: bash
-        run: |
-          mkdir -p libs
-          curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-${{ matrix.mpv_arch }}-20260610-git-304426c.7z
-          7z e mpv-dev.7z libmpv-2.dll -olibs -y
-          7z e mpv-dev.7z libmpv.dll.a -olibs -y
-          mv libs/libmpv.dll.a libs/mpv.lib
-          curl -L -o ffmpeg.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/ffmpeg-${{ matrix.mpv_arch }}-git-2576e0943.7z
-          7z e ffmpeg.7z ffmpeg.exe -olibs -y
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            mkdir -p libs
+            curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-${{ matrix.mpv_arch }}-20260610-git-304426c.7z
+            7z e mpv-dev.7z libmpv-2.dll -olibs -y
+            7z e mpv-dev.7z libmpv.dll.a -olibs -y
+            mv libs/libmpv.dll.a libs/mpv.lib
+            curl -L -o ffmpeg.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/ffmpeg-${{ matrix.mpv_arch }}-git-2576e0943.7z
+            7z e ffmpeg.7z ffmpeg.exe -olibs -y
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: startsWith(matrix.os, 'windows')
@@ -101,26 +116,31 @@ jobs:
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: startsWith(matrix.os, 'windows')
-        shell: bash
-        run: |
-          pip install meson ninja
-          if [ "${{ matrix.target }}" != "aarch64-pc-windows-msvc" ]; then
-            choco install -y nasm
-          fi
-          choco install -y pkgconfiglite
-          # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
-          # when pkg-config is absent (always on Windows runners); force
-          # the vendored meson build instead.
-          echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
-          # On aarch64-pc-windows-msvc, build dav1d with clang-cl instead of
-          # cl: dav1d's meson needs gas-preprocessor.pl for MSVC ARM64 asm
-          # (not installed), but skips that path when cc.get_id() ==
-          # 'clang-cl' (meson >= 0.58), using clang's integrated assembler
-          # for the .S files. clang-cl ships in the runner's bundled LLVM.
-          if [ "${{ matrix.target }}" = "aarch64-pc-windows-msvc" ]; then
-            echo "CC=clang-cl" >> "$GITHUB_ENV"
-            echo "CXX=clang-cl" >> "$GITHUB_ENV"
-          fi
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            pip install meson ninja
+            if [ "${{ matrix.target }}" != "aarch64-pc-windows-msvc" ]; then
+              choco install -y nasm
+            fi
+            choco install -y pkgconfiglite
+            # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
+            # when pkg-config is absent (always on Windows runners); force
+            # the vendored meson build instead.
+            echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
+            # On aarch64-pc-windows-msvc, build dav1d with clang-cl instead of
+            # cl: dav1d's meson needs gas-preprocessor.pl for MSVC ARM64 asm
+            # (not installed), but skips that path when cc.get_id() ==
+            # 'clang-cl' (meson >= 0.58), using clang's integrated assembler
+            # for the .S files. clang-cl ships in the runner's bundled LLVM.
+            if [ "${{ matrix.target }}" = "aarch64-pc-windows-msvc" ]; then
+              echo "CC=clang-cl" >> "$GITHUB_ENV"
+              echo "CXX=clang-cl" >> "$GITHUB_ENV"
+            fi
 
       - name: Build Standalone Binary
         env:
@@ -206,20 +226,25 @@ jobs:
 
       - name: Ensure GnuPG is installed
         if: success()
-        shell: bash
-        run: |
-          if ! command -v gpg &> /dev/null; then
-            echo "gpg not found. Installing..."
-            if [ "${{ matrix.os }}" = "macos-latest" ]; then
-              brew install gnupg
-            elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
-              choco install -y gnupg
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            if ! command -v gpg &> /dev/null; then
+              echo "gpg not found. Installing..."
+              if [ "${{ matrix.os }}" = "macos-latest" ]; then
+                brew install gnupg
+              elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
+                choco install -y gnupg
+              else
+                sudo apt-get update && sudo apt-get install -y gnupg
+              fi
             else
-              sudo apt-get update && sudo apt-get install -y gnupg
+              echo "gpg is already installed: $(gpg --version | head -n 1)"
             fi
-          else
-            echo "gpg is already installed: $(gpg --version | head -n 1)"
-          fi
 
       - name: Import GPG Key
         if: success()
@@ -277,15 +302,20 @@ jobs:
             touch CHANGES.md
           fi
 
+      - name: Download git-cliff
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 5
+          max_attempts: 3
+          retry_wait_seconds: 5
+          command: |
+            curl -L -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
+            tar -xzf git-cliff.tar.gz --strip-components=1
+
       - name: Generate Changelog from Commits
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Download and extract the git-cliff binary
-          curl -L -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
-          tar -xzf git-cliff.tar.gz --strip-components=1
-          
-          # Execute git-cliff directly
           ./git-cliff --config cliff.toml --current --strip header >> CHANGES.md
 
       - name: Publish Release Atomically
