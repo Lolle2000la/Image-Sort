@@ -79,6 +79,11 @@ jobs:
       - name: Setup libmpv Link Libraries (Windows)
         if: matrix.os == 'windows-latest'
         uses: nick-fields/retry@v4
+        env:
+          # gh refuses to run without a token in Actions contexts; the
+          # runner does not inject GH_TOKEN into action processes, only
+          # run steps that reference github.token explicitly get one.
+          GH_TOKEN: ${{ github.token }}
         with:
           timeout_minutes: 10
           max_attempts: 3

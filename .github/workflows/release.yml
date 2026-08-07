@@ -95,6 +95,11 @@ jobs:
       - name: Setup libmpv Link Libraries (Windows)
         if: startsWith(matrix.os, 'windows')
         uses: nick-fields/retry@v4
+        env:
+          # gh refuses to run without a token in Actions contexts; the
+          # runner does not inject GH_TOKEN into action processes, only
+          # run steps that reference github.token explicitly get one.
+          GH_TOKEN: ${{ github.token }}
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -328,6 +333,11 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 5
           command: |
+            # nick-fields/retry@v4 runs `command` in a different working
+            # directory than GITHUB_WORKSPACE and cannot honor
+            # working-directory; extract into the workspace so the next
+            # step can invoke ./git-cliff.
+            cd "$GITHUB_WORKSPACE"
             curl -L -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
             tar -xzf git-cliff.tar.gz --strip-components=1
 
