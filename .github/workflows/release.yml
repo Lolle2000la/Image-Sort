@@ -101,7 +101,12 @@ jobs:
           retry_wait_seconds: 10
           shell: bash
           command: |
-            mkdir -p libs
+            # nick-fields/retry@v4 runs `command` in a different working
+            # directory than GITHUB_WORKSPACE (it cannot honor
+            # working-directory), so all paths must be absolute -- a
+            # relative "libs" would not be found by the linker's
+            # "/LIBPATH:libs" at build time.
+            mkdir -p "$GITHUB_WORKSPACE/libs"
             if [ "${{ matrix.mpv_arch }}" = "i686" ]; then
               # zhongfly/mpv-winbuild ships x86_64/aarch64 only; keep the last
               # shinchiro/mpv-winbuild-cmake build for the 32-bit platform
@@ -118,10 +123,10 @@ jobs:
               curl -L -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$MPV_ASSET"
               curl -L -o ffmpeg.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$FFMPEG_ASSET"
             fi
-            7z e mpv-dev.7z libmpv-2.dll -olibs -y
-            7z e mpv-dev.7z libmpv.dll.a -olibs -y
-            mv libs/libmpv.dll.a libs/mpv.lib
-            7z e ffmpeg.7z ffmpeg.exe -olibs -y
+            7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
+            7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
+            mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
+            7z e ffmpeg.7z ffmpeg.exe "-o$GITHUB_WORKSPACE/libs" -y
 
       - uses: ilammy/msvc-dev-cmd@v1
         if: startsWith(matrix.os, 'windows')

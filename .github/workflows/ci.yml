@@ -85,20 +85,25 @@ jobs:
           retry_wait_seconds: 10
           shell: bash
           command: |
-            mkdir -p libs
+            # nick-fields/retry@v4 runs `command` in a different working
+            # directory than GITHUB_WORKSPACE (it cannot honor
+            # working-directory), so all paths must be absolute -- a
+            # relative "libs" would not be found by the linker's
+            # "/LIBPATH:libs" at build time.
+            mkdir -p "$GITHUB_WORKSPACE/libs"
             # zhongfly/mpv-winbuild publishes a fresh build daily but retains
             # only the last 30 days of builds, so the latest tag is resolved
             # at runtime instead of being pinned.
             RELEASE_TAG=$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)
             MPV_ASSET=$(gh release view --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
             curl -L -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$MPV_ASSET"
-            7z e mpv-dev.7z libmpv-2.dll -olibs -y
-            7z e mpv-dev.7z libmpv.dll.a -olibs -y
-            mv libs/libmpv.dll.a libs/mpv.lib
+            7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
+            7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
+            mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
             # Test binaries link libmpv-2.dll at load time; make it resolvable.
             # (cygpath: $PWD is POSIX-form in git-bash, which the Windows DLL
             # loader cannot use as a PATH entry.)
-            echo "$(cygpath -w "$PWD")\\libs" >> "$GITHUB_PATH"
+            echo "$(cygpath -w "$GITHUB_WORKSPACE")\\libs" >> "$GITHUB_PATH"
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: matrix.os == 'windows-latest'
