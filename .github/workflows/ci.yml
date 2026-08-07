@@ -86,7 +86,12 @@ jobs:
           shell: bash
           command: |
             mkdir -p libs
-            curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-x86_64-20260610-git-304426c.7z
+            # zhongfly/mpv-winbuild publishes a fresh build daily but retains
+            # only the last 30 days of builds, so the latest tag is resolved
+            # at runtime instead of being pinned.
+            RELEASE_TAG=$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)
+            MPV_ASSET=$(gh release view --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            curl -L -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$MPV_ASSET"
             7z e mpv-dev.7z libmpv-2.dll -olibs -y
             7z e mpv-dev.7z libmpv.dll.a -olibs -y
             mv libs/libmpv.dll.a libs/mpv.lib
