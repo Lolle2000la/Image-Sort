@@ -59,39 +59,6 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v7
 
-      - name: Deduplicate releases for tag
-        shell: bash
-        # External tooling occasionally creates more than one release for
-        # a freshly pushed tag (GitHub renames the extra ones to
-        # "untagged-*" URLs but keeps the same tag_name). velopack's
-        # upload resolves the *newest* such release while gh resolves the
-        # *oldest*, so the packages and the sig files would land on
-        # different releases. Converge on the oldest release before any
-        # upload happens. Safety: a duplicate is only deleted while it is
-        # still empty -- if it already holds assets (e.g. the creator ran
-        # late and velopack merged into it), fail loudly instead of
-        # deleting, so the assets can be moved manually.
-        run: |
-          set -euo pipefail
-          REPO="${{ github.repository }}"
-          TAG="${{ github.ref_name }}"
-          IDS="$(gh api --paginate "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .id" | sort -n)"
-          COUNT="$(printf '%s\n' "$IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
-          if [ "$COUNT" -gt 1 ]; then
-            echo "::warning::$COUNT releases exist for tag $TAG; keeping the oldest"
-            printf '%s\n' "$IDS" | tail -n +2 | while read -r ID; do
-              N_ASSETS="$(gh api "repos/$REPO/releases/$ID" --jq '.assets | length')"
-              if [ "$N_ASSETS" -gt 0 ]; then
-                echo "::error::duplicate release $ID for tag $TAG already holds $N_ASSETS assets; refusing to delete. Move the assets to the oldest release manually, then delete the duplicate and re-run."
-                exit 1
-              fi
-              echo "::warning::deleting empty duplicate release $ID for tag $TAG"
-              gh api -X DELETE "repos/$REPO/releases/$ID" || true
-            done
-          else
-            echo "single release for tag $TAG"
-          fi
-
       - name: Setup Rust Environment
         uses: dtolnay/rust-toolchain@stable
 
@@ -390,18 +357,60 @@ jobs:
         run: |
           ./git-cliff --config cliff.toml --current --strip header >> CHANGES.md
 
-      - name: Verify Single Release for Tag
+      - name: Merge Duplicate Releases for Tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # External tooling occasionally creates more than one release for
+        # a freshly pushed tag (GitHub renames the extra ones to
+        # "untagged-*" URLs but keeps the same tag_name). velopack's
+        # upload resolves the *newest* such release while gh resolves the
+        # *oldest*, so the packages and the sig files can land on
+        # different releases. By the time this step runs all deploy
+        # uploads are complete, so the release set is final: move every
+        # asset onto the oldest release (the one holding the real tag
+        # URL) and delete the emptied duplicates. Nothing with assets is
+        # ever deleted.
         run: |
           set -euo pipefail
+          REPO="${{ github.repository }}"
           TAG="${{ github.ref_name }}"
-          COUNT="$(gh api --paginate "repos/${{ github.repository }}/releases" --jq "[.[] | select(.tag_name == \"$TAG\")] | length")"
-          if [ "$COUNT" -gt 1 ]; then
-            echo "::error::$COUNT releases exist for tag $TAG; refusing to publish. Delete the duplicates (keep the one holding the packages) and re-run the publish job."
-            exit 1
+          IDS="$(gh api --paginate "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .id" | sort -n)"
+          COUNT="$(printf '%s\n' "$IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$COUNT" -le 1 ]; then
+            echo "single release for tag $TAG; nothing to merge"
+            exit 0
           fi
-          echo "exactly one release for tag $TAG"
+          CANON="$(printf '%s\n' "$IDS" | head -n 1)"
+          echo "::warning::$COUNT releases exist for tag $TAG; merging all assets into release $CANON"
+          TMPDIR="$(mktemp -d)"
+          gh api "repos/$REPO/releases/$CANON" --jq '.assets[].name' > "$TMPDIR/canon_assets.txt"
+          printf '%s\n' "$IDS" | tail -n +2 | while read -r ID; do
+            echo "::warning::merging assets from duplicate release $ID"
+            gh api "repos/$REPO/releases/$ID" --jq '.assets[] | [.id, .name] | @tsv' | while read -r AID NAME; do
+              if grep -Fqx "$NAME" "$TMPDIR/canon_assets.txt"; then
+                echo "::warning::asset $NAME already on canonical release; skipping"
+                continue
+              fi
+              echo "::warning::moving $NAME"
+              # NOTE: api.github.com 404s asset uploads for draft releases
+              # and gh api does not follow redirects, so use curl against
+              # the uploads host and the redirect-following download URL.
+              curl -fL -s -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Accept: application/octet-stream" \
+                "https://api.github.com/repos/$REPO/releases/assets/$AID" \
+                -o "$TMPDIR/$NAME"
+              curl -fL -s -X POST -H "Authorization: Bearer $GH_TOKEN" \
+                -H "Content-Type: application/octet-stream" \
+                --data-binary "@$TMPDIR/$NAME" \
+                "https://uploads.github.com/repos/$REPO/releases/$CANON/assets?name=$NAME" \
+                > /dev/null
+              rm -f "$TMPDIR/$NAME"
+              printf '%s\n' "$NAME" >> "$TMPDIR/canon_assets.txt"
+            done
+            gh api -X DELETE "repos/$REPO/releases/$ID"
+          done
+          rm -rf "$TMPDIR"
+          echo "merge complete; single release $CANON for tag $TAG"
 
       - name: Publish Release Atomically
         env:
