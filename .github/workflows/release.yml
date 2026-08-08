@@ -100,6 +100,9 @@ jobs:
           # runner does not inject GH_TOKEN into action processes, only
           # run steps that reference github.token explicitly get one.
           GH_TOKEN: ${{ github.token }}
+          # Pin the vendored libmpv/ffmpeg build tag (repository
+          # variable); empty = latest release of Lolle2000la/mpv-winbuild.
+          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG }}
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -112,22 +115,18 @@ jobs:
             # relative "libs" would not be found by the linker's
             # "/LIBPATH:libs" at build time.
             mkdir -p "$GITHUB_WORKSPACE/libs"
-            if [ "${{ matrix.mpv_arch }}" = "i686" ]; then
-              # zhongfly/mpv-winbuild ships x86_64/aarch64 only; keep the last
-              # shinchiro/mpv-winbuild-cmake build for the 32-bit platform
-              # (mpv upstream is 64-bit only).
-              curl -L -o mpv-dev.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/mpv-dev-i686-20260610-git-304426c.7z
-              curl -L -o ffmpeg.7z https://github.com/shinchiro/mpv-winbuild-cmake/releases/download/20260610/ffmpeg-i686-git-2576e0943.7z
+            # Vendored builds come from our self-hosted mpv-winbuild fork
+            # (Lolle2000la/mpv-winbuild), which publishes fresh
+            # mpv-dev-*/ffmpeg-* archives for all three arches.
+            if [ -n "${MPV_WINBUILD_TAG:-}" ]; then
+              RELEASE_SPEC="$MPV_WINBUILD_TAG"
             else
-              # zhongfly/mpv-winbuild publishes a fresh build daily but retains
-              # only the last 30 days of builds, so the latest tag is resolved
-              # at runtime instead of being pinned.
-              RELEASE_TAG=$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)
-              MPV_ASSET=$(gh release view --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-              FFMPEG_ASSET=$(gh release view --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-              curl -L -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$MPV_ASSET"
-              curl -L -o ffmpeg.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_TAG/$FFMPEG_ASSET"
+              RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
             fi
+            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            FFMPEG_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            curl -L -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            curl -L -o ffmpeg.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
             7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
             7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
