@@ -1,0 +1,120 @@
+name: Bump Vendored mpv-winbuild Tag
+
+on:
+  schedule:
+    # Runs after the fork's monthly build (1st, 03:00 UTC): 2nd, 05:00 UTC.
+    # Scheduled workflows only fire from the repo's DEFAULT branch
+    # (master), so the cron stays dormant until v3.0 is merged into
+    # master; workflow_dispatch works from any branch that has this
+    # workflow (e.g. dispatch against v3.0 to test it before the merge).
+    - cron: '0 5 2 * *'
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'Branch to open the bump PR against (defaults to the branch this workflow runs from)'
+        required: false
+        default: 'v3.0'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Bump mpv-winbuild pin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # inputs.base_branch only exists on workflow_dispatch; on
+          # schedule runs github.ref_name is the default branch (master)
+          # after the v3.0 merge -- the correct PR target. This keeps
+          # manual dispatch on v3.0 working while being self-correcting
+          # once the pin lives on master.
+          ref: ${{ inputs.base_branch || github.ref_name }}
+          fetch-depth: 0
+
+      - name: Bump pin and open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ inputs.base_branch || github.ref_name }}
+          MPV_WINBUILD_TAG_VAR: ${{ vars.MPV_WINBUILD_TAG }}
+        run: |
+          set -euo pipefail
+
+          # Fail loudly if the repo-variable override is set: the bump
+          # workflow only rewrites the file default, so a non-empty
+          # override would silently make every bump PR a cosmetic no-op.
+          if [ -n "$MPV_WINBUILD_TAG_VAR" ]; then
+            echo "::error::MPV_WINBUILD_TAG repo variable is set to '$MPV_WINBUILD_TAG_VAR' and overrides the file default; unset it (or bump it manually) before the auto-bump can take effect."
+            exit 1
+          fi
+
+          NEW_TAG="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
+          [ -n "$NEW_TAG" ] || { echo "::error::could not resolve latest mpv-winbuild release"; exit 1; }
+          echo "latest fork release: $NEW_TAG"
+
+          python3 - "$NEW_TAG" <<'EOF'
+          import re, sys, pathlib
+          new_tag = sys.argv[1]
+          files = [".github/workflows/release.yml", ".github/workflows/ci.yml"]
+          pattern = re.compile(
+              r"MPV_WINBUILD_TAG: \$\{\{ vars\.MPV_WINBUILD_TAG \|\| '[^']*' \}\}"
+          )
+          current = None
+          changed = False
+          for f in files:
+              p = pathlib.Path(f)
+              if not p.exists():
+                  continue
+              s = p.read_text()
+              m = pattern.search(s)
+              if m and current is None:
+                  current = m.group(0)
+              replacement = (
+                  "MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '"
+                  + new_tag
+                  + "' }}"
+              )
+              s2 = pattern.sub(replacement, s)
+              if s2 != s:
+                  p.write_text(s2)
+                  changed = True
+          print(f"current pin: {current}")
+          print(f"new pin:     {new_tag}")
+          print(f"changed:     {changed}")
+          if changed:
+              pathlib.Path("BUMPED").write_text("1")
+          EOF
+
+          if [ -f BUMPED ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            BRANCH="bump-mpv-winbuild-$NEW_TAG"
+
+            # Keep at most one open bump PR for the latest tag: close
+            # stale bump-mpv-winbuild-* PRs (the fork may skip months),
+            # but leave an identical PR for this tag alone (e.g. one a
+            # human opened ahead of schedule) instead of churning it.
+            EXISTING="$(gh pr list --state open --json number,headRefName --jq ".[] | select(.headRefName == \"$BRANCH\") | .number" | head -n 1)"
+            for PR_NUM in $(gh pr list --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("bump-mpv-winbuild-")) | .number'); do
+              if [ -n "$EXISTING" ] && [ "$PR_NUM" = "$EXISTING" ]; then
+                continue
+              fi
+              gh pr close "$PR_NUM" --comment "Superseded by the newest vendored mpv-winbuild bump."
+            done
+
+            if [ -n "$EXISTING" ]; then
+              echo "Bump PR #$EXISTING for $NEW_TAG is already open; skipping."
+            else
+              git checkout -b "$BRANCH"
+              git add .github/workflows/release.yml .github/workflows/ci.yml
+              git commit -m "chore(ci): bump vendored mpv-winbuild to $NEW_TAG"
+              git push origin "$BRANCH"
+              gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
+                --title "chore(ci): bump vendored mpv-winbuild to $NEW_TAG" \
+                --body "Monthly refresh of the vendored libmpv/ffmpeg Windows builds from our self-hosted mpv-winbuild fork ([release](https://github.com/Lolle2000la/mpv-winbuild/releases/tag/$NEW_TAG)). The pin lives in the MPV_WINBUILD_TAG default of the Setup libmpv Link Libraries (Windows) step (release.yml + ci.yml); the repo variable override is empty, so this default is authoritative. Reverting is a one-line change."
+            fi
+          else
+            echo "No bump needed; pin already at $NEW_TAG"
+          fi
