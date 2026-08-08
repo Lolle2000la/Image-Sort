@@ -67,8 +67,10 @@ jobs:
         # upload resolves the *newest* such release while gh resolves the
         # *oldest*, so the packages and the sig files would land on
         # different releases. Converge on the oldest release before any
-        # upload happens (at this point the duplicates are empty drafts,
-        # so nothing is lost).
+        # upload happens. Safety: a duplicate is only deleted while it is
+        # still empty -- if it already holds assets (e.g. the creator ran
+        # late and velopack merged into it), fail loudly instead of
+        # deleting, so the assets can be moved manually.
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
@@ -76,8 +78,14 @@ jobs:
           IDS="$(gh api --paginate "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .id" | sort -n)"
           COUNT="$(printf '%s\n' "$IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
           if [ "$COUNT" -gt 1 ]; then
-            echo "::warning::$COUNT releases exist for tag $TAG; keeping the oldest and deleting the rest"
+            echo "::warning::$COUNT releases exist for tag $TAG; keeping the oldest"
             printf '%s\n' "$IDS" | tail -n +2 | while read -r ID; do
+              N_ASSETS="$(gh api "repos/$REPO/releases/$ID" --jq '.assets | length')"
+              if [ "$N_ASSETS" -gt 0 ]; then
+                echo "::error::duplicate release $ID for tag $TAG already holds $N_ASSETS assets; refusing to delete. Move the assets to the oldest release manually, then delete the duplicate and re-run."
+                exit 1
+              fi
+              echo "::warning::deleting empty duplicate release $ID for tag $TAG"
               gh api -X DELETE "repos/$REPO/releases/$ID" || true
             done
           else
