@@ -72,6 +72,12 @@ jobs:
           EOF
 
           if [ -f BUMPED ]; then
+            # Keep at most one open bump PR: close any older
+            # bump-mpv-winbuild-* PRs (the fork may skip months; the
+            # stale PR would otherwise linger with an outdated pin).
+            for PR_NUM in $(gh pr list --state open --json number,headRefName --jq '.[] | select(.headRefName | startswith("bump-mpv-winbuild-")) | .number'); do
+              gh pr close "$PR_NUM" --comment "Superseded by the newest vendored mpv-winbuild bump."
+            done
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             BRANCH="bump-mpv-winbuild-$NEW_TAG"
