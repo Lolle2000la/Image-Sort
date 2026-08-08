@@ -3,10 +3,10 @@ name: Bump Vendored mpv-winbuild Tag
 on:
   schedule:
     # Runs after the fork's monthly build (1st, 03:00 UTC): 2nd, 05:00 UTC.
-    # NOTE: scheduled workflows only fire from the repo's DEFAULT branch
-    # (master). The workflow therefore must live on master to run on a
-    # schedule; until v3.0 is merged into master this only runs via
-    # workflow_dispatch (and is gated off below anyway).
+    # Scheduled workflows only fire from the repo's DEFAULT branch
+    # (master), so the cron stays dormant until v3.0 is merged into
+    # master; workflow_dispatch works from any branch that has this
+    # workflow (e.g. dispatch against v3.0 to test it before the merge).
     - cron: '0 5 2 * *'
   workflow_dispatch:
     inputs:
@@ -23,11 +23,6 @@ jobs:
   bump:
     name: Bump mpv-winbuild pin
     runs-on: ubuntu-latest
-    # DISABLED BY DEFAULT. Set the MPV_WINBUILD_AUTOBUMP_ENABLED
-    # repository variable to 'true' to enable. Keep disabled until the
-    # vendored-builds workflows (and their MPV_WINBUILD_TAG pin default)
-    # are merged into the base branch.
-    if: vars.MPV_WINBUILD_AUTOBUMP_ENABLED == 'true'
     steps:
       - uses: actions/checkout@v7
         with:
