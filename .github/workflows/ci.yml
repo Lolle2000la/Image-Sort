@@ -94,6 +94,10 @@ jobs:
           retry_wait_seconds: 10
           shell: bash
           command: |
+            # nick-fields/retry@v4 spawns the command without set -e, so
+            # failures would otherwise be swallowed and the step would
+            # "succeed" with garbage artifacts; be explicit.
+            set -euo pipefail
             # nick-fields/retry@v4 runs `command` in a different working
             # directory than GITHUB_WORKSPACE (it cannot honor
             # working-directory), so all paths must be absolute -- a
@@ -107,8 +111,10 @@ jobs:
             else
               RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
             fi
+            [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
             MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-            curl -L -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-x86_64 asset in release $RELEASE_SPEC"; exit 1; }
+            curl -fL -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
             7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
             7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"

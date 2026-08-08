@@ -110,6 +110,10 @@ jobs:
           retry_wait_seconds: 10
           shell: bash
           command: |
+            # nick-fields/retry@v4 spawns the command without set -e, so
+            # failures would otherwise be swallowed and the step would
+            # "succeed" with garbage artifacts; be explicit.
+            set -euo pipefail
             # nick-fields/retry@v4 runs `command` in a different working
             # directory than GITHUB_WORKSPACE (it cannot honor
             # working-directory), so all paths must be absolute -- a
@@ -124,10 +128,13 @@ jobs:
             else
               RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
             fi
+            [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
             MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
             FFMPEG_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-            curl -L -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
-            curl -L -o ffmpeg.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
+            [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
+            [ -n "$FFMPEG_ASSET" ] || { echo "::error::no ffmpeg-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
+            curl -fL -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            curl -fL -o ffmpeg.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
             7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
             7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
@@ -333,12 +340,15 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 5
           command: |
+            # nick-fields/retry@v4 spawns the command without set -e; be
+            # explicit so a failed download cannot silently pass.
+            set -euo pipefail
             # nick-fields/retry@v4 runs `command` in a different working
             # directory than GITHUB_WORKSPACE and cannot honor
             # working-directory; extract into the workspace so the next
             # step can invoke ./git-cliff.
             cd "$GITHUB_WORKSPACE"
-            curl -L -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
+            curl -fL -o git-cliff.tar.gz https://github.com/orhun/git-cliff/releases/download/v2.13.1/git-cliff-2.13.1-x86_64-unknown-linux-gnu.tar.gz
             tar -xzf git-cliff.tar.gz --strip-components=1
 
       - name: Generate Changelog from Commits
