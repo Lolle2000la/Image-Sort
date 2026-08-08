@@ -59,6 +59,31 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v7
 
+      - name: Deduplicate releases for tag
+        shell: bash
+        # External tooling occasionally creates more than one release for
+        # a freshly pushed tag (GitHub renames the extra ones to
+        # "untagged-*" URLs but keeps the same tag_name). velopack's
+        # upload resolves the *newest* such release while gh resolves the
+        # *oldest*, so the packages and the sig files would land on
+        # different releases. Converge on the oldest release before any
+        # upload happens (at this point the duplicates are empty drafts,
+        # so nothing is lost).
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          TAG="${{ github.ref_name }}"
+          IDS="$(gh api --paginate "repos/$REPO/releases" --jq ".[] | select(.tag_name == \"$TAG\") | .id" | sort -n)"
+          COUNT="$(printf '%s\n' "$IDS" | sed '/^$/d' | wc -l | tr -d ' ')"
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::warning::$COUNT releases exist for tag $TAG; keeping the oldest and deleting the rest"
+            printf '%s\n' "$IDS" | tail -n +2 | while read -r ID; do
+              gh api -X DELETE "repos/$REPO/releases/$ID" || true
+            done
+          else
+            echo "single release for tag $TAG"
+          fi
+
       - name: Setup Rust Environment
         uses: dtolnay/rust-toolchain@stable
 
@@ -356,6 +381,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           ./git-cliff --config cliff.toml --current --strip header >> CHANGES.md
+
+      - name: Verify Single Release for Tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ github.ref_name }}"
+          COUNT="$(gh api --paginate "repos/${{ github.repository }}/releases" --jq "[.[] | select(.tag_name == \"$TAG\")] | length")"
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::error::$COUNT releases exist for tag $TAG; refusing to publish. Delete the duplicates (keep the one holding the packages) and re-run the publish job."
+            exit 1
+          fi
+          echo "exactly one release for tag $TAG"
 
       - name: Publish Release Atomically
         env:
