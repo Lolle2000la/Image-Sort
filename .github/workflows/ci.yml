@@ -84,9 +84,10 @@ jobs:
           # runner does not inject GH_TOKEN into action processes, only
           # run steps that reference github.token explicitly get one.
           GH_TOKEN: ${{ github.token }}
-          # Pin the vendored libmpv/ffmpeg build tag (repository
-          # variable); empty = latest release of Lolle2000la/mpv-winbuild.
-          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG }}
+          # Pin the vendored libmpv/ffmpeg build tag. The monthly
+          # bump-mpv-winbuild workflow PRs this default; a repository
+          # variable of the same name overrides it (empty = latest).
+          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '2026-08-08-dd5d17d328' }}
         with:
           timeout_minutes: 10
           max_attempts: 3

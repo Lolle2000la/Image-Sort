@@ -1,0 +1,87 @@
+name: Bump Vendored mpv-winbuild Tag
+
+on:
+  schedule:
+    # Runs after the fork's monthly build (1st, 03:00 UTC): 2nd, 05:00 UTC
+    - cron: '0 5 2 * *'
+  workflow_dispatch:
+    inputs:
+      base_branch:
+        description: 'Branch to open the bump PR against'
+        required: false
+        default: 'v3.0'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    name: Bump mpv-winbuild pin
+    runs-on: ubuntu-latest
+    # DISABLED BY DEFAULT. Set the MPV_WINBUILD_AUTOBUMP_ENABLED
+    # repository variable to 'true' to enable. Keep disabled until the
+    # vendored-builds workflows (and their MPV_WINBUILD_TAG pin default)
+    # are merged into the base branch.
+    if: vars.MPV_WINBUILD_AUTOBUMP_ENABLED == 'true'
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
+
+      - name: Bump pin and open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ inputs.base_branch }}
+        run: |
+          NEW_TAG="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
+          echo "latest fork release: $NEW_TAG"
+
+          python3 - "$NEW_TAG" <<'EOF'
+          import re, sys, pathlib
+          new_tag = sys.argv[1]
+          files = [".github/workflows/release.yml", ".github/workflows/ci.yml"]
+          pattern = re.compile(
+              r"MPV_WINBUILD_TAG: \$\{\{ vars\.MPV_WINBUILD_TAG \|\| '[^']*' \}\}"
+          )
+          current = None
+          changed = False
+          for f in files:
+              p = pathlib.Path(f)
+              if not p.exists():
+                  continue
+              s = p.read_text()
+              m = pattern.search(s)
+              if m and current is None:
+                  current = m.group(0)
+              replacement = (
+                  "MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '"
+                  + new_tag
+                  + "' }}"
+              )
+              s2 = pattern.sub(replacement, s)
+              if s2 != s:
+                  p.write_text(s2)
+                  changed = True
+          print(f"current pin: {current}")
+          print(f"new pin:     {new_tag}")
+          print(f"changed:     {changed}")
+          if changed:
+              pathlib.Path("BUMPED").write_text("1")
+          EOF
+
+          if [ -f BUMPED ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            BRANCH="bump-mpv-winbuild-$NEW_TAG"
+            git checkout -b "$BRANCH"
+            git add .github/workflows/release.yml .github/workflows/ci.yml
+            git commit -m "chore(ci): bump vendored mpv-winbuild to $NEW_TAG"
+            git push origin "$BRANCH"
+            gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
+              --title "chore(ci): bump vendored mpv-winbuild to $NEW_TAG" \
+              --body "Monthly refresh of the vendored libmpv/ffmpeg Windows builds from our self-hosted mpv-winbuild fork ([release](https://github.com/Lolle2000la/mpv-winbuild/releases/tag/$NEW_TAG)). The pin lives in the MPV_WINBUILD_TAG default of the Setup libmpv Link Libraries (Windows) step (release.yml + ci.yml); the repo variable override is empty, so this default is authoritative. Reverting is a one-line change."
+          else
+            echo "No bump needed; pin already at $NEW_TAG"
+          fi
