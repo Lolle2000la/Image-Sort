@@ -10,6 +10,7 @@ could-not-act-error = Could not execute action "{$act_message}": {$error_message
 # Settings dialog
 settings-title = Settings
 settings-tab-general = General settings
+settings-tab-advanced = Advanced
 settings-tab-keybindings = Key bindings
 settings-close = Close
 
@@ -28,7 +29,7 @@ settings-windows-context-menu = Add a shortcut to open a folder in Media Sort di
 settings-language = Language
 settings-video-playback = Video Playback
 settings-video-hwdec = Enable hardware video decoding
-settings-video-zero-copy = Enable zero-copy GPU pipeline (OpenGL to wgpu)
+settings-video-zero-copy = Enable zero-copy GPU pipeline
 settings-video-zero-copy-macos-notice = Zero-copy GPU pipeline is unavailable on macOS (libmpv requires OpenGL, while macOS uses Metal). Software RGBA pipeline is active.
 
 # Key bindings

@@ -10,6 +10,7 @@ could-not-act-error = アクション「{$act_message}」を実行できませ�
 # Settings dialog
 settings-title = 設定
 settings-tab-general = 一般設定
+settings-tab-advanced = 詳細設定
 settings-tab-keybindings = キーバインド
 settings-close = 閉じる
 
@@ -28,7 +29,7 @@ settings-windows-context-menu = Windowsエクスプローラーのコンテキ�
 settings-language = 言語
 settings-video-playback = 動画再生
 settings-video-hwdec = ハードウェア動画デコードを有効にする
-settings-video-zero-copy = ゼロコピーGPUパイプラインを有効にする (OpenGLからwgpu)
+settings-video-zero-copy = ゼロコピーGPUパイプラインを有効にする
 settings-video-zero-copy-macos-notice = macOSではゼロコピーGPUパイプラインを利用できません（libmpvはOpenGLを必要とし、macOSはMetalを使用します）。ソフトウェアRGBAパイプラインが有効です。
 
 # Key bindings

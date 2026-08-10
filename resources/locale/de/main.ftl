@@ -10,6 +10,7 @@ could-not-act-error = Aktion "{$act_message}" konnte nicht ausgeführt werden: {
 # Settings dialog
 settings-title = Einstellungen
 settings-tab-general = Allgemeine Einstellungen
+settings-tab-advanced = Erweitert
 settings-tab-keybindings = Tastenkürzel
 settings-close = Schließen
 
@@ -28,7 +29,7 @@ settings-windows-context-menu = Eine Verknüpfung zum Öffnen eines Ordners in M
 settings-language = Sprache
 settings-video-playback = Videowiedergabe
 settings-video-hwdec = Hardware-Videodekodierung aktivieren
-settings-video-zero-copy = Zero-Copy-GPU-Pipeline aktivieren (OpenGL zu wgpu)
+settings-video-zero-copy = Zero-Copy-GPU-Pipeline aktivieren
 settings-video-zero-copy-macos-notice = Die Zero-Copy-GPU-Pipeline ist auf macOS nicht verfügbar (libmpv erfordert OpenGL, während macOS Metal verwendet). Die Software-RGBA-Pipeline ist aktiv.
 
 # Key bindings
