@@ -123,21 +123,15 @@ pub unsafe fn import_d3d11_handle_to_wgpu_dx12(
 
         let hal_texture = wgpu_hal::dx12::Device::texture_from_raw(
             d3d12_res,
-            &wgpu_hal::TextureDescriptor {
-                label: Some("mpv_dx12_texture"),
-                size: iced_wgpu::wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: iced_wgpu::wgpu::TextureDimension::D2,
-                format: iced_wgpu::wgpu::TextureFormat::Rgba8Unorm,
-                usage: wgpu_types::TextureUses::RESOURCE,
-                memory_flags: wgpu_hal::MemoryFlags::empty(),
-                view_formats: Vec::new(),
+            iced_wgpu::wgpu::TextureFormat::Rgba8Unorm,
+            iced_wgpu::wgpu::TextureDimension::D2,
+            iced_wgpu::wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
             },
+            1,
+            1,
         );
 
         let wgpu_texture = wgpu_device.create_texture_from_hal::<wgpu_hal::api::Dx12>(
