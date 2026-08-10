@@ -119,6 +119,17 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             }
             Task::none()
         }
+        SettingsMessage::ToggleVideoHardwareDecoding => {
+            state.settings.general.video_hardware_decoding =
+                !state.settings.general.video_hardware_decoding;
+            state.settings.mark_dirty();
+            Task::none()
+        }
+        SettingsMessage::ToggleVideoZeroCopy => {
+            state.settings.general.video_zero_copy = !state.settings.general.video_zero_copy;
+            state.settings.mark_dirty();
+            Task::none()
+        }
     }
 }
 

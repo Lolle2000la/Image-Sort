@@ -48,6 +48,18 @@ Media Sort includes pre-configured visual themes to customize the interface. Sel
 
 ---
 
+### Video Playback
+
+#### Enable hardware video decoding
+
+- **Behavior:** Toggles hardware-accelerated video decoding in `libmpv` (`hwdec=auto-copy` when enabled vs `hwdec=no` when disabled).
+
+#### Enable zero-copy GPU pipeline (OpenGL to wgpu)
+
+- **Behavior:** On Windows and Linux, toggles direct zero-copy GPU handle sharing between `libmpv`'s OpenGL FBO and `wgpu` (via DMA-BUF on Linux and Direct3D 11 shared handles on Windows). On macOS, this option is disabled with a notice because `libmpv` only provides an OpenGL render context, whereas macOS uses Metal; software RGBA rendering is active instead.
+
+---
+
 ### Updates
 
 :::note

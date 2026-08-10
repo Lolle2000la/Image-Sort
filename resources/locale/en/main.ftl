@@ -26,6 +26,10 @@ settings-install-prerelease = Install prerelease builds
 settings-windows-integration = Integration with Windows
 settings-windows-context-menu = Add a shortcut to open a folder in Media Sort directly from the context menu in Windows Explorer.
 settings-language = Language
+settings-video-playback = Video Playback
+settings-video-hwdec = Enable hardware video decoding
+settings-video-zero-copy = Enable zero-copy GPU pipeline (OpenGL to wgpu)
+settings-video-zero-copy-macos-notice = Zero-copy GPU pipeline is unavailable on macOS (libmpv requires OpenGL, while macOS uses Metal). Software RGBA pipeline is active.
 
 # Key bindings
 keybindings-restore-defaults = Restore default key bindings

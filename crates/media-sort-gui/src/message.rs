@@ -77,6 +77,8 @@ pub enum SettingsMessage {
     ToggleMetadataPanel,
     StartDragFolderDivider,
     StartDragMetadataDivider,
+    ToggleVideoHardwareDecoding,
+    ToggleVideoZeroCopy,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

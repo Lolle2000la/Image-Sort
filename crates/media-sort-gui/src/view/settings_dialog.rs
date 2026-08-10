@@ -373,6 +373,42 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 .spacing(8),
             );
 
+            let video_hwdec_cb = checkbox(state.settings.general.video_hardware_decoding)
+                .label(state.l10n.tr("settings-video-hwdec"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleVideoHardwareDecoding))
+                .size(16);
+
+            #[cfg(not(target_os = "macos"))]
+            let video_zero_copy_element: Element<'_, Message> =
+                checkbox(state.settings.general.video_zero_copy)
+                    .label(state.l10n.tr("settings-video-zero-copy"))
+                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleVideoZeroCopy))
+                    .size(16)
+                    .into();
+
+            #[cfg(target_os = "macos")]
+            let video_zero_copy_element: Element<'_, Message> = column![
+                checkbox(false)
+                    .label(state.l10n.tr("settings-video-zero-copy"))
+                    .size(16),
+                text(state.l10n.tr("settings-video-zero-copy-macos-notice"))
+                    .size(11)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+            ]
+            .spacing(4)
+            .into();
+
+            settings_col = settings_col.push(
+                column![
+                    text(state.l10n.tr("settings-video-playback"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    video_hwdec_cb,
+                    video_zero_copy_element,
+                ]
+                .spacing(8),
+            );
+
             #[cfg(target_os = "windows")]
             {
                 let integration_with_windows_cb =

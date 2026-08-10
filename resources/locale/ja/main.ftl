@@ -26,6 +26,10 @@ settings-install-prerelease = プレリリースビルドをインストール
 settings-windows-integration = Windowsとの統合
 settings-windows-context-menu = Windowsエクスプローラーのコンテキストメニューから直接Media Sortでフォルダを開くショートカットを追加します。
 settings-language = 言語
+settings-video-playback = 動画再生
+settings-video-hwdec = ハードウェア動画デコードを有効にする
+settings-video-zero-copy = ゼロコピーGPUパイプラインを有効にする (OpenGLからwgpu)
+settings-video-zero-copy-macos-notice = macOSではゼロコピーGPUパイプラインを利用できません（libmpvはOpenGLを必要とし、macOSはMetalを使用します）。ソフトウェアRGBAパイプラインが有効です。
 
 # Key bindings
 keybindings-restore-defaults = デフォルトのキーバインドを復元

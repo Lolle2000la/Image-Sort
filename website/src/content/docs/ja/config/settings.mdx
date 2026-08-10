@@ -48,6 +48,18 @@ Media Sortには、インターフェースをカスタマイズするための�
 
 ---
 
+### 動画再生
+
+#### ハードウェア動画デコードを有効にする
+
+- **動作:** `libmpv`でのハードウェアアクセラレーション動画デコードを切り替えます（有効な場合は `hwdec=auto-copy`、無効な場合は `hwdec=no`）。
+
+#### ゼロコピーGPUパイプラインを有効にする (OpenGLからwgpu)
+
+- **動作:** WindowsおよびLinuxにおいて、`libmpv`のOpenGL FBOと`wgpu`間の直接ゼロコピーGPUメモリ共有を有効にします（LinuxではDMA-BUF、WindowsではDirect3D 11共有ハンドルを使用）。macOSでは、`libmpv`がOpenGLコンテキストのみを提供し、macOSがMetalを使用するため、注記とともに無効化され、ソフトウェアRGBAレンダリングが機能します。
+
+---
+
 ### アップデート
 
 :::note

@@ -33,8 +33,10 @@ description: config.toml を介した Media Sort の詳細な手動構成手順�
 - **`last_opened_folder`** (文字列/null): 再開するフォルダパス。自動的に記録されます。
 - **`reopen_last_selected_media`** (真偽値): 再開されたフォルダ内で最後に選択されていたメディアファイルを次回起動時に自動的に再開するかどうか。(デフォルト: `true`)
 - **`last_selected_media`** (文字列/null): 再開するメディアファイルの絶対パス。自動的に記録されます。
-- **`animate_gifs`** (真偽値): プレビューおよびグリッド表示でGIF画像をアニメーション表示するかどうか。(デフォルト: `true`)
-- **`folder_tree_width`** (数値): 左側のナビゲーションパネルの幅（ピクセル単位）。(デフォルト: `240`)
+- **`animate_gifs`** (真偽値): プレビューとグリッドサムネイルの両方でGIF画像をアニメーション表示するか制御します。（デフォルト: `true`）
+- **`video_hardware_decoding`** (真偽値): ハードウェア動画デコード（`hwdec=auto-copy`）を有効にします。（デフォルト: `true`）
+- **`video_zero_copy`** (真偽値): WindowsおよびLinuxにおいて、`libmpv` (OpenGL) と `wgpu` (Vulkan/DX12) 間の直接ゼロコピーGPUメモリ共有を有効にします。（デフォルト: `true`）
+- **`folder_tree_width`** (数値): 左側のナビゲーションパネルの幅（ピクセル単位）。（デフォルト: `240`）
 - **`check_for_updates_on_startup`** (真偽値、Windows/macOSパッケージ版のみ): 起動時に自動的にアップデートを確認するかどうか。(デフォルト: `true`)
 - **`install_prerelease_builds`** (真偽値、Windows/macOSパッケージ版のみ): アップデート確認の際に開発版（アルファ/ベータ版など）を含めるかどうか。(デフォルト: `false`)
 - **`integration_with_windows`** (真偽値、Windows版のみ): Windowsエクスプローラーの右クリックメニュー項目を追加するかどうか。(デフォルト: `false`)

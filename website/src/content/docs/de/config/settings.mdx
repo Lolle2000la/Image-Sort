@@ -48,6 +48,18 @@ Media Sort enthält vorkonfigurierte visuelle Designs zur Anpassung der Benutzer
 
 ---
 
+### Videowiedergabe
+
+#### Hardware-Videodekodierung aktivieren
+
+- **Verhalten:** Aktiviert die hardwarebeschleunigte Videodekodierung in `libmpv` (`hwdec=auto-copy` wenn aktiviert vs. `hwdec=no` wenn deaktiviert).
+
+#### Zero-Copy-GPU-Pipeline aktivieren (OpenGL zu wgpu)
+
+- **Verhalten:** Auf Windows und Linux aktiviert dies die direkte Zero-Copy-GPU-Speicherschnittstelle zwischen dem OpenGL-FBO von `libmpv` und `wgpu` (über DMA-BUF auf Linux und Direct3D 11 Shared Handles auf Windows). Auf macOS ist diese Option mit einem Hinweis deaktiviert, da `libmpv` nur einen OpenGL-Kontext bereitstellt, während macOS Metal verwendet; stattdessen ist das Software-RGBA-Rendering aktiv.
+
+---
+
 ### Updates
 
 :::note

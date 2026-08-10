@@ -13,6 +13,10 @@ pub struct PlayerConfig {
     pub max_frame_width: u32,
     /// Maximum rendered frame height in pixels.
     pub max_frame_height: u32,
+    /// Enables hardware video decoding in libmpv (`hwdec=auto-copy` vs `hwdec=no`).
+    pub enable_hwdec: bool,
+    /// Enables zero-copy GPU interop pipeline on supported platforms (Windows & Linux).
+    pub enable_zero_copy: bool,
 }
 
 impl Default for PlayerConfig {
@@ -20,6 +24,8 @@ impl Default for PlayerConfig {
         Self {
             max_frame_width: 960,
             max_frame_height: 540,
+            enable_hwdec: true,
+            enable_zero_copy: true,
         }
     }
 }
@@ -235,7 +241,7 @@ async fn run_video_worker(
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
     config: PlayerConfig,
 ) {
-    let mut player = match MpvContext::new() {
+    let mut player = match MpvContext::new_with_options(false, config.enable_hwdec) {
         Ok(p) => p,
         Err(e) => {
             tracing::error!("Failed to create MpvContext: {e}");

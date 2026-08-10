@@ -34,6 +34,12 @@ pub struct GeneralSettings {
 
     #[serde(default = "default_folder_tree_width")]
     pub folder_tree_width: u16,
+
+    #[serde(default = "default_true")]
+    pub video_zero_copy: bool,
+
+    #[serde(default = "default_true")]
+    pub video_hardware_decoding: bool,
 }
 
 impl Default for GeneralSettings {
@@ -50,6 +56,8 @@ impl Default for GeneralSettings {
             last_selected_media: None,
             locale: None,
             folder_tree_width: default_folder_tree_width(),
+            video_zero_copy: true,
+            video_hardware_decoding: true,
         }
     }
 }
