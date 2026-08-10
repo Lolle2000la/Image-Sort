@@ -81,6 +81,10 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             };
             Task::none()
         }
+        SettingsMessage::OpenAdvanced => {
+            state.settings_ui = SettingsUiState::Advanced;
+            Task::none()
+        }
         SettingsMessage::RestoreDefaultKeyBindings => {
             state.settings.keybindings =
                 media_sort_core::settings::keybindings::KeyBindings::default();
@@ -117,6 +121,17 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             } else {
                 let _ = media_sort_backend::platform::windows_shell::unregister();
             }
+            Task::none()
+        }
+        SettingsMessage::ToggleVideoHardwareDecoding => {
+            state.settings.general.video_hardware_decoding =
+                !state.settings.general.video_hardware_decoding;
+            state.settings.mark_dirty();
+            Task::none()
+        }
+        SettingsMessage::ToggleVideoZeroCopy => {
+            state.settings.general.video_zero_copy = !state.settings.general.video_zero_copy;
+            state.settings.mark_dirty();
             Task::none()
         }
     }

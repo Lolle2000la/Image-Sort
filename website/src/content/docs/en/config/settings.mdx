@@ -48,6 +48,22 @@ Media Sort includes pre-configured visual themes to customize the interface. Sel
 
 ---
 
+### Video Playback
+
+#### Enable hardware video decoding
+
+- **Behavior:** Uses your graphics card (GPU) to decode video files instead of the CPU. This significantly reduces CPU usage, saves power, and keeps playback smooth. If you experience unexpected video corruption or green artifacts with certain video formats, turning this off will force software decoding on the CPU.
+
+#### Enable zero-copy GPU rendering
+
+- **Behavior:** Keeps decoded video frames directly inside graphics card (GPU) memory as they pass from the video player engine (`libmpv`) to the display system (`wgpu`). Because frame data never needs to be copied back into system RAM, video playback is faster, uses less memory, and consumes less battery power. If you encounter GPU driver crashes or display flickering, disabling this option will fall back to software RAM buffers.
+
+:::note[macOS Availability]
+On macOS, zero-copy GPU rendering is automatically disabled. Media Sort uses software RAM buffers on macOS because `libmpv` requires OpenGL, while macOS uses Metal graphics drivers.
+:::
+
+---
+
 ### Updates
 
 :::note

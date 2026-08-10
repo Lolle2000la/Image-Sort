@@ -73,10 +73,13 @@ pub enum SettingsMessage {
     Save,
     RestoreDefaultKeyBindings,
     OpenKeybindings,
+    OpenAdvanced,
     EditKeyBinding(usize),
     ToggleMetadataPanel,
     StartDragFolderDivider,
     StartDragMetadataDivider,
+    ToggleVideoHardwareDecoding,
+    ToggleVideoZeroCopy,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

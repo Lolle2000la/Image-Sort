@@ -248,6 +248,18 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         )
         .id(iced::widget::Id::new("settings_tab_general")),
         container(
+            button(text(state.l10n.tr("settings-tab-advanced")).size(13))
+                .on_press(Message::Settings(SettingsMessage::OpenAdvanced))
+                .style(
+                    if matches!(state.settings_ui, crate::state::SettingsUiState::Advanced) {
+                        iced::widget::button::primary
+                    } else {
+                        iced::widget::button::secondary
+                    }
+                ),
+        )
+        .id(iced::widget::Id::new("settings_tab_advanced")),
+        container(
             button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
                 .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
                 .style(
@@ -265,8 +277,8 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
     ]
     .spacing(10);
 
-    let tab_content: Element<'_, Message> =
-        if matches!(state.settings_ui, crate::state::SettingsUiState::Settings) {
+    let tab_content: Element<'_, Message> = match &state.settings_ui {
+        crate::state::SettingsUiState::Settings => {
             // General settings tab
             let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
                 .label(state.l10n.tr("settings-play-gifs"))
@@ -393,7 +405,49 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             }
 
             scrollable(settings_col).height(Length::Fill).into()
-        } else {
+        }
+        crate::state::SettingsUiState::Advanced => {
+            // Advanced tab: video playback settings
+            let video_hwdec_cb = checkbox(state.settings.general.video_hardware_decoding)
+                .label(state.l10n.tr("settings-video-hwdec"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleVideoHardwareDecoding))
+                .size(16);
+
+            #[cfg(not(target_os = "macos"))]
+            let video_zero_copy_element: Element<'_, Message> =
+                checkbox(state.settings.general.video_zero_copy)
+                    .label(state.l10n.tr("settings-video-zero-copy"))
+                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleVideoZeroCopy))
+                    .size(16)
+                    .into();
+
+            #[cfg(target_os = "macos")]
+            let video_zero_copy_element: Element<'_, Message> = column![
+                checkbox(false)
+                    .label(state.l10n.tr("settings-video-zero-copy"))
+                    .size(16),
+                text(state.l10n.tr("settings-video-zero-copy-macos-notice"))
+                    .size(11)
+                    .color(Color::from_rgb(0.6, 0.6, 0.6)),
+            ]
+            .spacing(4)
+            .into();
+
+            let advanced_col = column![
+                column![
+                    text(state.l10n.tr("settings-video-playback"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    video_hwdec_cb,
+                    video_zero_copy_element,
+                ]
+                .spacing(8),
+            ]
+            .spacing(16);
+
+            scrollable(advanced_col).height(Length::Fill).into()
+        }
+        _ => {
             // Key bindings tab
             let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
                 .on_press(Message::Settings(
@@ -509,7 +563,8 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 column![restore_btn, images_section, folders_section, other_section,].spacing(16);
 
             scrollable(bindings_column).height(Length::Fill).into()
-        };
+        }
+    };
 
     let close_btn = container(
         button(text(state.l10n.tr("settings-close")))

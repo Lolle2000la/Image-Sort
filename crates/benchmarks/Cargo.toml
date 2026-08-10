@@ -6,6 +6,10 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[features]
+default = []
+vendor-windows = ["mpv-utils/vendor-windows"]
+
 [dependencies]
 media-sort-backend = { path = "../media-sort-backend" }
 media-sort-core = { path = "../media-sort-core" }
@@ -20,6 +24,9 @@ kamadak-exif.workspace = true
 webp = "0.3"
 bytemuck = "1"
 ico = "0.5"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+mpv-utils = { path = "../mpv-utils", features = ["vendor-windows"] }
 
 # Mirrors the backend: native AVIF decode everywhere except i686-pc-windows-msvc.
 [target.'cfg(not(all(target_os = "windows", target_arch = "x86")))'.dependencies]

@@ -6,6 +6,11 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 
+[features]
+default = []
+# Downloads and stages vendored libmpv and ffmpeg binaries on Windows.
+vendor-windows = []
+
 [dependencies]
 libmpv-sys = "3.1.0"
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
@@ -13,3 +18,4 @@ rayon.workspace = true
 kamadak-exif.workspace = true
 mp4ameta.workspace = true
 tracing.workspace = true
+

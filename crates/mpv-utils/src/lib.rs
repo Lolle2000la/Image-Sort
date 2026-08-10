@@ -16,10 +16,12 @@
 //! this crate; `mpv-utils` is also usable directly from non-GUI code (tests,
 //! benchmarks) without pulling in a UI framework.
 
+pub mod gl_interop;
 pub mod mpv_context;
 pub mod rotation;
 pub mod worker;
 
+pub use gl_interop::{GlFboTarget, SharedGpuFrameHandle, create_gl_render_context, render_gl_fbo};
 pub use mpv_context::{MpvContext, MpvError};
 pub use rotation::{Rotation, detect_video_rotation};
 pub use worker::{

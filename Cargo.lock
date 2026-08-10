@@ -2801,6 +2801,7 @@ dependencies = [
 name = "iced-mpv"
 version = "3.0.0-alpha.13"
 dependencies = [
+ "ash",
  "bytemuck",
  "iced",
  "iced_wgpu",
@@ -2808,6 +2809,9 @@ dependencies = [
  "mpv-utils",
  "tokio",
  "tracing",
+ "wgpu-hal",
+ "wgpu-types",
+ "windows 0.58.0",
 ]
 
 [[package]]

@@ -6,6 +6,7 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest", "dep:pgp", "dep:memmap2"]
+vendor-windows = ["iced-mpv/vendor-windows"]
 demo = [
     "iced/canvas",
     "dep:pollster",
@@ -48,6 +49,9 @@ serde_json = { workspace = true, optional = true }
 iced_runtime = { version = "0.14", optional = true }
 iced_test = { version = "0.14", optional = true }
 open = { version = "5.4.0", features = ["shellexecute-on-windows"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+iced-mpv = { path = "../iced-mpv", features = ["vendor-windows"] }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 embed-resource = "3.0.11"

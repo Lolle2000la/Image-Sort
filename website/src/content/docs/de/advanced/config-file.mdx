@@ -33,8 +33,10 @@ Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das
 - **`last_opened_folder`** (String/null): Der Pfad des zuletzt geöffneten Ordners.
 - **`reopen_last_selected_media`** (Boolean): Zuletzt ausgewähltes Medium im wiederhergestellten Ordner beim nächsten Start automatisch wiederherstellen. (Standard: `true`)
 - **`last_selected_media`** (String/null): Der absolute Pfad des zuletzt ausgewählten Mediums.
-- **`animate_gifs`** (Boolean): Steuert, ob GIF-Bilder in Vorschauen und Rastern animiert werden. (Standard: `true`)
-- **`folder_tree_width`** (Zahl): Die Breite des linken Ordner-Navigations-Panels in Pixeln. (Standard: `240`)
+- **`animate_gifs`** (Boolean): Steuert, ob GIF-Bilder sowohl in der Vorschau als auch in den Grid-Thumbnails animiert werden. (Standard: `true`)
+- **`video_hardware_decoding`** (Boolean): Aktiviert die hardwarebeschleunigte Videodekodierung (`hwdec=auto-copy`). (Standard: `true`)
+- **`video_zero_copy`** (Boolean): Aktiviert die direkte Zero-Copy-GPU-Speicherschnittstelle zwischen `libmpv` (OpenGL) und `wgpu` (Vulkan/DX12) auf Windows und Linux. (Standard: `true`)
+- **`folder_tree_width`** (Zahl): Breite des linken Navigationsbereichs in Pixeln. (Standard: `240`)
 - **`check_for_updates_on_startup`** (Boolean, nur Windows/macOS-Bundles): Automatische Update-Prüfung beim Start aktivieren/deaktivieren. (Standard: `true`)
 - **`install_prerelease_builds`** (Boolean, nur Windows/macOS-Bundles): Bezieht Vorabversionen (Alpha/Beta) in die Update-Prüfung ein. (Standard: `false`)
 - **`integration_with_windows`** (Boolean, nur Windows): Steuert die Windows Explorer-Kontextmenüintegration. (Standard: `false`)
