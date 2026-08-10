@@ -60,10 +60,20 @@ fn base_subscription() -> Subscription<Message> {
 }
 
 fn video_subscription(state: &AppState) -> Subscription<Message> {
+    let hwdec = state.settings.general.video_hardware_decoding;
+    let zero_copy = state.settings.general.video_zero_copy;
+    // When both zero-copy and hwdec are active, frames stay on the GPU and
+    // never touch the CPU, so there is no benefit in capping the render size.
+    let (max_w, max_h) = if hwdec && zero_copy {
+        (None, None)
+    } else {
+        (Some(960), Some(540))
+    };
     let config = iced_mpv::PlayerConfig {
-        enable_hwdec: state.settings.general.video_hardware_decoding,
-        enable_zero_copy: state.settings.general.video_zero_copy,
-        ..Default::default()
+        max_frame_width: max_w,
+        max_frame_height: max_h,
+        enable_hwdec: hwdec,
+        enable_zero_copy: zero_copy,
     };
     iced_mpv::VideoPlayer::subscription_with_config_and_map(config, Message::Video)
 }

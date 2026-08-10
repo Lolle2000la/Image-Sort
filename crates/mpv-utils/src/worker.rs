@@ -8,11 +8,15 @@ use std::path::PathBuf;
 /// Configuration for the background playback worker ([`start_video_worker`]).
 #[derive(Debug, Clone)]
 pub struct PlayerConfig {
-    /// Maximum rendered frame width in pixels. Larger videos are scaled down
-    /// to fit this box; the render size is the video's aspect-fitted size.
-    pub max_frame_width: u32,
-    /// Maximum rendered frame height in pixels.
-    pub max_frame_height: u32,
+    /// Maximum rendered frame width in pixels. `None` means uncapped (use the
+    /// video's native width). Larger videos are otherwise scaled down to fit
+    /// this box; the render size is the video's aspect-fitted size.
+    ///
+    /// Should be `None` when the zero-copy GPU path is active — frames never
+    /// touch the CPU so there is no cost in rendering at native resolution.
+    pub max_frame_width: Option<u32>,
+    /// Maximum rendered frame height in pixels. `None` means uncapped.
+    pub max_frame_height: Option<u32>,
     /// Enables hardware video decoding in libmpv (`hwdec=auto-copy` vs `hwdec=no`).
     pub enable_hwdec: bool,
     /// Enables zero-copy GPU interop pipeline on supported platforms (Windows & Linux).
@@ -22,8 +26,8 @@ pub struct PlayerConfig {
 impl Default for PlayerConfig {
     fn default() -> Self {
         Self {
-            max_frame_width: 960,
-            max_frame_height: 540,
+            max_frame_width: Some(960),
+            max_frame_height: Some(540),
             enable_hwdec: true,
             enable_zero_copy: true,
         }
@@ -263,17 +267,21 @@ async fn run_video_worker(
     // immutable slice payload would force a fresh allocation per frame. The
     // initial size is only an allocation hint (per-frame `resize` sets the
     // real size), so a max-frame-size config that overflows usize degrades to
-    // empty pool buffers instead of panicking.
-    let max_buffer_size = match rgba_frame_size(config.max_frame_width, config.max_frame_height) {
-        Some(n) => n,
-        None => {
-            tracing::warn!(
-                "PlayerConfig max frame size {}x{} overflows usize; starting with empty pool buffers",
-                config.max_frame_width,
-                config.max_frame_height
-            );
-            0
-        }
+    // empty pool buffers instead of panicking. When both dimensions are None
+    // (uncapped) we start with empty buffers; the first frame will allocate.
+    let max_buffer_size = match (config.max_frame_width, config.max_frame_height) {
+        (Some(w), Some(h)) => match rgba_frame_size(w, h) {
+            Some(n) => n,
+            None => {
+                tracing::warn!(
+                    "PlayerConfig max frame size {}x{} overflows usize; starting with empty pool buffers",
+                    w,
+                    h
+                );
+                0
+            }
+        },
+        _ => 0, // uncapped — first real frame sets the size
     };
     let mut pool = [
         std::sync::Arc::new(vec![0u8; max_buffer_size]),
@@ -416,9 +424,15 @@ async fn run_video_worker(
                                         (w, h)
                                     };
 
-                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
-                                        .min(config.max_frame_height as f64 / eff_h as f64)
-                                        .min(1.0);
+                                    let scale = match (config.max_frame_width, config.max_frame_height) {
+                                        (Some(max_w), Some(max_h)) => {
+                                            (max_w as f64 / eff_w as f64)
+                                                .min(max_h as f64 / eff_h as f64)
+                                                .min(1.0)
+                                        }
+                                        // Uncapped: render at native resolution.
+                                        _ => 1.0,
+                                    };
                                     let render_unrot_w = ((w as f64 * scale) as i32) & !1;
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
