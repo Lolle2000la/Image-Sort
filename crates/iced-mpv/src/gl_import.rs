@@ -121,7 +121,7 @@ pub unsafe fn import_d3d11_handle_to_wgpu_dx12(
             return Err("Failed to retrieve ID3D12Resource from OpenSharedHandle".into());
         };
 
-        let hal_texture = hal_device.texture_from_raw(
+        let hal_texture = wgpu_hal::dx12::Device::texture_from_raw(
             d3d12_res,
             &wgpu_hal::TextureDescriptor {
                 label: Some("mpv_dx12_texture"),

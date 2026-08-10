@@ -14,7 +14,7 @@ ui = ["dep:lucide-icons", "wgpu"]
 # the custom `VideoPipeline` shader). Without it only the iced subscription,
 # state machine and `ui` icon widgets are available — no GPU dependency is
 # compiled at all.
-wgpu = ["dep:iced_wgpu", "dep:bytemuck", "iced/wgpu", "dep:wgpu-hal", "dep:ash", "dep:wgpu-types"]
+wgpu = ["dep:iced_wgpu", "dep:bytemuck", "iced/wgpu", "dep:wgpu-hal", "dep:ash", "dep:wgpu-types", "dep:windows"]
 # Helpers for driving `VideoState` in unit/integration tests without a running
 # worker. Enable this in dev-dependencies of consuming crates.
 test-utils = []
@@ -40,3 +40,10 @@ wgpu-types = { version = "27", optional = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
 tracing = { workspace = true }
 lucide-icons = { version = "1.21", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", optional = true, features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct3D12",
+] }
+

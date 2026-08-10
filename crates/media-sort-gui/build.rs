@@ -52,9 +52,46 @@ fn main() {
 
     fs::write(dest, code).unwrap();
 
+    #[cfg(target_os = "windows")]
+    {
+        copy_dlls_on_windows();
+    }
+
     // Rerun triggers
     println!("cargo:rerun-if-changed=../../contributors.json");
     println!("cargo:rerun-if-changed=build.rs");
+}
+
+#[cfg(target_os = "windows")]
+fn copy_dlls_on_windows() {
+    let out_dir = std::path::PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    if let Some(profile_dir) = out_dir.ancestors().nth(3) {
+        let manifest_dir = std::path::PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+        let workspace_dir = manifest_dir
+            .parent()
+            .and_then(|p| p.parent())
+            .unwrap_or(&manifest_dir);
+        let mpv_vendor_dir = workspace_dir.join("target").join("mpv-win64");
+
+        if mpv_vendor_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&mpv_vendor_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().and_then(|s| s.to_str()) == Some("dll") {
+                        let filename = path.file_name().unwrap();
+                        let dest = profile_dir.join(&filename);
+                        let _ = fs::copy(&path, &dest);
+
+                        if filename.to_str() == Some("libmpv-2.dll") {
+                            let _ = fs::copy(&path, profile_dir.join("mpv-1.dll"));
+                            let _ = fs::copy(&path, profile_dir.join("mpv-2.dll"));
+                            let _ = fs::copy(&path, profile_dir.join("mpv.dll"));
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 fn fallback_contributors() -> Vec<Contributor> {
