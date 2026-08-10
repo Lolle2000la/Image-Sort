@@ -1,0 +1,2 @@
+[target.'cfg(target_os = "windows")'.env]
+SYSTEM_DEPS_BUILD_INTERNAL = "always"
