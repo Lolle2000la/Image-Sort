@@ -51,6 +51,16 @@ fn setup_mpv_windows() {
             let _ = fs::copy(&lib_a, mpv_vendor_dir.join("libmpv-2.lib"));
         }
 
+        let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+        if let Some(profile_dir) = out_dir.ancestors().nth(3) {
+            if dll.exists() {
+                let _ = fs::copy(&dll, profile_dir.join("libmpv-2.dll"));
+                let _ = fs::copy(&dll, profile_dir.join("mpv-1.dll"));
+                let _ = fs::copy(&dll, profile_dir.join("mpv-2.dll"));
+                let _ = fs::copy(&dll, profile_dir.join("mpv.dll"));
+            }
+        }
+
         println!(
             "cargo:rustc-link-search=native={}",
             mpv_vendor_dir.display()
