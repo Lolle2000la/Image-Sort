@@ -6,7 +6,7 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest", "dep:pgp", "dep:memmap2"]
-winbuild = ["iced-mpv/winbuild"]
+vendor-windows = ["iced-mpv/vendor-windows"]
 demo = [
     "iced/canvas",
     "dep:pollster",
@@ -51,7 +51,7 @@ iced_test = { version = "0.14", optional = true }
 open = { version = "5.4.0", features = ["shellexecute-on-windows"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-iced-mpv = { path = "../iced-mpv", features = ["winbuild"] }
+iced-mpv = { path = "../iced-mpv", features = ["vendor-windows"] }
 
 [target.'cfg(target_os = "windows")'.build-dependencies]
 embed-resource = "3.0.11"

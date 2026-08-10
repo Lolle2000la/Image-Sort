@@ -19,7 +19,7 @@ wgpu = ["dep:iced_wgpu", "dep:bytemuck", "iced/wgpu", "dep:wgpu-hal", "dep:ash",
 # worker. Enable this in dev-dependencies of consuming crates.
 test-utils = []
 # Downloads and stages vendored libmpv and ffmpeg binaries on Windows.
-winbuild = ["mpv-utils/winbuild"]
+vendor-windows = ["mpv-utils/vendor-windows"]
 
 [dependencies]
 mpv-utils = { path = "../mpv-utils" }
@@ -44,7 +44,7 @@ tracing = { workspace = true }
 lucide-icons = { version = "1.21", optional = true }
 
 [target.'cfg(windows)'.dependencies]
-mpv-utils = { path = "../mpv-utils", features = ["winbuild"] }
+mpv-utils = { path = "../mpv-utils", features = ["vendor-windows"] }
 windows = { version = "0.58", optional = true, features = [
     "Win32_Foundation",
     "Win32_Graphics_Direct3D12",

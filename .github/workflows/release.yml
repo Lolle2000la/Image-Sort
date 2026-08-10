@@ -132,7 +132,7 @@ jobs:
           rustup target add ${{ matrix.target }}
           FEATURES="velopack"
           if [[ "${{ matrix.os }}" == windows* ]]; then
-            FEATURES="velopack,winbuild"
+            FEATURES="velopack,vendor-windows"
           fi
           cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features "$FEATURES"
 

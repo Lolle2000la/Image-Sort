@@ -9,7 +9,7 @@ rust-version.workspace = true
 [features]
 default = []
 # Downloads and stages vendored libmpv and ffmpeg binaries on Windows.
-winbuild = []
+vendor-windows = []
 
 [dependencies]
 libmpv-sys = "3.1.0"

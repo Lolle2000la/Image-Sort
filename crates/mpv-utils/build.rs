@@ -1,12 +1,12 @@
 fn main() {
-    #[cfg(all(target_os = "windows", feature = "winbuild"))]
+    #[cfg(all(target_os = "windows", feature = "vendor-windows"))]
     setup_mpv_windows();
 }
 
 #[allow(dead_code)]
 const DEFAULT_MPV_WINBUILD_TAG: &str = "2026-08-08-dd5d17d328";
 
-#[cfg(all(target_os = "windows", feature = "winbuild"))]
+#[cfg(all(target_os = "windows", feature = "vendor-windows"))]
 fn setup_mpv_windows() {
     use std::env;
     use std::fs;
