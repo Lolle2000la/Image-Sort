@@ -73,7 +73,13 @@ pub use widget::controls::{MediaControl, MediaControlsState, format_time, media_
 pub use widget::player::video_player_view;
 
 #[cfg(feature = "wgpu")]
-pub use widget::shader::{VideoPipeline, VideoPrimitive, VideoProgram, video_shader_view};
+pub mod gl_import;
+
+#[cfg(feature = "wgpu")]
+pub use widget::shader::{
+    MpvShaderPipeline, VideoPipeline, VideoPrimitive, VideoProgram, video_shader_view,
+    video_zero_copy_shader_view,
+};
 
 #[cfg(any(test, feature = "test-utils"))]
 pub mod testing;

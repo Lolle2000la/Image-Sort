@@ -181,9 +181,37 @@ impl Pipeline for VideoPipeline {
     }
 }
 
-/// A single video frame to render: raw RGBA pixels plus display geometry.
+/// A custom shader primitive for directly rendering an mpv zero-copy [`wgpu::BindGroup`].
+#[derive(Debug)]
+pub struct MpvShaderPipeline {
+    pub bind_group: wgpu::BindGroup,
+}
+
+impl Primitive for MpvShaderPipeline {
+    type Pipeline = VideoPipeline;
+
+    fn prepare(
+        &self,
+        _pipeline: &mut Self::Pipeline,
+        _device: &wgpu::Device,
+        _queue: &wgpu::Queue,
+        _bounds: &Rectangle,
+        _viewport: &Viewport,
+    ) {
+    }
+
+    fn draw(&self, pipeline: &Self::Pipeline, render_pass: &mut wgpu::RenderPass<'_>) -> bool {
+        render_pass.set_pipeline(&pipeline.pipeline);
+        render_pass.set_vertex_buffer(0, pipeline.vertex_buffer.slice(..));
+        render_pass.set_bind_group(0, &self.bind_group, &[]);
+        render_pass.draw(0..4, 0..1);
+        true
+    }
+}
+
+/// A single video frame to render: raw RGBA pixels or zero-copy GPU texture plus display geometry.
 ///
-/// The frame is uploaded to the GPU with aspect-ratio fitting and rotation
+/// The frame is uploaded or bound to the GPU with aspect-ratio fitting and rotation
 /// applied via texture coordinates.
 #[derive(Debug, Clone)]
 pub struct VideoPrimitive {
@@ -191,6 +219,7 @@ pub struct VideoPrimitive {
     pub height: u32,
     pub rotation: Rotation,
     pub rgba: Option<std::sync::Arc<Vec<u8>>>,
+    pub zero_copy_texture: Option<std::sync::Arc<wgpu::Texture>>,
 }
 
 impl Primitive for VideoPrimitive {
@@ -256,6 +285,28 @@ impl Primitive for VideoPrimitive {
         ];
 
         queue.write_buffer(&pipeline.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+
+        if let Some(zero_copy_tex) = &self.zero_copy_texture {
+            let texture_view = zero_copy_tex.create_view(&wgpu::TextureViewDescriptor::default());
+            let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("mpv_zero_copy_bind_group"),
+                layout: &pipeline.bind_group_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&texture_view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&pipeline.sampler),
+                    },
+                ],
+            });
+            pipeline.bind_group = Some(bind_group);
+            pipeline.width = self.width;
+            pipeline.height = self.height;
+            return;
+        }
 
         let size_changed = pipeline.width != self.width
             || pipeline.height != self.height
@@ -406,6 +457,29 @@ where
         height,
         rotation,
         rgba,
+        zero_copy_texture: None,
+    }))
+    .width(Length::Fill)
+    .height(Length::Fill)
+    .into()
+}
+
+/// A zero-copy video frame element using imported GPU texture memory directly.
+pub fn video_zero_copy_shader_view<'a, Message: 'a, Theme: 'a, Renderer>(
+    width: u32,
+    height: u32,
+    rotation: Rotation,
+    texture: Option<std::sync::Arc<wgpu::Texture>>,
+) -> Element<'a, Message, Theme, Renderer>
+where
+    Renderer: iced_wgpu::primitive::Renderer + 'a,
+{
+    iced::widget::Shader::new(VideoProgram::new(VideoPrimitive {
+        width,
+        height,
+        rotation,
+        rgba: None,
+        zero_copy_texture: texture,
     }))
     .width(Length::Fill)
     .height(Length::Fill)
