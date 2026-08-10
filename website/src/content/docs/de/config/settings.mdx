@@ -52,11 +52,15 @@ Media Sort enthält vorkonfigurierte visuelle Designs zur Anpassung der Benutzer
 
 #### Hardware-Videodekodierung aktivieren
 
-- **Verhalten:** Aktiviert die hardwarebeschleunigte Videodekodierung in `libmpv` (`hwdec=auto-copy` wenn aktiviert vs. `hwdec=no` wenn deaktiviert).
+- **Verhalten:** Verwendet Ihre Grafikkarte (GPU) anstelle des Prozessors (CPU) zur Dekodierung von Videodateien. Dies reduziert die CPU-Auslastung erheblich, spart Strom und sorgt für eine flüssige Wiedergabe. Falls bei bestimmten Videoformaten Grafikfehler oder grüne Artefakte auftreten, erzwingt das Deaktivieren dieser Option die Dekodierung über die CPU.
 
-#### Zero-Copy-GPU-Pipeline aktivieren (OpenGL zu wgpu)
+#### Zero-Copy-GPU-Rendering aktivieren
 
-- **Verhalten:** Auf Windows und Linux aktiviert dies die direkte Zero-Copy-GPU-Speicherschnittstelle zwischen dem OpenGL-FBO von `libmpv` und `wgpu` (über DMA-BUF auf Linux und Direct3D 11 Shared Handles auf Windows). Auf macOS ist diese Option mit einem Hinweis deaktiviert, da `libmpv` nur einen OpenGL-Kontext bereitstellt, während macOS Metal verwendet; stattdessen ist das Software-RGBA-Rendering aktiv.
+- **Verhalten:** Belässt dekodierte Video-Frames direkt im Speicher der Grafikkarte (GPU), wenn sie vom Video-Player (`libmpv`) an das Anzeigesystem (`wgpu`) übergeben werden. Da Videodaten nicht mehr in den RAM-Arbeitsspeicher kopiert werden müssen, ist die Wiedergabe schneller, verbraucht weniger Speicher und schont den Akku. Falls Treiberabstürze oder Bildflackern auftreten, schaltet das Deaktivieren dieser Option auf RAM-Software-Puffer zurück.
+
+:::note[Verfügbarkeit auf macOS]
+Auf macOS ist das Zero-Copy-GPU-Rendering automatisch deaktiviert. Media Sort verwendet auf macOS Software-RAM-Puffer, da `libmpv` OpenGL erfordert, während macOS Metal-Grafiktreiber verwendet.
+:::
 
 ---
 

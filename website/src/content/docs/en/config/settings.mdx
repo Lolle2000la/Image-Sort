@@ -52,11 +52,15 @@ Media Sort includes pre-configured visual themes to customize the interface. Sel
 
 #### Enable hardware video decoding
 
-- **Behavior:** Toggles hardware-accelerated video decoding in `libmpv` (`hwdec=auto-copy` when enabled vs `hwdec=no` when disabled).
+- **Behavior:** Uses your graphics card (GPU) to decode video files instead of the CPU. This significantly reduces CPU usage, saves power, and keeps playback smooth. If you experience unexpected video corruption or green artifacts with certain video formats, turning this off will force software decoding on the CPU.
 
-#### Enable zero-copy GPU pipeline (OpenGL to wgpu)
+#### Enable zero-copy GPU rendering
 
-- **Behavior:** On Windows and Linux, toggles direct zero-copy GPU handle sharing between `libmpv`'s OpenGL FBO and `wgpu` (via DMA-BUF on Linux and Direct3D 11 shared handles on Windows). On macOS, this option is disabled with a notice because `libmpv` only provides an OpenGL render context, whereas macOS uses Metal; software RGBA rendering is active instead.
+- **Behavior:** Keeps decoded video frames directly inside graphics card (GPU) memory as they pass from the video player engine (`libmpv`) to the display system (`wgpu`). Because frame data never needs to be copied back into system RAM, video playback is faster, uses less memory, and consumes less battery power. If you encounter GPU driver crashes or display flickering, disabling this option will fall back to software RAM buffers.
+
+:::note[macOS Availability]
+On macOS, zero-copy GPU rendering is automatically disabled. Media Sort uses software RAM buffers on macOS because `libmpv` requires OpenGL, while macOS uses Metal graphics drivers.
+:::
 
 ---
 
