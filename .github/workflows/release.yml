@@ -92,54 +92,6 @@ jobs:
             brew install mpv ffmpeg dylibbundler dav1d
             echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
 
-      - name: Setup libmpv Link Libraries (Windows)
-        if: startsWith(matrix.os, 'windows')
-        uses: nick-fields/retry@v4
-        env:
-          # gh refuses to run without a token in Actions contexts; the
-          # runner does not inject GH_TOKEN into action processes, only
-          # run steps that reference github.token explicitly get one.
-          GH_TOKEN: ${{ github.token }}
-          # Pin the vendored libmpv/ffmpeg build tag. The monthly
-          # bump-mpv-winbuild workflow PRs this default; a repository
-          # variable of the same name overrides it (empty = latest).
-          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '2026-08-08-dd5d17d328' }}
-        with:
-          timeout_minutes: 10
-          max_attempts: 3
-          retry_wait_seconds: 10
-          shell: bash
-          command: |
-            # nick-fields/retry@v4 spawns the command without set -e, so
-            # failures would otherwise be swallowed and the step would
-            # "succeed" with garbage artifacts; be explicit.
-            set -euo pipefail
-            # nick-fields/retry@v4 runs `command` in a different working
-            # directory than GITHUB_WORKSPACE (it cannot honor
-            # working-directory), so all paths must be absolute -- a
-            # relative "libs" would not be found by the linker's
-            # "/LIBPATH:libs" at build time.
-            mkdir -p "$GITHUB_WORKSPACE/libs"
-            # Vendored builds come from our self-hosted mpv-winbuild fork
-            # (Lolle2000la/mpv-winbuild), which publishes fresh
-            # mpv-dev-*/ffmpeg-* archives for all three arches.
-            if [ -n "${MPV_WINBUILD_TAG:-}" ]; then
-              RELEASE_SPEC="$MPV_WINBUILD_TAG"
-            else
-              RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
-            fi
-            [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
-            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-            FFMPEG_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-            [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
-            [ -n "$FFMPEG_ASSET" ] || { echo "::error::no ffmpeg-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
-            curl -fL -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
-            curl -fL -o ffmpeg.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
-            7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
-            7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
-            mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
-            7z e ffmpeg.7z ffmpeg.exe "-o$GITHUB_WORKSPACE/libs" -y
-
       - uses: ilammy/msvc-dev-cmd@v1
         if: startsWith(matrix.os, 'windows')
         with:
@@ -176,7 +128,6 @@ jobs:
       - name: Build Standalone Binary
         env:
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
-          RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
         run: |
           rustup target add ${{ matrix.target }}
           cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features velopack
@@ -214,8 +165,8 @@ jobs:
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p "dist/Media Sort.app" --mainExe media-sort-gui --icon "packaging/macos/icon.icns" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }}
           elif [ "${{ matrix.os }}" = "windows-latest" ] || [ "${{ matrix.os }}" = "windows-11-arm" ]; then
             cp "$TARGET_DIR/media-sort-gui.exe" dist/
-            cp libs/libmpv-2.dll dist/
-            cp libs/ffmpeg.exe dist/
+            cp "$TARGET_DIR/libmpv-2.dll" dist/
+            cp "$TARGET_DIR/ffmpeg.exe" dist/
             cp packaging/windows/icon.ico dist/
 
             vpk pack -u MediaSort -v "$CLEAN_VERSION" -p dist -e ${{ matrix.exe_name }} --icon "dist/icon.ico" --channel ${{ matrix.platform }} --runtime ${{ matrix.platform }} --framework ${{ matrix.vcredist }}

@@ -57,9 +57,9 @@ jobs:
           python3 - "$NEW_TAG" <<'EOF'
           import re, sys, pathlib
           new_tag = sys.argv[1]
-          files = [".github/workflows/release.yml", ".github/workflows/ci.yml"]
+          files = ["crates/mpv-utils/build.rs"]
           pattern = re.compile(
-              r"MPV_WINBUILD_TAG: \$\{\{ vars\.MPV_WINBUILD_TAG \|\| '[^']*' \}\}"
+              r'const DEFAULT_MPV_WINBUILD_TAG: &str = "[^"]*";'
           )
           current = None
           changed = False
@@ -72,9 +72,9 @@ jobs:
               if m and current is None:
                   current = m.group(0)
               replacement = (
-                  "MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '"
+                  'const DEFAULT_MPV_WINBUILD_TAG: &str = "'
                   + new_tag
-                  + "' }}"
+                  + '";'
               )
               s2 = pattern.sub(replacement, s)
               if s2 != s:
@@ -108,12 +108,12 @@ jobs:
               echo "Bump PR #$EXISTING for $NEW_TAG is already open; skipping."
             else
               git checkout -b "$BRANCH"
-              git add .github/workflows/release.yml .github/workflows/ci.yml
+              git add crates/mpv-utils/build.rs
               git commit -m "chore(ci): bump vendored mpv-winbuild to $NEW_TAG"
               git push origin "$BRANCH"
               gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
                 --title "chore(ci): bump vendored mpv-winbuild to $NEW_TAG" \
-                --body "Monthly refresh of the vendored libmpv/ffmpeg Windows builds from our self-hosted mpv-winbuild fork ([release](https://github.com/Lolle2000la/mpv-winbuild/releases/tag/$NEW_TAG)). The pin lives in the MPV_WINBUILD_TAG default of the Setup libmpv Link Libraries (Windows) step (release.yml + ci.yml); the repo variable override is empty, so this default is authoritative. Reverting is a one-line change."
+                --body "Monthly refresh of the vendored libmpv/ffmpeg Windows builds from our self-hosted mpv-winbuild fork ([release](https://github.com/Lolle2000la/mpv-winbuild/releases/tag/$NEW_TAG)). The pin lives in DEFAULT_MPV_WINBUILD_TAG of crates/mpv-utils/build.rs; the repo variable override is empty, so this default is authoritative. Reverting is a one-line change."
             fi
           else
             echo "No bump needed; pin already at $NEW_TAG"
