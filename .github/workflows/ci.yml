@@ -100,7 +100,7 @@ jobs:
       - name: Run Clippy Lints
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-        run: cargo clippy --workspace --all-targets -- -D warnings
+        run: cargo clippy --workspace --all-targets ${{ matrix.os == 'windows-latest' && '--features winbuild' || '' }} -- -D warnings
 
       - name: Run Workspace Tests
         if: matrix.os != 'windows-latest'
@@ -115,7 +115,7 @@ jobs:
         # NOTE: keep the default shell here. Under git-bash, /usr/bin precedes
         # the MSVC dirs in PATH and rustc invokes GNU coreutils' `link`
         # instead of MSVC link.exe.
-        run: cargo test --workspace --tests --exclude media-sort-gui
+        run: cargo test --workspace --tests --exclude media-sort-gui --features winbuild
 
       - name: Run GUI Tests (Windows, serial)
         if: matrix.os == 'windows-latest'
@@ -123,7 +123,7 @@ jobs:
         # COM, rodio/WASAPI) are suspects in a parallel access-violation
         # crash on headless runners; if it still crashes, nocapture names
         # the culprit test in the log.
-        run: cargo test -p media-sort-gui --tests -- --test-threads=1 --nocapture
+        run: cargo test -p media-sort-gui --tests --features winbuild -- --test-threads=1 --nocapture
 
   verify-contributors:
     name: Verify Contributors List

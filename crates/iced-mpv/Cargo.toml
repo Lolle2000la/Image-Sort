@@ -18,6 +18,8 @@ wgpu = ["dep:iced_wgpu", "dep:bytemuck", "iced/wgpu", "dep:wgpu-hal", "dep:ash",
 # Helpers for driving `VideoState` in unit/integration tests without a running
 # worker. Enable this in dev-dependencies of consuming crates.
 test-utils = []
+# Downloads and stages vendored libmpv and ffmpeg binaries on Windows.
+winbuild = ["mpv-utils/winbuild"]
 
 [dependencies]
 mpv-utils = { path = "../mpv-utils" }

@@ -130,7 +130,11 @@ jobs:
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
         run: |
           rustup target add ${{ matrix.target }}
-          cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features velopack
+          FEATURES="velopack"
+          if [[ "${{ matrix.os }}" == windows* ]]; then
+            FEATURES="velopack,winbuild"
+          fi
+          cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features "$FEATURES"
 
       - name: Install and Run Velopack Packager
         shell: bash

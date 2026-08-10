@@ -6,6 +6,7 @@ edition.workspace = true
 [features]
 default = []
 velopack = ["dep:velopack", "dep:reqwest", "dep:pgp", "dep:memmap2"]
+winbuild = ["iced-mpv/winbuild"]
 demo = [
     "iced/canvas",
     "dep:pollster",
