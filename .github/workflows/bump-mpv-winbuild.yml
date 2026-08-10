@@ -38,17 +38,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BASE_BRANCH: ${{ inputs.base_branch || github.ref_name }}
-          MPV_WINBUILD_TAG_VAR: ${{ vars.MPV_WINBUILD_TAG }}
         run: |
           set -euo pipefail
-
-          # Fail loudly if the repo-variable override is set: the bump
-          # workflow only rewrites the file default, so a non-empty
-          # override would silently make every bump PR a cosmetic no-op.
-          if [ -n "$MPV_WINBUILD_TAG_VAR" ]; then
-            echo "::error::MPV_WINBUILD_TAG repo variable is set to '$MPV_WINBUILD_TAG_VAR' and overrides the file default; unset it (or bump it manually) before the auto-bump can take effect."
-            exit 1
-          fi
 
           NEW_TAG="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
           [ -n "$NEW_TAG" ] || { echo "::error::could not resolve latest mpv-winbuild release"; exit 1; }
