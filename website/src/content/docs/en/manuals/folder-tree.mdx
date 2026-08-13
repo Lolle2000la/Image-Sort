@@ -6,6 +6,11 @@ description: How to navigate, expand, collapse, and manage the folder tree in Me
 import {
     Folder,
     FolderOpen,
+    FolderRoot,
+    FolderBookmark,
+    FolderGit2,
+    FolderSymlink,
+    FolderLock,
     ArrowUp,
     ChevronRight,
     ChevronDown,
@@ -48,7 +53,7 @@ For example, if your current folder is `/home/user/Pictures/Vacation/`, the tree
   📁 mountains/                        (real subfolder)
 ```
 
-Clicking any breadcrumb opens that directory as the new current folder, updating the media grid and tree accordingly.
+Clicking any breadcrumb selects it (like any other tree node). Press <Kbd>Enter</Kbd> to open that directory as the new current folder, updating the media grid and tree accordingly.
 
 ## Opening a Folder
 
@@ -60,13 +65,30 @@ Press <Kbd>C</Kbd> to open the "Create Folder" dialog. The new folder is created
 
 ## Folder Icons
 
-The tree uses three distinct lucide icons to convey state:
+The tree uses several distinct lucide icons to convey folder type and state:
 
-| Icon                     | Meaning                                             |
-| :----------------------- | :-------------------------------------------------- |
-| <Folder size={18} />     | The folder is collapsed. It may contain subfolders. |
-| <FolderOpen size={18} /> | The folder is expanded. Its children are visible.   |
-| <ArrowUp size={18} />    | Parent breadcrumb. Opens the ancestor directory.    |
+| Icon                        | Meaning                                                                  |
+| :-------------------------- | :----------------------------------------------------------------------- |
+| <Folder size={18} />        | Regular folder, collapsed. It may contain subfolders.                    |
+| <FolderOpen size={18} />    | Regular folder, expanded. Its children are visible.                      |
+| <FolderBookmark size={18} />| Pinned folder (top-level bookmark node).                                 |
+| <FolderRoot size={18} />    | Filesystem root (`/` on Linux/macOS, drive roots on Windows).            |
+| <FolderLock size={18} />    | Restricted folder: its contents cannot be listed or it is read-only.     |
+| <FolderSymlink size={18} /> | Symbolic link to another folder. The resolved target path is shown next to the name. |
+| <FolderGit2 size={18} />    | Folder contains a git repository (`.git`).                               |
+| <ArrowUp size={18} />       | Parent breadcrumb (ancestor of the current or a pinned folder).          |
+
+When a folder matches several types, the icon priority is: pinned > root > lock > symlink > git. The git icon is intentionally the lowest-priority classification.
+
+## Symbolic Links
+
+Symbolic links to directories appear as regular tree nodes marked with the <span class="icon-inline"><FolderSymlink size={14} /></span> icon, with the full path of their final destination shown next to the node name. Media Sort follows symlinks transparently:
+
+- **Expanding** a symlink node lists the contents of the link target.
+- **Opening** a symlink (select + <Kbd>Enter</Kbd>) opens the resolved target directory, not the link path.
+- **Moving or copying** images into a selected symlinked folder writes directly into the final target directory.
+
+The symlink refusal policy for *files* is unchanged: sorting actions still refuse symbolic-link file sources so a move never relocates the link's target instead of the entry you see in the grid.
 
 ## Pinned Folders
 

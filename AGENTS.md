@@ -131,11 +131,11 @@ Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `
 
 | Module | Purpose |
 |--------|---------|
-| `actions/` | `ReversibleAction` trait + `MoveAction`, `RenameAction`, `DeleteAction`, `CopyAction`. **Symlink policy:** all action constructors refuse symbolic-link sources (`ActionError::SourceIsSymlink`), checked via the shared `path_utils::is_symlink` helper BEFORE and AFTER `canonicalize()` — `canonicalize()` would resolve the link and silently act on its TARGET (drag & drop accepts arbitrary OS paths), and the post-canonicalize re-check closes the swap window. `CopyAction::execute()` re-checks the source immediately before `fs::copy` (which follows links). `MoveAction` refuses an existing destination (`TargetExists`), enforced at construction AND inside `execute()`/`rollback()` — `rename(2)` silently replaces, and Undo/Redo must not clobber a file that appeared at the old path since the move; destination checks use `symlink_metadata()` so dangling symlinks count as existing. Create-folder input is validated with `RenameAction::validate_stem` (rejects `/`, `\\`, `.`, `..`, OS-illegal chars). |
+| `actions/` | `ReversibleAction` trait + `MoveAction`, `RenameAction`, `DeleteAction`, `CopyAction`. **Symlink policy:** all action constructors refuse symbolic-link sources (`ActionError::SourceIsSymlink`), checked via the shared `path_utils::is_symlink` helper BEFORE and AFTER `canonicalize()` — `canonicalize()` would resolve the link and silently act on its TARGET (drag & drop accepts arbitrary OS paths), and the post-canonicalize re-check closes the swap window. `CopyAction::execute()` re-checks the source immediately before `fs::copy` (which follows links). Destination folders are always canonicalized at construction, so actions into a symlinked folder land in the real target directory. `MoveAction` refuses an existing destination (`TargetExists`), enforced at construction AND inside `execute()`/`rollback()` — `rename(2)` silently replaces, and Undo/Redo must not clobber a file that appeared at the old path since the move; destination checks use `symlink_metadata()` so dangling symlinks count as existing. Create-folder input is validated with `RenameAction::validate_stem` (rejects `/`, `\\`, `.`, `..`, OS-illegal chars). |
 | `history.rs` | Undo/redo with `done`/`undone` stacks of `Box<dyn ReversibleAction>` |
 | `l10n.rs` | Fluent-backed localization, auto-detects system locale, `tr()` for lookups |
 | `media_type.rs` | `MediaType` enum (Image/Video/Audio), global `MediaRegistry` (OnceLock), extension lists |
-| `models.rs` | `MediaEntry`, `FolderNode`, `PinnedFolder` data types |
+| `models.rs` | `MediaEntry`, `FolderNode` (with `FolderKind` icon classification: `Default`/`Git`/`Symlink`/`Locked`, plus `symlink_target` for display), `PinnedFolder` data types |
 | `path_utils.rs` | Cross-platform path comparison utilities, `is_symlink` (single source of truth for the symlink-refusal policy), `atomic_write` (unique-temp + fsync + rename — used by the settings store), `unique_temp_path` (shared by the settings store and the updater; pid + counter keeps two app instances from racing on a shared temp name) |
 | `settings/` | `SettingsStore` + sub-modules: `advanced`, `general`, `keybindings`, `metadata_panel`, `pinned_folders`, `window_position` |
 | `build.rs` | Auto-generates `locales_codegen.rs` from `resources/locale/` (see below) |
@@ -193,7 +193,7 @@ The raw tokio command channel is hidden behind the opaque `PlayerHandle`; produc
 | `main.rs` | Entry point: init mpv registry, load settings, launch iced application |
 | `message.rs` | `Message` and sub-enum definitions |
 | `demo.rs` | Consolidates both interactive demo initialization and headless video export |
-| `state.rs` | `AppState` struct, folder tree logic, media scanning, `detect_media_type()` |
+| `state.rs` | `AppState` struct, folder tree logic (see the folder tree section below), media scanning, `detect_media_type()` |
 | `view/` | 11 view files: `main_layout`, `folder_tree`, `folder_panel`, `media_grid`, `media_preview`, `metadata_panel`, `control_panel`, `search_bar`, `settings_dialog`, `credits_dialog`, `overlay` (modal overlay + transient `status_toast`) |
 
 Transient user feedback (refused drops, update failures, create-folder errors) goes through `AppState.status_message` (`StatusMessage { text, expires_at }`): set via `state.set_status(...)`, rendered as a non-blocking `status_toast` stacked above modals by `view/overlay.rs`, and expired by `handle_tick` against the tick's own `Instant` (sleep-proof). `open_folder` clears it. New user-visible strings need entries in all three locale files.
@@ -282,6 +282,19 @@ There are **two different** media type detection functions:
 2. `detect_media_type()` in `media-sort-gui/src/state.rs:566` — simple linear scan of hardcoded extension lists from `MediaType::extensions()`. Defaults to `MediaType::Image` for unknown extensions.
 
 The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches if mpv discovers additional extensions at startup (e.g., a custom mpv build with extra demuxers). If you add formats, update both.
+
+## Folder tree
+
+The folder tree (`state.rs::build_children` / `build_parent_chain` / `build_tree_nodes_data`, rendered by `view/folder_tree.rs`) classifies every node via `inspect_folder()` (state.rs), which stores a `FolderKind` on the `FolderNode`:
+
+- **`Git`** — the folder contains a `.git` entry (lowest priority)
+- **`Symlink`** — the folder is a symlink; `symlink_target` (resolved via `canonicalize`, `read_link` fallback for dangling links) is shown next to the node name
+- **`Locked`** — contents not listable (read_dir `PermissionDenied`) or not writable (unix: no `0o222` write bits on the target's metadata; Windows: readonly attribute)
+- **`Default`** — plain folder
+
+Priority at build time: `Locked` > `Symlink` > `Git` > `Default`. `widgets/folder_icon.rs::icon_for()` maps kinds to lucide glyphs (FolderLock/FolderSymlink/FolderGit2/Folder/FolderOpen); the view overrides with `FolderBookmark` for pinned roots (depth 0, index > 0) and `FolderRoot` for filesystem roots (`path.parent().is_none()` — `/` on unix, drive roots on Windows; also used for the root of the parent chain). Parent-nav (chain) nodes keep the arrow-up glyph except at the filesystem root.
+
+**Symlinked folders are followed transparently:** `build_children` includes symlink-to-directory entries, `read_dir` on them lists the target's children, expanding/selecting works like any other node, and `open_folder` canonicalizes the path up front so the tree, scanner and watcher all operate on the real target. Move/copy destinations are canonicalized by the action constructors, so sorting into a selected symlinked folder lands in the final target. The symlink-refusal policy for *file sources* is unchanged (see the `actions/` row above). Note `is_current` uses `paths_equal` (canonicalize-based), so the symlink node through which the current folder was entered is highlighted.
 
 ## Caching
 

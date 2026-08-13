@@ -24,7 +24,7 @@ use std::sync::mpsc;
 
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
-use media_sort_core::models::{FolderNode, PinnedFolder};
+use media_sort_core::models::{FolderKind, FolderNode, PinnedFolder};
 use media_sort_core::settings::store::SettingsStore;
 
 /// A transient user-facing status banner: text plus a monotonic expiry
@@ -165,6 +165,11 @@ impl AppState {
     }
 
     pub fn open_folder(&mut self, path: &Path) {
+        // Symlinked folders are followed transparently: the tree, the media
+        // scanner and the watcher all operate on the real target path, so
+        // entering a symlink shows and works on its final destination.
+        let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
+        let path = canonical.as_path();
         self.folder.current_folder = Some(path.to_path_buf());
         self.settings.general.last_opened_folder = Some(path.to_string_lossy().to_string());
         self.settings.mark_dirty();
@@ -436,6 +441,7 @@ fn build_tree_nodes_data(
         .chain(build_children(root, Some(root)))
         .collect();
     restore_expansion(&mut children, expanded_paths);
+    let root_inspection = inspect_folder(root);
     tree.push(FolderNode {
         path: root.to_path_buf(),
         name: root
@@ -446,6 +452,8 @@ fn build_tree_nodes_data(
         is_current: true,
         is_expanded: expanded_paths.is_empty() || expanded_paths.contains(root),
         is_parent_nav: false,
+        kind: root_inspection.kind,
+        symlink_target: root_inspection.symlink_target,
     });
 
     for pinned in pinned_folders {
@@ -458,6 +466,7 @@ fn build_tree_nodes_data(
             .chain(build_children(&pinned.path, Some(root)))
             .collect();
         restore_expansion(&mut pinned_children, expanded_paths);
+        let pinned_inspection = inspect_folder(&pinned.path);
         tree.push(FolderNode {
             path: pinned.path.clone(),
             name: pinned.name.clone(),
@@ -465,6 +474,8 @@ fn build_tree_nodes_data(
             is_current: false,
             is_expanded: expanded_paths.contains(&pinned.path),
             is_parent_nav: false,
+            kind: pinned_inspection.kind,
+            symlink_target: pinned_inspection.symlink_target,
         });
     }
 
@@ -497,7 +508,14 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
 
     let mut children: Vec<FolderNode> = entries
         .flatten()
-        .filter(|entry| entry.file_type().is_ok_and(|ft| ft.is_dir()))
+        .filter(|entry| {
+            entry.file_type().is_ok_and(|ft| {
+                // Symbolic links to directories are followed transparently:
+                // they appear as regular child nodes (with the symlink icon)
+                // and their children are read from the link target.
+                ft.is_dir() || (ft.is_symlink() && entry.path().is_dir())
+            })
+        })
         .map(|entry| {
             let path = entry.path();
             let name = path
@@ -507,20 +525,12 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
             let is_current =
                 current.is_some_and(|c| media_sort_core::path_utils::paths_equal(c, &path));
 
-            let has_child_dir = std::fs::read_dir(&path).is_ok_and(|sub_entries| {
-                sub_entries
-                    .flatten()
-                    .any(|e| e.file_type().is_ok_and(|ft| ft.is_dir()))
-            });
+            let inspection = inspect_folder(&path);
 
-            let node_children = if has_child_dir {
+            let node_children = if inspection.has_child_dir {
                 vec![FolderNode {
-                    path: PathBuf::new(),
-                    name: String::new(),
-                    children: Vec::new(),
-                    is_current: false,
                     is_expanded: true,
-                    is_parent_nav: false,
+                    ..FolderNode::default()
                 }]
             } else {
                 Vec::new()
@@ -533,6 +543,8 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
                 is_current,
                 is_expanded: false,
                 is_parent_nav: false,
+                kind: inspection.kind,
+                symlink_target: inspection.symlink_target,
             }
         })
         .collect();
@@ -543,6 +555,90 @@ pub(crate) fn build_children(parent: &Path, current: Option<&Path>) -> Vec<Folde
 
 fn is_dummy_or_empty(children: &[FolderNode]) -> bool {
     children.is_empty() || (children.len() == 1 && children[0].path.as_os_str().is_empty())
+}
+
+/// Everything the folder tree needs to know about a directory, gathered in
+/// one pass: the [`FolderKind`] for icon selection, the resolved target of a
+/// symlink (for display), and whether it has subdirectories (to decide the
+/// expand chevron).
+struct FolderInspection {
+    kind: FolderKind,
+    symlink_target: Option<PathBuf>,
+    has_child_dir: bool,
+}
+
+fn inspect_folder(path: &Path) -> FolderInspection {
+    let is_symlink = media_sort_core::path_utils::is_symlink(path);
+
+    // The full target path is shown next to symlink nodes. canonicalize()
+    // resolves the final destination; read_link() is the fallback for
+    // dangling links (which have no canonical path).
+    let symlink_target = if is_symlink {
+        path.canonicalize()
+            .ok()
+            .or_else(|| std::fs::read_link(path).ok())
+    } else {
+        None
+    };
+
+    // Listing determines both `has_child_dir` and whether the contents can
+    // be read. read_dir follows symlinks, so this reads the link target.
+    let (has_child_dir, listable) = match std::fs::read_dir(path) {
+        Ok(entries) => {
+            let has_child_dir = entries.flatten().any(|entry| {
+                entry
+                    .file_type()
+                    .is_ok_and(|ft| ft.is_dir() || (ft.is_symlink() && entry.path().is_dir()))
+            });
+            (has_child_dir, true)
+        }
+        Err(e) => (false, e.kind() != std::io::ErrorKind::PermissionDenied),
+    };
+
+    let writable = std::fs::metadata(path)
+        .map(|m| is_writable_metadata(&m))
+        .unwrap_or(true);
+
+    let contains_git = path.join(".git").exists();
+
+    // Priority: Locked > Symlink > Git > Default. Git is intentionally the
+    // lowest-priority classification, so a git repo that is also a symlink
+    // (or restricted) shows the more meaningful icon.
+    let kind = if !listable || !writable {
+        FolderKind::Locked
+    } else if is_symlink {
+        FolderKind::Symlink
+    } else if contains_git {
+        FolderKind::Git
+    } else {
+        FolderKind::Default
+    };
+
+    FolderInspection {
+        kind,
+        symlink_target,
+        has_child_dir,
+    }
+}
+
+/// Whether the folder is writable: on unix any write bit (owner/group/other)
+/// counts, on Windows the read-only attribute decides. Follows symlinks, so
+/// a symlinked folder is judged by its target.
+fn is_writable_metadata(metadata: &std::fs::Metadata) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        metadata.permissions().mode() & 0o222 != 0
+    }
+    #[cfg(windows)]
+    {
+        !metadata.permissions().readonly()
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = metadata;
+        true
+    }
 }
 
 fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
@@ -565,6 +661,8 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_else(|| ancestor.display().to_string());
 
+            let inspection = inspect_folder(&ancestor);
+
             Some(FolderNode {
                 path: ancestor,
                 name,
@@ -572,6 +670,8 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: true,
+                kind: inspection.kind,
+                symlink_target: inspection.symlink_target,
             })
         })
         .map(|rootmost| vec![rootmost])
@@ -955,6 +1055,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let child_path = PathBuf::from("/root/sub");
         let found = toggle_expand_recursive(&mut root.children, &child_path, None);
@@ -966,6 +1067,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         root.children = vec![child];
         let found = toggle_expand_recursive(&mut root.children, &child_path, None);
@@ -982,6 +1084,7 @@ mod tests {
             is_current: false,
             is_expanded: true,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let mut children = vec![child];
         let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"), None);
@@ -998,6 +1101,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let child = FolderNode {
             path: PathBuf::from("/root/sub"),
@@ -1006,6 +1110,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let mut children = vec![child];
         let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"), None);
@@ -1030,6 +1135,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
 
         let nav_node = FolderNode {
@@ -1039,6 +1145,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         };
 
         let mut tree = vec![nav_node];
@@ -1066,6 +1173,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         };
 
         let nav_node = FolderNode {
@@ -1075,6 +1183,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         };
 
         let mut tree = vec![nav_node];
@@ -1110,6 +1219,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         };
 
         let mut tree = vec![nav_node];
@@ -1222,6 +1332,130 @@ mod tests {
         std::fs::remove_dir_all(&dir).ok();
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn test_build_children_includes_symlinked_dirs() {
+        let dir = std::env::temp_dir().join(format!("mediasort_bc_symlink_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let real = dir.join("real");
+        let real_sub = real.join("nested");
+        std::fs::create_dir_all(&real_sub).unwrap();
+        let link = dir.join("link");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+
+        let children = build_children(&dir, None);
+        assert_eq!(children.len(), 2);
+
+        let link_node = children.iter().find(|c| c.path == link).unwrap();
+        assert_eq!(link_node.kind, FolderKind::Symlink);
+        assert_eq!(
+            link_node.symlink_target,
+            Some(real.canonicalize().unwrap()),
+            "the resolved final target must be shown"
+        );
+        assert!(
+            !link_node.children.is_empty(),
+            "symlinked dirs with subfolders need the dummy child for the chevron"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_inspect_folder_git_kind() {
+        let dir = std::env::temp_dir().join(format!("mediasort_git_kind_{}", std::process::id()));
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+
+        let inspection = inspect_folder(&dir);
+        assert_eq!(inspection.kind, FolderKind::Git);
+        assert!(inspection.symlink_target.is_none());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_inspect_folder_plain_kind() {
+        let dir = std::env::temp_dir().join(format!("mediasort_plain_kind_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let inspection = inspect_folder(&dir);
+        assert_eq!(inspection.kind, FolderKind::Default);
+        assert!(inspection.symlink_target.is_none());
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_inspect_folder_read_only_is_locked() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = std::env::temp_dir().join(format!("mediasort_locked_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+
+        let inspection = inspect_folder(&dir);
+        assert_eq!(inspection.kind, FolderKind::Locked);
+
+        // Restore writability so the cleanup can remove the directory.
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_inspect_folder_locked_wins_over_git() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = std::env::temp_dir().join(format!("mediasort_locked_git_{}", std::process::id()));
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o555)).unwrap();
+
+        let inspection = inspect_folder(&dir);
+        assert_eq!(inspection.kind, FolderKind::Locked);
+
+        std::fs::set_permissions(&dir, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_inspect_folder_symlink_kind_and_target() {
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_symlink_kind_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let real = dir.join("real");
+        std::fs::create_dir(&real).unwrap();
+        let link = dir.join("link");
+        std::os::unix::fs::symlink(&real, &link).unwrap();
+
+        let inspection = inspect_folder(&link);
+        assert_eq!(inspection.kind, FolderKind::Symlink);
+        assert_eq!(
+            inspection.symlink_target,
+            Some(real.canonicalize().unwrap())
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_inspect_folder_symlink_wins_over_git() {
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_symlink_git_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let repo = dir.join("repo");
+        std::fs::create_dir_all(repo.join(".git")).unwrap();
+        let link = dir.join("link");
+        std::os::unix::fs::symlink(&repo, &link).unwrap();
+
+        let inspection = inspect_folder(&link);
+        assert_eq!(inspection.kind, FolderKind::Symlink);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
     #[test]
     fn test_toggle_expand_parent_nav_idempotency() {
         let dir =
@@ -1237,6 +1471,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         };
 
         let mut tree = vec![FolderNode {
@@ -1246,6 +1481,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: true,
+            ..FolderNode::default()
         }];
 
         toggle_expand_recursive(&mut tree, &dir, Some(&sub));
@@ -1304,6 +1540,7 @@ mod tests {
                     is_current: false,
                     is_expanded: false,
                     is_parent_nav: false,
+                    ..FolderNode::default()
                 },
                 FolderNode {
                     path: p_sub2.clone(),
@@ -1312,11 +1549,13 @@ mod tests {
                     is_current: false,
                     is_expanded: false,
                     is_parent_nav: false,
+                    ..FolderNode::default()
                 },
             ],
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
 
         let node_root2 = FolderNode {
@@ -1326,6 +1565,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
 
         state.folder.folder_tree = vec![node_root1, node_root2];
@@ -1372,10 +1612,12 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             }],
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         state.folder.folder_tree = vec![node];
 
@@ -1402,6 +1644,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let node_root = FolderNode {
             path: p_root.clone(),
@@ -1410,6 +1653,7 @@ mod tests {
             is_current: false,
             is_expanded: true,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         state.folder.folder_tree = vec![node_root];
 
@@ -1437,6 +1681,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let node_mid = FolderNode {
             path: p_mid.clone(),
@@ -1445,6 +1690,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let node_root = FolderNode {
             path: p_root.clone(),
@@ -1453,6 +1699,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         state.folder.folder_tree = vec![node_root];
 
@@ -1483,6 +1730,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let node_sub1 = FolderNode {
             path: p_sub1.clone(),
@@ -1491,6 +1739,7 @@ mod tests {
             is_current: false,
             is_expanded: false,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         let node_root = FolderNode {
             path: p_root.clone(),
@@ -1499,6 +1748,7 @@ mod tests {
             is_current: false,
             is_expanded: true,
             is_parent_nav: false,
+            ..FolderNode::default()
         };
         state.folder.folder_tree = vec![node_root];
 
@@ -1526,6 +1776,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
             FolderNode {
                 path: path_b.clone(),
@@ -1534,6 +1785,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
             FolderNode {
                 path: path_a.clone(),
@@ -1542,6 +1794,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
         ];
 
@@ -1635,10 +1888,12 @@ mod tests {
                 is_current: false,
                 is_expanded: true,
                 is_parent_nav: true,
+                ..FolderNode::default()
             }],
             is_current: true,
             is_expanded: true,
             is_parent_nav: false,
+            ..FolderNode::default()
         }];
 
         state.build_folder_tree();
@@ -1666,6 +1921,7 @@ mod tests {
                 is_current: true,
                 is_expanded: true,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
             FolderNode {
                 path: target_pin.clone(),
@@ -1674,6 +1930,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
         ];
 
@@ -1717,6 +1974,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
             FolderNode {
                 path: p_b.clone(),
@@ -1725,6 +1983,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
         ];
         state.folder.set_selected(p_a.clone(), 0);
@@ -1746,6 +2005,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
             FolderNode {
                 path: p_b.clone(),
@@ -1754,6 +2014,7 @@ mod tests {
                 is_current: false,
                 is_expanded: false,
                 is_parent_nav: false,
+                ..FolderNode::default()
             },
         ];
         state.folder.set_selected(p_b.clone(), 1);

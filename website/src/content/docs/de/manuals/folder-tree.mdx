@@ -6,6 +6,11 @@ description: Navigieren, ein- und ausklappen und Verwalten des Ordnerbaums in Me
 import {
     Folder,
     FolderOpen,
+    FolderRoot,
+    FolderBookmark,
+    FolderGit2,
+    FolderSymlink,
+    FolderLock,
     ArrowUp,
     ChevronRight,
     ChevronDown,
@@ -48,7 +53,7 @@ Beispiel: Wenn Ihr aktueller Ordner `/home/benutzer/Bilder/Urlaub/` ist, zeigt d
   📁 berge/                           (echter Unterordner)
 ```
 
-Ein Klick auf einen Breadcrumb öffnet dieses Verzeichnis als neuen aktuellen Ordner und aktualisiert das Medienraster sowie den Baum entsprechend.
+Ein Klick auf einen Breadcrumb wählt ihn aus (wie jeden anderen Baumknoten). Drücken Sie <Kbd>Enter</Kbd>, um dieses Verzeichnis als neuen aktuellen Ordner zu öffnen und das Medienraster sowie den Baum entsprechend zu aktualisieren.
 
 ## Einen Ordner öffnen
 
@@ -60,13 +65,30 @@ Drücken Sie <Kbd>C</Kbd>, um den „Ordner erstellen"-Dialog zu öffnen. Der ne
 
 ## Ordnersymbole
 
-Der Baum verwendet drei verschiedene Lucide-Icons:
+Der Baum verwendet verschiedene Lucide-Icons, um Ordnertyp und -zustand anzuzeigen:
 
-| Icon                     | Bedeutung                                                    |
-| :----------------------- | :----------------------------------------------------------- |
-| <Folder size={18} />     | Der Ordner ist eingeklappt. Er kann Unterordner enthalten.   |
-| <FolderOpen size={18} /> | Der Ordner ist aufgeklappt. Seine Unterordner sind sichtbar. |
-| <ArrowUp size={18} />    | Breadcrumb. Öffnet das übergeordnete Verzeichnis.            |
+| Icon                         | Bedeutung                                                                 |
+| :--------------------------- | :------------------------------------------------------------------------ |
+| <Folder size={18} />         | Normaler Ordner, eingeklappt. Er kann Unterordner enthalten.              |
+| <FolderOpen size={18} />     | Normaler Ordner, aufgeklappt. Seine Unterordner sind sichtbar.            |
+| <FolderBookmark size={18} /> | Angepinnter Ordner (Lesezeichen-Knoten auf oberster Ebene).               |
+| <FolderRoot size={18} />     | Dateisystemwurzel (`/` unter Linux/macOS, Laufwerkswurzeln unter Windows).|
+| <FolderLock size={18} />     | Eingeschränkter Ordner: Inhalt nicht lesbar oder Ordner schreibgeschützt. |
+| <FolderSymlink size={18} />  | Symbolischer Link auf einen anderen Ordner. Der aufgelöste Zielpfad wird neben dem Namen angezeigt. |
+| <FolderGit2 size={18} />     | Ordner enthält ein Git-Repository (`.git`).                               |
+| <ArrowUp size={18} />        | Breadcrumb (übergeordnetes Verzeichnis des aktuellen oder eines angepinnten Ordners). |
+
+Wenn ein Ordner auf mehrere Typen passt, gilt diese Priorität: angepinnt > Wurzel > gesperrt > Symlink > Git. Das Git-Icon hat bewusst die niedrigste Priorität.
+
+## Symbolische Links
+
+Symbolische Links auf Verzeichnisse erscheinen als normale Baumknoten mit dem <span class="icon-inline"><FolderSymlink size={14} /></span>-Symbol; neben dem Namen wird der vollständige Pfad des endgültigen Ziels angezeigt. Media Sort folgt symbolischen Links transparent:
+
+- **Aufklappen** eines Symlink-Knotens listet den Inhalt des Link-Ziels.
+- **Öffnen** eines Symlinks (Auswahl + <Kbd>Enter</Kbd>) öffnet das aufgelöste Zielverzeichnis, nicht den Link-Pfad.
+- **Verschieben oder Kopieren** von Bildern in einen ausgewählten Symlink-Ordner schreibt direkt in das endgültige Zielverzeichnis.
+
+Die Symlink-Regel für *Dateien* bleibt unverändert: Sortieraktionen lehnen symbolische Links als Dateiquelle weiterhin ab, damit ein Verschieben niemals das Link-Ziel statt des im Raster sichtbaren Eintrags verschiebt.
 
 ## Angepinnte Ordner
 
