@@ -53,5 +53,4 @@ pub struct FolderNode {
 pub struct PinnedFolder {
     pub path: PathBuf,
     pub name: String,
-    pub numeric_shortcut: Option<u8>,
 }

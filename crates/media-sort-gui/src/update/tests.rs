@@ -950,12 +950,10 @@ fn test_pinned_folder_drag_and_drop() {
         media_sort_core::models::PinnedFolder {
             path: path1.clone(),
             name: "p1".into(),
-            numeric_shortcut: None,
         },
         media_sort_core::models::PinnedFolder {
             path: path2.clone(),
             name: "p2".into(),
-            numeric_shortcut: None,
         },
     ];
     state.folder.current_folder = Some(PathBuf::from("/current"));

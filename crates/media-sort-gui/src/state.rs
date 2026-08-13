@@ -104,11 +104,7 @@ impl AppState {
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_else(|| p.clone());
-                PinnedFolder {
-                    path,
-                    name,
-                    numeric_shortcut: None,
-                }
+                PinnedFolder { path, name }
             })
             .collect();
 
@@ -434,7 +430,6 @@ impl AppState {
             let pinned = PinnedFolder {
                 path: folder.clone(),
                 name,
-                numeric_shortcut: None,
             };
             if !self
                 .folder
@@ -473,7 +468,6 @@ impl AppState {
         let pinned = PinnedFolder {
             path: path.to_path_buf(),
             name,
-            numeric_shortcut: None,
         };
         if !self
             .folder
@@ -580,11 +574,7 @@ impl AppState {
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
                     .unwrap_or_else(|| p.clone());
-                PinnedFolder {
-                    path,
-                    name,
-                    numeric_shortcut: None,
-                }
+                PinnedFolder { path, name }
             })
             .collect();
         self.build_folder_tree();
@@ -1170,12 +1160,10 @@ mod tests {
             PinnedFolder {
                 path: PathBuf::from("/pinned1"),
                 name: "p1".into(),
-                numeric_shortcut: None,
             },
             PinnedFolder {
                 path: PathBuf::from("/pinned2"),
                 name: "p2".into(),
-                numeric_shortcut: None,
             },
         ];
 
@@ -1198,12 +1186,10 @@ mod tests {
             PinnedFolder {
                 path: PathBuf::from("/pinned1"),
                 name: "p1".into(),
-                numeric_shortcut: None,
             },
             PinnedFolder {
                 path: PathBuf::from("/pinned2"),
                 name: "p2".into(),
-                numeric_shortcut: None,
             },
         ];
         state.build_folder_tree();
