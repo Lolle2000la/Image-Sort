@@ -2,6 +2,7 @@ use iced::{Element, Subscription, Task};
 
 use crate::message::Message;
 use crate::state::AppState;
+use crate::subscriptions::filesystem::filesystem_subscription;
 use crate::view;
 
 #[cfg(feature = "demo")]
@@ -51,7 +52,7 @@ pub fn subscription(state: &AppState) -> Subscription<Message> {
     Subscription::batch([
         base_subscription(),
         video_subscription(state),
-        crate::subscriptions::filesystem::filesystem_subscription(state),
+        filesystem_subscription(state),
     ])
 }
 

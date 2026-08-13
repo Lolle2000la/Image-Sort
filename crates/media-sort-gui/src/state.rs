@@ -20,12 +20,16 @@ pub use metadata::MetadataPanelState;
 pub use rename_modal::RenameModalState;
 pub use settings_ui::SettingsUiState;
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
 
+use media_sort_backend::filesystem::scanner::scan_media_files;
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::PinnedFolder;
+use media_sort_core::path_utils::paths_equal;
 use media_sort_core::settings::store::SettingsStore;
 
 use folder::tree;
@@ -70,7 +74,7 @@ pub struct AppState {
     /// at the same path: the path list (the identity's key) is unchanged,
     /// so without the bump iced would keep the stale subscription and the
     /// OS watch on the dead inode would never be re-established.
-    pub watch_generation: std::sync::atomic::AtomicU64,
+    pub watch_generation: AtomicU64,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -154,7 +158,7 @@ impl AppState {
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
             status_message: None,
-            watch_generation: std::sync::atomic::AtomicU64::new(0),
+            watch_generation: AtomicU64::new(0),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -219,9 +223,7 @@ impl AppState {
         self.folder.tree_refresh_pending = false;
         self.start_async_folder_tree();
 
-        self.media_grid.scan_receiver = Some(
-            media_sort_backend::filesystem::scanner::scan_media_files(path),
-        );
+        self.media_grid.scan_receiver = Some(scan_media_files(path));
         self.media_grid.pending_select_index = Some(0);
     }
 
@@ -249,9 +251,7 @@ impl AppState {
         // video can't repopulate the video state during the rescan (the
         // previously-selected path would otherwise match a stale mpv frame).
         self.video.select(None);
-        self.media_grid.scan_receiver = Some(
-            media_sort_backend::filesystem::scanner::scan_media_files(&folder),
-        );
+        self.media_grid.scan_receiver = Some(scan_media_files(&folder));
         self.media_grid.pending_select_index = Some(select_idx);
     }
 
@@ -284,9 +284,7 @@ impl AppState {
         });
         self.media_grid.scan_replace = true;
         self.media_grid.scan_buffer.clear();
-        self.media_grid.scan_receiver = Some(
-            media_sort_backend::filesystem::scanner::scan_media_files(folder),
-        );
+        self.media_grid.scan_receiver = Some(scan_media_files(folder));
     }
 
     /// Watcher-driven folder tree rebuild. Coalesces like
@@ -315,8 +313,7 @@ impl AppState {
     /// canonicalized so a symlinked node is watched at its real target
     /// (matching how the tree displays it).
     pub fn watched_directories(&self) -> Vec<PathBuf> {
-        let mut set: std::collections::HashSet<PathBuf> =
-            tree::collect_expanded_paths(&self.folder.folder_tree);
+        let mut set: HashSet<PathBuf> = tree::collect_expanded_paths(&self.folder.folder_tree);
         if let Some(ref cur) = self.folder.current_folder {
             set.insert(cur.clone());
             if let Some(parent) = cur.parent().filter(|p| !p.as_os_str().is_empty()) {
@@ -339,9 +336,9 @@ impl AppState {
     /// needed) — after removal the path can no longer be statted.
     pub fn tree_contains_path(&self, path: &Path) -> bool {
         fn walk(nodes: &[media_sort_core::models::FolderNode], path: &Path) -> bool {
-            nodes.iter().any(|n| {
-                media_sort_core::path_utils::paths_equal(&n.path, path) || walk(&n.children, path)
-            })
+            nodes
+                .iter()
+                .any(|n| paths_equal(&n.path, path) || walk(&n.children, path))
         }
         walk(&self.folder.folder_tree, path)
     }
@@ -351,8 +348,7 @@ impl AppState {
     /// deleted and recreated at the same path — the path list key is
     /// unchanged, but the OS watch on the old inode is dead.
     pub fn bump_watch_generation(&mut self) {
-        self.watch_generation
-            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.watch_generation.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn build_folder_tree(&mut self) {

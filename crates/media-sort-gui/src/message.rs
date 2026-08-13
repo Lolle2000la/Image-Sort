@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::Instant;
 
+use media_sort_backend::filesystem::watcher::FileSystemEvent;
 use media_sort_core::settings::keybindings::Key;
 use media_sort_core::settings::store::SettingsStore;
 
@@ -39,7 +40,7 @@ pub enum Message {
     /// folder-tree node). Keeps the media grid and the folder tree in sync
     /// with changes made outside the app.
     #[serde(skip_deserializing)]
-    FileSystemChanged(Vec<media_sort_backend::filesystem::watcher::FileSystemEvent>),
+    FileSystemChanged(Vec<FileSystemEvent>),
 
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
