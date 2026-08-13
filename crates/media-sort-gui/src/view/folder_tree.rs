@@ -138,9 +138,7 @@ fn render_node<'a>(
         row_content = row_content.push(badge);
     }
 
-    let folder_action = if node.is_parent_nav {
-        FolderMessage::Open(node_path.clone())
-    } else if depth == 0 && root_index > 0 {
+    let folder_action = if depth == 0 && root_index > 0 {
         FolderMessage::SelectedPinned(node_path.clone(), current_flat_idx)
     } else {
         FolderMessage::Selected(node_path.clone(), current_flat_idx)
