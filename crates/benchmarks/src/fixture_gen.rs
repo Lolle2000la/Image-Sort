@@ -1,6 +1,12 @@
 use std::path::{Path, PathBuf};
 
 use image::{DynamicImage, ExtendedColorType, ImageReader};
+use rayon::prelude::*;
+
+/// Bump when fixture generation parameters change so stale caches are
+/// detected via the VERSION marker and regenerated (this also invalidates
+/// the CI fixtures cache, which is keyed on this file's hash).
+const FIXTURE_VERSION: u32 = 1;
 
 /// All 15 formats in image 0.25 `default-formats`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -74,8 +80,26 @@ impl BenchFormat {
     }
 }
 
+/// Fixtures live under the workspace `target/` dir: persistent across local
+/// runs, restorable by the CI fixtures cache, and never committed.
 fn fixture_dir() -> PathBuf {
-    std::env::temp_dir().join("media_sort_format_fixtures")
+    PathBuf::from(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../target/media-sort-fixtures"
+    ))
+}
+
+fn cache_valid() -> bool {
+    std::fs::read_to_string(fixture_dir().join("VERSION"))
+        .map(|v| v.trim().parse::<u32>() == Ok(FIXTURE_VERSION))
+        .unwrap_or(false)
+}
+
+fn write_version() {
+    let _ = std::fs::write(
+        fixture_dir().join("VERSION"),
+        format!("{FIXTURE_VERSION}\n"),
+    );
 }
 
 pub fn fixture_path(fmt: BenchFormat) -> PathBuf {
@@ -96,38 +120,88 @@ fn source_image() -> DynamicImage {
 
 pub fn ensure_all_fixtures() -> Vec<(BenchFormat, PathBuf, DynamicImage)> {
     let dir = fixture_dir();
+    if dir.exists() && !cache_valid() {
+        let _ = std::fs::remove_dir_all(&dir);
+    }
     std::fs::create_dir_all(&dir).ok();
 
     let source = source_image();
     let rgba = source.to_rgba8();
     let (src_w, src_h) = rgba.dimensions();
 
-    let mut results = Vec::new();
-
-    for &fmt in BenchFormat::ALL {
-        let path = fixture_path(fmt);
-
-        // Regenerate JPEG to ensure quality=92
-        if fmt == BenchFormat::Jpeg {
-            let _ = std::fs::remove_file(&path);
-        }
-
-        if !path.exists() {
-            println!("generating fixture for {fmt:?}...");
-            if let Err(e) = generate_fixture(fmt, &path, &source, (&rgba, src_w, src_h)) {
+    // Generate in parallel: every format is independent and the expensive
+    // encoders (AVIF via ffmpeg, WebP, the float-converting EXR/HDR, ...)
+    // otherwise serialize into a multi-minute single-threaded loop. Writes
+    // go through a unique temp + rename so concurrent processes (nextest
+    // runs one process per test) cannot corrupt a shared fixture; on a
+    // cache hit nothing is written at all.
+    let generated: Vec<(BenchFormat, PathBuf)> = BenchFormat::ALL
+        .par_iter()
+        .filter_map(|&fmt| {
+            let path = fixture_path(fmt);
+            if !path.exists()
+                && let Err(e) = regenerate(fmt, &path, &source, (&rgba, src_w, src_h))
+            {
                 eprintln!("  SKIP {fmt:?}: {e}");
-                continue;
+                return None;
             }
-        }
-        match decode_fixture(&path) {
-            Ok(img) => results.push((fmt, path, img)),
-            Err(e) => {
-                eprintln!("  SKIP {fmt:?} decode check failed: {e}");
-            }
-        }
+            Some((fmt, path))
+        })
+        .collect();
+
+    if !cache_valid() {
+        write_version();
     }
 
-    results
+    // Decode check in parallel as well.
+    generated
+        .into_par_iter()
+        .filter_map(|(fmt, path)| match decode_fixture(&path) {
+            Ok(img) => Some((fmt, path, img)),
+            Err(e) => {
+                eprintln!("  SKIP {fmt:?} decode check failed: {e}");
+                None
+            }
+        })
+        .collect()
+}
+
+/// Generates `fmt` into a per-process temp path and atomically promotes it
+/// onto `path`. Losing the promotion race is not an error: the content is
+/// deterministic, so whichever process wins writes identical bytes.
+fn regenerate(
+    fmt: BenchFormat,
+    path: &Path,
+    source: &DynamicImage,
+    (rgba, src_w, src_h): (&image::RgbaImage, u32, u32),
+) -> Result<(), String> {
+    let tmp = unique_temp_path(path);
+    if let Err(e) = generate_fixture(fmt, &tmp, source, (rgba, src_w, src_h)) {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(e);
+    }
+    match std::fs::rename(&tmp, path) {
+        Ok(()) => Ok(()),
+        Err(_) if path.exists() => {
+            let _ = std::fs::remove_file(&tmp);
+            Ok(())
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(&tmp);
+            Err(format!("promote: {e}"))
+        }
+    }
+}
+
+fn unique_temp_path(path: &Path) -> PathBuf {
+    let stem = path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("fixture");
+    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("tmp");
+    // Keep the real extension so format-guessing writers (image::save_buffer)
+    // still infer the codec from the temp path.
+    path.with_file_name(format!("{stem}.{}.{ext}", std::process::id()))
 }
 
 fn generate_fixture(
@@ -137,7 +211,7 @@ fn generate_fixture(
     (rgba, src_w, src_h): (&image::RgbaImage, u32, u32),
 ) -> Result<(), String> {
     match fmt {
-        BenchFormat::Jpeg => generate_jpeg_quality92(path, source)?,
+        BenchFormat::Jpeg => generate_jpeg_quality92(path, rgba)?,
         BenchFormat::Png => save_as(path, source, image::ImageFormat::Png)?,
         BenchFormat::Gif => {
             let small = source.resize(1024, 1024, image::imageops::FilterType::Lanczos3);
@@ -178,13 +252,20 @@ fn save_raw(path: &Path, data: &[u8], w: u32, h: u32, ct: ExtendedColorType) -> 
     image::save_buffer(path, data, w, h, ct).map_err(|e| format!("{e}"))
 }
 
-fn generate_jpeg_quality92(path: &Path, source: &DynamicImage) -> Result<(), String> {
-    let mut buf =
-        std::io::BufWriter::new(std::fs::File::create(path).map_err(|e| format!("create: {e}"))?);
-    let enc = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut buf, 92);
-    source
-        .write_with_encoder(enc)
-        .map_err(|e| format!("jpeg q92: {e}"))
+fn generate_jpeg_quality92(path: &Path, rgba: &image::RgbaImage) -> Result<(), String> {
+    // turbojpeg (SIMD, hardware-scaled) replaces image's JpegEncoder, the
+    // slowest encoder in the fixture set on the 5260x3511 source image.
+    let (w, h) = rgba.dimensions();
+    let image = turbojpeg::Image {
+        pixels: rgba.as_raw().as_slice(),
+        width: w as usize,
+        pitch: (w * 4) as usize,
+        height: h as usize,
+        format: turbojpeg::PixelFormat::RGBA,
+    };
+    let jpeg = turbojpeg::compress(image, 92, turbojpeg::Subsamp::Sub2x2)
+        .map_err(|e| format!("turbojpeg: {e}"))?;
+    std::fs::write(path, jpeg).map_err(|e| format!("write jpeg: {e}"))
 }
 
 fn generate_hdr(path: &Path, rgba: &image::RgbaImage, w: u32, h: u32) -> Result<(), String> {
@@ -267,7 +348,9 @@ fn generate_avif_ffmpeg(path: &Path, source: &DynamicImage) -> Result<(), String
         return Err("ffmpeg not found on PATH".to_string());
     }
 
-    let temp_png = path.with_extension("_temp.png");
+    // The temp PNG derives from the per-process temp path so concurrent
+    // processes generating the same fixture never share an intermediate.
+    let temp_png = path.with_extension(format!("png.{}", std::process::id()));
     source
         .save_with_format(&temp_png, image::ImageFormat::Png)
         .map_err(|e| format!("temp png: {e}"))?;
@@ -322,28 +405,25 @@ mod tests {
     fn test_generate_and_decode_all_format_fixtures() {
         let results = ensure_all_fixtures();
         assert!(!results.is_empty(), "should have at least one fixture");
-        for (_fmt, path, _img) in &results {
-            let decoded = decode_fixture(path);
-            assert!(
-                decoded.is_ok(),
-                "failed to decode {:?}: {:?}",
-                path,
-                decoded.err()
-            );
-        }
+        // ensure_all_fixtures already decode-checks every fixture it returns.
         println!("Generated and verified {} fixtures", results.len());
     }
 
     #[test]
     fn test_jpeg_quality_92_roundtrip() {
-        let fmt = BenchFormat::Jpeg;
-        let path = fixture_path(fmt);
-        std::fs::remove_file(&path).ok();
+        // Regenerate the JPEG from scratch (bypassing the shared cache) into
+        // a process-private path so concurrent test processes cannot
+        // interfere with the cached fixture.
+        let tmp = std::env::temp_dir().join(format!(
+            "mediasort_jpeg92_roundtrip_{}.jpg",
+            std::process::id()
+        ));
         let source = source_image();
         let rgba = source.to_rgba8();
         let (sw, sh) = rgba.dimensions();
-        generate_jpeg_quality92(&path, &source).unwrap();
-        let decoded = decode_fixture(&path).unwrap();
+        generate_jpeg_quality92(&tmp, &rgba).unwrap();
+        let decoded = decode_fixture(&tmp).unwrap();
         assert_eq!(decoded.dimensions(), (sw, sh));
+        let _ = std::fs::remove_file(&tmp);
     }
 }

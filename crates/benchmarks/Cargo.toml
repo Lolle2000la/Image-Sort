@@ -20,6 +20,7 @@ kamadak-exif.workspace = true
 webp = "0.3"
 bytemuck = "1"
 ico = "0.5"
+rayon.workspace = true
 
 # Mirrors the backend: native AVIF decode everywhere except i686-pc-windows-msvc.
 [target.'cfg(not(all(target_os = "windows", target_arch = "x86")))'.dependencies]

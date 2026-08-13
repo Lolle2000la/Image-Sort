@@ -183,6 +183,14 @@ jobs:
         with:
           tool: nextest
 
+      - name: Cache Bench Fixtures
+        uses: actions/cache@v6
+        with:
+          path: target/media-sort-fixtures
+          # Keyed on the generator + the source image: any change misses and
+          # regenerates. The code also self-validates via the VERSION marker.
+          key: ${{ matrix.os }}-fixtures-${{ hashFiles('crates/benchmarks/src/fixture_gen.rs', 'resources/MockState/mock 1.jpg') }}
+
       - name: Run Workspace Tests
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
