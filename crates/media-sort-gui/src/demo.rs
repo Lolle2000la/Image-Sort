@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use rayon::prelude::*;
 
 use iced_automation::{AutomationStateTrait, DemoApp};
 
@@ -151,10 +150,8 @@ pub fn try_headless_export(cli: &crate::Cli) -> Option<Result<(), Box<dyn std::e
                 })
                 .collect();
 
-            // Note: rayon requires items to be `Send`, but `Box<dyn std::error::Error>`
-            // is not, so errors are stringified here and re-boxed after collecting.
             let results: Vec<Result<(), String>> = combos
-                .par_iter()
+                .iter()
                 .map(|&(path, ref output_video_path, locale)| {
                     tracing::info!(
                         "Rendering demo [{locale}]: {} -> {:?}",
@@ -235,8 +232,8 @@ pub fn export_demo_video_with_locale(
         window_height: DEFAULT_HEIGHT as f32,
         style: iced_automation::AutomationStyle::default(),
         // The locale is passed explicitly through the settings (via
-        // `configure_settings_for_demo`), which keeps parallel renders
-        // race-free — no process-wide environment mutation needed.
+        // `configure_settings_for_demo`) — no process-wide environment
+        // mutation needed.
         locale: Some(locale.to_string()),
     };
 
@@ -247,7 +244,7 @@ pub fn export_demo_video_with_locale(
     // (one per rendered frame). The app's real-time tick subscription also
     // runs inside the emulator, so real-time advancement must be disabled —
     // otherwise wall-clock time fast-forwards the flow relative to the frames,
-    // and slow parallel renders complete after only a handful of frames.
+    // and slow renders complete after only a handful of frames.
     if let Some(automation) = bootstrap.state.automation_mut().as_mut() {
         automation.real_time = false;
     }

@@ -201,14 +201,14 @@ Transient user feedback (refused drops, update failures, create-folder errors) g
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |
 | `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation), `filesystem.rs` (OS watcher subscription, see the Filesystem watcher section) |
 
-### Demo video export (parallel rendering)
+### Demo video export
 
-`media-sort-gui --export` renders all flows × locales in parallel via rayon. To stay race-free:
+`media-sort-gui --export` renders all flows × locales **sequentially** (parallel rayon rendering was reverted — every render is CPU/wgpu-bound and parallel runs contend to the point of being slower overall). Rendering is sequential, but these rules still apply:
 
 - **Locale** is passed explicitly: `DemoConfig.locale` → `DemoApp::configure_settings_for_demo()` hook → `settings.general.locale`. Never mutate `LANG`/`LC_ALL` env vars for this — they are process-global.
 - **Fixture dirs** are unique per render (`demo_<pid>_<counter>` in temp), created in `init_demo`.
 - **Automation clock**: `AutomationState.real_time` must be `false` for headless export so flows advance only on deterministic virtual ticks (1 per frame). Interactive demos keep `real_time = true`. If both clocks drive the automation, wall-clock load fast-forwards steps relative to rendered frames.
-- **Virtual cursor**: `VIRTUAL_CURSOR` (mirrors `AutomationState.virtual_cursor` for the headless render loop's hover drawing) is `thread_local!`. Each rayon render stays on one worker thread; a process-global cursor makes hover states flicker as renders overwrite each other.
+- **Virtual cursor**: `VIRTUAL_CURSOR` (mirrors `AutomationState.virtual_cursor` for the headless render loop's hover drawing) is `thread_local!`.
 - Flow specs reference fixture files by absolute name (e.g. `$DEMO_ROOT/mock 5.png`) — when renumbering/renaming `resources/MockState/`, update `resources/demo_flows/*.json` accordingly.
 
 ### website (Astro + Starlight)

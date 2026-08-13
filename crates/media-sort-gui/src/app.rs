@@ -73,8 +73,8 @@ fn video_subscription(state: &AppState) -> Subscription<Message> {
 }
 
 /// Like [`subscription`], but without the video worker. The headless demo
-/// export renders many app instances in parallel and never plays videos, so
-/// skipping the worker avoids spawning one libmpv `MpvContext` per render.
+/// export never plays videos, so skipping the worker avoids spawning one
+/// libmpv `MpvContext` per render.
 #[cfg(feature = "demo")]
 pub(crate) fn demo_subscription(_state: &AppState) -> Subscription<Message> {
     base_subscription()
