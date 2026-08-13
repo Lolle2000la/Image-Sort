@@ -281,12 +281,6 @@ async fn collect_capped<S: ChunkSource>(
     Ok(bytes)
 }
 
-/// Unique temp path for a file that will be renamed onto `final_path`.
-/// Shared with the settings store via `media-sort-core`'s `path_utils`. The
-/// temp deliberately does NOT carry the `.nupkg` extension, so
-/// `pre_startup_verify_packages` never mistakes a leftover temp for an
-/// unverified staged package.
-
 /// Removes only the temp artifacts this run created, leaving previously
 /// staged PGP-verified packages alone. A no-op when a download aborted
 /// before the write. The final `package_path`/`sig_path` are never

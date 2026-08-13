@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-
 use iced_automation::{AutomationStateTrait, DemoApp};
 
 use crate::message::{FolderMessage, Message};
