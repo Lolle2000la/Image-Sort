@@ -601,6 +601,40 @@ fn test_rename_entry_via_symlinked_folder_alias() {
     std::fs::remove_dir_all(&base).ok();
 }
 
+#[cfg(unix)]
+#[test]
+fn test_rename_entry_symlink_source_refused() {
+    // The handler must not pre-canonicalize symlink sources: resolving the
+    // link would bypass RenameAction's SourceIsSymlink refusal and rename
+    // the link's TARGET.
+    let base =
+        std::env::temp_dir().join(format!("mediasort_rename_symlink_{}", std::process::id()));
+    std::fs::create_dir_all(&base).unwrap();
+    let victim = base.join("victim.jpg");
+    std::fs::write(&victim, b"do not touch").unwrap();
+    let link = base.join("link.jpg");
+    std::os::unix::fs::symlink(&victim, &link).unwrap();
+
+    let mut state = AppState::new(SettingsStore::default());
+    state.open_folder(&base);
+    drain_async_scan(&mut state);
+
+    let _task = update(
+        &mut state,
+        Message::Media(MediaMessage::RenameEntry(
+            link.clone(),
+            "renamed".to_string(),
+        )),
+    );
+
+    assert!(victim.exists(), "the symlink target must be untouched");
+    assert_eq!(std::fs::read(&victim).unwrap(), b"do not touch");
+    assert!(link.exists());
+    assert!(!state.history.can_undo());
+
+    std::fs::remove_dir_all(&base).ok();
+}
+
 #[test]
 fn test_rename_entry_target_exists_is_noop() {
     let root =

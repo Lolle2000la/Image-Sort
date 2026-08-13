@@ -64,8 +64,14 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             // Entries are scanned from the canonicalized current folder, so
             // the retain comparison must use the canonicalized path. Resolve
             // BEFORE deleting: afterwards canonicalize() fails because the
-            // file is gone.
-            let canonical_path = path.canonicalize().unwrap_or_else(|_| path.clone());
+            // file is gone. Symlink sources are deliberately NOT resolved —
+            // resolving would bypass the trash layer's symlink refusal and
+            // act on the link's target.
+            let canonical_path = if media_sort_core::path_utils::is_symlink(&path) {
+                path.clone()
+            } else {
+                path.canonicalize().unwrap_or(path)
+            };
             match media_sort_backend::filesystem::trash::delete_to_trash(&canonical_path) {
                 Ok(handle) => {
                     let action = media_sort_core::actions::delete_action::DeleteAction::new(
@@ -131,8 +137,14 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             // /private/var) would otherwise miss the entry and leave the
             // stale path in the grid. Resolve BEFORE the rename: after
             // execute() the old path no longer exists and canonicalize()
-            // would fail.
-            let canonical_path = path.canonicalize().unwrap_or_else(|_| path.clone());
+            // would fail. Symlink sources are deliberately NOT resolved —
+            // resolving would bypass RenameAction's SourceIsSymlink refusal
+            // and rename the link's target.
+            let canonical_path = if media_sort_core::path_utils::is_symlink(&path) {
+                path.clone()
+            } else {
+                path.canonicalize().unwrap_or(path)
+            };
             match RenameAction::new(&canonical_path, &new_name) {
                 Ok(mut action) => {
                     if let Err(e) = action.execute() {

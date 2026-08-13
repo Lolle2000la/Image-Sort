@@ -145,6 +145,7 @@ fn render_node<'a>(
         row_content = row_content.push(
             text(format!("→ {}", target.display()))
                 .size(10)
+                .wrapping(iced::widget::text::Wrapping::None)
                 .color(Color::from_rgb(0.6, 0.6, 0.6)),
         );
     }
