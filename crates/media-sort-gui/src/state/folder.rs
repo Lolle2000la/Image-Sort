@@ -1,3 +1,5 @@
+pub(crate) mod tree;
+
 use std::fmt;
 use std::path::PathBuf;
 use std::sync::mpsc;
@@ -58,7 +60,7 @@ impl FolderState {
     pub fn collect_visible_folders(&mut self) -> Vec<PathBuf> {
         if self.visible_folders_cache.is_empty() && !self.folder_tree.is_empty() {
             let mut list = Vec::new();
-            super::collect_visible_folders_recursive(&self.folder_tree, &mut list);
+            tree::collect_visible_folders_recursive(&self.folder_tree, &mut list);
             self.visible_folders_cache = list;
         }
         self.visible_folders_cache.clone()
@@ -136,10 +138,10 @@ impl FolderState {
         let Some(selected) = self.selected_folder.clone() else {
             return;
         };
-        if let Some(expanded) = super::find_node_expanded(&self.folder_tree, &selected) {
+        if let Some(expanded) = tree::find_node_expanded(&self.folder_tree, &selected) {
             if expanded {
                 if let Some(first_child_path) =
-                    super::first_visible_child(&self.folder_tree, &selected)
+                    tree::first_visible_child(&self.folder_tree, &selected)
                 {
                     let visible = self.collect_visible_folders();
                     let idx = self.selected_folder_idx.unwrap_or(0);
@@ -156,7 +158,7 @@ impl FolderState {
                     }
                 }
             } else {
-                super::set_expand_recursive(
+                tree::set_expand_recursive(
                     &mut self.folder_tree,
                     &selected,
                     true,
@@ -172,9 +174,9 @@ impl FolderState {
         let Some(selected) = self.selected_folder.clone() else {
             return;
         };
-        if let Some(expanded) = super::find_node_expanded(&self.folder_tree, &selected) {
+        if let Some(expanded) = tree::find_node_expanded(&self.folder_tree, &selected) {
             if expanded {
-                super::set_expand_recursive(
+                tree::set_expand_recursive(
                     &mut self.folder_tree,
                     &selected,
                     false,
@@ -182,7 +184,7 @@ impl FolderState {
                 );
                 self.invalidate_visible_folders_cache();
             } else if let Some(parent) = selected.parent()
-                && super::find_node_expanded(&self.folder_tree, parent).is_some()
+                && tree::find_node_expanded(&self.folder_tree, parent).is_some()
             {
                 let visible = self.collect_visible_folders();
                 if let Some(old_idx) = self.selected_folder_idx

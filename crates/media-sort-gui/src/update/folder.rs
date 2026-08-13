@@ -81,8 +81,8 @@ pub fn handle_folder_message(state: &mut AppState, msg: FolderMessage) -> Task<M
             state.folder.set_selected(path, idx);
             Task::none()
         }
-        FolderMessage::ToggleExpand(path) => {
-            state.toggle_folder_expand(&path);
+        FolderMessage::ToggleExpand(path, idx) => {
+            state.toggle_folder_expand(&path, idx);
             Task::none()
         }
         FolderMessage::PinSelected => {

@@ -61,12 +61,28 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
         }
         MediaMessage::DeleteEntry(path) => {
             let index_to_select = state.media_grid.selected_index.unwrap_or(0);
-            match media_sort_backend::filesystem::trash::delete_to_trash(&path) {
+            // Entries are scanned from the canonicalized current folder, so
+            // the retain comparison must use the canonicalized path. Resolve
+            // BEFORE deleting: afterwards canonicalize() fails because the
+            // file is gone. Symlink sources are deliberately NOT resolved —
+            // resolving would bypass the trash layer's symlink refusal and
+            // act on the link's target.
+            let canonical_path = if media_sort_core::path_utils::is_symlink(&path) {
+                path.clone()
+            } else {
+                path.canonicalize().unwrap_or(path)
+            };
+            match media_sort_backend::filesystem::trash::delete_to_trash(&canonical_path) {
                 Ok(handle) => {
-                    let action =
-                        media_sort_core::actions::delete_action::DeleteAction::new(&path, handle);
+                    let action = media_sort_core::actions::delete_action::DeleteAction::new(
+                        &canonical_path,
+                        handle,
+                    );
                     state.history.push_executed(Box::new(action));
-                    state.media_grid.entries.retain(|e| e.path != path);
+                    state
+                        .media_grid
+                        .entries
+                        .retain(|e| e.path != canonical_path);
                     state.media_grid.rebuild_lower_names();
                     return super::tasks::select_and_load_entry(state, index_to_select);
                 }
@@ -115,7 +131,21 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
             Task::none()
         }
         MediaMessage::RenameEntry(path, new_name) => {
-            match RenameAction::new(&path, &new_name) {
+            // Entries are scanned from the canonicalized current folder, so
+            // the position lookup must compare against the canonicalized
+            // source path — a non-canonical alias (e.g. macOS /var vs
+            // /private/var) would otherwise miss the entry and leave the
+            // stale path in the grid. Resolve BEFORE the rename: after
+            // execute() the old path no longer exists and canonicalize()
+            // would fail. Symlink sources are deliberately NOT resolved —
+            // resolving would bypass RenameAction's SourceIsSymlink refusal
+            // and rename the link's target.
+            let canonical_path = if media_sort_core::path_utils::is_symlink(&path) {
+                path.clone()
+            } else {
+                path.canonicalize().unwrap_or(path)
+            };
+            match RenameAction::new(&canonical_path, &new_name) {
                 Ok(mut action) => {
                     if let Err(e) = action.execute() {
                         tracing::error!("Rename failed: {e}");
@@ -123,8 +153,11 @@ pub fn handle_media_message(state: &mut AppState, msg: MediaMessage) -> Task<Mes
                         state.rename.error = None;
                         let new_path = action.new_path().to_path_buf();
                         state.history.push_executed(Box::new(action));
-                        if let Some(pos) =
-                            state.media_grid.entries.iter().position(|e| e.path == path)
+                        if let Some(pos) = state
+                            .media_grid
+                            .entries
+                            .iter()
+                            .position(|e| e.path == canonical_path)
                         {
                             state.media_grid.entries[pos].path = new_path.clone();
                             state.media_grid.entries[pos].file_name = new_path

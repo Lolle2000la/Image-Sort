@@ -49,11 +49,15 @@ fn render_node<'a>(
     *running_idx += 1;
 
     let icon = if node.is_parent_nav {
-        folder_icon::arrow_up_icon()
-    } else if node.is_expanded && !node.children.is_empty() {
-        folder_icon::open_folder_icon()
+        if node.path.parent().is_none() {
+            folder_icon::root_icon()
+        } else {
+            folder_icon::arrow_up_icon()
+        }
+    } else if depth == 0 && root_index > 0 {
+        folder_icon::bookmark_icon()
     } else {
-        folder_icon::folder_icon()
+        folder_icon::node_icon(node)
     };
 
     let node_path = node.path.clone();
@@ -73,6 +77,7 @@ fn render_node<'a>(
         )
         .on_press(Message::Folder(FolderMessage::ToggleExpand(
             node_path.clone(),
+            current_flat_idx,
         )))
         .style(iced::widget::button::text)
         .padding(iced::Padding::new(2.0))
@@ -133,6 +138,17 @@ fn render_node<'a>(
             .wrapping(iced::widget::text::Wrapping::None)
             .shaping(iced::widget::text::Shaping::Advanced),
     );
+
+    // Symlinked folders show the full path of their final destination so it
+    // is clear where the folder actually points.
+    if let Some(target) = &node.symlink_target {
+        row_content = row_content.push(
+            text(format!("→ {}", target.display()))
+                .size(10)
+                .wrapping(iced::widget::text::Wrapping::None)
+                .color(Color::from_rgb(0.6, 0.6, 0.6)),
+        );
+    }
 
     if let Some(badge) = shortcut_badge {
         row_content = row_content.push(badge);
