@@ -24,6 +24,7 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
+use std::time::{Duration, Instant};
 
 use media_sort_backend::filesystem::scanner::scan_media_files;
 use media_sort_core::history::History;
@@ -42,7 +43,7 @@ use folder::tree;
 #[derive(Debug, Clone)]
 pub struct StatusMessage {
     pub text: String,
-    pub expires_at: std::time::Instant,
+    pub expires_at: Instant,
 }
 
 #[cfg_attr(feature = "demo", iced_automation::state(crate::message::Message))]
@@ -75,6 +76,15 @@ pub struct AppState {
     /// so without the bump iced would keep the stale subscription and the
     /// OS watch on the dead inode would never be re-established.
     pub watch_generation: AtomicU64,
+
+    /// Earliest `Instant` at which the config file may be polled for
+    /// external changes (`SettingsStore::reload_from_disk`). The tick
+    /// handler re-checks once per second so a file read + TOML parse is
+    /// not performed on every 16 ms tick. Initialized one second after
+    /// construction so startup ticks (and tests) never poll immediately.
+    /// Omitted from demo builds (headless renders must stay deterministic).
+    #[cfg(not(feature = "demo"))]
+    pub settings_reload_at: Instant,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -159,6 +169,8 @@ impl AppState {
             drag_drop: DragDropState::new(),
             status_message: None,
             watch_generation: AtomicU64::new(0),
+            #[cfg(not(feature = "demo"))]
+            settings_reload_at: Instant::now() + Duration::from_secs(1),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -175,7 +187,7 @@ impl AppState {
     pub fn set_status(&mut self, text: String) {
         self.status_message = Some(StatusMessage {
             text,
-            expires_at: std::time::Instant::now() + std::time::Duration::from_secs(5),
+            expires_at: Instant::now() + Duration::from_secs(5),
         });
     }
 
@@ -540,6 +552,42 @@ impl AppState {
             .iter()
             .map(|p| p.path.display().to_string())
             .collect();
+    }
+
+    /// Re-derives the pinned-folder UI list from the settings store after
+    /// an external settings reload adopted changed pinned folders. In-app
+    /// pin operations write both sides, so a mismatch can only come from
+    /// another instance.
+    #[cfg(not(feature = "demo"))]
+    pub fn sync_pinned_folders_from_settings(&mut self) {
+        let current: Vec<String> = self
+            .folder
+            .pinned_folders
+            .iter()
+            .map(|p| p.path.display().to_string())
+            .collect();
+        if current == self.settings.pinned_folders.paths {
+            return;
+        }
+        self.folder.pinned_folders = self
+            .settings
+            .pinned_folders
+            .paths
+            .iter()
+            .map(|p| {
+                let path = PathBuf::from(p);
+                let name = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().to_string())
+                    .unwrap_or_else(|| p.clone());
+                PinnedFolder {
+                    path,
+                    name,
+                    numeric_shortcut: None,
+                }
+            })
+            .collect();
+        self.build_folder_tree();
     }
 }
 

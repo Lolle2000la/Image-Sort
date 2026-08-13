@@ -11,6 +11,7 @@ use media_sort_core::models::MediaEntry;
 use media_sort_core::settings::keybindings::Key;
 use media_sort_core::settings::store::SettingsStore;
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 /// Drive `poll_background_channels` until the media scan started by
 /// `open_folder` (or `start_async_media_scan` via Undo/Redo) finishes.
@@ -21,10 +22,10 @@ use std::path::PathBuf;
 /// enough to absorb scheduler contention under parallel test execution
 /// where every test spawns its own scanner thread).
 fn drain_async_scan(state: &mut AppState) {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
-    while state.media_grid.scan_receiver.is_some() && std::time::Instant::now() < deadline {
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while state.media_grid.scan_receiver.is_some() && Instant::now() < deadline {
         let _ = poll_background_channels(state);
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        std::thread::sleep(Duration::from_millis(1));
     }
     assert!(
         state.media_grid.scan_receiver.is_none(),
@@ -36,12 +37,12 @@ fn drain_async_scan(state: &mut AppState) {
 /// by `open_folder` (or a watcher-driven refresh) finishes, including any
 /// chained `tree_refresh_pending` rebuilds.
 fn drain_folder_tree(state: &mut AppState) {
-    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    let deadline = Instant::now() + Duration::from_secs(10);
     while (state.folder.folder_tree_receiver.is_some() || state.folder.tree_refresh_pending)
-        && std::time::Instant::now() < deadline
+        && Instant::now() < deadline
     {
         let _ = poll_background_channels(state);
-        std::thread::sleep(std::time::Duration::from_millis(1));
+        std::thread::sleep(Duration::from_millis(1));
     }
     assert!(
         state.folder.folder_tree_receiver.is_none() && !state.folder.tree_refresh_pending,
@@ -930,7 +931,7 @@ fn test_tick_should_exit_saves_settings() {
     state.settings.general.theme = "Dark".to_string();
     state.should_exit = true;
 
-    let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+    let _task = update(&mut state, Message::Tick(Instant::now()));
 
     let data = std::fs::read_to_string(&tmp).unwrap();
     let reloaded: SettingsStore = toml::from_str(&data).unwrap();
@@ -1097,7 +1098,7 @@ fn test_update_open_url() {
 fn test_update_tick_should_not_exit_initially() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(!state.should_exit);
-    let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+    let _task = update(&mut state, Message::Tick(Instant::now()));
     assert!(!state.should_exit);
 }
 
@@ -1111,12 +1112,88 @@ fn test_update_tick_should_exit() {
     let mut state = AppState::new(settings);
     state.settings.general.theme = "Dark".to_string();
     state.should_exit = true;
-    let _task = update(&mut state, Message::Tick(std::time::Instant::now()));
+    let _task = update(&mut state, Message::Tick(Instant::now()));
     assert!(state.should_exit);
 
     let data = std::fs::read_to_string(&tmp).unwrap();
     let reloaded: SettingsStore = toml::from_str(&data).unwrap();
     assert_eq!(reloaded.general.theme, "Dark");
+
+    let _ = std::fs::remove_file(&tmp);
+}
+
+#[test]
+fn test_tick_applies_external_settings_changes() {
+    let tmp = std::env::temp_dir().join(format!("mediasort_tick_reload_{}", std::process::id()));
+    let _ = std::fs::remove_file(&tmp);
+    let settings = SettingsStore {
+        custom_path: Some(tmp.clone()),
+        ..SettingsStore::default()
+    };
+    let mut state = AppState::new(settings);
+    state.settings.save().unwrap();
+
+    // A second instance changes theme, locale and a pinned folder.
+    let mut other: SettingsStore = toml::from_str(&std::fs::read_to_string(&tmp).unwrap()).unwrap();
+    other.custom_path = Some(tmp.clone());
+    other.general.theme = "Dark".to_string();
+    other.general.locale = Some("de".to_string());
+    other.pinned_folders.paths = vec!["/tmp/pinned".to_string()];
+    other.save().unwrap();
+
+    // Force the once-per-second reload poll to run on the next tick.
+    state.settings_reload_at = Instant::now();
+    let _task = update(&mut state, Message::Tick(Instant::now()));
+
+    assert_eq!(state.settings.general.theme, "Dark");
+    assert_eq!(state.l10n.locale(), "de");
+    assert_eq!(
+        state.settings.pinned_folders.paths,
+        vec!["/tmp/pinned".to_string()]
+    );
+    assert_eq!(state.folder.pinned_folders.len(), 1);
+    assert_eq!(
+        state.folder.pinned_folders[0].path,
+        PathBuf::from("/tmp/pinned")
+    );
+
+    let _ = std::fs::remove_file(&tmp);
+}
+
+#[test]
+fn test_tick_reload_preserves_unflushed_local_change() {
+    let tmp = std::env::temp_dir().join(format!(
+        "mediasort_tick_reload_local_{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&tmp);
+    let settings = SettingsStore {
+        custom_path: Some(tmp.clone()),
+        ..SettingsStore::default()
+    };
+    let mut state = AppState::new(settings);
+    state.settings.save().unwrap();
+
+    // A second instance disables GIF animation.
+    let mut other: SettingsStore = toml::from_str(&std::fs::read_to_string(&tmp).unwrap()).unwrap();
+    other.custom_path = Some(tmp.clone());
+    other.general.animate_gifs = false;
+    other.save().unwrap();
+
+    // This instance changed the theme but has not flushed yet.
+    state.settings.general.theme = "Dark".to_string();
+    state.settings.mark_dirty();
+
+    state.settings_reload_at = Instant::now();
+    let _task = update(&mut state, Message::Tick(Instant::now()));
+
+    // The unflushed local change survived the reload, the external change
+    // was adopted, and the tick's dirty flush persisted the merged result.
+    assert_eq!(state.settings.general.theme, "Dark");
+    assert!(!state.settings.general.animate_gifs);
+    let merged: SettingsStore = toml::from_str(&std::fs::read_to_string(&tmp).unwrap()).unwrap();
+    assert_eq!(merged.general.theme, "Dark");
+    assert!(!merged.general.animate_gifs);
 
     let _ = std::fs::remove_file(&tmp);
 }
