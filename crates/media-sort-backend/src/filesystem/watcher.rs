@@ -149,8 +149,15 @@ fn classify_event(event: &notify::Event) -> Vec<FileSystemEvent> {
             .collect(),
         EventKind::Modify(ModifyKind::Name(_)) => {
             // A rename carries both the source and destination path on the
-            // same event. Backends that cannot track renames deliver a
-            // single path instead — degrade to `Modified`.
+            // same event when the backend can pair them (inotify). Windows
+            // delivers the two sides as separate single-path events
+            // (`RenameMode::From` / `RenameMode::To`), and FSEvents
+            // reports `RenameMode::Any` once per side — neither can pair
+            // them. Classify a single-path side by existence: the side
+            // that still exists is the destination (`Added`), the
+            // vanished side is the source (`Removed`). This keeps renames
+            // visible to the GUI on every platform instead of degrading
+            // them to `Modified` (which the GUI deliberately ignores).
             if event.paths.len() >= 2 {
                 vec![FileSystemEvent::Renamed(
                     PathBuf::from(&event.paths[0]),
@@ -160,7 +167,13 @@ fn classify_event(event: &notify::Event) -> Vec<FileSystemEvent> {
                 event
                     .paths
                     .iter()
-                    .map(|p| FileSystemEvent::Modified(PathBuf::from(p)))
+                    .map(|p| {
+                        if p.exists() {
+                            FileSystemEvent::Added(PathBuf::from(p))
+                        } else {
+                            FileSystemEvent::Removed(PathBuf::from(p))
+                        }
+                    })
                     .collect()
             }
         }
@@ -229,16 +242,38 @@ mod tests {
     }
 
     #[test]
-    fn test_classify_rename_single_path_degrades_to_modified() {
+    fn test_classify_rename_from_side_becomes_removed() {
         use notify::event::{ModifyKind, RenameMode};
+        // Windows delivers the old side of a rename as a single-path
+        // `Name(From)` event; the path no longer exists → `Removed`.
         let ev = event(
             notify::EventKind::Modify(ModifyKind::Name(RenameMode::From)),
             &["/a/old.jpg"],
         );
         assert_eq!(
             classify_event(&ev),
-            vec![FileSystemEvent::Modified(PathBuf::from("/a/old.jpg"))]
+            vec![FileSystemEvent::Removed(PathBuf::from("/a/old.jpg"))]
         );
+    }
+
+    #[test]
+    fn test_classify_rename_to_side_becomes_added() {
+        use notify::event::{ModifyKind, RenameMode};
+        // Windows delivers the new side of a rename as a single-path
+        // `Name(To)` event; the path exists → `Added`.
+        let dir =
+            std::env::temp_dir().join(format!("mediasort_watcher_cls_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let new_path = dir.join("new.jpg");
+        std::fs::write(&new_path, b"data").unwrap();
+
+        let ev = event(
+            notify::EventKind::Modify(ModifyKind::Name(RenameMode::To)),
+            &[new_path.to_str().unwrap()],
+        );
+        assert_eq!(classify_event(&ev), vec![FileSystemEvent::Added(new_path)]);
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]
