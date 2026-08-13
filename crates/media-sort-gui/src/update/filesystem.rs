@@ -1,0 +1,170 @@
+//! Routing of filesystem watcher events into media grid and folder tree
+//! refreshes.
+//!
+//! Two refresh pipelines are driven from here, both coalescing and both
+//! non-blocking:
+//!
+//! - **Media grid** — events whose parent is the current folder trigger
+//!   [`AppState::start_media_refresh`], a replace-mode background rescan
+//!   that keeps the current entries visible until the new list lands.
+//! - **Folder tree** — events that change the children of any displayed
+//!   folder (a subfolder added/removed/renamed inside the current folder or
+//!   an expanded node) trigger [`AppState::request_folder_tree_refresh`],
+//!   a background tree rebuild that preserves expansion state.
+//!
+//! Special cases: the current folder itself renamed externally is followed
+//! (the app re-opens the new path); the current folder deleted externally
+//! moves the view up to the closest existing ancestor.
+
+use std::path::{Path, PathBuf};
+
+use iced::Task;
+
+use crate::message::Message;
+use crate::state::AppState;
+use media_sort_backend::filesystem::watcher::FileSystemEvent;
+use media_sort_core::path_utils::paths_equal;
+
+pub fn handle_filesystem_events(
+    state: &mut AppState,
+    events: Vec<FileSystemEvent>,
+) -> Task<Message> {
+    let Some(current) = state.folder.current_folder.clone() else {
+        return Task::none();
+    };
+
+    let watched = state.watched_directories();
+
+    let mut tree_dirty = false;
+    let mut media_dirty = false;
+    let mut folder_renamed_to: Option<PathBuf> = None;
+
+    for event in &events {
+        match event {
+            FileSystemEvent::Added(path) => {
+                let is_dir = path.is_dir();
+                // A new subfolder changes the children of its parent; if
+                // that parent is displayed (watched), the tree must pick
+                // it up. New files change nothing in the tree.
+                if is_dir && parent_in_watched(path, &watched) {
+                    tree_dirty = true;
+                }
+                // New files in the current folder appear in the grid; new
+                // subfolders do not (the scanner lists files only).
+                if !is_dir && parent_is_current(path, &current) {
+                    media_dirty = true;
+                }
+            }
+            FileSystemEvent::Removed(path) => {
+                // The current folder itself was removed — handled after
+                // the loop (move up to the closest existing ancestor).
+                if paths_equal(path, &current) {
+                    continue;
+                }
+                // A removed path that used to be a tree node (displayed
+                // folder) needs a tree rebuild; the path can no longer be
+                // statted, so ask the tree itself.
+                if state.tree_contains_path(path) {
+                    tree_dirty = true;
+                }
+                if parent_is_current(path, &current) {
+                    media_dirty = true;
+                }
+            }
+            FileSystemEvent::Renamed(from, to) => {
+                if paths_equal(from, &current) {
+                    folder_renamed_to = Some(to.clone());
+                    continue;
+                }
+                // A pinned folder renamed externally: keep the pin (and the
+                // persisted settings) pointing at the new path. `to` still
+                // exists, so `paths_equal` can canonicalize both sides;
+                // the `p.path == *from` arm covers pins stored in canonical
+                // form. The tree rebuild below re-reads the new name.
+                if let Some(pos) = state
+                    .folder
+                    .pinned_folders
+                    .iter()
+                    .position(|p| p.path == *from || paths_equal(&p.path, to))
+                {
+                    state.folder.pinned_folders[pos].path = to.clone();
+                    if let Some(name) = to.file_name() {
+                        state.folder.pinned_folders[pos].name = name.to_string_lossy().to_string();
+                    }
+                    if let Some(stored) = state.settings.pinned_folders.paths.get_mut(pos) {
+                        *stored = to.to_string_lossy().to_string();
+                    }
+                    state.settings.mark_dirty();
+                }
+                if state.tree_contains_path(from) || parent_in_watched(from, &watched) {
+                    tree_dirty = true;
+                }
+                // Renames into or out of the current folder change the
+                // grid either way.
+                if parent_is_current(from, &current) || parent_is_current(to, &current) {
+                    media_dirty = true;
+                }
+            }
+            // Pure content modifications change no visible structure; the
+            // watcher error fallback also lands here (a vanished watch is
+            // caught by the exists-check below).
+            FileSystemEvent::Modified(_) => {}
+        }
+    }
+
+    if let Some(new_path) = folder_renamed_to {
+        // The current folder was renamed externally: follow it. A clean
+        // re-open of the new path resets selection/history/video like any
+        // other folder switch, and the watcher subscription re-keys on the
+        // new current folder automatically.
+        tracing::info!(
+            "Current folder was renamed externally: {} -> {}",
+            current.display(),
+            new_path.display()
+        );
+        state.open_folder(&new_path);
+        return Task::none();
+    }
+
+    if !current.exists() {
+        // The current folder vanished without a usable rename event (e.g.
+        // deleted, or moved on a backend that can't pair renames). Move up
+        // to the closest existing ancestor so the user isn't left staring
+        // at a dead grid.
+        let mut ancestor = current.parent().map(|p| p.to_path_buf());
+        while let Some(ref dir) = ancestor {
+            if dir.is_dir() {
+                state.open_folder(dir);
+                return Task::none();
+            }
+            ancestor = dir.parent().map(|p| p.to_path_buf());
+        }
+        state.folder.current_folder = None;
+        state.media_grid.entries.clear();
+        state.media_grid.rebuild_lower_names();
+        state.media_grid.selected_index = None;
+        state.folder.folder_tree.clear();
+        state.folder.invalidate_visible_folders_cache();
+        state.video.select(None);
+        return Task::none();
+    }
+
+    if tree_dirty {
+        state.request_folder_tree_refresh();
+    }
+    if media_dirty {
+        state.start_media_refresh();
+    }
+    Task::none()
+}
+
+/// Whether `path`'s parent is one of the watched (displayed) directories.
+fn parent_in_watched(path: &Path, watched: &[PathBuf]) -> bool {
+    path.parent()
+        .is_some_and(|p| watched.iter().any(|w| paths_equal(w, p)))
+}
+
+/// Whether `path` sits directly inside the current folder.
+fn parent_is_current(path: &Path, current: &Path) -> bool {
+    path.parent().is_some_and(|p| paths_equal(p, current))
+}

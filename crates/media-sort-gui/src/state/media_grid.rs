@@ -42,6 +42,18 @@ pub struct MediaGridState {
     pub scan_receiver: Option<mpsc::Receiver<PathBuf>>,
     /// Index to select after the background scan completes.
     pub pending_select_index: Option<usize>,
+    /// When true, the in-flight scan REPLACES [`entries`] on completion
+    /// (watcher-driven refresh) instead of extending them. Buffered entries
+    /// land in [`scan_buffer`] while the scan runs.
+    pub(crate) scan_replace: bool,
+    /// Entries drained from the receiver while [`scan_replace`] is active.
+    pub(crate) scan_buffer: Vec<MediaEntry>,
+    /// A watcher event arrived while a scan was in flight; start another
+    /// replace-scan once the current one finishes.
+    pub(crate) pending_refresh: bool,
+    /// Path of the selected entry captured when a refresh starts, so the
+    /// selection can be restored by path after the replacement lands.
+    pub(crate) refresh_select_path: Option<PathBuf>,
 }
 
 impl fmt::Debug for MediaGridState {
@@ -53,6 +65,8 @@ impl fmt::Debug for MediaGridState {
             .field("scroll", &self.scroll)
             .field("scan_receiver", &self.scan_receiver.is_some())
             .field("pending_select_index", &self.pending_select_index)
+            .field("scan_replace", &self.scan_replace)
+            .field("pending_refresh", &self.pending_refresh)
             .finish()
     }
 }

@@ -48,7 +48,11 @@ pub fn theme(state: &AppState) -> iced::Theme {
 }
 
 pub fn subscription(state: &AppState) -> Subscription<Message> {
-    Subscription::batch([base_subscription(), video_subscription(state)])
+    Subscription::batch([
+        base_subscription(),
+        video_subscription(state),
+        crate::subscriptions::filesystem::filesystem_subscription(state),
+    ])
 }
 
 fn base_subscription() -> Subscription<Message> {

@@ -34,6 +34,12 @@ pub enum Message {
     Video(iced_mpv::PlayerMessage),
     #[serde(skip_deserializing)]
     DragDrop(DragDropMessage),
+    /// Filesystem watcher batch: external add/remove/rename/modify events
+    /// for watched directories (the current folder plus every expanded
+    /// folder-tree node). Keeps the media grid and the folder tree in sync
+    /// with changes made outside the app.
+    #[serde(skip_deserializing)]
+    FileSystemChanged(Vec<media_sort_backend::filesystem::watcher::FileSystemEvent>),
 
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]

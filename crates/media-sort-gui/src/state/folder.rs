@@ -27,6 +27,9 @@ pub struct FolderState {
     pub dragging_pinned_folder: Option<PathBuf>,
     pub hovered_pinned_folder: Option<PathBuf>,
     pub folder_tree_receiver: Option<mpsc::Receiver<Vec<FolderNode>>>,
+    /// A watcher event arrived while the folder tree was rebuilding in the
+    /// background; start another rebuild once the in-flight one lands.
+    pub(crate) tree_refresh_pending: bool,
     pub(crate) visible_folders_cache: Vec<PathBuf>,
     pub scroll: FolderScrollState,
 }

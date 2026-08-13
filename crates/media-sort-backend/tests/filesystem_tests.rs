@@ -244,3 +244,134 @@ fn test_windows_trash_restore_picks_most_recent() {
     assert!(file.exists());
     assert_eq!(fs::read_to_string(&file).unwrap(), "second version");
 }
+
+mod watcher_tests {
+    use super::*;
+    use media_sort_backend::filesystem::watcher::{FileSystemEvent, watch_directories};
+    use std::time::{Duration, Instant};
+
+    /// Polls `rx` until the deadline, returning everything collected.
+    /// Polling (not `blocking_recv`) — the latter blocks indefinitely on
+    /// an empty channel and would hang the test.
+    fn drain_until(
+        rx: &mut tokio::sync::mpsc::Receiver<FileSystemEvent>,
+        deadline: Instant,
+    ) -> Vec<FileSystemEvent> {
+        let mut collected = Vec::new();
+        loop {
+            if Instant::now() >= deadline {
+                break;
+            }
+            match rx.try_recv() {
+                Ok(event) => collected.push(event),
+                Err(_) => std::thread::sleep(Duration::from_millis(20)),
+            }
+        }
+        collected
+    }
+
+    #[test]
+    fn test_watch_reports_add_remove_and_rename() {
+        let tmp = TempDir::new("mediasort_watch");
+        let sub = tmp.path().join("sub");
+        fs::create_dir(&sub).unwrap();
+
+        let (_handle, mut rx) = watch_directories(&[tmp.path().to_path_buf()]);
+        // Give the watcher a moment to register (debouncer thread + OS).
+        std::thread::sleep(Duration::from_millis(200));
+
+        fs::write(tmp.path().join("new.jpg"), b"data").unwrap();
+        let added_deadline = Instant::now() + Duration::from_secs(5);
+        let mut added_seen = false;
+        while Instant::now() < added_deadline && !added_seen {
+            for event in drain_until(&mut rx, Instant::now() + Duration::from_millis(500)) {
+                if matches!(&event, FileSystemEvent::Added(p) if p.file_name().is_some_and(|n| n == "new.jpg"))
+                {
+                    added_seen = true;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(added_seen, "expected an Added event for new.jpg");
+
+        fs::remove_file(tmp.path().join("new.jpg")).unwrap();
+        let removed_deadline = Instant::now() + Duration::from_secs(5);
+        let mut removed_seen = false;
+        while Instant::now() < removed_deadline && !removed_seen {
+            for event in drain_until(&mut rx, Instant::now() + Duration::from_millis(500)) {
+                if matches!(&event, FileSystemEvent::Removed(p) if p.file_name().is_some_and(|n| n == "new.jpg"))
+                {
+                    removed_seen = true;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(removed_seen, "expected a Removed event for new.jpg");
+
+        // Rename: some backends pair both paths on one event, others emit
+        // separate remove/create — accept either representation.
+        fs::write(tmp.path().join("old.jpg"), b"data").unwrap();
+        std::thread::sleep(Duration::from_millis(300));
+        let _ = drain_until(&mut rx, Instant::now() + Duration::from_millis(200));
+        fs::rename(tmp.path().join("old.jpg"), tmp.path().join("renamed.jpg")).unwrap();
+        let rename_deadline = Instant::now() + Duration::from_secs(5);
+        let mut rename_seen = false;
+        while Instant::now() < rename_deadline && !rename_seen {
+            for event in drain_until(&mut rx, Instant::now() + Duration::from_millis(500)) {
+                match &event {
+                    FileSystemEvent::Renamed(from, to)
+                        if from.file_name().is_some_and(|n| n == "old.jpg")
+                            && to.file_name().is_some_and(|n| n == "renamed.jpg") =>
+                    {
+                        rename_seen = true;
+                    }
+                    FileSystemEvent::Added(p)
+                        if p.file_name().is_some_and(|n| n == "renamed.jpg") =>
+                    {
+                        rename_seen = true;
+                    }
+                    _ => {}
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(
+            rename_seen,
+            "expected a Renamed or Added event for renamed.jpg"
+        );
+
+        drop(_handle);
+    }
+
+    #[test]
+    fn test_watch_multiple_directories() {
+        let base = TempDir::new("mediasort_watch_multi");
+        let a = base.path().join("a");
+        let b = base.path().join("b");
+        fs::create_dir(&a).unwrap();
+        fs::create_dir(&b).unwrap();
+
+        let (_handle, mut rx) = watch_directories(&[a.clone(), b.clone()]);
+        std::thread::sleep(Duration::from_millis(200));
+
+        fs::write(a.join("in_a.jpg"), b"data").unwrap();
+        fs::write(b.join("in_b.jpg"), b"data").unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut seen_a = false;
+        let mut seen_b = false;
+        while Instant::now() < deadline && !(seen_a && seen_b) {
+            for event in drain_until(&mut rx, Instant::now() + Duration::from_millis(500)) {
+                if let FileSystemEvent::Added(p) = event {
+                    seen_a |= p.file_name().is_some_and(|n| n == "in_a.jpg");
+                    seen_b |= p.file_name().is_some_and(|n| n == "in_b.jpg");
+                }
+            }
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(seen_a, "expected an Added event for in_a.jpg");
+        assert!(seen_b, "expected an Added event for in_b.jpg");
+
+        drop(_handle);
+    }
+}

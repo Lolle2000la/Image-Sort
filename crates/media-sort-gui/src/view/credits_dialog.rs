@@ -136,10 +136,6 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
         ("metaflac", "https://github.com/jameshurst/rust-metaflac"),
         ("mp4ameta", "https://github.com/Saecki/rust-mp4ameta"),
         ("Notify", "https://github.com/notify-rs/notify"),
-        (
-            "notify-debouncer-mini",
-            "https://github.com/notify-rs/notify",
-        ),
         ("objc2", "https://github.com/madsmtm/objc2"),
         ("objc2-foundation", "https://github.com/madsmtm/objc2"),
         ("proc-macro2", "https://github.com/dtolnay/proc-macro2"),
