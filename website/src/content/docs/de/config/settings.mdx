@@ -80,6 +80,18 @@ Die Update-Funktion wird auf Plattformen unterstützt, die mit Velopack-Installe
 
 ---
 
+## Erweiterte Einstellungen
+
+Die Registerkarte **Erweitert** enthält Optionen für fortgeschrittene Nutzer, die die Leistung der Medien-Dekodierung beeinflussen.
+
+### Video
+
+#### Hardware-Videodekodierung deaktivieren
+
+- **Verhalten:** Standardmäßig verwendet Media Sort hardwarebeschleunigte Videodekodierung (mpv-Modus `hwdec=auto-copy`) und rendert Videoframes in ihrer nativen Auflösung. Wenn ein Video nicht dekodiert werden kann oder fehlerhaft dargestellt wird, erzwingt diese Option die Software-Dekodierung (`hwdec=no`). Frames werden dann in einer begrenzten Auflösung (960×540) gerendert, damit die CPU-Dekodierung flüssig bleibt. Die Änderung wird sofort wirksam.
+
+---
+
 ## Tastaturkürzel
 
 Die Registerkarte **Tastenkürzel** ermöglicht die Neubelegung aller Tastaturkürzel. Details zur GUI-Neubelegung finden Sie auf der Seite [Eigene Tastaturbelegungen](/config/keybindings/) und das TOML-Schema auf der Seite [Konfigurationsdatei](/advanced/config-file/).

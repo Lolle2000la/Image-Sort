@@ -11,6 +11,7 @@ could-not-act-error = Aktion "{$act_message}" konnte nicht ausgeführt werden: {
 settings-title = Einstellungen
 settings-tab-general = Allgemeine Einstellungen
 settings-tab-keybindings = Tastenkürzel
+settings-tab-advanced = Erweitert
 settings-close = Schließen
 
 # General settings
@@ -26,6 +27,10 @@ settings-install-prerelease = Vorabversionen installieren
 settings-windows-integration = Windows-Integration
 settings-windows-context-menu = Eine Verknüpfung zum Öffnen eines Ordners in Media Sort direkt aus dem Kontextmenü im Windows Explorer hinzufügen.
 settings-language = Sprache
+
+# Advanced settings
+settings-video = Video
+settings-disable-hw-decoding = Hardware-Videodekodierung deaktivieren
 
 # Key bindings
 keybindings-restore-defaults = Standard-Tastenkürzel wiederherstellen

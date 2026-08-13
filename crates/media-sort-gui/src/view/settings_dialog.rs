@@ -2,7 +2,7 @@ use iced::widget::{button, checkbox, column, container, pick_list, row, scrollab
 use iced::{Alignment, Color, Element, Length};
 
 use crate::message::{Message, SettingsMessage};
-use crate::state::AppState;
+use crate::state::{AppState, SettingsUiState};
 use crate::subscriptions::keyboard::format_keybinding;
 
 const BOLD_FONT: iced::Font = iced::Font {
@@ -172,7 +172,7 @@ fn keybinding_row<'a>(state: &'a AppState, idx: usize, label: String) -> Element
     let binding = get_keybinding(state, idx);
     let is_editing = matches!(
         &state.settings_ui,
-        crate::state::SettingsUiState::Keybindings {
+        SettingsUiState::Keybindings {
             editing_keybinding: Some(i),
             ..
         } if *i == idx
@@ -238,23 +238,18 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
         container(
             button(text(state.l10n.tr("settings-tab-general")).size(13))
                 .on_press(Message::Settings(SettingsMessage::Open))
-                .style(
-                    if matches!(state.settings_ui, crate::state::SettingsUiState::Settings) {
-                        iced::widget::button::primary
-                    } else {
-                        iced::widget::button::secondary
-                    }
-                ),
+                .style(if matches!(state.settings_ui, SettingsUiState::Settings) {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
         )
         .id(iced::widget::Id::new("settings_tab_general")),
         container(
             button(text(state.l10n.tr("settings-tab-keybindings")).size(13))
                 .on_press(Message::Settings(SettingsMessage::OpenKeybindings))
                 .style(
-                    if matches!(
-                        state.settings_ui,
-                        crate::state::SettingsUiState::Keybindings { .. }
-                    ) {
+                    if matches!(state.settings_ui, SettingsUiState::Keybindings { .. }) {
                         iced::widget::button::primary
                     } else {
                         iced::widget::button::secondary
@@ -262,11 +257,21 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 ),
         )
         .id(iced::widget::Id::new("settings_tab_keybindings")),
+        container(
+            button(text(state.l10n.tr("settings-tab-advanced")).size(13))
+                .on_press(Message::Settings(SettingsMessage::OpenAdvanced))
+                .style(if matches!(state.settings_ui, SettingsUiState::Advanced) {
+                    iced::widget::button::primary
+                } else {
+                    iced::widget::button::secondary
+                }),
+        )
+        .id(iced::widget::Id::new("settings_tab_advanced")),
     ]
     .spacing(10);
 
-    let tab_content: Element<'_, Message> =
-        if matches!(state.settings_ui, crate::state::SettingsUiState::Settings) {
+    let tab_content: Element<'_, Message> = match &state.settings_ui {
+        SettingsUiState::Settings => {
             // General settings tab
             let animate_gifs_cb = checkbox(state.settings.general.animate_gifs)
                 .label(state.l10n.tr("settings-play-gifs"))
@@ -393,7 +398,8 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
             }
 
             scrollable(settings_col).height(Length::Fill).into()
-        } else {
+        }
+        SettingsUiState::Keybindings { .. } => {
             // Key bindings tab
             let restore_btn = button(text(state.l10n.tr("keybindings-restore-defaults")).size(12))
                 .on_press(Message::Settings(
@@ -509,7 +515,32 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 column![restore_btn, images_section, folders_section, other_section,].spacing(16);
 
             scrollable(bindings_column).height(Length::Fill).into()
-        };
+        }
+        SettingsUiState::Advanced => {
+            // Advanced settings tab
+            let disable_hw_decoding_cb =
+                checkbox(state.settings.advanced.disable_hardware_decoding)
+                    .label(state.l10n.tr("settings-disable-hw-decoding"))
+                    .on_toggle(|_| Message::Settings(SettingsMessage::ToggleHardwareDecoding))
+                    .size(16);
+
+            let advanced_col = column![
+                column![
+                    text(state.l10n.tr("settings-video"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    disable_hw_decoding_cb,
+                ]
+                .spacing(8),
+            ];
+
+            scrollable(advanced_col).height(Length::Fill).into()
+        }
+        SettingsUiState::Hidden => {
+            // The dialog is only rendered while the settings UI is open.
+            column![].into()
+        }
+    };
 
     let close_btn = container(
         button(text(state.l10n.tr("settings-close")))

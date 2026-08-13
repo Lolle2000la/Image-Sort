@@ -41,6 +41,14 @@ Exposes appearance, locale, automatic update properties, and startup folder conf
 
 ---
 
+### `[advanced]`
+
+Contains options for advanced users that affect media decoding:
+
+- **`disable_hardware_decoding`** (boolean): Forces software video decoding (`hwdec=no`). When `false` (the default), hardware decoding (`hwdec=auto-copy`) is used and video frames render at their native resolution; when `true`, frames are capped at 960×540 to keep CPU decoding fast. (Default: `false`)
+
+---
+
 ### `[metadata_panel]`
 
 Configures the collapsable sidebar displaying EXIF and container metadata tags:

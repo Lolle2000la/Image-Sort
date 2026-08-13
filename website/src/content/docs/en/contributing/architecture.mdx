@@ -23,7 +23,7 @@ Dependency direction: `media-sort-gui` → `media-sort-backend` + `iced-automati
 
 ### media-sort-core
 
-- **Settings:** `SettingsStore` with 5 sub-structs (General, KeyBindings, MetadataPanel, PinnedFolders, WindowPosition). Loaded/saved as TOML at `$CONFIG_DIR/media-sort/config.toml`.
+- **Settings:** `SettingsStore` with 6 sub-structs (General, KeyBindings, MetadataPanel, PinnedFolders, WindowPosition, Advanced). Loaded/saved as TOML at `$CONFIG_DIR/media-sort/config.toml`.
 - **Internationalization:** Fluent-based localization with auto-detection from system locale. Locale files live in `resources/locale/{en,de,ja}/`.
 - **Undo/Redo:** `ReversibleAction` trait with `done`/`undone` stacks. Actions include Move, Copy, Rename, and Delete.
 - **Media Types:** `MediaType` enum (Image/Video/Audio), global `MediaRegistry` initialized at startup.

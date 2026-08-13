@@ -77,6 +77,8 @@ pub enum SettingsMessage {
     ToggleMetadataPanel,
     StartDragFolderDivider,
     StartDragMetadataDivider,
+    OpenAdvanced,
+    ToggleHardwareDecoding,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, iced_automation_macros::AutomationKeycap)]

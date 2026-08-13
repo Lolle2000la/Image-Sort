@@ -80,6 +80,18 @@ Update features are supported on platforms built with Velopack bundle targets (c
 
 ---
 
+## Advanced Settings
+
+The **Advanced** tab covers options for advanced users that affect media decoding performance.
+
+### Video
+
+#### Disable hardware video decoding
+
+- **Behavior:** By default, Media Sort uses hardware-accelerated video decoding (mpv's `hwdec=auto-copy` mode) and renders video frames at their native resolution. If a video fails to decode or renders incorrectly, enable this option to force software decoding (`hwdec=no`); frames are then rendered at a capped resolution (960×540) to keep CPU decoding fast. The change takes effect immediately.
+
+---
+
 ## Keybindings
 
 The **Key bindings** tab lets you remap all keyboard shortcuts. See the [Custom Keybindings](/config/keybindings/) page for details on how to use the GUI remapping editor and the [Configuration File](/advanced/config-file/) page for the TOML schema.

@@ -84,19 +84,27 @@ pub struct MpvContext {
 }
 
 impl MpvContext {
-    /// Creates a fully configured playback context (video + audio enabled).
+    /// Creates a fully configured playback context (video + audio enabled)
+    /// with hardware decoding enabled.
     pub fn new() -> Result<Self, MpvError> {
-        Self::create(false)
+        Self::create(false, true)
+    }
+
+    /// Creates a fully configured playback context (video + audio enabled).
+    /// `hardware_decoding` controls mpv's `hwdec` option: `true` keeps the
+    /// default `auto-copy` mode, `false` forces software decoding (`hwdec=no`).
+    pub fn new_with_hardware_decoding(hardware_decoding: bool) -> Result<Self, MpvError> {
+        Self::create(false, hardware_decoding)
     }
 
     /// Creates a minimal context tuned for thumbnail extraction: audio and
     /// subtitles are disabled and seeking is allowed to be approximate, which
     /// makes frame capture much faster.
     pub fn new_thumbnail_player() -> Result<Self, MpvError> {
-        Self::create(true)
+        Self::create(true, true)
     }
 
-    fn create(thumbnail_mode: bool) -> Result<Self, MpvError> {
+    fn create(thumbnail_mode: bool, hardware_decoding: bool) -> Result<Self, MpvError> {
         unsafe {
             let handle = mpv_create();
             if handle.is_null() {
@@ -106,7 +114,11 @@ impl MpvContext {
             // Common options for both modes.
             Self::set_option(handle, c"vo", "libmpv");
             Self::set_option(handle, c"keep-open", "yes");
-            Self::set_option(handle, c"hwdec", "auto-copy");
+            if hardware_decoding {
+                Self::set_option(handle, c"hwdec", "auto-copy");
+            } else {
+                Self::set_option(handle, c"hwdec", "no");
+            }
             Self::set_option(handle, c"sub-auto", "no");
             Self::set_option(handle, c"audio-file-auto", "no");
             Self::set_option(handle, c"cache", "no");

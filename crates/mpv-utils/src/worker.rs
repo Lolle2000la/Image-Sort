@@ -10,9 +10,17 @@ use std::path::PathBuf;
 pub struct PlayerConfig {
     /// Maximum rendered frame width in pixels. Larger videos are scaled down
     /// to fit this box; the render size is the video's aspect-fitted size.
+    /// Only applied when [`Self::hardware_decoding`] is `false`.
     pub max_frame_width: u32,
     /// Maximum rendered frame height in pixels.
+    /// Only applied when [`Self::hardware_decoding`] is `false`.
     pub max_frame_height: u32,
+    /// Whether the worker enables mpv hardware decoding (`hwdec=auto-copy`).
+    /// When `true`, frames are rendered at the video's native resolution
+    /// (mpv defaults — no downscaling). When `false`, software decoding
+    /// (`hwdec=no`) is used and frames are capped at
+    /// [`Self::max_frame_width`]/[`Self::max_frame_height`].
+    pub hardware_decoding: bool,
 }
 
 impl Default for PlayerConfig {
@@ -20,6 +28,7 @@ impl Default for PlayerConfig {
         Self {
             max_frame_width: 960,
             max_frame_height: 540,
+            hardware_decoding: true,
         }
     }
 }
@@ -207,6 +216,22 @@ pub(crate) fn rgba_frame_size(w: u32, h: u32) -> Option<usize> {
         .and_then(|n| usize::try_from(n).ok())
 }
 
+/// The render scale for a video of effective (rotation-corrected) size
+/// `eff_w × eff_h` under `config`.
+///
+/// With hardware decoding enabled, frames are rendered at native resolution
+/// (mpv defaults): scale `1.0`. With hardware decoding disabled, the frame is
+/// aspect-fitted into the configured `max_frame_width × max_frame_height`
+/// box, never upscaled (`scale <= 1.0`).
+pub(crate) fn render_scale(eff_w: i64, eff_h: i64, config: &PlayerConfig) -> f64 {
+    if config.hardware_decoding {
+        return 1.0;
+    }
+    (config.max_frame_width as f64 / eff_w as f64)
+        .min(config.max_frame_height as f64 / eff_h as f64)
+        .min(1.0)
+}
+
 /// Spawns the background video worker on the current tokio runtime with the
 /// default [`PlayerConfig`].
 ///
@@ -235,7 +260,7 @@ async fn run_video_worker(
     event_tx: tokio::sync::mpsc::Sender<VideoEvent>,
     config: PlayerConfig,
 ) {
-    let mut player = match MpvContext::new() {
+    let mut player = match MpvContext::new_with_hardware_decoding(config.hardware_decoding) {
         Ok(p) => p,
         Err(e) => {
             tracing::error!("Failed to create MpvContext: {e}");
@@ -257,16 +282,22 @@ async fn run_video_worker(
     // immutable slice payload would force a fresh allocation per frame. The
     // initial size is only an allocation hint (per-frame `resize` sets the
     // real size), so a max-frame-size config that overflows usize degrades to
-    // empty pool buffers instead of panicking.
-    let max_buffer_size = match rgba_frame_size(config.max_frame_width, config.max_frame_height) {
-        Some(n) => n,
-        None => {
-            tracing::warn!(
-                "PlayerConfig max frame size {}x{} overflows usize; starting with empty pool buffers",
-                config.max_frame_width,
-                config.max_frame_height
-            );
-            0
+    // empty pool buffers instead of panicking. With hardware decoding the
+    // frames are native-sized (mpv defaults), so the cap is not even a useful
+    // hint and the pool starts empty.
+    let max_buffer_size = if config.hardware_decoding {
+        0
+    } else {
+        match rgba_frame_size(config.max_frame_width, config.max_frame_height) {
+            Some(n) => n,
+            None => {
+                tracing::warn!(
+                    "PlayerConfig max frame size {}x{} overflows usize; starting with empty pool buffers",
+                    config.max_frame_width,
+                    config.max_frame_height
+                );
+                0
+            }
         }
     };
     let mut pool = [
@@ -410,9 +441,7 @@ async fn run_video_worker(
                                         (w, h)
                                     };
 
-                                    let scale = (config.max_frame_width as f64 / eff_w as f64)
-                                        .min(config.max_frame_height as f64 / eff_h as f64)
-                                        .min(1.0);
+                                    let scale = render_scale(eff_w, eff_h, &config);
                                     let render_unrot_w = ((w as f64 * scale) as i32) & !1;
                                     let render_unrot_h = ((h as f64 * scale) as i32) & !1;
 
@@ -671,5 +700,31 @@ mod tests {
             Some(n) => assert_eq!(n as u64, exact, "helper must not wrap"),
             None => assert!(exact > usize::MAX as u64),
         }
+    }
+
+    #[test]
+    fn test_render_scale_hardware_decoding_is_native_size() {
+        // With hardware decoding, frames render at mpv default (native)
+        // resolution: scale is 1.0 regardless of the video size and the
+        // configured cap.
+        let config = PlayerConfig::default();
+        assert_eq!(render_scale(1920, 1080, &config), 1.0);
+        assert_eq!(render_scale(640, 360, &config), 1.0);
+        assert_eq!(render_scale(3840, 2160, &config), 1.0);
+    }
+
+    #[test]
+    fn test_render_scale_software_decoding_caps_frame() {
+        let config = PlayerConfig {
+            hardware_decoding: false,
+            ..PlayerConfig::default()
+        };
+        // 1920x1080 fits 960x540 at scale 0.5.
+        assert_eq!(render_scale(1920, 1080, &config), 0.5);
+        // Smaller-than-cap videos are never upscaled.
+        assert_eq!(render_scale(640, 360, &config), 1.0);
+        // The tighter dimension wins: width here, height here.
+        assert_eq!(render_scale(7680, 2160, &config), 0.125);
+        assert_eq!(render_scale(1920, 4320, &config), 0.125);
     }
 }
