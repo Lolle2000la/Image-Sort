@@ -193,7 +193,7 @@ The raw tokio command channel is hidden behind the opaque `PlayerHandle`; produc
 | `main.rs` | Entry point: init mpv registry, load settings, launch iced application |
 | `message.rs` | `Message` and sub-enum definitions |
 | `demo.rs` | Consolidates both interactive demo initialization and headless video export |
-| `state.rs` | `AppState` struct, folder tree logic (see the folder tree section below), media scanning, `detect_media_type()` |
+| `state.rs` | `AppState` struct, media scanning, `detect_media_type()`; folder tree logic lives in `state/folder/tree.rs`, per-folder classification in `state/folder_inspection.rs` |
 | `view/` | 11 view files: `main_layout`, `folder_tree`, `folder_panel`, `media_grid`, `media_preview`, `metadata_panel`, `control_panel`, `search_bar`, `settings_dialog`, `credits_dialog`, `overlay` (modal overlay + transient `status_toast`) |
 
 Transient user feedback (refused drops, update failures, create-folder errors) goes through `AppState.status_message` (`StatusMessage { text, expires_at }`): set via `state.set_status(...)`, rendered as a non-blocking `status_toast` stacked above modals by `view/overlay.rs`, and expired by `handle_tick` against the tick's own `Instant` (sleep-proof). `open_folder` clears it. New user-visible strings need entries in all three locale files.
@@ -279,13 +279,13 @@ At the file system level the `image` crate can decode GIF natively. The mpv path
 There are **two different** media type detection functions:
 
 1. `MediaRegistry::determine_type()` in `media-sort-core/src/media_type.rs:87` — strict priority order (native image → native audio → mpv-discovered), uses the global OnceLock registry. Returns `None` for unknown extensions.
-2. `detect_media_type()` in `media-sort-gui/src/state.rs:566` — simple linear scan of hardcoded extension lists from `MediaType::extensions()`. Defaults to `MediaType::Image` for unknown extensions.
+2. `detect_media_type()` in `media-sort-gui/src/state.rs:440` — simple linear scan of hardcoded extension lists from `MediaType::extensions()`. Defaults to `MediaType::Image` for unknown extensions.
 
 The GUI scanner uses (2), metadata loading uses (1). This can cause mismatches if mpv discovers additional extensions at startup (e.g., a custom mpv build with extra demuxers). If you add formats, update both.
 
 ## Folder tree
 
-The folder tree (`state.rs::build_children` / `build_parent_chain` / `build_tree_nodes_data`, rendered by `view/folder_tree.rs`) classifies every node via `inspect_folder()` (state.rs), which stores a `FolderKind` on the `FolderNode`:
+The folder tree (`state/folder/tree.rs::build_children` / `build_parent_chain` / `build_tree_nodes_data`, rendered by `view/folder_tree.rs`) classifies every node via `inspect_folder()` (`state/folder_inspection.rs`), which stores a `FolderKind` on the `FolderNode`:
 
 - **`Git`** — the folder contains a `.git` entry (lowest priority)
 - **`Symlink`** — the folder is a symlink; `symlink_target` (resolved via `canonicalize`, `read_link` fallback for dangling links) is shown next to the node name
