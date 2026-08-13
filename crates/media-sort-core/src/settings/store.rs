@@ -222,6 +222,9 @@ impl SettingsStore {
     ///   instance's `window_position`, `general.last_opened_folder` and
     ///   `general.last_selected_media` stay local.
     /// - Everything else adopts the on-disk value.
+    /// - Unknown keys (written by a future version) are ignored: they
+    ///   never count as a change and never enter the saved snapshot, so a
+    ///   later save cannot treat them as removals and delete them.
     ///
     /// A missing or unparsable file is a no-op (`Ok(false)`): startup
     /// already handles those cases, and a corrupt file must not destroy a
@@ -253,17 +256,29 @@ impl SettingsStore {
         for session_path in SESSION_SCOPED_PATHS {
             replace_path(&mut merged, &curr, session_path);
         }
-        // ...and their baseline stays the local one, so an unflushed local
-        // change there remains pending (and is written by the next save).
-        let mut new_last = disk;
+
+        // Deserialize the merged state and re-serialize it: the comparison
+        // must ignore unknown keys (fields written by a future version),
+        // otherwise their mere presence would report a spurious change.
+        let incoming: SettingsStore = merged.clone().try_into().map_err(SettingsError::TomlDe)?;
+        let adopted = toml::Value::try_from(&incoming).map_err(SettingsError::TomlSer)?;
+
+        // New baseline: the disk state re-serialized through this
+        // version's structs. Unknown keys never enter the baseline —
+        // otherwise the next save would see them in `last` but not `curr`
+        // and delete them from disk. The baseline keeps the DISK values
+        // (not the adopted ones) for pending fields so an unflushed local
+        // change still differs from the baseline and is flushed by the
+        // next save; session subtrees keep their old baseline for the
+        // same reason and are never clobbered by this instance.
+        let disk_store: SettingsStore = disk.clone().try_into().map_err(SettingsError::TomlDe)?;
+        let mut new_last = toml::Value::try_from(&disk_store).map_err(SettingsError::TomlSer)?;
         for session_path in SESSION_SCOPED_PATHS {
             replace_path(&mut new_last, &last, session_path);
         }
 
-        let changed = merged != curr;
+        let changed = adopted != curr;
         if changed {
-            let incoming: SettingsStore =
-                merged.clone().try_into().map_err(SettingsError::TomlDe)?;
             let custom_path = self.custom_path.clone();
             let dirty = self.dirty;
             *self = incoming;
@@ -1153,6 +1168,65 @@ mod tests {
             "unknown keys must survive a merged save: {data}"
         );
         assert!(data.contains("Dark"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_reload_then_save_preserves_unknown_keys() {
+        let dir = test_temp_subdir();
+        let config = dir.join("config.toml");
+        let mut a = SettingsStore {
+            custom_path: Some(config.clone()),
+            ..SettingsStore::default()
+        };
+        a.save().unwrap();
+        // A future app version wrote a key this version does not know about.
+        let extra = std::fs::read_to_string(&config).unwrap() + "\n[futuresection]\nkey = 1\n";
+        std::fs::write(&config, extra).unwrap();
+
+        // Unknown keys alone must not count as an external change...
+        assert!(!a.reload_from_disk().unwrap());
+        // ...and a subsequent save must not delete them.
+        a.general.theme = "Dark".to_string();
+        a.save().unwrap();
+        let data = std::fs::read_to_string(&config).unwrap();
+        assert!(
+            data.contains("[futuresection]"),
+            "unknown keys must survive reload + save: {data}"
+        );
+        assert!(data.contains("Dark"));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_reload_with_real_change_then_save_preserves_unknown_keys() {
+        let dir = test_temp_subdir();
+        let config = dir.join("config.toml");
+        let mut a = SettingsStore {
+            custom_path: Some(config.clone()),
+            ..SettingsStore::default()
+        };
+        a.save().unwrap();
+
+        // A future app version wrote a real change AND an unknown key.
+        let mut b = settings_at(&config);
+        b.general.animate_gifs = false;
+        b.save().unwrap();
+        let extra = std::fs::read_to_string(&config).unwrap() + "\n[futuresection]\nkey = 1\n";
+        std::fs::write(&config, extra).unwrap();
+
+        assert!(a.reload_from_disk().unwrap());
+        assert!(!a.general.animate_gifs);
+        a.general.theme = "Dark".to_string();
+        a.save().unwrap();
+        let data = std::fs::read_to_string(&config).unwrap();
+        assert!(
+            data.contains("[futuresection]"),
+            "unknown keys must survive reload + save: {data}"
+        );
+        assert!(data.contains("Dark"));
+        assert!(!settings_at(&config).general.animate_gifs);
+
         std::fs::remove_dir_all(&dir).ok();
     }
 
