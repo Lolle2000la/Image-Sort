@@ -10,6 +10,10 @@ pub mod video;
 #[cfg(test)]
 mod tests;
 
+#[cfg(not(feature = "demo"))]
+use std::time::Duration;
+use std::time::Instant;
+
 use iced::Task;
 
 use crate::message::Message;
@@ -71,7 +75,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
     }
 }
 
-fn handle_tick(state: &mut AppState, instant: std::time::Instant) -> Task<Message> {
+fn handle_tick(state: &mut AppState, instant: Instant) -> Task<Message> {
     if state.should_exit {
         let _ = state.settings.save();
         state.video.deactivate();
@@ -114,6 +118,22 @@ fn handle_tick(state: &mut AppState, instant: std::time::Instant) -> Task<Messag
         } else {
             state.audio.position = player.position();
             state.audio.duration = player.duration();
+        }
+    }
+
+    // Poll the config file for external changes once per second (a store
+    // without a custom path — tests, fallbacks — has no file to watch).
+    // Reload happens BEFORE the dirty flush so an unflushed local change
+    // is preserved by the reload's merge and persisted by the save below.
+    // Excluded from demo builds: parallel headless renders must not adopt
+    // the real user config mid-render.
+    #[cfg(not(feature = "demo"))]
+    if state.settings.custom_path.is_some() && instant >= state.settings_reload_at {
+        state.settings_reload_at = instant + Duration::from_secs(1);
+        match state.settings.reload_from_disk() {
+            Ok(true) => settings::apply_external_settings_changes(state),
+            Ok(false) => {}
+            Err(e) => tracing::debug!("External settings reload failed: {e}"),
         }
     }
 

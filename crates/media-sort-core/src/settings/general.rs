@@ -34,6 +34,13 @@ pub struct GeneralSettings {
 
     #[serde(default = "default_folder_tree_width")]
     pub folder_tree_width: u16,
+
+    /// Treat pinned folders as session-scoped: this instance neither
+    /// adopts pinned folders from other instances (on config reload) nor
+    /// lets them adopt its own. Off by default (pinned folders are
+    /// shared between running instances).
+    #[serde(default)]
+    pub session_pinned_folders: bool,
 }
 
 impl Default for GeneralSettings {
@@ -50,6 +57,7 @@ impl Default for GeneralSettings {
             last_selected_media: None,
             locale: None,
             folder_tree_width: default_folder_tree_width(),
+            session_pinned_folders: false,
         }
     }
 }

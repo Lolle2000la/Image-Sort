@@ -31,13 +31,9 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             Task::done(Message::Settings(SettingsMessage::Save))
         }
         SettingsMessage::ChangeLanguage(locale) => {
-            state.l10n.set_locale(&locale);
             state.settings.general.locale = Some(locale);
             state.settings.mark_dirty();
-            state.media_grid.search.placeholder = state.l10n.tr("keybindings-search-images");
-            state.rename.placeholder = state.l10n.tr("ui-enter-new-name");
-            state.create_folder.create_folder_placeholder =
-                state.l10n.tr("ui-folder-name-placeholder");
+            apply_locale_if_changed(state);
             Task::none()
         }
         SettingsMessage::SetTheme(theme) => {
@@ -67,6 +63,12 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
         }
         SettingsMessage::ToggleAnimateGifs => {
             state.settings.general.animate_gifs = !state.settings.general.animate_gifs;
+            state.settings.mark_dirty();
+            Task::none()
+        }
+        SettingsMessage::ToggleSessionPinnedFolders => {
+            state.settings.general.session_pinned_folders =
+                !state.settings.general.session_pinned_folders;
             state.settings.mark_dirty();
             Task::none()
         }
@@ -154,5 +156,31 @@ pub fn handle_settings_loaded(
             tracing::error!("Failed to load settings: {err}");
             Task::none()
         }
+    }
+}
+
+/// Mirrors a settings store that was replaced by an external reload
+/// (`SettingsStore::reload_from_disk`) into the derived UI state: the
+/// locale (and localized placeholders), the metadata-panel expansion
+/// mirror and the pinned-folder list. Plain fields (theme, keybindings,
+/// tree width, …) are read live from `state.settings` by the view and
+/// subscription layers and need no mirroring.
+#[cfg(not(feature = "demo"))]
+pub fn apply_external_settings_changes(state: &mut AppState) {
+    apply_locale_if_changed(state);
+    state.metadata.panel_expanded = state.settings.metadata_panel.is_expanded;
+    state.sync_pinned_folders_from_settings();
+}
+
+/// Applies the locale selected in the settings store to the fluent bundle
+/// and re-derives the localized placeholder strings.
+fn apply_locale_if_changed(state: &mut AppState) {
+    if let Some(ref locale) = state.settings.general.locale
+        && state.l10n.locale() != *locale
+    {
+        state.l10n.set_locale(locale);
+        state.media_grid.search.placeholder = state.l10n.tr("keybindings-search-images");
+        state.rename.placeholder = state.l10n.tr("ui-enter-new-name");
+        state.create_folder.create_folder_placeholder = state.l10n.tr("ui-folder-name-placeholder");
     }
 }
