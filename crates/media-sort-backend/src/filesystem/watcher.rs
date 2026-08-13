@@ -15,6 +15,10 @@ pub enum FileSystemEvent {
 /// Holds the OS watcher and the debounce thread alive. Dropping it stops
 /// both: the watcher's drop disconnects the raw event channel, which makes
 /// the debounce thread flush its pending batch and exit.
+///
+/// Field drop order is load-bearing: `_watcher` must drop BEFORE
+/// `_debounce_thread` so the channel disconnect happens first (Rust drops
+/// struct fields in declaration order). Do not reorder.
 pub struct FileWatcherHandle {
     _watcher: notify::RecommendedWatcher,
     _debounce_thread: std::thread::JoinHandle<()>,
@@ -22,7 +26,7 @@ pub struct FileWatcherHandle {
 
 /// Watches a single directory non-recursively (convenience wrapper around
 /// [`watch_directories`]).
-pub fn watch_directory(path: &Path) -> (FileWatcherHandle, mpsc::Receiver<FileSystemEvent>) {
+pub fn watch_directory(path: &Path) -> (FileWatcherHandle, mpsc::Receiver<Vec<FileSystemEvent>>) {
     watch_directories(&[path.to_path_buf()])
 }
 
@@ -38,13 +42,21 @@ pub fn watch_directory(path: &Path) -> (FileWatcherHandle, mpsc::Receiver<FileSy
 /// that something happened.
 ///
 /// A 100 ms debounce coalesces bursts (e.g. an editor's save = write +
-/// rename + metadata churn) into a single batch per quiet window. The
-/// `notify` event kinds are preserved through the debounce — the
-/// debouncer-mini crate was rejected precisely because it reduces every
-/// event to `(path, Any)`.
+/// rename + metadata churn) into a single batch per quiet window, and each
+/// batch is delivered as ONE channel message (a 500-file copy = 1 message,
+/// not 500) so consumers process bursts as a unit. The `notify` event kinds
+/// are preserved through the debounce — the debouncer-mini crate was
+/// rejected precisely because it reduces every event to `(path, Any)`.
+///
+/// Note the platform backends vary in precision; the classification in
+/// [`classify_event`] documents each case. In particular the macOS backend
+/// (kqueue, pinned via the workspace `macos_kqueue` feature) cannot pair
+/// rename sides and under-reports directory-child changes, so consumers
+/// should treat any event batch as "something changed, re-scan" rather
+/// than trusting it as a complete diff.
 pub fn watch_directories(
     paths: &[PathBuf],
-) -> (FileWatcherHandle, mpsc::Receiver<FileSystemEvent>) {
+) -> (FileWatcherHandle, mpsc::Receiver<Vec<FileSystemEvent>>) {
     let (tx, rx) = mpsc::channel(256);
     let watch_paths: Vec<PathBuf> = paths
         .iter()
@@ -85,16 +97,26 @@ pub fn watch_directories(
 }
 
 /// Collects raw `notify` events for a 100 ms quiet window and forwards the
-/// classified batch. Exits when the watcher side disconnects (flushing any
-/// pending batch first).
+/// classified batch as a single message. Exits when the watcher side
+/// disconnects (flushing any pending batch first).
 fn debounce_loop(
     raw_rx: std::sync::mpsc::Receiver<notify::Event>,
-    tx: mpsc::Sender<FileSystemEvent>,
+    tx: mpsc::Sender<Vec<FileSystemEvent>>,
 ) {
     const DEBOUNCE: Duration = Duration::from_millis(100);
 
     let mut pending: Vec<notify::Event> = Vec::new();
     let mut deadline: Option<Instant> = None;
+
+    let flush = |pending: &mut Vec<notify::Event>| {
+        let batch: Vec<FileSystemEvent> = std::mem::take(pending)
+            .iter()
+            .flat_map(classify_event)
+            .collect();
+        if !batch.is_empty() {
+            let _ = tx.blocking_send(batch);
+        }
+    };
 
     loop {
         let timeout = deadline
@@ -110,19 +132,11 @@ fn debounce_loop(
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                 if deadline.is_some_and(|d| Instant::now() >= d) {
                     deadline = None;
-                    for event in std::mem::take(&mut pending) {
-                        for classified in classify_event(&event) {
-                            let _ = tx.blocking_send(classified);
-                        }
-                    }
+                    flush(&mut pending);
                 }
             }
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                for event in std::mem::take(&mut pending) {
-                    for classified in classify_event(&event) {
-                        let _ = tx.blocking_send(classified);
-                    }
-                }
+                flush(&mut pending);
                 break;
             }
         }
@@ -150,14 +164,21 @@ fn classify_event(event: &notify::Event) -> Vec<FileSystemEvent> {
         EventKind::Modify(ModifyKind::Name(_)) => {
             // A rename carries both the source and destination path on the
             // same event when the backend can pair them (inotify). Windows
-            // delivers the two sides as separate single-path events
-            // (`RenameMode::From` / `RenameMode::To`), and FSEvents
-            // reports `RenameMode::Any` once per side — neither can pair
-            // them. Classify a single-path side by existence: the side
-            // that still exists is the destination (`Added`), the
-            // vanished side is the source (`Removed`). This keeps renames
-            // visible to the GUI on every platform instead of degrading
-            // them to `Modified` (which the GUI deliberately ignores).
+            // (ReadDirectoryChangesWatcher) delivers the two sides as
+            // separate single-path events (`RenameMode::From` /
+            // `RenameMode::To`), and macOS (kqueue, pinned via the
+            // workspace `macos_kqueue` feature) emits `RenameMode::Any`
+            // with the old path only. Classify a single-path side by
+            // existence: the side that still exists is the destination
+            // (`Added`), the vanished side is the source (`Removed`). This
+            // keeps renames visible to the GUI on every platform instead
+            // of degrading them to `Modified` (which the GUI deliberately
+            // ignores for files).
+            //
+            // The existence check runs at debounce-flush time (100 ms+
+            // after the event), so a create-then-delete within the window
+            // misclassifies — acceptable for a refresh heuristic, since
+            // the consumer responds with a full rescan either way.
             if event.paths.len() >= 2 {
                 vec![FileSystemEvent::Renamed(
                     PathBuf::from(&event.paths[0]),

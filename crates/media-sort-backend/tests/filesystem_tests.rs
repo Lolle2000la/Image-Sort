@@ -252,9 +252,10 @@ mod watcher_tests {
 
     /// Polls `rx` until the deadline, returning everything collected.
     /// Polling (not `blocking_recv`) — the latter blocks indefinitely on
-    /// an empty channel and would hang the test.
+    /// an empty channel and would hang the test. Each channel message is a
+    /// debounced batch, so the batches are flattened.
     fn drain_until(
-        rx: &mut tokio::sync::mpsc::Receiver<FileSystemEvent>,
+        rx: &mut tokio::sync::mpsc::Receiver<Vec<FileSystemEvent>>,
         deadline: Instant,
     ) -> Vec<FileSystemEvent> {
         let mut collected = Vec::new();
@@ -263,7 +264,7 @@ mod watcher_tests {
                 break;
             }
             match rx.try_recv() {
-                Ok(event) => collected.push(event),
+                Ok(batch) => collected.extend(batch),
                 Err(_) => std::thread::sleep(Duration::from_millis(20)),
             }
         }
@@ -276,13 +277,16 @@ mod watcher_tests {
 
         #[cfg(target_os = "macos")]
         {
-            // FSEvents on GitHub Actions macOS runners only delivers the
-            // FIRST callback batch reliably (see notify#937: later
-            // callbacks can stall indefinitely), so the rename below is
-            // the only mutation after the watch starts. The create path
-            // is covered by `test_watch_multiple_directories`, and the
-            // remove/rename classification by the `classify_event` unit
-            // tests.
+            // The macOS backend is kqueue (workspace `macos_kqueue`
+            // feature), which detects new children by scanning the
+            // directory on a NOTE_WRITE and reporting only the FIRST
+            // entry not yet in its watch map — anything else in the same
+            // burst is silently absorbed. The rename below is therefore
+            // the only mutation after the watch starts, making
+            // `renamed.jpg` the only unknown entry the scan can report.
+            // The create path is covered by
+            // `test_watch_multiple_directories`, and remove/rename
+            // classification by the `classify_event` unit tests.
             let old = tmp.path().join("old.jpg");
             fs::write(&old, b"data").unwrap();
 
@@ -305,9 +309,9 @@ mod watcher_tests {
                         FileSystemEvent::Added(p)
                             if p.file_name().is_some_and(|n| n == "renamed.jpg") =>
                         {
-                            // FSEvents reports one single-path rename event
-                            // per side; the destination side classifies as
-                            // Added (existence-based classification).
+                            // The kqueue directory scan reports the renamed
+                            // file as a new (unknown) entry; its existence
+                            // classifies it as Added.
                             rename_seen = true;
                         }
                         _ => {}

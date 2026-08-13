@@ -298,15 +298,22 @@ impl AppState {
     }
 
     /// The directories whose direct children are currently displayed:
-    /// every expanded tree node plus the current folder (its children are
-    /// the media grid). Watched non-recursively by the filesystem
-    /// subscription; canonicalized so a symlinked node is watched at its
-    /// real target (matching how the tree displays it).
+    /// every expanded tree node, the current folder (its children are the
+    /// media grid), and the current folder's PARENT. The parent is
+    /// watched so a rename/delete of the current folder itself stays
+    /// visible on backends that can't report self-events (Windows
+    /// delivers nothing for a deleted current folder unless the parent is
+    /// watched). Watched non-recursively by the filesystem subscription;
+    /// canonicalized so a symlinked node is watched at its real target
+    /// (matching how the tree displays it).
     pub fn watched_directories(&self) -> Vec<PathBuf> {
         let mut set: std::collections::HashSet<PathBuf> =
             tree::collect_expanded_paths(&self.folder.folder_tree);
         if let Some(ref cur) = self.folder.current_folder {
             set.insert(cur.clone());
+            if let Some(parent) = cur.parent().filter(|p| !p.as_os_str().is_empty()) {
+                set.insert(parent.to_path_buf());
+            }
         }
         let mut dirs: Vec<PathBuf> = set
             .into_iter()

@@ -1638,6 +1638,12 @@ mod filesystem_watcher_tests {
             watched.contains(&canonical(&dir)),
             "the current folder must always be watched"
         );
+        let parent = dir.parent().map(canonical).unwrap();
+        assert!(
+            watched.contains(&parent),
+            "the current folder's parent must be watched so a rename/delete \
+             of the current folder itself stays visible on every backend"
+        );
 
         let sub_canonical = canonical(&sub);
         let sub_idx = state
@@ -1651,6 +1657,63 @@ mod filesystem_watcher_tests {
         assert!(
             watched.contains(&sub_canonical),
             "an expanded folder's children are displayed and must be watched"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_modified_dir_event_triggers_media_refresh() {
+        // kqueue-style under-reporting: the only file in the folder is
+        // deleted externally, the backend emits a directory-level
+        // `Modified` (no per-child event), and the grid must still rescan
+        // and drop the vanished entry.
+        let dir = temp_media_dir("mediasort_fs_dir_modified");
+        std::fs::write(dir.join("a.jpg"), b"x").unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&dir);
+        drain_async_scan(&mut state);
+        assert_eq!(state.media_grid.entries.len(), 1);
+
+        std::fs::remove_file(dir.join("a.jpg")).unwrap();
+        let _ = update(
+            &mut state,
+            Message::FileSystemChanged(vec![FileSystemEvent::Modified(canonical(&dir))]),
+        );
+        drain_async_scan(&mut state);
+        assert!(
+            state.media_grid.entries.is_empty(),
+            "a directory-level Modified must trigger a rescan that drops the vanished entry"
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_modified_file_event_is_ignored() {
+        // Content-only changes of files must not trigger rescans (they
+        // change no visible structure).
+        let dir = temp_media_dir("mediasort_fs_file_modified");
+        std::fs::write(dir.join("a.jpg"), b"x").unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.open_folder(&dir);
+        drain_async_scan(&mut state);
+
+        let _ = update(
+            &mut state,
+            Message::FileSystemChanged(vec![FileSystemEvent::Modified(canonical(
+                &dir.join("a.jpg"),
+            ))]),
+        );
+        assert!(
+            state.media_grid.scan_receiver.is_none(),
+            "a file-level Modified must not start a media refresh"
+        );
+        assert!(
+            state.folder.folder_tree_receiver.is_none() && !state.folder.tree_refresh_pending,
+            "a file-level Modified must not start a tree rebuild"
         );
 
         std::fs::remove_dir_all(&dir).ok();

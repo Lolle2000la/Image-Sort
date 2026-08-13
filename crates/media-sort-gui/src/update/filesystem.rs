@@ -12,9 +12,23 @@
 //!   an expanded node) trigger [`AppState::request_folder_tree_refresh`],
 //!   a background tree rebuild that preserves expansion state.
 //!
-//! Special cases: the current folder itself renamed externally is followed
-//! (the app re-opens the new path); the current folder deleted externally
-//! moves the view up to the closest existing ancestor.
+//! Directory-level `Modified` events (the OS only telling us "this
+//! directory changed", not which children) trigger the same refreshes.
+//! This matters most on macOS, whose kqueue backend (workspace
+//! `macos_kqueue` feature) under-reports children: it reports only the
+//! first not-yet-known entry per directory-write reap and never reports
+//! deletions of pre-existing files, emitting a directory `Modified`
+//! instead. Treating every batch as "something changed, re-scan" (full
+//! replace-mode rescan, never a partial diff) makes the grid
+//! self-correcting on every backend.
+//!
+//! Special cases: the current folder itself renamed externally is
+//! followed (the app re-opens the new path) where the backend can pair
+//! the rename (inotify, with the parent watched); where it cannot
+//! (Windows/macOS deliver the two sides separately), the view moves up
+//! to the closest existing ancestor like a plain deletion. The current
+//! folder deleted externally always moves the view up to the closest
+//! existing ancestor.
 
 use std::path::{Path, PathBuf};
 
@@ -81,6 +95,11 @@ pub fn handle_filesystem_events(
                 // exists, so `paths_equal` can canonicalize both sides;
                 // the `p.path == *from` arm covers pins stored in canonical
                 // form. The tree rebuild below re-reads the new name.
+                //
+                // Known limitation: this arm only runs where the backend
+                // pairs rename sides (inotify). On Windows/macOS the sides
+                // arrive as separate Removed/Added events, so a renamed
+                // pin keeps pointing at the old path there.
                 if let Some(pos) = state
                     .folder
                     .pinned_folders
@@ -105,10 +124,25 @@ pub fn handle_filesystem_events(
                     media_dirty = true;
                 }
             }
-            // Pure content modifications change no visible structure; the
-            // watcher error fallback also lands here (a vanished watch is
-            // caught by the exists-check below).
-            FileSystemEvent::Modified(_) => {}
+            FileSystemEvent::Modified(path) => {
+                // A directory-level Modified means its child set may have
+                // changed without per-child events (kqueue's
+                // under-reporting, watch errors, NFS). Content-only
+                // modifications of FILES stay deliberately ignored.
+                if !path.is_dir() {
+                    continue;
+                }
+                if paths_equal(path, &current) {
+                    // The current folder itself: its displayed children
+                    // (grid + tree) may both have changed.
+                    media_dirty = true;
+                    tree_dirty = true;
+                } else if watched.iter().any(|w| paths_equal(w, path)) {
+                    // An expanded tree node: its displayed children may
+                    // have changed.
+                    tree_dirty = true;
+                }
+            }
         }
     }
 
@@ -117,6 +151,11 @@ pub fn handle_filesystem_events(
         // re-open of the new path resets selection/history/video like any
         // other folder switch, and the watcher subscription re-keys on the
         // new current folder automatically.
+        //
+        // Early return: the remaining events in this batch (e.g. sibling
+        // changes) are deliberately dropped — `open_folder` rebuilds the
+        // tree and rescans the media grid from scratch, which subsumes
+        // their effects.
         tracing::info!(
             "Current folder was renamed externally: {} -> {}",
             current.display(),
