@@ -1,3 +1,4 @@
+pub mod advanced;
 pub mod general;
 pub mod keybindings;
 pub mod metadata_panel;

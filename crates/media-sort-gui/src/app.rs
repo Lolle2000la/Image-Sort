@@ -47,8 +47,8 @@ pub fn theme(state: &AppState) -> iced::Theme {
     }
 }
 
-pub fn subscription(_state: &AppState) -> Subscription<Message> {
-    Subscription::batch([base_subscription(), video_subscription()])
+pub fn subscription(state: &AppState) -> Subscription<Message> {
+    Subscription::batch([base_subscription(), video_subscription(state)])
 }
 
 fn base_subscription() -> Subscription<Message> {
@@ -59,8 +59,12 @@ fn base_subscription() -> Subscription<Message> {
     ])
 }
 
-fn video_subscription() -> Subscription<Message> {
-    iced_mpv::VideoPlayer::subscription_with(Message::Video)
+fn video_subscription(state: &AppState) -> Subscription<Message> {
+    let config = iced_mpv::PlayerConfig {
+        hardware_decoding: !state.settings.advanced.disable_hardware_decoding,
+        ..iced_mpv::PlayerConfig::default()
+    };
+    iced_mpv::VideoPlayer::subscription_with_config_and_map(config, Message::Video)
 }
 
 /// Like [`subscription`], but without the video worker. The headless demo

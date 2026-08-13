@@ -81,6 +81,16 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             };
             Task::none()
         }
+        SettingsMessage::OpenAdvanced => {
+            state.settings_ui = SettingsUiState::Advanced;
+            Task::none()
+        }
+        SettingsMessage::ToggleHardwareDecoding => {
+            state.settings.advanced.disable_hardware_decoding =
+                !state.settings.advanced.disable_hardware_decoding;
+            state.settings.mark_dirty();
+            Task::none()
+        }
         SettingsMessage::RestoreDefaultKeyBindings => {
             state.settings.keybindings =
                 media_sort_core::settings::keybindings::KeyBindings::default();

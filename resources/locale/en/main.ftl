@@ -11,6 +11,7 @@ could-not-act-error = Could not execute action "{$act_message}": {$error_message
 settings-title = Settings
 settings-tab-general = General settings
 settings-tab-keybindings = Key bindings
+settings-tab-advanced = Advanced
 settings-close = Close
 
 # General settings
@@ -26,6 +27,10 @@ settings-install-prerelease = Install prerelease builds
 settings-windows-integration = Integration with Windows
 settings-windows-context-menu = Add a shortcut to open a folder in Media Sort directly from the context menu in Windows Explorer.
 settings-language = Language
+
+# Advanced settings
+settings-video = Video
+settings-disable-hw-decoding = Disable hardware video decoding
 
 # Key bindings
 keybindings-restore-defaults = Restore default key bindings

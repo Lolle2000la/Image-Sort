@@ -20,6 +20,7 @@ impl<FReady: 'static, FEvent: 'static> std::hash::Hash for Handlers<FReady, FEve
         std::any::TypeId::of::<Self>().hash(state);
         self.config.max_frame_width.hash(state);
         self.config.max_frame_height.hash(state);
+        self.config.hardware_decoding.hash(state);
     }
 }
 

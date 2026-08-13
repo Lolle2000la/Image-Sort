@@ -137,7 +137,7 @@ Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `
 | `media_type.rs` | `MediaType` enum (Image/Video/Audio), global `MediaRegistry` (OnceLock), extension lists |
 | `models.rs` | `MediaEntry`, `FolderNode`, `PinnedFolder` data types |
 | `path_utils.rs` | Cross-platform path comparison utilities, `is_symlink` (single source of truth for the symlink-refusal policy), `atomic_write` (unique-temp + fsync + rename — used by the settings store), `unique_temp_path` (shared by the settings store and the updater; pid + counter keeps two app instances from racing on a shared temp name) |
-| `settings/` | `SettingsStore` + sub-modules: `general`, `keybindings`, `metadata_panel`, `pinned_folders`, `window_position` |
+| `settings/` | `SettingsStore` + sub-modules: `advanced`, `general`, `keybindings`, `metadata_panel`, `pinned_folders`, `window_position` |
 | `build.rs` | Auto-generates `locales_codegen.rs` from `resources/locale/` (see below) |
 
 ### media-sort-backend
@@ -220,13 +220,14 @@ Transient user feedback (refused drops, update failures, create-folder errors) g
 
 ## Settings
 
-`SettingsStore` (`crates/media-sort-core/src/settings/store.rs:54`) has 5 sub-structs:
+`SettingsStore` (`crates/media-sort-core/src/settings/store.rs:54`) has 6 sub-structs:
 
 - `GeneralSettings` — locale, dark mode, reopen folder, update checks, GIF animation, folder tree width
 - `KeyBindings` — all user-configurable shortcuts
 - `MetadataPanelSettings` — expanded state and panel width
 - `PinnedFoldersSettings` — list of pinned folder paths as strings
 - `WindowPosition` — left, top, width, height
+- `AdvancedSettings` — `disable_hardware_decoding` (video playback only, see the video pipeline section)
 
 Saves are **atomic** (temp file + rename); a symlinked config path is resolved first so the rename lands on the real target and the user's symlink stays intact.
 
@@ -245,7 +246,7 @@ The video playback path is complex and worth understanding before touching:
 
 1. **Startup** — `main.rs` queries mpv via `MpvContext::query_supported_extensions()` (from `mpv-utils`, re-exported by iced-mpv) and initializes the global `MediaRegistry`
 2. **Subscription** — `video_player_subscription()` (iced-mpv) spawns a tokio `VideoWorker` task (in `mpv-utils`) that owns the `MpvContext` and runs an mpv event loop. Raw worker events are re-exported as `WorkerEvent` (distinct from the crate's `VideoEvent` domain events)
-3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `WorkerEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused). All user intents flow through `PlayerMessage::Action(VideoAction)` — the GUI's `Message::Video(PlayerMessage)` carries them straight into `VideoState::update`, which returns `VideoEvent` domain events (`LoadFailed`, `PlayExternally`, one-shot `FrameReady`) that the app must handle. The worker's render cap is configurable via `PlayerConfig` (`video_player_subscription_with` / `VideoPlayer::subscription_with_config*`; default 960×540).
+3. **Communication** — the GUI sends `VideoCommand` (Load, Seek, SetVolume, TogglePause, Stop, Deactivate) through the opaque `PlayerHandle`; worker responds with `WorkerEvent` (FrameReady, PlaybackProgress, Muted, Volume, Paused). All user intents flow through `PlayerMessage::Action(VideoAction)` — the GUI's `Message::Video(PlayerMessage)` carries them straight into `VideoState::update`, which returns `VideoEvent` domain events (`LoadFailed`, `PlayExternally`, one-shot `FrameReady`) that the app must handle. The worker is configured via `PlayerConfig` (`video_player_subscription_with` / `VideoPlayer::subscription_with_config*`), which carries `hardware_decoding` plus a frame cap (`max_frame_width`/`max_frame_height`). `app::video_subscription` derives it from `AdvancedSettings::disable_hardware_decoding`: **hardware decoding is ON by default** (`hwdec=auto-copy`) and frames render at the video's **native resolution** (mpv defaults, no downscale); with hardware decoding disabled (`hwdec=no`) frames are capped at 960×540 to keep CPU decoding fast. The config is part of the subscription identity hash in `iced-mpv/subscription.rs`, so toggling the setting restarts the worker; `VideoState` re-loads the selected video on the new `Ready` handle.
 4. **Rendering** — Frame RGBA data arrives as `WorkerEvent::FrameReady { rgba: Arc<Vec<u8>>, width, height, rotation: Rotation }`, stored in `VideoState`. The `video_player_view` widget (`widgets/video_player.rs` in the GUI) renders it via a custom wgpu shader (`widgets/video_shader.rs` in iced-mpv) for zero-copy Vulkan interop. This requires `ash` + `raw-window-handle` + `wgpu`.
 5. **Lifecycle** — When the user navigates away from a video (`VideoState::select(None)`), closes the application (`CloseRequested`/`Quit`) or the state is dropped, `Deactivate` is sent to stop mpv playback. On `MpvContext::drop` or channel disconnect, `player.stop()` is executed to ensure `libmpv` demuxer/decoder threads release media handles and do not block application teardown.
 

@@ -1065,6 +1065,30 @@ fn test_settings_toggle_animate_gifs() {
 }
 
 #[test]
+fn test_settings_open_advanced_tab() {
+    let mut state = AppState::new(SettingsStore::default());
+    let _task = update(&mut state, Message::Settings(SettingsMessage::OpenAdvanced));
+    assert!(matches!(state.settings_ui, SettingsUiState::Advanced));
+}
+
+#[test]
+fn test_settings_toggle_hardware_decoding() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert!(!state.settings.advanced.disable_hardware_decoding);
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleHardwareDecoding),
+    );
+    assert!(state.settings.advanced.disable_hardware_decoding);
+    assert!(state.settings.dirty);
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleHardwareDecoding),
+    );
+    assert!(!state.settings.advanced.disable_hardware_decoding);
+}
+
+#[test]
 fn test_settings_toggle_reopen_folder() {
     let mut state = AppState::new(SettingsStore::default());
     let initial = state.settings.general.reopen_last_opened_folder;

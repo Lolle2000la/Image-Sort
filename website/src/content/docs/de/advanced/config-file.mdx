@@ -41,6 +41,14 @@ Steuert das visuelle Erscheinungsbild, die Sprache, das Update-Verhalten und das
 
 ---
 
+### `[advanced]`
+
+Enthält Optionen für fortgeschrittene Nutzer, die die Medien-Dekodierung betreffen:
+
+- **`disable_hardware_decoding`** (Boolean): Erzwingt Software-Videodekodierung (`hwdec=no`). Bei `false` (Standard) wird Hardware-Dekodierung (`hwdec=auto-copy`) verwendet und Videoframes werden in nativer Auflösung gerendert; bei `true` werden Frames auf 960×540 begrenzt, damit die CPU-Dekodierung flüssig bleibt. (Standard: `false`)
+
+---
+
 ### `[metadata_panel]`
 
 Konfiguriert das einklappbare Seitenpanel für EXIF- und Container-Tag-Metadaten:

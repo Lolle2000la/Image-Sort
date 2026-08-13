@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::path_utils;
+use crate::settings::advanced::AdvancedSettings;
 use crate::settings::general::GeneralSettings;
 use crate::settings::keybindings::KeyBindings;
 use crate::settings::metadata_panel::MetadataPanelSettings;
@@ -68,6 +69,8 @@ pub struct SettingsStore {
     pub window_position: WindowPosition,
     #[serde(default)]
     pub metadata_panel: MetadataPanelSettings,
+    #[serde(default)]
+    pub advanced: AdvancedSettings,
 }
 
 impl SettingsStore {
@@ -383,6 +386,7 @@ mod tests {
     use std::io;
     use std::path::PathBuf;
 
+    use crate::settings::advanced::AdvancedSettings;
     use crate::settings::keybindings::Key;
     use crate::settings::metadata_panel::MetadataPanelSettings;
     use crate::settings::store::{SettingsError, SettingsStore};
@@ -498,6 +502,12 @@ mod tests {
         let mps = MetadataPanelSettings::default();
         assert!(!mps.is_expanded);
         assert_eq!(mps.panel_width, 300);
+    }
+
+    #[test]
+    fn test_advanced_settings_default() {
+        let advanced = AdvancedSettings::default();
+        assert!(!advanced.disable_hardware_decoding);
     }
 
     #[test]
