@@ -1700,6 +1700,9 @@ mod filesystem_watcher_tests {
         let mut state = AppState::new(SettingsStore::default());
         state.open_folder(&dir);
         drain_async_scan(&mut state);
+        // Let the initial tree rebuild from open_folder finish first, so
+        // the assertions below observe only the event's own effects.
+        drain_folder_tree(&mut state);
 
         let _ = update(
             &mut state,
