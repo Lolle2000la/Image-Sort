@@ -368,9 +368,12 @@ pub(crate) fn find_node_expanded(nodes: &[FolderNode], path: &Path) -> Option<bo
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
     use media_sort_core::models::FolderKind;
+    #[cfg(unix)]
     use media_sort_core::settings::store::SettingsStore;
 
+    #[cfg(unix)]
     use crate::state::AppState;
 
     #[test]
@@ -778,6 +781,27 @@ mod tests {
         walk(nodes, path, nth, &mut running, &mut seen)
     }
 
+    /// Collects `(path, flat_index)` for every parent-nav (chain) node,
+    /// mirroring the view's ordering (dummy nodes skipped).
+    #[cfg(unix)]
+    fn collect_parent_nav_indices(
+        nodes: &[FolderNode],
+        running: &mut usize,
+        out: &mut Vec<(PathBuf, usize)>,
+    ) {
+        for node in nodes {
+            if node.path.as_os_str().is_empty() {
+                continue;
+            }
+            let idx = *running;
+            *running += 1;
+            if node.is_parent_nav {
+                out.push((node.path.clone(), idx));
+            }
+            collect_parent_nav_indices(&node.children, running, out);
+        }
+    }
+
     /// Finds the first parent-nav node with `path`, ignoring duplicate
     /// non-chain nodes (roots) with the same path.
     fn find_parent_nav_node<'a>(nodes: &'a [FolderNode], path: &Path) -> Option<&'a FolderNode> {
@@ -905,18 +929,23 @@ mod tests {
         state.open_folder(&home);
         state.build_folder_tree();
 
-        // Expand the pinned root, then its chain down to /home/luca. The
-        // chain paths /, /tmp, ... collide with the root's own chain, so
-        // every toggle must hit the pinned occurrence (nth 1).
+        // Expand the pinned root, then every parent-nav (chain) node in the
+        // tree at its actual flat index. On Linux the root and the pinned
+        // chain share ancestor paths (e.g. /tmp/...); on macOS they do not
+        // (open_folder canonicalizes /var to /private/var while the pinned
+        // chain keeps the lexical paths), so path-based expansion must not
+        // assume which occurrence belongs to the pinned chain.
         let pinned_idx =
             flat_index_of_nth(&state.folder.folder_tree, &home.join("Nextcloud"), 0).unwrap();
         state.toggle_folder_expand(&home.join("Nextcloud"), pinned_idx);
 
-        for ancestor in std::iter::successors(Some(home.as_path()), |p| p.parent()) {
-            let Some(idx) = flat_index_of_nth(&state.folder.folder_tree, ancestor, 1) else {
-                break;
-            };
-            state.toggle_folder_expand(ancestor, idx);
+        let mut chain_nodes: Vec<(PathBuf, usize)> = Vec::new();
+        collect_parent_nav_indices(&state.folder.folder_tree, &mut 0, &mut chain_nodes);
+        // Descending index order: rebuilding a node only shifts the flat
+        // indices of nodes AFTER it, so earlier entries stay valid.
+        chain_nodes.sort_by_key(|b| std::cmp::Reverse(b.1));
+        for (path, idx) in chain_nodes {
+            state.toggle_folder_expand(&path, idx);
         }
 
         let chain_node = find_parent_nav_node(&state.folder.folder_tree, &home)
