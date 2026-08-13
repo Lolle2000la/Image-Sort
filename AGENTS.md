@@ -114,7 +114,7 @@ The GUI follows iced's TEA pattern with a unidirectional data flow:
 - **Messages** — `Message` enum (`crates/media-sort-gui/src/message.rs:8`) with nested sub-enums: `FolderMessage`, `MediaMessage`, `SettingsMessage`, plus a direct `Video(iced_mpv::PlayerMessage)` variant (the player's own message type carries both events and user intents — there is no separate `VideoMessage` enum)
 - **Update** — `app::update()` (`crates/media-sort-gui/src/app.rs:10`) is the pure reducer, ~950 lines across `update/`, returning `Task<Message>` for side effects. Undo/Redo (`MediaMessage::Undo`/`Redo`) feed `AppState::start_async_media_scan(select_idx)`, which kicks off the same `scan_media_files` background scan as `open_folder` rather than blocking the UI thread on a synchronous rescan; `poll_background_channels` drains and finally re-selects the entry at `pending_select_index`. Tests that need `entries` populated before asserting drain the async scan via the `drain_async_scan` helper in `update/tests.rs` (loops `poll_background_channels` until `scan_receiver` is `None`). There is no synchronous scan path in production or tests.
 - **View** — `app::view()` delegates to `main_layout_view()` which composes 10 view sub-modules. `media_grid_view` is **virtualized**: only the cards within the current scroll viewport (±5 cards of buffer, computed via the shared `viewport_window` helper from `state.media_grid.scroll`, mirroring `subscriptions/thumbnail_tracker::update_viewport`) are constructed per frame, with leading/trailing `space()` of the same width padding the row so the scrollable's offset math is unchanged. `viewport_window` clamps both bounds to the filtered-list length so a stale scroll snapshot (folder switch to a smaller folder, or a search query shrinking the list, before the next `on_scroll` event) can never slice past the entry list — `open_folder` also resets `scroll.offset_x` to 0 for the same reason. Per-card `iced::widget::Id`s (and the equivalent per-folder-node IDs in `folder_tree_view`) were dropped — none were ever read elsewhere, so this also removes the per-frame `Box::leak` memory leak.
-- **Subscription** — `app::subscription()` (`crates/media-sort-gui/src/app.rs:50`) merges 4 streams into `Message`:
+- **Subscription** — `app::subscription()` (`crates/media-sort-gui/src/app.rs:50`) merges 5 streams into `Message`:
 
 | Stream | Source | Purpose |
 |--------|--------|---------|
@@ -122,6 +122,7 @@ The GUI follows iced's TEA pattern with a unidirectional data flow:
 | Keyboard | `subscriptions::keyboard` | Raw key events via `winit`, matched against configurable keybindings |
 | Events | `iced::event::listen()` | Window resize/move/close, mouse drag (divider resize) |
 | Video | `iced_mpv::VideoPlayer::subscription_with` | mpv worker thread events (frame ready, playback progress, etc.); omitted in headless demo export via `app::demo_subscription` |
+| Filesystem | `subscriptions::filesystem` | OS watcher events (adds/removes/renames) for the watched directory set, feeding `Message::FileSystemChanged` (see the Filesystem watcher section); also omitted from `demo_subscription` |
 
 Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `update` module (`crates/media-sort-gui/src/update.rs`), which holds the `#[cfg(test)] mod tests` unit tests (`update/tests.rs`).
 
@@ -146,7 +147,7 @@ Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `
 |--------|---------|
 | `filesystem/scanner.rs` | `walkdir`-based media file discovery |
 | `filesystem/trash.rs` | Delete-to-trash (wrapping `platform/trash.rs`) |
-| `filesystem/watcher.rs` | `notify` + `notify-debouncer-mini` filesystem change events |
+| `filesystem/watcher.rs` | `notify`-based OS watcher: `watch_directories()` watches any set of directories non-recursively, classifies events into `Added`/`Removed`/`Modified`/`Renamed` (drops `Access` noise) and debounces bursts through a private 100 ms debounce thread — `notify-debouncer-mini` was rejected because it reduces every event to `(path, Any)` and would destroy the kind information the GUI routing relies on. Each debounced burst is delivered as ONE channel message (a 500-file copy = 1 message), and consumers treat a batch as "something changed, re-scan", never as a complete diff. **Rename classification:** backends that pair both sides (inotify) emit one event with two paths → `Renamed(from, to)`; Windows delivers the two sides as separate single-path `Name(From)`/`Name(To)` events and macOS (kqueue — the workspace pins the `macos_kqueue` notify feature) emits `Name(Any)` with the old path only, so a single-path side is classified by existence — the side that still exists is `Added` (destination), the vanished side is `Removed` (source). The existence check runs at flush time (100 ms+ after the event; create-then-delete windows can misclassify — fine for a refresh heuristic). |
 | `media/format_pipeline.rs` | Per-format thumbnail/preview dispatch (private, shared by thumbnail.rs + image_decoder.rs) |
 | `media/image_decoder.rs` | Full-resolution image loading via `image` crate; `load_preview()` (capped preview decode) |
 | `media/audio_decoder.rs` | `AudioPlayer` using `rodio` output + `symphonia` decoding |
@@ -198,7 +199,7 @@ The raw tokio command channel is hidden behind the opaque `PlayerHandle`; produc
 
 Transient user feedback (refused drops, update failures, create-folder errors) goes through `AppState.status_message` (`StatusMessage { text, expires_at }`): set via `state.set_status(...)`, rendered as a non-blocking `status_toast` stacked above modals by `view/overlay.rs`, and expired by `handle_tick` against the tick's own `Instant` (sleep-proof). `open_folder` clears it. New user-visible strings need entries in all three locale files.
 | `widgets/` | Custom widgets: `video_canvas`, `video_player` (controls), `video_shader` (wgpu), `rename_modal`, `create_folder_modal`, `folder_icon` |
-| `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation) |
+| `subscriptions/` | `keyboard.rs`, `video_player.rs`, `prefetch.rs` (thumbnail generation), `filesystem.rs` (OS watcher subscription, see the Filesystem watcher section) |
 
 ### Demo video export (parallel rendering)
 
@@ -298,6 +299,26 @@ Priority at build time: `Locked` > `Symlink` > `Git` > `Default`. `widgets/folde
 
 **Expansion state:** `ToggleExpand` carries the clicked node's *flat index* (same disambiguation as selection) because the current root and chain nodes can share a path (e.g. pinned breadcrumbs containing the current folder); path-only matching would toggle the wrong node. `toggle_folder_expand` falls back to re-resolving the path's current index when the click index is stale. Chain nodes are built with only nested breadcrumb children; expanding them rebuilds the real child listing via the shared `rebuild_node_children`, and `rebuild_expanded_children` in `build_tree_nodes_data` re-populates nodes that `restore_expansion` re-marked as expanded (previously they rendered as expanded with no real children and, with no chevron, could never be expanded until the folder was reopened).
 
+## Filesystem watcher
+
+External changes (adds, renames, moves, removes made outside the app) flow from the OS into the media grid and the folder tree through a watcher pipeline:
+
+1. **Watched set** — `AppState::watched_directories()` (`state.rs`) computes the directories whose direct children are displayed: the current folder (media grid), every expanded folder-tree node, plus the current folder's **parent** (so a rename/delete of the current folder itself stays visible on backends that deliver no self-events — Windows reports nothing for a deleted current folder unless the parent is watched). Paths are canonicalized (symlinked nodes watch their real target) and filtered to existing dirs. The set is a pure function of the tree — no cache, so it can never go stale. It is recomputed per `subscription()` call (including each 16 ms tick — a tree walk plus a `canonicalize` per dir, trivial at UI scale).
+2. **Subscription** — `subscriptions/filesystem.rs` keys an iced subscription on that set (`Subscription::run_with` with the sorted dir list + a `watch_generation` counter as the hashable id): iced restarts the stream whenever the set changes (folder switch, expand/collapse), so the OS watches always mirror the screen. The generation is bumped when a watched directory was deleted and recreated at the same path — the path list is unchanged, but the OS watch on the old inode is dead, so the identity must change to force a restart. The stream calls `media_sort_backend::filesystem::watcher::watch_directories()` and forwards each debounced burst as ONE `Message::FileSystemChanged(Vec<FileSystemEvent>)` — a 500-file copy is one routing pass, not 500. `FileWatcherHandle` lives inside the stream closure — dropping it (subscription restart/replacement) stops the watcher and its debounce thread. Excluded from `demo_subscription` so parallel headless renders stay deterministic.
+3. **Routing** — `update/filesystem.rs::handle_filesystem_events` decides per event kind:
+   - `Added`/`Removed`/`Renamed` whose parent is the **current folder** → media refresh
+   - `Added` dir / `Removed`/`Renamed` of a path in the **folder tree** (or with a parent in the watched set) → tree refresh; a `Renamed` triggers the tree rebuild only for directories (`to.is_dir()` or the source was a tree node) — a file rename changes nothing the tree displays
+   - `Modified` on a **directory** that is the current folder (→ media + tree refresh) or another watched dir (→ tree refresh) — the safety net for backends that under-report children; `Modified` on a **file** (content-only) is deliberately ignored — structure is unchanged
+   - the current folder itself removed → media + tree refresh plus a `watch_generation` bump (re-establishes the watch if an external tool recreated the folder at the same path); if it no longer exists, the view moves to the closest existing ancestor instead
+   - the current folder itself renamed → `open_folder` on the new path (follow), but only where the backend pairs rename sides (inotify, with the parent watched); where it can't pair (Windows/macOS deliver the two sides separately), the view moves up to the closest existing ancestor like a plain deletion
+   - externally renamed pinned folders get their `pinned_folders` entry (and persisted settings path) updated to the new path — **known limitation:** this only runs on the paired-rename branch (inotify); on Windows/macOS the pin stays stale
+4. **Media refresh** — `AppState::start_media_refresh()` starts a *replace-mode* scan (`MediaGridState.scan_replace` + `scan_buffer`): the existing entries stay visible while the scan runs (no grid blanking), and on completion `apply_refresh_selection` (`update.rs`) swaps the entries and restores the selection **by path** — same file selected, just at its new sorted index; only when the selected file vanished does it fall back to `select_and_load_entry` on the clamped old index. If the user had no selection, none is made (an external change never silently loads entry 0). The replace path bypasses the `reopen_last_selected_media` logic (that's folder-open semantics). Because every batch triggers a full rescan (never a partial diff), the grid self-corrects even when the backend under-reports events.
+5. **Coalescing** — both refresh pipelines coalesce latest-wins instead of restarting on every event: if a scan/rebuild is in flight, `pending_refresh`/`tree_refresh_pending` is set, and `poll_background_channels` starts exactly one follow-up pass when the in-flight one lands. An event storm (copying hundreds of files) therefore costs at most one extra scan/rebuild after the last event instead of one thread per batch. `open_folder`/`start_async_media_scan`/`build_folder_tree` reset the refresh state (a folder switch always starts fresh).
+
+**Platform backend notes:** Linux uses inotify (pairs rename sides, per-child events — the most precise backend; the "follow renamed current folder" branch is effectively inotify-only). Windows uses ReadDirectoryChangesWatcher (rename sides arrive as separate `Name(From)`/`Name(To)` single-path events; self-rename/delete of the current folder needs the parent watch, which is always active). macOS uses **kqueue** (the workspace pins notify's `macos_kqueue` feature, not FSEvents): it detects new children by scanning the directory on a `NOTE_WRITE` and reports only the FIRST not-yet-known entry, never reports deletions of pre-existing files (a directory-level `Modified` is emitted instead — hence the dir-`Modified` routing), and emits `Name(Any)` with the old path for renames of watched entries. The kqueue under-reporting is why consumers must treat any batch as "something changed, re-scan" rather than a complete diff.
+
+In-app actions (move/delete/rename/copy) also trigger watcher events, so a redundant refresh runs shortly after — harmless by design (idempotent scan, selection preserved by path), it just keeps the grid consistent with the filesystem's view.
+
 ## Caching
 
 | Cache | Type | Capacity | Purpose |
@@ -396,7 +417,7 @@ The benchmarks crate builds the same vendored static libjpeg-turbo as the backen
 | `wgpu` + `winit` + `ash` + `raw-window-handle` | Vulkan interop for video frames |
 | `symphonia` (all codecs) + `rodio` | Audio decoding and output |
 | `kamadak-exif` + `id3` + `metaflac` + `mp4ameta` | Metadata extraction |
-| `notify` + `notify-debouncer-mini` | Filesystem watcher |
+| `notify` | Filesystem watcher |
 | `walkdir` | Media file scanning |
 | `trash` | Cross-platform delete-to-trash |
 | `fluent` + `fluent-bundle` + `unic-langid` | i18n |

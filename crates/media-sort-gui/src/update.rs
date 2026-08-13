@@ -1,4 +1,5 @@
 pub mod drag_drop;
+pub mod filesystem;
 pub mod folder;
 pub mod keyboard;
 pub mod media;
@@ -34,6 +35,7 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
         Message::DragDrop(drag_drop_msg) => {
             drag_drop::handle_drag_drop_message(state, drag_drop_msg)
         }
+        Message::FileSystemChanged(events) => filesystem::handle_filesystem_events(state, events),
         Message::KeyCaptured(key, ctrl, shift, alt) => {
             keyboard::handle_key_captured(state, key, ctrl, shift, alt)
         }
@@ -139,6 +141,13 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
         state.folder.invalidate_visible_folders_cache();
         state.folder.sync_selected_idx();
     }
+    // Watcher events arrived while the tree was rebuilding: the finished
+    // rebuild is already stale, start another one (it re-reads the
+    // filesystem, so the result is current).
+    if state.folder.folder_tree_receiver.is_none() && state.folder.tree_refresh_pending {
+        state.folder.tree_refresh_pending = false;
+        state.start_async_folder_tree();
+    }
 
     let (new_entries, scan_finished) = if let Some(ref rx) = state.media_grid.scan_receiver {
         let mut new_entries: Vec<media_sort_core::models::MediaEntry> = rx
@@ -193,38 +202,87 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
     } else {
         (Vec::new(), false)
     };
-    if !new_entries.is_empty() {
+    if state.media_grid.scan_replace {
+        // Watcher-driven refresh: buffer the drained paths; the entries
+        // list is swapped wholesale when the scan finishes.
+        state.media_grid.scan_buffer.extend(new_entries);
+    } else if !new_entries.is_empty() {
         state.media_grid.entries.extend(new_entries);
         state.media_grid.rebuild_lower_names();
     }
 
     if scan_finished {
         state.media_grid.scan_receiver = None;
-        state
-            .media_grid
-            .entries
-            .sort_by(|a, b| a.file_name.cmp(&b.file_name));
-        let mut select_idx = state.media_grid.pending_select_index.take().unwrap_or(0);
-        if state.settings.general.reopen_last_opened_folder
-            && state.settings.general.reopen_last_selected_media
-            && let Some(ref last_media_path_str) = state.settings.general.last_selected_media
-        {
-            let last_media_path = std::path::PathBuf::from(last_media_path_str);
-            if let Some(pos) = state
+        if state.media_grid.scan_replace {
+            state.media_grid.scan_replace = false;
+            let mut entries = std::mem::take(&mut state.media_grid.scan_buffer);
+            entries.sort_by(|a, b| a.file_name.cmp(&b.file_name));
+            state.media_grid.entries = entries;
+            state.media_grid.rebuild_lower_names();
+            state.cache.thumbnail_tracker.cancel_debounce();
+            bg_tasks.extend(apply_refresh_selection(state));
+            bg_tasks.push(tasks::load_visible_thumbnails(state));
+        } else {
+            state
                 .media_grid
                 .entries
-                .iter()
-                .position(|entry| entry.path == last_media_path)
+                .sort_by(|a, b| a.file_name.cmp(&b.file_name));
+            let mut select_idx = state.media_grid.pending_select_index.take().unwrap_or(0);
+            if state.settings.general.reopen_last_opened_folder
+                && state.settings.general.reopen_last_selected_media
+                && let Some(ref last_media_path_str) = state.settings.general.last_selected_media
             {
-                select_idx = pos;
+                let last_media_path = std::path::PathBuf::from(last_media_path_str);
+                if let Some(pos) = state
+                    .media_grid
+                    .entries
+                    .iter()
+                    .position(|entry| entry.path == last_media_path)
+                {
+                    select_idx = pos;
+                }
+            }
+            state.cache.thumbnail_tracker.cancel_debounce();
+            bg_tasks.push(tasks::load_visible_thumbnails(state));
+            bg_tasks.push(tasks::select_and_load_entry(state, select_idx));
+        }
+        // Watcher events arrived while the scan ran: the finished result
+        // is already stale, start a replace-mode refresh immediately (it
+        // reads the filesystem again, so the result is current).
+        if state.media_grid.pending_refresh {
+            state.media_grid.pending_refresh = false;
+            if let Some(folder) = state.folder.current_folder.clone() {
+                state.begin_refresh_scan(&folder);
             }
         }
-        state.cache.thumbnail_tracker.cancel_debounce();
-        bg_tasks.push(tasks::load_visible_thumbnails(state));
-        bg_tasks.push(tasks::select_and_load_entry(state, select_idx));
     }
 
     Task::batch(bg_tasks)
+}
+
+/// Restores the selection after a replace-mode refresh landed. The selected
+/// entry is re-located by path (sorted order may have moved it); if it
+/// vanished externally, the old position (clamped) is loaded instead. When
+/// the same file is still selected, no preview/metadata reload happens.
+/// If the user had no selection, none is made — an external change must
+/// not silently load entry 0.
+fn apply_refresh_selection(state: &mut AppState) -> Vec<Task<Message>> {
+    let mut tasks = Vec::new();
+    let prev_path = state.media_grid.refresh_select_path.take();
+    let filtered = state.media_grid.filtered_entries();
+    let new_idx = prev_path.and_then(|p| filtered.iter().position(|e| e.path == p));
+    drop(filtered);
+    match new_idx {
+        Some(idx) => {
+            state.media_grid.selected_index = Some(idx);
+        }
+        None => {
+            if let Some(fallback) = state.media_grid.selected_index {
+                tasks.push(tasks::select_and_load_entry(state, fallback));
+            }
+        }
+    }
+    tasks
 }
 
 #[cfg(feature = "demo")]

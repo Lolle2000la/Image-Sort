@@ -3,6 +3,7 @@ use super::*;
 use crate::message::{FolderMessage, MediaMessage, Message, SettingsMessage};
 use crate::state::{AppState, SettingsUiState};
 use crate::update::keyboard::handle_key_captured;
+use media_sort_backend::filesystem::watcher::FileSystemEvent;
 use media_sort_core::actions::rename_action::RenameAction;
 use media_sort_core::actions::reversible::ReversibleAction;
 use media_sort_core::media_type::MediaType;
@@ -29,6 +30,29 @@ fn drain_async_scan(state: &mut AppState) {
         state.media_grid.scan_receiver.is_none(),
         "async media scan did not complete within 10 s deadline"
     );
+}
+
+/// Drive `poll_background_channels` until the folder tree rebuild started
+/// by `open_folder` (or a watcher-driven refresh) finishes, including any
+/// chained `tree_refresh_pending` rebuilds.
+fn drain_folder_tree(state: &mut AppState) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    while (state.folder.folder_tree_receiver.is_some() || state.folder.tree_refresh_pending)
+        && std::time::Instant::now() < deadline
+    {
+        let _ = poll_background_channels(state);
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    assert!(
+        state.folder.folder_tree_receiver.is_none() && !state.folder.tree_refresh_pending,
+        "folder tree rebuild did not complete within 10 s deadline"
+    );
+}
+
+fn temp_media_dir(prefix: &str) -> PathBuf {
+    let dir = std::env::temp_dir().join(format!("{}_{}", prefix, std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
 }
 
 #[test]
@@ -1346,3 +1370,5 @@ fn test_l10n_detect_locale_returns_string() {
     let locale = media_sort_core::l10n::detect_locale();
     assert!(!locale.is_empty());
 }
+
+mod filesystem_watcher;

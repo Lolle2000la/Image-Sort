@@ -20,12 +20,16 @@ pub use metadata::MetadataPanelState;
 pub use rename_modal::RenameModalState;
 pub use settings_ui::SettingsUiState;
 
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc;
 
+use media_sort_backend::filesystem::scanner::scan_media_files;
 use media_sort_core::history::History;
 use media_sort_core::media_type::{MediaRegistry, MediaType};
 use media_sort_core::models::PinnedFolder;
+use media_sort_core::path_utils::paths_equal;
 use media_sort_core::settings::store::SettingsStore;
 
 use folder::tree;
@@ -64,6 +68,13 @@ pub struct AppState {
     /// instant). Rendered by the main layout, cleared on the next tick
     /// after expiry.
     pub status_message: Option<StatusMessage>,
+
+    /// Monotonic counter folded into the filesystem subscription
+    /// identity. Bumped when the current folder is deleted and recreated
+    /// at the same path: the path list (the identity's key) is unchanged,
+    /// so without the bump iced would keep the stale subscription and the
+    /// OS watch on the dead inode would never be re-established.
+    pub watch_generation: AtomicU64,
 
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
@@ -147,6 +158,7 @@ impl AppState {
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
             status_message: None,
+            watch_generation: AtomicU64::new(0),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -183,6 +195,12 @@ impl AppState {
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
+        // Cancel any watcher-driven refresh state: the folder switch starts
+        // a fresh extend-mode scan below.
+        self.media_grid.scan_replace = false;
+        self.media_grid.scan_buffer.clear();
+        self.media_grid.pending_refresh = false;
+        self.media_grid.refresh_select_path = None;
         // The scroll snapshot belongs to the previous folder's content
         // (possibly thousands of cards); without a reset the first render
         // of the new, smaller folder would slice the entry list past its
@@ -202,11 +220,10 @@ impl AppState {
         self.audio.playing = false;
         self.audio.position = 0.0;
 
+        self.folder.tree_refresh_pending = false;
         self.start_async_folder_tree();
 
-        self.media_grid.scan_receiver = Some(
-            media_sort_backend::filesystem::scanner::scan_media_files(path),
-        );
+        self.media_grid.scan_receiver = Some(scan_media_files(path));
         self.media_grid.pending_select_index = Some(0);
     }
 
@@ -224,14 +241,114 @@ impl AppState {
         self.media_grid.entries.clear();
         self.media_grid.rebuild_lower_names();
         self.media_grid.selected_index = None;
+        // Cancel any watcher-driven refresh state: this is a full
+        // extend-mode rescan (initial load / undo / redo).
+        self.media_grid.scan_replace = false;
+        self.media_grid.scan_buffer.clear();
+        self.media_grid.pending_refresh = false;
+        self.media_grid.refresh_select_path = None;
         // Clear video state so a late FrameReady from the previously-selected
         // video can't repopulate the video state during the rescan (the
         // previously-selected path would otherwise match a stale mpv frame).
         self.video.select(None);
-        self.media_grid.scan_receiver = Some(
-            media_sort_backend::filesystem::scanner::scan_media_files(&folder),
-        );
+        self.media_grid.scan_receiver = Some(scan_media_files(&folder));
         self.media_grid.pending_select_index = Some(select_idx);
+    }
+
+    /// Watcher-driven rescan of the current folder that REPLACES the grid
+    /// entries when it finishes (unlike `open_folder`/Undo/Redo, the
+    /// existing entries stay visible while the scan runs, so external
+    /// changes never blank the grid). Coalesces: if a scan is already in
+    /// flight, the refresh is deferred until it completes — restarting on
+    /// every event batch of a large copy would starve the scanner.
+    pub fn start_media_refresh(&mut self) {
+        let Some(folder) = self.folder.current_folder.clone() else {
+            return;
+        };
+        if self.media_grid.scan_receiver.is_some() {
+            self.media_grid.pending_refresh = true;
+            return;
+        }
+        self.media_grid.pending_refresh = false;
+        self.begin_refresh_scan(&folder);
+    }
+
+    pub(crate) fn begin_refresh_scan(&mut self, folder: &Path) {
+        // Capture the selected entry's path so the selection can be restored
+        // by path after the replacement lands (indices shift on re-sort).
+        self.media_grid.refresh_select_path = self.media_grid.selected_index.and_then(|idx| {
+            self.media_grid
+                .filtered_entries()
+                .get(idx)
+                .map(|e| e.path.clone())
+        });
+        self.media_grid.scan_replace = true;
+        self.media_grid.scan_buffer.clear();
+        self.media_grid.scan_receiver = Some(scan_media_files(folder));
+    }
+
+    /// Watcher-driven folder tree rebuild. Coalesces like
+    /// [`start_media_refresh`](Self::start_media_refresh): while a rebuild
+    /// is in flight the request is deferred, so an event storm cannot spawn
+    /// a thread per batch.
+    pub fn request_folder_tree_refresh(&mut self) {
+        if self.folder.current_folder.is_none() {
+            return;
+        }
+        if self.folder.folder_tree_receiver.is_some() {
+            self.folder.tree_refresh_pending = true;
+            return;
+        }
+        self.folder.tree_refresh_pending = false;
+        self.start_async_folder_tree();
+    }
+
+    /// The directories whose direct children are currently displayed:
+    /// every expanded tree node, the current folder (its children are the
+    /// media grid), and the current folder's PARENT. The parent is
+    /// watched so a rename/delete of the current folder itself stays
+    /// visible on backends that can't report self-events (Windows
+    /// delivers nothing for a deleted current folder unless the parent is
+    /// watched). Watched non-recursively by the filesystem subscription;
+    /// canonicalized so a symlinked node is watched at its real target
+    /// (matching how the tree displays it).
+    pub fn watched_directories(&self) -> Vec<PathBuf> {
+        let mut set: HashSet<PathBuf> = tree::collect_expanded_paths(&self.folder.folder_tree);
+        if let Some(ref cur) = self.folder.current_folder {
+            set.insert(cur.clone());
+            if let Some(parent) = cur.parent().filter(|p| !p.as_os_str().is_empty()) {
+                set.insert(parent.to_path_buf());
+            }
+        }
+        let mut dirs: Vec<PathBuf> = set
+            .into_iter()
+            .filter(|p| !p.as_os_str().is_empty())
+            .map(|p| p.canonicalize().unwrap_or(p))
+            .filter(|p| p.is_dir())
+            .collect();
+        dirs.sort();
+        dirs
+    }
+
+    /// Whether `path` (path-equality, canonicalization-aware) appears as a
+    /// node anywhere in the current folder tree. Used to decide whether a
+    /// removed path was a displayed folder (and therefore a tree rebuild is
+    /// needed) — after removal the path can no longer be statted.
+    pub fn tree_contains_path(&self, path: &Path) -> bool {
+        fn walk(nodes: &[media_sort_core::models::FolderNode], path: &Path) -> bool {
+            nodes
+                .iter()
+                .any(|n| paths_equal(&n.path, path) || walk(&n.children, path))
+        }
+        walk(&self.folder.folder_tree, path)
+    }
+
+    /// Forces the filesystem subscription to restart on the next update
+    /// cycle by changing its identity. Used when a watched directory was
+    /// deleted and recreated at the same path — the path list key is
+    /// unchanged, but the OS watch on the old inode is dead.
+    pub fn bump_watch_generation(&mut self) {
+        self.watch_generation.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn build_folder_tree(&mut self) {
@@ -239,6 +356,7 @@ impl AppState {
             return;
         }
         self.folder.folder_tree_receiver = None;
+        self.folder.tree_refresh_pending = false;
         let expanded_paths = tree::collect_expanded_paths(&self.folder.folder_tree);
         let root = self
             .folder
