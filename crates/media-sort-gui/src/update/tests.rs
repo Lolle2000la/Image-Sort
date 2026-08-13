@@ -560,6 +560,47 @@ fn test_rename_entry_success() {
     std::fs::remove_dir_all(&root).ok();
 }
 
+#[cfg(unix)]
+#[test]
+fn test_rename_entry_via_symlinked_folder_alias() {
+    // Regression: open_folder canonicalizes the current folder, so entries
+    // carry canonical paths. A rename message carrying the non-canonical
+    // alias (here: a path through a symlinked dir, like macOS /var vs
+    // /private/var) must still find the entry and update its path.
+    let base = std::env::temp_dir().join(format!("mediasort_rename_alias_{}", std::process::id()));
+    std::fs::create_dir_all(&base).unwrap();
+    let real = base.join("real");
+    std::fs::create_dir_all(&real).unwrap();
+    let file = real.join("test_image.jpg");
+    std::fs::write(&file, b"fake jpeg data").unwrap();
+    let alias = base.join("alias");
+    std::os::unix::fs::symlink(&real, &alias).unwrap();
+
+    let mut state = AppState::new(SettingsStore::default());
+    state.open_folder(&alias);
+    drain_async_scan(&mut state);
+    state.media_grid.selected_index = Some(0);
+
+    let _task = update(
+        &mut state,
+        Message::Media(MediaMessage::RenameEntry(
+            alias.join("test_image.jpg"),
+            "renamed_image".to_string(),
+        )),
+    );
+
+    assert!(!file.exists());
+    let renamed = real.join("renamed_image.jpg");
+    assert!(renamed.exists());
+    assert_eq!(
+        state.media_grid.entries[0].path,
+        renamed.canonicalize().unwrap()
+    );
+    assert_eq!(state.media_grid.entries[0].file_name, "renamed_image.jpg");
+
+    std::fs::remove_dir_all(&base).ok();
+}
+
 #[test]
 fn test_rename_entry_target_exists_is_noop() {
     let root =
