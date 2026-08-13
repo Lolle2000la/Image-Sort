@@ -264,12 +264,29 @@ impl AppState {
         self.folder.folder_tree_receiver = Some(rx);
     }
 
-    pub fn toggle_folder_expand(&mut self, path: &Path) {
-        toggle_expand_recursive(
+    pub fn toggle_folder_expand(&mut self, path: &Path, idx: usize) {
+        let current = self.folder.current_folder.clone();
+        let mut running_idx = 0;
+        let toggled = toggle_expand_recursive(
             &mut self.folder.folder_tree,
             path,
-            self.folder.current_folder.as_deref(),
+            idx,
+            &mut running_idx,
+            current.as_deref(),
         );
+        // The click index can be stale (a tree rebuild between render and
+        // message delivery); fall back to resolving the path's current flat
+        // index so the correct node is still toggled.
+        if !toggled && let Some(current_idx) = flat_index_of(&self.folder.folder_tree, path) {
+            let mut running_idx = 0;
+            let _ = toggle_expand_recursive(
+                &mut self.folder.folder_tree,
+                path,
+                current_idx,
+                &mut running_idx,
+                current.as_deref(),
+            );
+        }
         self.folder.invalidate_visible_folders_cache();
         self.folder.sync_selected_idx();
     }
@@ -479,6 +496,11 @@ fn build_tree_nodes_data(
         });
     }
 
+    // Restored-expanded chain nodes were built with only their nested
+    // breadcrumb chain; populate their real children so a restored tree
+    // shows the same content as a manually expanded one.
+    rebuild_expanded_children(&mut tree, Some(root));
+
     tree
 }
 
@@ -678,13 +700,97 @@ fn build_parent_chain(current: &Path) -> Vec<FolderNode> {
         .unwrap_or_default()
 }
 
+/// Rebuilds a node's children from the filesystem: the real subfolder
+/// listing is prepended with the preserved parent-navigation (chain) child
+/// nodes, so a chain node keeps its ancestor breadcrumbs after expanding.
+fn rebuild_node_children(node: &mut FolderNode, current_folder: Option<&Path>) {
+    let current = if node.is_current {
+        Some(node.path.as_path())
+    } else {
+        current_folder
+    };
+
+    let parent_nav_nodes: Vec<FolderNode> = node
+        .children
+        .drain(..)
+        .filter(|c| c.is_parent_nav)
+        .collect();
+
+    let mut new_children = build_children(&node.path, current);
+
+    new_children.splice(0..0, parent_nav_nodes);
+
+    node.children = new_children;
+}
+
+/// Whether an expanded node still needs its children rebuilt. Chain nodes
+/// built from `build_parent_chain` start with only nested chain children
+/// (or none at all) — no real subfolder listing — and `restore_expansion`
+/// can mark them expanded again, so they must be populated.
+fn needs_children_rebuild(node: &FolderNode) -> bool {
+    node.is_expanded
+        && node.path.is_dir()
+        && (is_dummy_or_empty(&node.children)
+            || (node.is_parent_nav
+                && node
+                    .children
+                    .iter()
+                    .all(|c| c.is_parent_nav || c.path.as_os_str().is_empty())))
+}
+
+/// Populates children for every expanded node that lacks them (see
+/// [`needs_children_rebuild`]). Called after `restore_expansion` in
+/// `build_tree_nodes_data` so restored-expanded chain nodes show their real
+/// children instead of only the nested breadcrumb chain.
+fn rebuild_expanded_children(nodes: &mut [FolderNode], current_folder: Option<&Path>) {
+    for node in nodes.iter_mut() {
+        if needs_children_rebuild(node) {
+            rebuild_node_children(node, current_folder);
+        }
+        rebuild_expanded_children(&mut node.children, current_folder);
+    }
+}
+
+/// Counts the flat index of `path` in the tree, mirroring the view's
+/// ordering: empty-path (dummy) nodes are skipped, depth-first.
+fn flat_index_of(nodes: &[FolderNode], path: &Path) -> Option<usize> {
+    let mut running = 0;
+    fn walk(nodes: &[FolderNode], path: &Path, running: &mut usize) -> Option<usize> {
+        for node in nodes {
+            if node.path.as_os_str().is_empty() {
+                continue;
+            }
+            if node.path == path {
+                return Some(*running);
+            }
+            *running += 1;
+            if let Some(found) = walk(&node.children, path, running) {
+                return Some(found);
+            }
+        }
+        None
+    }
+    walk(nodes, path, &mut running)
+}
+
 fn toggle_expand_recursive(
     nodes: &mut [FolderNode],
     path: &Path,
+    idx: usize,
+    running_idx: &mut usize,
     current_folder: Option<&Path>,
 ) -> bool {
     for node in nodes.iter_mut() {
-        if node.path == path {
+        // Mirror the view's flat-index ordering: dummy nodes (empty path)
+        // are skipped and do not consume an index.
+        if node.path.as_os_str().is_empty() {
+            continue;
+        }
+        let node_idx = *running_idx;
+        *running_idx += 1;
+        // The index disambiguates duplicate paths (the current root and a
+        // chain node can share the same path, e.g. pinned breadcrumbs).
+        if node_idx == idx && node.path == path {
             if node.path.exists() && node.children.is_empty() && !node.is_parent_nav {
                 return true;
             }
@@ -693,27 +799,11 @@ fn toggle_expand_recursive(
                 && (is_dummy_or_empty(&node.children) || node.is_parent_nav)
                 && node.path.is_dir()
             {
-                let current = if node.is_current {
-                    Some(node.path.as_path())
-                } else {
-                    current_folder
-                };
-
-                let parent_nav_nodes: Vec<FolderNode> = node
-                    .children
-                    .drain(..)
-                    .filter(|c| c.is_parent_nav)
-                    .collect();
-
-                let mut new_children = build_children(&node.path, current);
-
-                new_children.splice(0..0, parent_nav_nodes);
-
-                node.children = new_children;
+                rebuild_node_children(node, current_folder);
             }
             return true;
         }
-        if toggle_expand_recursive(&mut node.children, path, current_folder) {
+        if toggle_expand_recursive(&mut node.children, path, idx, running_idx, current_folder) {
             return true;
         }
     }
@@ -749,23 +839,7 @@ fn set_expand_recursive(
                     && (is_dummy_or_empty(&node.children) || node.is_parent_nav)
                     && node.path.is_dir()
                 {
-                    let current = if node.is_current {
-                        Some(node.path.as_path())
-                    } else {
-                        current_folder
-                    };
-
-                    let parent_nav_nodes: Vec<FolderNode> = node
-                        .children
-                        .drain(..)
-                        .filter(|c| c.is_parent_nav)
-                        .collect();
-
-                    let mut new_children = build_children(&node.path, current);
-
-                    new_children.splice(0..0, parent_nav_nodes);
-
-                    node.children = new_children;
+                    rebuild_node_children(node, current_folder);
                 }
             }
             return true;
@@ -1058,7 +1132,10 @@ mod tests {
             ..FolderNode::default()
         };
         let child_path = PathBuf::from("/root/sub");
-        let found = toggle_expand_recursive(&mut root.children, &child_path, None);
+        let found = {
+            let idx = flat_index_of(&root.children, &child_path).unwrap_or(0);
+            toggle_expand_recursive(&mut root.children, &child_path, idx, &mut 0, None)
+        };
         assert!(!found);
         let child = FolderNode {
             path: child_path.clone(),
@@ -1070,7 +1147,10 @@ mod tests {
             ..FolderNode::default()
         };
         root.children = vec![child];
-        let found = toggle_expand_recursive(&mut root.children, &child_path, None);
+        let found = {
+            let idx = flat_index_of(&root.children, &child_path).unwrap_or(0);
+            toggle_expand_recursive(&mut root.children, &child_path, idx, &mut 0, None)
+        };
         assert!(found);
         assert!(root.children[0].is_expanded);
     }
@@ -1087,7 +1167,16 @@ mod tests {
             ..FolderNode::default()
         };
         let mut children = vec![child];
-        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub"), None);
+        let found = {
+            let idx = flat_index_of(&children, &PathBuf::from("/root/sub")).unwrap_or(0);
+            toggle_expand_recursive(
+                &mut children,
+                &PathBuf::from("/root/sub"),
+                idx,
+                &mut 0,
+                None,
+            )
+        };
         assert!(found);
         assert!(!children[0].is_expanded);
     }
@@ -1113,7 +1202,16 @@ mod tests {
             ..FolderNode::default()
         };
         let mut children = vec![child];
-        let found = toggle_expand_recursive(&mut children, &PathBuf::from("/root/sub/deep"), None);
+        let found = {
+            let idx = flat_index_of(&children, &PathBuf::from("/root/sub/deep")).unwrap_or(0);
+            toggle_expand_recursive(
+                &mut children,
+                &PathBuf::from("/root/sub/deep"),
+                idx,
+                &mut 0,
+                None,
+            )
+        };
         assert!(found);
         assert!(!children[0].is_expanded);
         assert!(children[0].children[0].is_expanded);
@@ -1149,7 +1247,10 @@ mod tests {
         };
 
         let mut tree = vec![nav_node];
-        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+        let found = {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub1))
+        };
 
         assert!(found);
         assert!(tree[0].is_expanded);
@@ -1187,7 +1288,10 @@ mod tests {
         };
 
         let mut tree = vec![nav_node];
-        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+        let found = {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub1))
+        };
 
         assert!(found);
         assert!(tree[0].is_expanded);
@@ -1223,7 +1327,10 @@ mod tests {
         };
 
         let mut tree = vec![nav_node];
-        let found = toggle_expand_recursive(&mut tree, &dir, Some(&sub1));
+        let found = {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub1))
+        };
 
         assert!(found);
         assert!(tree[0].is_expanded);
@@ -1484,13 +1591,22 @@ mod tests {
             ..FolderNode::default()
         }];
 
-        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub))
+        };
         assert_eq!(tree[0].children.len(), 2);
 
-        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub))
+        };
         assert!(!tree[0].is_expanded);
 
-        toggle_expand_recursive(&mut tree, &dir, Some(&sub));
+        {
+            let idx = flat_index_of(&tree, &dir).unwrap_or(0);
+            toggle_expand_recursive(&mut tree, &dir, idx, &mut 0, Some(&sub))
+        };
         assert!(tree[0].is_expanded);
         assert_eq!(
             tree[0].children.len(),
@@ -1499,6 +1615,218 @@ mod tests {
         );
 
         std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// Flat index of the `nth` node (0-based) whose path equals `path`,
+    /// mirroring the view's ordering (dummy nodes skipped).
+    fn flat_index_of_nth(nodes: &[FolderNode], path: &Path, nth: usize) -> Option<usize> {
+        let mut running = 0;
+        let mut seen = 0;
+        fn walk(
+            nodes: &[FolderNode],
+            path: &Path,
+            nth: usize,
+            running: &mut usize,
+            seen: &mut usize,
+        ) -> Option<usize> {
+            for node in nodes {
+                if node.path.as_os_str().is_empty() {
+                    continue;
+                }
+                if node.path == path {
+                    if *seen == nth {
+                        return Some(*running);
+                    }
+                    *seen += 1;
+                }
+                *running += 1;
+                if let Some(found) = walk(&node.children, path, nth, running, seen) {
+                    return Some(found);
+                }
+            }
+            None
+        }
+        walk(nodes, path, nth, &mut running, &mut seen)
+    }
+
+    /// Finds the first parent-nav node with `path`, ignoring duplicate
+    /// non-chain nodes (roots) with the same path.
+    fn find_parent_nav_node<'a>(nodes: &'a [FolderNode], path: &Path) -> Option<&'a FolderNode> {
+        for node in nodes {
+            if node.path == path && node.is_parent_nav {
+                return Some(node);
+            }
+            if let Some(found) = find_parent_nav_node(&node.children, path) {
+                return Some(found);
+            }
+        }
+        None
+    }
+
+    #[test]
+    fn test_toggle_expand_disambiguates_duplicate_paths_by_index() {
+        // Regression: the current root and a chain node (pinned breadcrumbs)
+        // can share the same path. Path-only matching toggled the FIRST
+        // match (the root) even when the user clicked the chain node's
+        // chevron. The flat index from the view must select the clicked node.
+        let path = PathBuf::from("/same/path");
+
+        let mut tree = vec![
+            FolderNode {
+                path: path.clone(),
+                name: "root".into(),
+                children: vec![],
+                is_current: true,
+                is_expanded: true,
+                is_parent_nav: false,
+                ..FolderNode::default()
+            },
+            FolderNode {
+                path: PathBuf::from("/pinned"),
+                name: "pinned".into(),
+                children: vec![FolderNode {
+                    path: path.clone(),
+                    name: "chain".into(),
+                    children: vec![],
+                    is_current: false,
+                    is_expanded: false,
+                    is_parent_nav: true,
+                    ..FolderNode::default()
+                }],
+                is_current: false,
+                is_expanded: true,
+                is_parent_nav: false,
+                ..FolderNode::default()
+            },
+        ];
+
+        // Chain node is the second occurrence -> flat index 2.
+        let chain_idx = flat_index_of_nth(&tree, &path, 1).unwrap();
+        assert_eq!(chain_idx, 2);
+        {
+            let mut running = 0;
+            toggle_expand_recursive(&mut tree, &path, chain_idx, &mut running, None)
+        };
+
+        // The chain node toggled (false -> true), the root did NOT. With
+        // path-only first-match matching the root would have collapsed.
+        assert!(find_parent_nav_node(&tree, &path).unwrap().is_expanded);
+        assert!(
+            tree[0].is_expanded,
+            "the root must keep its own expansion state"
+        );
+    }
+
+    #[test]
+    fn test_restored_expanded_chain_node_gets_real_children() {
+        // Regression: after a rebuild, previously-expanded chain nodes were
+        // restored with only their nested breadcrumb chain (or nothing) —
+        // the real children were only built on a manual collapse+expand,
+        // which is impossible when the node has no chevron.
+        let base =
+            std::env::temp_dir().join(format!("mediasort_chain_restore_{}", std::process::id()));
+        let root = base.join("current");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::create_dir_all(root.join("alpha")).unwrap();
+        std::fs::create_dir_all(root.join("beta")).unwrap();
+
+        // Mark the root's parent (an ancestor chain node) as expanded.
+        let parent = base.clone();
+        let mut expanded_paths = std::collections::HashSet::new();
+        expanded_paths.insert(parent.clone());
+
+        let tree = build_tree_nodes_data(&root, &[], &expanded_paths);
+
+        let parent_nav = find_parent_nav_node(&tree, &parent).expect("chain node exists");
+        assert!(
+            parent_nav.is_expanded,
+            "restored chain node must stay expanded"
+        );
+        let names: Vec<_> = parent_nav
+            .children
+            .iter()
+            .filter(|c| !c.is_parent_nav)
+            .map(|c| c.name.as_str())
+            .collect();
+        assert!(
+            names.contains(&"current"),
+            "restored-expanded chain node must show its real children, got {names:?}"
+        );
+
+        std::fs::remove_dir_all(&base).ok();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_symlinked_pinned_chain_full_listing_after_reopen() {
+        use std::os::unix::fs::symlink;
+
+        let base =
+            std::env::temp_dir().join(format!("mediasort_chain_symlink_{}", std::process::id()));
+        let home = base.join("home").join("luca");
+        let real_nextcloud = base.join("data").join("luca").join("Nextcloud");
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::create_dir_all(&real_nextcloud).unwrap();
+        std::fs::create_dir_all(home.join("development")).unwrap();
+        std::fs::create_dir_all(home.join("other_stuff")).unwrap();
+        symlink(&real_nextcloud, home.join("Nextcloud")).unwrap();
+
+        let mut state = AppState::new(SettingsStore::default());
+        state.pin_folder(&home.join("Nextcloud"));
+        state.open_folder(&home);
+        state.build_folder_tree();
+
+        // Expand the pinned root, then its chain down to /home/luca. The
+        // chain paths /, /tmp, ... collide with the root's own chain, so
+        // every toggle must hit the pinned occurrence (nth 1).
+        let pinned_idx =
+            flat_index_of_nth(&state.folder.folder_tree, &home.join("Nextcloud"), 0).unwrap();
+        state.toggle_folder_expand(&home.join("Nextcloud"), pinned_idx);
+
+        for ancestor in std::iter::successors(Some(home.as_path()), |p| p.parent()) {
+            let Some(idx) = flat_index_of_nth(&state.folder.folder_tree, ancestor, 1) else {
+                break;
+            };
+            state.toggle_folder_expand(ancestor, idx);
+        }
+
+        let chain_node = find_parent_nav_node(&state.folder.folder_tree, &home)
+            .expect("pinned chain /home/luca node exists");
+        let names: Vec<_> = chain_node
+            .children
+            .iter()
+            .filter(|c| !c.is_parent_nav)
+            .map(|c| c.name.as_str())
+            .collect();
+        for expected in ["Nextcloud", "development", "other_stuff"] {
+            assert!(
+                names.contains(&expected),
+                "chain node of {home:?} missing {expected}, got {names:?}"
+            );
+        }
+
+        // Re-open /home/luca as the current folder: the pinned chain node is
+        // restored expanded and must keep its real children (regression:
+        // it used to be restored with only the nested chain / no children).
+        state.open_folder(&home);
+        state.build_folder_tree();
+        let chain_node = find_parent_nav_node(&state.folder.folder_tree, &home)
+            .expect("pinned chain /home/luca node exists after reopen");
+        assert!(chain_node.is_expanded);
+        let names: Vec<_> = chain_node
+            .children
+            .iter()
+            .filter(|c| !c.is_parent_nav)
+            .map(|c| c.name.as_str())
+            .collect();
+        for expected in ["Nextcloud", "development", "other_stuff"] {
+            assert!(
+                names.contains(&expected),
+                "restored chain node of {home:?} missing {expected}, got {names:?}"
+            );
+        }
+
+        std::fs::remove_dir_all(&base).ok();
     }
 
     #[test]

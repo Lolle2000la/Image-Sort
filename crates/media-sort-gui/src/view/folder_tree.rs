@@ -77,6 +77,7 @@ fn render_node<'a>(
         )
         .on_press(Message::Folder(FolderMessage::ToggleExpand(
             node_path.clone(),
+            current_flat_idx,
         )))
         .style(iced::widget::button::text)
         .padding(iced::Padding::new(2.0))

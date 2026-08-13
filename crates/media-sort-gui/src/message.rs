@@ -99,7 +99,7 @@ pub enum FolderMessage {
     #[automation(keycap = "Arrow Keys\nSelect Destination")]
     Selected(PathBuf, usize),
     #[automation(keycap = "Space\nExpand Folder")]
-    ToggleExpand(PathBuf),
+    ToggleExpand(PathBuf, usize),
     PinSelected,
     UnpinCurrent(PathBuf),
     MovePinnedUp(PathBuf),

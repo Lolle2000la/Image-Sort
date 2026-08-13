@@ -296,6 +296,8 @@ Priority at build time: `Locked` > `Symlink` > `Git` > `Default`. `widgets/folde
 
 **Symlinked folders are followed transparently:** `build_children` includes symlink-to-directory entries, `read_dir` on them lists the target's children, expanding/selecting works like any other node, and `open_folder` canonicalizes the path up front so the tree, scanner and watcher all operate on the real target. Move/copy destinations are canonicalized by the action constructors, so sorting into a selected symlinked folder lands in the final target. The symlink-refusal policy for *file sources* is unchanged (see the `actions/` row above). Note `is_current` uses `paths_equal` (canonicalize-based), so the symlink node through which the current folder was entered is highlighted.
 
+**Expansion state:** `ToggleExpand` carries the clicked node's *flat index* (same disambiguation as selection) because the current root and chain nodes can share a path (e.g. pinned breadcrumbs containing the current folder); path-only matching would toggle the wrong node. `toggle_folder_expand` falls back to re-resolving the path's current index when the click index is stale. Chain nodes are built with only nested breadcrumb children; expanding them rebuilds the real child listing via the shared `rebuild_node_children`, and `rebuild_expanded_children` in `build_tree_nodes_data` re-populates nodes that `restore_expansion` re-marked as expanded (previously they rendered as expanded with no real children and, with no chevron, could never be expanded until the folder was reopened).
+
 ## Caching
 
 | Cache | Type | Capacity | Purpose |
