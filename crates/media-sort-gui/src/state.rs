@@ -65,6 +65,13 @@ pub struct AppState {
     /// after expiry.
     pub status_message: Option<StatusMessage>,
 
+    /// Monotonic counter folded into the filesystem subscription
+    /// identity. Bumped when the current folder is deleted and recreated
+    /// at the same path: the path list (the identity's key) is unchanged,
+    /// so without the bump iced would keep the stale subscription and the
+    /// OS watch on the dead inode would never be re-established.
+    pub watch_generation: std::sync::atomic::AtomicU64,
+
     #[cfg(feature = "velopack")]
     pub pending_update: Option<velopack::UpdateInfo>,
     #[cfg(feature = "velopack")]
@@ -147,6 +154,7 @@ impl AppState {
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
             status_message: None,
+            watch_generation: std::sync::atomic::AtomicU64::new(0),
             #[cfg(feature = "velopack")]
             pending_update: None,
             #[cfg(feature = "velopack")]
@@ -336,6 +344,15 @@ impl AppState {
             })
         }
         walk(&self.folder.folder_tree, path)
+    }
+
+    /// Forces the filesystem subscription to restart on the next update
+    /// cycle by changing its identity. Used when a watched directory was
+    /// deleted and recreated at the same path — the path list key is
+    /// unchanged, but the OS watch on the old inode is dead.
+    pub fn bump_watch_generation(&mut self) {
+        self.watch_generation
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
     }
 
     pub fn build_folder_tree(&mut self) {

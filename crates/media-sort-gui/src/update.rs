@@ -264,6 +264,8 @@ pub fn poll_background_channels(state: &mut AppState) -> Task<Message> {
 /// entry is re-located by path (sorted order may have moved it); if it
 /// vanished externally, the old position (clamped) is loaded instead. When
 /// the same file is still selected, no preview/metadata reload happens.
+/// If the user had no selection, none is made — an external change must
+/// not silently load entry 0.
 fn apply_refresh_selection(state: &mut AppState) -> Vec<Task<Message>> {
     let mut tasks = Vec::new();
     let prev_path = state.media_grid.refresh_select_path.take();
@@ -275,8 +277,9 @@ fn apply_refresh_selection(state: &mut AppState) -> Vec<Task<Message>> {
             state.media_grid.selected_index = Some(idx);
         }
         None => {
-            let fallback = state.media_grid.selected_index.unwrap_or(0);
-            tasks.push(tasks::select_and_load_entry(state, fallback));
+            if let Some(fallback) = state.media_grid.selected_index {
+                tasks.push(tasks::select_and_load_entry(state, fallback));
+            }
         }
     }
     tasks

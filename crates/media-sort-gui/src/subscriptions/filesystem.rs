@@ -16,14 +16,22 @@ use iced::{Subscription, stream};
 use crate::message::Message;
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
-struct WatchTargets(Vec<std::path::PathBuf>);
+struct WatchTargets(Vec<std::path::PathBuf>, u64);
 
 pub fn filesystem_subscription(state: &crate::state::AppState) -> Subscription<Message> {
     let dirs = state.watched_directories();
     if dirs.is_empty() {
         return Subscription::none();
     }
-    let targets = WatchTargets(dirs);
+    // The generation bump (deleted-and-recreated watched dir) changes the
+    // identity even though the path list is identical, forcing iced to
+    // restart the stream and re-establish the OS watches.
+    let targets = WatchTargets(
+        dirs,
+        state
+            .watch_generation
+            .load(std::sync::atomic::Ordering::Relaxed),
+    );
     Subscription::run_with(targets, run)
 }
 

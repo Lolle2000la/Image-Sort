@@ -37,7 +37,6 @@ image = { version = "0.25", default-features = false, features = [
 notify = { version = "8", default-features = false, features = [
     "macos_kqueue",
 ] }
-notify-debouncer-mini = "0.7"
 trash = "5"
 winreg = "0.56"
 walkdir = "2"

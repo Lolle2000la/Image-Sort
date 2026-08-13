@@ -70,9 +70,18 @@ pub fn handle_filesystem_events(
                 }
             }
             FileSystemEvent::Removed(path) => {
-                // The current folder itself was removed — handled after
-                // the loop (move up to the closest existing ancestor).
+                // The current folder itself was removed. If it still does
+                // not exist after the loop, the view moves up to the
+                // closest existing ancestor. If an external tool deleted
+                // AND recreated it at the same path before the flush, the
+                // folder exists again: the grid/tree must rescan the new
+                // content, and the watch-generation bump forces the
+                // subscription to restart so the OS watch is re-established
+                // on the new directory (the old inode watch is dead).
                 if paths_equal(path, &current) {
+                    media_dirty = true;
+                    tree_dirty = true;
+                    state.bump_watch_generation();
                     continue;
                 }
                 // A removed path that used to be a tree node (displayed
@@ -91,15 +100,16 @@ pub fn handle_filesystem_events(
                     continue;
                 }
                 // A pinned folder renamed externally: keep the pin (and the
-                // persisted settings) pointing at the new path. `to` still
-                // exists, so `paths_equal` can canonicalize both sides;
-                // the `p.path == *from` arm covers pins stored in canonical
-                // form. The tree rebuild below re-reads the new name.
-                //
-                // Known limitation: this arm only runs where the backend
-                // pairs rename sides (inotify). On Windows/macOS the sides
-                // arrive as separate Removed/Added events, so a renamed
-                // pin keeps pointing at the old path there.
+                // persisted settings) pointing at the new path. Only the
+                // paired-rename backend (inotify) reaches this arm — see
+                // the module doc. `p.path == *from` matches pins stored in
+                // canonical form (the event's `from` is canonical); pins
+                // stored in a non-canonical spelling of the OLD path can
+                // never match here because the old path no longer exists
+                // and `paths_equal` cannot canonicalize it. The
+                // `paths_equal(&p.path, to)` arm only handles re-delivery
+                // of an already-updated pin (idempotency), not the primary
+                // match.
                 if let Some(pos) = state
                     .folder
                     .pinned_folders
@@ -115,7 +125,16 @@ pub fn handle_filesystem_events(
                     }
                     state.settings.mark_dirty();
                 }
-                if state.tree_contains_path(from) || parent_in_watched(from, &watched) {
+                // A folder rename changes the displayed children of the
+                // source and/or destination parent; a FILE rename changes
+                // nothing in the tree (it shows folders only), so gate the
+                // tree rebuild on directory-ness. `tree_contains_path`
+                // covers a displayed folder node renamed away from the
+                // watched set (its destination may not be statable here).
+                if state.tree_contains_path(from)
+                    || (to.is_dir()
+                        && (parent_in_watched(from, &watched) || parent_in_watched(to, &watched)))
+                {
                     tree_dirty = true;
                 }
                 // Renames into or out of the current folder change the
