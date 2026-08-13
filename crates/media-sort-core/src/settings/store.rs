@@ -220,7 +220,9 @@ impl SettingsStore {
     ///   user edit is never reverted by a reload.
     /// - Session-scoped fields are never adopted from disk: this
     ///   instance's `window_position`, `general.last_opened_folder` and
-    ///   `general.last_selected_media` stay local.
+    ///   `general.last_selected_media` stay local, plus
+    ///   `pinned_folders` when `general.session_pinned_folders` is
+    ///   enabled.
     /// - Everything else adopts the on-disk value.
     /// - Unknown keys (written by a future version) are ignored: they
     ///   never count as a change and never enter the saved snapshot, so a
@@ -257,10 +259,19 @@ impl SettingsStore {
             replace_path(&mut merged, &curr, session_path);
         }
 
-        // Deserialize the merged state and re-serialize it: the comparison
-        // must ignore unknown keys (fields written by a future version),
-        // otherwise their mere presence would report a spurious change.
-        let incoming: SettingsStore = merged.clone().try_into().map_err(SettingsError::TomlDe)?;
+        // ...and, when enabled, pinned folders join the session scope:
+        // the choice is read from the merged (to-be-adopted) state so a
+        // concurrent toggle of the setting takes effect in this reload.
+        let mut incoming: SettingsStore =
+            merged.clone().try_into().map_err(SettingsError::TomlDe)?;
+        if incoming.general.session_pinned_folders {
+            replace_path(&mut merged, &curr, "pinned_folders");
+            incoming = merged.clone().try_into().map_err(SettingsError::TomlDe)?;
+        }
+
+        // Re-serialize the merged state: the comparison must ignore
+        // unknown keys (fields written by a future version), otherwise
+        // their mere presence would report a spurious change.
         let adopted = toml::Value::try_from(&incoming).map_err(SettingsError::TomlSer)?;
 
         // New baseline: the disk state re-serialized through this
@@ -275,6 +286,9 @@ impl SettingsStore {
         let mut new_last = toml::Value::try_from(&disk_store).map_err(SettingsError::TomlSer)?;
         for session_path in SESSION_SCOPED_PATHS {
             replace_path(&mut new_last, &last, session_path);
+        }
+        if incoming.general.session_pinned_folders {
+            replace_path(&mut new_last, &last, "pinned_folders");
         }
 
         let changed = adopted != curr;
@@ -307,9 +321,11 @@ impl SettingsStore {
     }
 }
 
-/// Dotted paths of the subtrees that are scoped to one running instance.
-/// `reload_from_disk` never adopts external values for these, and their
-/// merge baseline stays local so unflushed local changes stay pending.
+/// Dotted paths of the subtrees that are always scoped to one running
+/// instance. `reload_from_disk` never adopts external values for these,
+/// and their merge baseline stays local so unflushed local changes stay
+/// pending. `pinned_folders` joins this set dynamically when
+/// `general.session_pinned_folders` is enabled (see `reload_from_disk`).
 const SESSION_SCOPED_PATHS: &[&str] = &[
     "window_position",
     "general.last_opened_folder",
@@ -1277,6 +1293,94 @@ mod tests {
         assert_eq!(a.general.last_opened_folder, None);
         assert_eq!(a.general.last_selected_media, None);
         assert_eq!(a.window_position.left, WindowPosition::default().left);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_reload_shares_pinned_folders_by_default() {
+        let dir = test_temp_subdir();
+        let config = dir.join("config.toml");
+        let mut a = SettingsStore {
+            custom_path: Some(config.clone()),
+            ..SettingsStore::default()
+        };
+        a.save().unwrap();
+
+        let mut b = settings_at(&config);
+        b.pinned_folders.paths = vec!["/b/pin".to_string()];
+        b.save().unwrap();
+
+        // Default: pinned folders are shared and adopted on reload.
+        assert!(a.reload_from_disk().unwrap());
+        assert_eq!(a.pinned_folders.paths, vec!["/b/pin".to_string()]);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_reload_session_pinned_folders_are_not_adopted() {
+        let dir = test_temp_subdir();
+        let config = dir.join("config.toml");
+        let mut a = SettingsStore {
+            custom_path: Some(config.clone()),
+            ..SettingsStore::default()
+        };
+        a.pinned_folders.paths = vec!["/a/pin".to_string()];
+        a.save().unwrap();
+
+        let mut b = settings_at(&config);
+        b.general.session_pinned_folders = true;
+        b.pinned_folders.paths = vec!["/b/pin".to_string()];
+        b.save().unwrap();
+
+        // The toggle itself is a shared setting and is adopted...
+        assert!(a.reload_from_disk().unwrap());
+        assert!(a.general.session_pinned_folders);
+        // ...but the pins stay local.
+        assert_eq!(a.pinned_folders.paths, vec!["/a/pin".to_string()]);
+
+        // A save by A must not clobber B's pins on disk either: the
+        // baseline keeps A's own pins, so nothing is dirty.
+        a.save().unwrap();
+        assert_eq!(
+            settings_at(&config).pinned_folders.paths,
+            vec!["/b/pin".to_string()]
+        );
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn test_reload_unflushed_pin_change_survives_session_scope() {
+        let dir = test_temp_subdir();
+        let config = dir.join("config.toml");
+        let mut a = SettingsStore {
+            custom_path: Some(config.clone()),
+            ..SettingsStore::default()
+        };
+        a.pinned_folders.paths = vec!["/a/pin".to_string()];
+        a.save().unwrap();
+
+        let mut b = settings_at(&config);
+        b.general.session_pinned_folders = true;
+        b.save().unwrap();
+
+        // A changed its pins but has not flushed yet.
+        a.pinned_folders.paths = vec!["/a/pin".to_string(), "/a/pin2".to_string()];
+        a.mark_dirty();
+        assert!(a.reload_from_disk().unwrap());
+        // The unflushed local pin change survives the reload...
+        assert_eq!(
+            a.pinned_folders.paths,
+            vec!["/a/pin".to_string(), "/a/pin2".to_string()]
+        );
+        // ...and is flushed by the next save.
+        a.save().unwrap();
+        assert_eq!(
+            settings_at(&config).pinned_folders.paths,
+            vec!["/a/pin".to_string(), "/a/pin2".to_string()]
+        );
 
         std::fs::remove_dir_all(&dir).ok();
     }

@@ -278,6 +278,11 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                 .on_toggle(|_| Message::Settings(SettingsMessage::ToggleAnimateGifs))
                 .size(16);
 
+            let session_pinned_cb = checkbox(state.settings.general.session_pinned_folders)
+                .label(state.l10n.tr("settings-session-pinned-folders"))
+                .on_toggle(|_| Message::Settings(SettingsMessage::ToggleSessionPinnedFolders))
+                .size(16);
+
             #[cfg(feature = "velopack")]
             let check_updates_cb = checkbox(state.settings.general.check_for_updates_on_startup)
                 .label(state.l10n.tr("settings-check-updates"))
@@ -337,6 +342,13 @@ pub fn settings_dialog_view(state: &AppState) -> Element<'_, Message> {
                         .font(BOLD_FONT)
                         .size(14),
                     animate_gifs_cb,
+                ]
+                .spacing(8),
+                column![
+                    text(state.l10n.tr("settings-pinned-folders"))
+                        .font(BOLD_FONT)
+                        .size(14),
+                    session_pinned_cb,
                 ]
                 .spacing(8),
             ];

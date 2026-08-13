@@ -1198,6 +1198,38 @@ fn test_tick_reload_preserves_unflushed_local_change() {
     let _ = std::fs::remove_file(&tmp);
 }
 
+#[test]
+fn test_tick_session_pinned_folders_are_not_synced() {
+    let tmp = std::env::temp_dir().join(format!(
+        "mediasort_tick_session_pins_{}",
+        std::process::id()
+    ));
+    let _ = std::fs::remove_file(&tmp);
+    let settings = SettingsStore {
+        custom_path: Some(tmp.clone()),
+        ..SettingsStore::default()
+    };
+    let mut state = AppState::new(settings);
+    state.settings.save().unwrap();
+
+    // A second instance enables per-session pins and pins its own folder.
+    let mut other: SettingsStore = toml::from_str(&std::fs::read_to_string(&tmp).unwrap()).unwrap();
+    other.custom_path = Some(tmp.clone());
+    other.general.session_pinned_folders = true;
+    other.pinned_folders.paths = vec!["/other/pin".to_string()];
+    other.save().unwrap();
+
+    state.settings_reload_at = Instant::now();
+    let _task = update(&mut state, Message::Tick(Instant::now()));
+
+    // The toggle itself is adopted; the pins are not.
+    assert!(state.settings.general.session_pinned_folders);
+    assert!(state.settings.pinned_folders.paths.is_empty());
+    assert!(state.folder.pinned_folders.is_empty());
+
+    let _ = std::fs::remove_file(&tmp);
+}
+
 // ============================================================================
 // Settings message handler tests
 // ============================================================================
@@ -1238,6 +1270,18 @@ fn test_settings_toggle_animate_gifs() {
         Message::Settings(SettingsMessage::ToggleAnimateGifs),
     );
     assert_eq!(state.settings.general.animate_gifs, !was_animating);
+}
+
+#[test]
+fn test_settings_toggle_session_pinned_folders() {
+    let mut state = AppState::new(SettingsStore::default());
+    let was_session = state.settings.general.session_pinned_folders;
+    let _task = update(
+        &mut state,
+        Message::Settings(SettingsMessage::ToggleSessionPinnedFolders),
+    );
+    assert_eq!(state.settings.general.session_pinned_folders, !was_session);
+    assert!(state.settings.dirty);
 }
 
 #[test]

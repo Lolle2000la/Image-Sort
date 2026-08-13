@@ -76,6 +76,7 @@ pub enum SettingsMessage {
     #[serde(skip_deserializing)]
     ToggleIntegrationWithWindows,
     ToggleAnimateGifs,
+    ToggleSessionPinnedFolders,
     ChangeLanguage(String),
     Save,
     RestoreDefaultKeyBindings,

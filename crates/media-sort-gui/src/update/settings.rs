@@ -66,6 +66,12 @@ pub fn handle_settings_message(state: &mut AppState, msg: SettingsMessage) -> Ta
             state.settings.mark_dirty();
             Task::none()
         }
+        SettingsMessage::ToggleSessionPinnedFolders => {
+            state.settings.general.session_pinned_folders =
+                !state.settings.general.session_pinned_folders;
+            state.settings.mark_dirty();
+            Task::none()
+        }
         SettingsMessage::Save => {
             state.settings.mark_dirty();
             Task::none()
