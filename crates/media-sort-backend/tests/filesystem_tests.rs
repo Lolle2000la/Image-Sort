@@ -274,33 +274,28 @@ mod watcher_tests {
     fn test_watch_reports_add_remove_and_rename() {
         let tmp = TempDir::new("mediasort_watch");
 
-        let (_handle, mut rx) = watch_directories(&[tmp.path().to_path_buf()]);
-        // Give the watcher a moment to register (debouncer thread + OS).
-        std::thread::sleep(Duration::from_millis(200));
-
         #[cfg(target_os = "macos")]
         {
-            // FSEvents on macOS runners is unreliable across multiple
-            // callback batches (see notify#937: later callbacks can stall
-            // for tens of seconds), so every mutation happens in one
-            // burst and the assertions check the union of the received
-            // events against a generous deadline. The remove path stays
-            // covered by the sequential flow on the other platforms.
-            fs::write(tmp.path().join("new.jpg"), b"data").unwrap();
-            fs::write(tmp.path().join("old.jpg"), b"data").unwrap();
-            fs::rename(tmp.path().join("old.jpg"), tmp.path().join("renamed.jpg")).unwrap();
+            // FSEvents on GitHub Actions macOS runners only delivers the
+            // FIRST callback batch reliably (see notify#937: later
+            // callbacks can stall indefinitely), so the rename below is
+            // the only mutation after the watch starts. The create path
+            // is covered by `test_watch_multiple_directories`, and the
+            // remove/rename classification by the `classify_event` unit
+            // tests.
+            let old = tmp.path().join("old.jpg");
+            fs::write(&old, b"data").unwrap();
+
+            let (_handle, mut rx) = watch_directories(&[tmp.path().to_path_buf()]);
+            std::thread::sleep(Duration::from_millis(200));
+
+            fs::rename(&old, tmp.path().join("renamed.jpg")).unwrap();
 
             let deadline = Instant::now() + Duration::from_secs(30);
-            let mut added_seen = false;
             let mut rename_seen = false;
-            while Instant::now() < deadline && !(added_seen && rename_seen) {
+            while Instant::now() < deadline && !rename_seen {
                 for event in drain_until(&mut rx, Instant::now() + Duration::from_millis(500)) {
                     match &event {
-                        FileSystemEvent::Added(p)
-                            if p.file_name().is_some_and(|n| n == "new.jpg") =>
-                        {
-                            added_seen = true;
-                        }
                         FileSystemEvent::Renamed(from, to)
                             if from.file_name().is_some_and(|n| n == "old.jpg")
                                 && to.file_name().is_some_and(|n| n == "renamed.jpg") =>
@@ -320,15 +315,20 @@ mod watcher_tests {
                 }
                 std::thread::sleep(Duration::from_millis(50));
             }
-            assert!(added_seen, "expected an Added event for new.jpg");
             assert!(
                 rename_seen,
                 "expected a Renamed or Added event for renamed.jpg"
             );
+
+            drop(_handle);
         }
 
         #[cfg(not(target_os = "macos"))]
         {
+            let (_handle, mut rx) = watch_directories(&[tmp.path().to_path_buf()]);
+            // Give the watcher a moment to register (debouncer thread + OS).
+            std::thread::sleep(Duration::from_millis(200));
+
             fs::write(tmp.path().join("new.jpg"), b"data").unwrap();
             let added_deadline = Instant::now() + Duration::from_secs(10);
             let mut added_seen = false;
@@ -391,9 +391,9 @@ mod watcher_tests {
                 rename_seen,
                 "expected a Renamed or Added event for renamed.jpg"
             );
-        }
 
-        drop(_handle);
+            drop(_handle);
+        }
     }
 
     #[test]
