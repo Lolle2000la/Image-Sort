@@ -176,7 +176,11 @@ jobs:
       - name: Build Standalone Binary
         env:
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
-          RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs' || '' }}
+          # The NODEFAULTLIB flags mirror .cargo/config.toml (see there for
+          # the full rationale): RUSTFLAGS here REPLACES config rustflags,
+          # and the vendored libjpeg-turbo's static MSVC CRT would otherwise
+          # warn LNK4098 on every Windows link.
+          RUSTFLAGS: ${{ startsWith(matrix.os, 'windows') && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
         run: |
           rustup target add ${{ matrix.target }}
           cargo build --release --target ${{ matrix.target }} -p media-sort-gui --features velopack
