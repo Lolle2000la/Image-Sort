@@ -194,7 +194,7 @@ jobs:
       - name: Run Workspace Tests
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
         # nextest runs each test in its own process, so the previous Windows
         # split (exclude the GUI crate, then rerun it serially to work around
         # a parallel access-violation crash) is no longer needed -- the same
@@ -208,7 +208,7 @@ jobs:
       - name: Run Doctests
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
         # cargo-nextest does not run doctests, and the old `--tests` selection
         # skipped them too -- run them explicitly so this coverage is gained
         # rather than lost by the switch.
