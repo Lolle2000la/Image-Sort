@@ -11,24 +11,60 @@ on:
     paths-ignore:
       - 'website/**'
       - 'README.md'
+  merge_group:
+    # Path filters are NOT supported for the merge_group event (they are
+    # silently ignored), so merge-queue runs always execute every job.
+    # Required checks must still report here or queued PRs block forever.
+    branches: [main, v3.0]
+    types: [checks_requested]
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  fmt:
-    name: Code Formatting
+  lint:
+    name: Format & Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
-          components: rustfmt
-      - run: cargo fmt --all -- --check
+          components: rustfmt, clippy
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-latest-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ubuntu-latest-cargo-
+
+      - name: Install System Dependencies
+        uses: nick-fields/retry@v4
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
+
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        # Clippy flags the same issues on every OS, so run it once on Linux
+        # instead of once per matrix entry -- but with every target and every
+        # feature enabled so the single run still covers all code paths
+        # (velopack, demo, headless, avif-native, ...).
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   test:
-    name: Test & Lint (${{ matrix.os }})
-    needs: fmt
+    name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -39,8 +75,6 @@ jobs:
       - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
-        with:
-          components: clippy
 
       - name: Cache Cargo Dependencies
         uses: actions/cache@v6
@@ -144,38 +178,41 @@ jobs:
         with:
           arch: x64
 
-      - name: Run Clippy Lints
-        env:
-          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs' || '' }}
-        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Cache Bench Fixtures
+        uses: actions/cache@v6
+        with:
+          path: target/media-sort-fixtures
+          # Keyed on the generator + the source image: any change misses and
+          # regenerates. The code also self-validates via the VERSION marker.
+          key: ${{ matrix.os }}-fixtures-${{ hashFiles('crates/benchmarks/src/fixture_gen.rs', 'resources/MockState/mock 1.jpg') }}
 
       - name: Run Workspace Tests
-        if: matrix.os != 'windows-latest'
         env:
           LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
-        # --tests, not --all-targets: bench targets are harness=false, so
-        # "testing" them would execute the full divan benchmark suite.
-        run: cargo test --workspace --tests
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
+        # nextest runs each test in its own process, so the previous Windows
+        # split (exclude the GUI crate, then rerun it serially to work around
+        # a parallel access-violation crash) is no longer needed -- the same
+        # command works on all OSes. Bench targets (divan, harness=false)
+        # are skipped, matching the old `--tests` selection.
+        # NOTE: keep the default shell. Under git-bash, /usr/bin precedes the
+        # MSVC dirs in PATH and rustc invokes GNU coreutils' `link` instead of
+        # MSVC link.exe.
+        run: cargo nextest run --workspace
 
-      - name: Run Workspace Tests (Windows, excluding GUI)
-        if: matrix.os == 'windows-latest'
+      - name: Run Doctests
         env:
-          RUSTFLAGS: '-L native=libs'
-        # NOTE: keep the default shell here. Under git-bash, /usr/bin precedes
-        # the MSVC dirs in PATH and rustc invokes GNU coreutils' `link`
-        # instead of MSVC link.exe.
-        run: cargo test --workspace --tests --exclude media-sort-gui
-
-      - name: Run GUI Tests (Windows, serial)
-        if: matrix.os == 'windows-latest'
-        env:
-          RUSTFLAGS: '-L native=libs'
-        # Serial + nocapture: native libs the GUI tests touch (trash-crate
-        # COM, rodio/WASAPI) are suspects in a parallel access-violation
-        # crash on headless runners; if it still crashes, nocapture names
-        # the culprit test in the log.
-        run: cargo test -p media-sort-gui --tests -- --test-threads=1 --nocapture
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
+        # cargo-nextest does not run doctests, and the old `--tests` selection
+        # skipped them too -- run them explicitly so this coverage is gained
+        # rather than lost by the switch.
+        run: cargo test --workspace --doc
 
   verify-contributors:
     name: Verify Contributors List

@@ -1120,6 +1120,7 @@ fn test_update_tick_should_exit() {
     let _ = std::fs::remove_file(&tmp);
 }
 
+#[cfg(not(feature = "demo"))]
 #[test]
 fn test_tick_applies_external_settings_changes() {
     let tmp = std::env::temp_dir().join(format!("mediasort_tick_reload_{}", std::process::id()));
@@ -1158,6 +1159,7 @@ fn test_tick_applies_external_settings_changes() {
     let _ = std::fs::remove_file(&tmp);
 }
 
+#[cfg(not(feature = "demo"))]
 #[test]
 fn test_tick_reload_preserves_unflushed_local_change() {
     let tmp = std::env::temp_dir().join(format!(
@@ -1196,6 +1198,7 @@ fn test_tick_reload_preserves_unflushed_local_change() {
     let _ = std::fs::remove_file(&tmp);
 }
 
+#[cfg(not(feature = "demo"))]
 #[test]
 fn test_tick_session_pinned_folders_are_not_synced() {
     let tmp = std::env::temp_dir().join(format!(
