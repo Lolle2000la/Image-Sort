@@ -36,6 +36,14 @@ static THEME_OPTIONS: &[ThemeOption] = &[
         name: "Dark",
     },
     ThemeOption {
+        key: "BreezeLight",
+        name: "Breeze Light",
+    },
+    ThemeOption {
+        key: "BreezeDark",
+        name: "Breeze Dark",
+    },
+    ThemeOption {
         key: "Dracula",
         name: "Dracula",
     },

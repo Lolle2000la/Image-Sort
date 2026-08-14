@@ -1446,6 +1446,39 @@ fn test_explicit_theme_ignores_system_mode() {
 }
 
 #[test]
+fn test_breeze_themes() {
+    let mut state = AppState::new(SettingsStore::default());
+
+    state.settings.general.theme = "BreezeLight".to_string();
+    let light_theme = crate::app::theme(&state);
+    let light_ext = light_theme.extended_palette();
+    assert_eq!(
+        light_ext.primary.base.text,
+        iced::Color::from_rgb8(255, 255, 255)
+    );
+    assert_eq!(
+        light_ext.secondary.base.text,
+        iced::Color::from_rgb8(35, 38, 41)
+    );
+
+    state.settings.general.theme = "BreezeDark".to_string();
+    let dark_theme = crate::app::theme(&state);
+    let dark_ext = dark_theme.extended_palette();
+    assert_eq!(
+        dark_ext.primary.base.text,
+        iced::Color::from_rgb8(252, 252, 252)
+    );
+    assert_eq!(
+        dark_ext.secondary.base.text,
+        iced::Color::from_rgb8(252, 252, 252)
+    );
+    assert_eq!(
+        dark_ext.secondary.base.color,
+        iced::Color::from_rgb8(41, 44, 48)
+    );
+}
+
+#[test]
 fn test_settings_open_keybindings() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(matches!(state.settings_ui, SettingsUiState::Hidden));

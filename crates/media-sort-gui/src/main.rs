@@ -7,6 +7,7 @@ mod demo;
 mod message;
 mod state;
 mod subscriptions;
+pub mod theme;
 mod update;
 mod view;
 mod widgets;

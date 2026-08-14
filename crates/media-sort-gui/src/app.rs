@@ -48,6 +48,8 @@ pub fn theme(state: &AppState) -> iced::Theme {
         "Nightfly" => iced::Theme::Nightfly,
         "Oxocarbon" => iced::Theme::Oxocarbon,
         "Ferra" => iced::Theme::Ferra,
+        "BreezeLight" => crate::theme::breeze_light(),
+        "BreezeDark" => crate::theme::breeze_dark(),
         _ => iced::Theme::Light,
     }
 }
