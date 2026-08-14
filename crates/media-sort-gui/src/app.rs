@@ -23,6 +23,10 @@ pub fn view(state: &AppState) -> Element<'_, Message> {
 
 pub fn theme(state: &AppState) -> iced::Theme {
     match state.settings.general.theme.as_str() {
+        "Auto" => match state.system_theme {
+            iced::theme::Mode::Dark => iced::Theme::Dark,
+            iced::theme::Mode::Light | iced::theme::Mode::None => iced::Theme::Light,
+        },
         "Dark" => iced::Theme::Dark,
         "Dracula" => iced::Theme::Dracula,
         "Nord" => iced::Theme::Nord,
@@ -61,6 +65,7 @@ fn base_subscription() -> Subscription<Message> {
         iced::time::every(std::time::Duration::from_millis(16)).map(Message::Tick),
         crate::subscriptions::keyboard::keyboard_subscription(),
         iced::event::listen().map(Message::EventOccurred),
+        iced::system::theme_changes().map(Message::SystemThemeChanged),
     ])
 }
 

@@ -687,7 +687,7 @@ mod tests {
     #[test]
     fn test_settings_default() {
         let settings = SettingsStore::default();
-        assert_eq!(settings.general.theme, "Light");
+        assert_eq!(settings.general.theme, "Auto");
         assert!(settings.general.check_for_updates_on_startup);
         assert!(settings.general.animate_gifs);
     }
@@ -746,7 +746,7 @@ mod tests {
     fn test_settings_empty_json_uses_defaults() {
         let json = "{}";
         let settings: SettingsStore = serde_json::from_str(json).unwrap();
-        assert_eq!(settings.general.theme, "Light");
+        assert_eq!(settings.general.theme, "Auto");
         assert!(settings.general.check_for_updates_on_startup);
         assert!(
             !settings

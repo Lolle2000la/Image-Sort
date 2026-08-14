@@ -62,8 +62,10 @@ impl Default for GeneralSettings {
     }
 }
 
+/// `"Auto"` follows the OS light/dark preference; see
+/// `AppState::system_theme` in the GUI crate.
 fn default_theme() -> String {
-    "Light".to_string()
+    "Auto".to_string()
 }
 
 fn default_true() -> bool {

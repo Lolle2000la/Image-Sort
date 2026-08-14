@@ -218,6 +218,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tasks.push(iced::Task::done(crate::message::Message::SettingsLoaded(
                     Box::new(Ok(settings.clone())),
                 )));
+                tasks.push(iced::system::theme().map(crate::message::Message::SystemThemeChanged));
 
                 if let Some(path) = startup_path {
                     tasks.push(iced::Task::done(crate::message::Message::Folder(

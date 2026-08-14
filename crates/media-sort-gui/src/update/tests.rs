@@ -1407,6 +1407,45 @@ fn test_settings_set_theme_unknown() {
 }
 
 #[test]
+fn test_system_theme_changed() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert_eq!(state.system_theme, iced::theme::Mode::None);
+    let _task = update(
+        &mut state,
+        Message::SystemThemeChanged(iced::theme::Mode::Dark),
+    );
+    assert_eq!(state.system_theme, iced::theme::Mode::Dark);
+    let _task = update(
+        &mut state,
+        Message::SystemThemeChanged(iced::theme::Mode::Light),
+    );
+    assert_eq!(state.system_theme, iced::theme::Mode::Light);
+}
+
+#[test]
+fn test_auto_theme_follows_system_mode() {
+    let mut state = AppState::new(SettingsStore::default());
+    assert_eq!(state.settings.general.theme, "Auto");
+
+    // Before the OS preference resolves, Auto falls back to Light.
+    assert_eq!(crate::app::theme(&state), iced::Theme::Light);
+
+    state.system_theme = iced::theme::Mode::Dark;
+    assert_eq!(crate::app::theme(&state), iced::Theme::Dark);
+
+    state.system_theme = iced::theme::Mode::Light;
+    assert_eq!(crate::app::theme(&state), iced::Theme::Light);
+}
+
+#[test]
+fn test_explicit_theme_ignores_system_mode() {
+    let mut state = AppState::new(SettingsStore::default());
+    state.settings.general.theme = "Dark".to_string();
+    state.system_theme = iced::theme::Mode::Light;
+    assert_eq!(crate::app::theme(&state), iced::Theme::Dark);
+}
+
+#[test]
 fn test_settings_open_keybindings() {
     let mut state = AppState::new(SettingsStore::default());
     assert!(matches!(state.settings_ui, SettingsUiState::Hidden));

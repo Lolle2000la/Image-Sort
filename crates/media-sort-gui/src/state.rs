@@ -70,6 +70,13 @@ pub struct AppState {
     /// after expiry.
     pub status_message: Option<StatusMessage>,
 
+    /// The OS light/dark preference, resolved at startup via
+    /// `iced::system::theme()` and kept live by the `SystemThemeChanged`
+    /// message (`iced::system::theme_changes()` subscription). Used by
+    /// `app::theme()` to resolve the `"Auto"` theme setting; `None` (the
+    /// initial value before the first resolution) falls back to Light.
+    pub system_theme: iced::theme::Mode,
+
     /// Monotonic counter folded into the filesystem subscription
     /// identity. Bumped when the current folder is deleted and recreated
     /// at the same path: the path list (the identity's key) is unchanged,
@@ -164,6 +171,7 @@ impl AppState {
             settings_ui: SettingsUiState::default(),
             drag_drop: DragDropState::new(),
             status_message: None,
+            system_theme: iced::theme::Mode::None,
             watch_generation: AtomicU64::new(0),
             #[cfg(not(feature = "demo"))]
             settings_reload_at: Instant::now() + Duration::from_secs(1),

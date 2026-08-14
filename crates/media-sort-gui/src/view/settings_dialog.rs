@@ -24,6 +24,10 @@ impl std::fmt::Display for ThemeOption {
 
 static THEME_OPTIONS: &[ThemeOption] = &[
     ThemeOption {
+        key: "Auto",
+        name: "Auto",
+    },
+    ThemeOption {
         key: "Light",
         name: "Light",
     },

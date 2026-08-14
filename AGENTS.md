@@ -58,6 +58,8 @@ At startup the app queries mpv for supported formats via `demuxer-lavf-list` and
 
 ## Configuration
 
+The `general.theme` setting accepts the iced theme names shown in the settings dialog's pick list plus `"Auto"` (the default). `"Auto"` resolves through `app::theme()`: `AppState.system_theme` (`iced::theme::Mode`) holds the OS light/dark preference, resolved once at startup via `iced::system::theme()` and kept live by the `SystemThemeChanged` message from the `iced::system::theme_changes()` subscription (cross-platform: Windows registry/`UISettings`, macOS `AppleInterfaceStyle`, Linux desktop portal `color-scheme`). `Mode::None` (not yet resolved) falls back to Light. Explicit themes ignore the system mode entirely; legacy WPF configs still migrate their `DarkMode` bool to `"Dark"`/`"Light"`.
+
 
 
 ## Update mechanism

@@ -40,6 +40,10 @@ pub fn update(state: &mut AppState, message: Message) -> Task<Message> {
             drag_drop::handle_drag_drop_message(state, drag_drop_msg)
         }
         Message::FileSystemChanged(events) => filesystem::handle_filesystem_events(state, events),
+        Message::SystemThemeChanged(mode) => {
+            state.system_theme = mode;
+            Task::none()
+        }
         Message::KeyCaptured(key, ctrl, shift, alt) => {
             keyboard::handle_key_captured(state, key, ctrl, shift, alt)
         }

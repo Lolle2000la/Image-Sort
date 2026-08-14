@@ -42,6 +42,11 @@ pub enum Message {
     #[serde(skip_deserializing)]
     FileSystemChanged(Vec<FileSystemEvent>),
 
+    /// OS light/dark preference resolved at startup or changed while
+    /// running. Drives the `"Auto"` theme setting.
+    #[serde(skip_deserializing)]
+    SystemThemeChanged(iced::theme::Mode),
+
     #[cfg(feature = "velopack")]
     #[serde(skip_deserializing)]
     Update(UpdateMessage),
