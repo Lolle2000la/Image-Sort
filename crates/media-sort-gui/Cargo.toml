@@ -8,7 +8,6 @@ default = []
 velopack = ["dep:velopack", "dep:reqwest", "dep:pgp", "dep:memmap2"]
 demo = [
     "iced/canvas",
-    "dep:pollster",
     "dep:iced_runtime",
     "dep:iced_test",
     "dep:serde_json",
@@ -43,7 +42,6 @@ velopack = { version = "1.2", optional = true }
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"], optional = true }
 pgp = { version = "0.21", optional = true }
 memmap2 = { version = "0.9", optional = true }
-pollster = { version = "1", optional = true }
 serde_json = { workspace = true, optional = true }
 iced_runtime = { version = "0.14", optional = true }
 iced_test = { version = "0.14", optional = true }
