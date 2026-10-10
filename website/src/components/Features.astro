@@ -24,24 +24,22 @@ const iconMap: Record<string, any> = {
 <div class="features-section">
     <h2 class="section-title">{sectionTitle}</h2>
     <div class="features-grid">
-        {
-            features.map((f) => {
-                const IconComponent = iconMap[f.icon.toLowerCase()];
-                return (
-                    <div class="feature-card">
-                        <div class="feature-icon">
-                            {IconComponent ? (
-                                <IconComponent size={32} class="icon-lucide" />
-                            ) : (
-                                f.icon
-                            )}
-                        </div>
-                        <h3 class="feature-title">{f.title}</h3>
-                        <p class="feature-desc">{f.description}</p>
+        {features.map((f) => {
+            const IconComponent = iconMap[f.icon.toLowerCase()];
+            return (
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        {IconComponent ? (
+                            <IconComponent size={32} class="icon-lucide" />
+                        ) : (
+                            f.icon
+                        )}
                     </div>
-                );
-            })
-        }
+                    <h3 class="feature-title">{f.title}</h3>
+                    <p class="feature-desc">{f.description}</p>
+                </div>
+            );
+        })}
     </div>
 </div>
 

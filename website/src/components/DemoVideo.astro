@@ -35,7 +35,9 @@ const uniqueId = Math.random().toString(36).substring(2, 9);
 {/* Modal Overlay */}
 <div id={`modal-${uniqueId}`} class="modal-overlay">
     <div class="modal-content">
-        <span class="close-btn" id={`close-${uniqueId}`}>&times;</span>
+        <span class="close-btn" id={`close-${uniqueId}`}>
+            &times;
+        </span>
         <video
             id={`video-play-${uniqueId}`}
             controls
