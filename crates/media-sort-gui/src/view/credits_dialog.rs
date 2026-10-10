@@ -81,7 +81,7 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
 
     let repo_btn = button(text(state.l10n.tr("ui-about-repository")).size(12))
         .on_press(Message::OpenUrl(
-            "https://github.com/Lolle2000la/Image-Sort".to_string(),
+            "https://github.com/Lolle2000la/Media-Sort".to_string(),
         ))
         .style(iced::widget::button::text);
 

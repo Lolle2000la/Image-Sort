@@ -8,6 +8,9 @@ import { repoUrl } from './src/config.ts';
 
 // https://astro.build/config
 export default defineConfig({
+    // Canonical origin for sitemap.xml, canonical URLs and OG tags. The site is
+    // served from GitHub Pages under the custom domain in public/CNAME.
+    site: 'https://imagesort.org',
     integrations: [
         starlight({
             title: 'Media Sort',

@@ -26,7 +26,7 @@ If applicable, add screenshots to help explain your problem.
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows 7/8/10]
  - Architecture: [x86/x64]
- - Version: [e.g. 2.0.0, 2.0.0-preview.5]
+ - Version: [e.g. 3.0.0, 3.0.0-alpha.1]
 
 **Additional context**
 Add any other context about the problem here.
