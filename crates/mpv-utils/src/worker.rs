@@ -149,7 +149,9 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                 .enumerate()
                 .for_each(|(dst_y, row)| {
                     let src_x = dst_y as u32;
-                    row.chunks_exact_mut(4)
+                    row.as_chunks_mut::<4>()
+                        .0
+                        .iter_mut()
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = src_h - 1 - dst_x as u32;
@@ -167,7 +169,9 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                 .enumerate()
                 .for_each(|(dst_y, row)| {
                     let src_y = src_h - 1 - dst_y as u32;
-                    row.chunks_exact_mut(4)
+                    row.as_chunks_mut::<4>()
+                        .0
+                        .iter_mut()
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_x = src_w - 1 - dst_x as u32;
@@ -185,7 +189,9 @@ pub fn rotate_rgba(src_w: u32, src_h: u32, src: &[u8], rotation: Rotation) -> (u
                 .enumerate()
                 .for_each(|(dst_y, row)| {
                     let src_x = src_w - 1 - dst_y as u32;
-                    row.chunks_exact_mut(4)
+                    row.as_chunks_mut::<4>()
+                        .0
+                        .iter_mut()
                         .enumerate()
                         .for_each(|(dst_x, pixel)| {
                             let src_y = dst_x as u32;
