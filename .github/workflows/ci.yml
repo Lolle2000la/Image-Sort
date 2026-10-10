@@ -2,12 +2,12 @@ name: CI Pipeline
 
 on:
   push:
-    branches: [main, v3.0]
+    branches: [master, main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
   pull_request:
-    branches: [main, v3.0]
+    branches: [master, main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
@@ -15,7 +15,7 @@ on:
     # Path filters are NOT supported for the merge_group event (they are
     # silently ignored), so merge-queue runs always execute every job.
     # Required checks must still report here or queued PRs block forever.
-    branches: [main, v3.0]
+    branches: [master, main, v3.0]
     types: [checks_requested]
 
 env:

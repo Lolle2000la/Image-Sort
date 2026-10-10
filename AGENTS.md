@@ -102,11 +102,11 @@ The dev profile sets `opt-level = 3` for all dependencies (`[profile.dev.package
 
 ## Git
 
-Conventional commits (`feat:`, `fix:`, `chore:`). The `docs/` directory is the GitHub Pages site served at `imagesort.org` via Jekyll. It is intentionally kept even though the help pages are outdated for v3.0.
+Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is the GitHub Pages site served at `imagesort.org` via the `gh-pages` branch (the custom domain is declared in `website/public/CNAME`). The legacy Jekyll `docs/` tree was removed when the Rust rewrite landed — the Astro/Starlight site replaced it.
 
-`.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored and must never be committed.
+`.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored (see the root `.gitignore`) and must never be committed.
 
-**CI Routing:** GitHub Actions path filtering decouples builds. Commits touching `website/` trigger the Astro production build and push to the `gh-pages` branch. Changes to application crates skip web deployment and route to the multi-platform Rust test matrices.
+**CI Routing:** `ci.yml` (`paths-ignore: website/**`, `README.md`) runs the Rust lint/test matrices directly on push to `master`/`main`/`v3.0` and on pull requests. The Astro site is deployed separately by `deploy-demos-website.yml` (triggered by `workflow_run` on the release workflow, or `workflow_dispatch`), which builds `website/` and pushes `website/dist` to the `gh-pages` branch.
 
 ## Architecture pattern (iced / The Elm Architecture)
 
@@ -433,12 +433,10 @@ The benchmarks crate builds the same vendored static libjpeg-turbo as the backen
 When you add a new module, dependency, build step, architectural decision, or test infrastructure, update this file. When you change how an existing system works (e.g., the video pipeline, settings persistence, media type detection), update the relevant section.
 
 ### Help pages (`docs/`)
-The `docs/` directory is the GitHub Pages site at `imagesort.org`. As of v3.0 the help pages are outdated and intentionally kept for historical reference. If you update the user-facing UI or workflow, update the corresponding help page:
-- `docs/help.md` (English)
-- `docs/help/help.de.md` (German)
+Removed with the Rust rewrite. The old Jekyll tree documented the v1.x/v2.x WPF UI (MSI installers, Microsoft Store links, .NET 3.1 / WiX build prerequisites) and is superseded by `website/`.
 
 ### Documentation website (`website/`)
-The `website/` directory is the new Astro/Starlight documentation site deployed to `gh-pages`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
+The `website/` directory is the GitHub Pages site at `imagesort.org`, deployed to the `gh-pages` branch by `.github/workflows/deploy-demos-website.yml`. The custom domain is declared in `website/public/CNAME`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
 To render all automated demo videos (headless iced simulation) to the public assets directory for deployment, run `npm run render-demos` from the `website/` directory. Output videos are saved in `website/public/demos/`.
 
 **CRITICAL REQUIREMENT:**

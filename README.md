@@ -2,7 +2,7 @@
 
 Sort your media files fast. Version 3.0 is a rewrite in Rust.
 
-![Screenshot from the user interface of Media Sort](https://github.com/Lolle2000la/Image-Sort/raw/master/Image-Sort-Screenshot.gif)
+The [documentation site](https://imagesort.org/) has a short demo video of every workflow.
 
 ## What is Media Sort?
 
@@ -59,14 +59,14 @@ All keybindings are customizable in the Settings dialog. Media keys (Play/Pause,
 
 ## Privacy Policy
 
-Read the [Privacy Policy](https://imagesort.org/privacy_policy.html).
+Read the [Privacy Policy](https://imagesort.org/about/privacy/).
 
 No data is willingly collected. If you turn on "Check for updates on startup" in Settings, the app queries the GitHub API. That may collect data per GitHub's [privacy statement](https://help.github.com/en/github/site-policy/github-privacy-statement). Turn it off if you don't want that.
 
 ## Requirements
 
 - Linux, macOS, or Windows
-- Rust 1.80 or later (if building from source)
+- Rust 1.99 or later (if building from source)
 - libmpv (needed for video and audio playback)
 - libdav1d (needed for AVIF image decoding)
 - ffmpeg (bundled on Windows and macOS for fast video thumbnails; optional on Linux — falls back to mpv)
@@ -90,8 +90,8 @@ libjpeg-turbo (used for fast JPEG decoding) is vendored statically at build time
 ## Building
 
 ```
-git clone https://github.com/Lolle2000la/Image-Sort.git
-cd Image-Sort
+git clone https://github.com/Lolle2000la/Media-Sort.git
+cd Media-Sort
 cargo build --release
 cargo run --release
 ```
@@ -105,7 +105,7 @@ Pre-built binaries for Linux, Windows, and macOS are provided with automatic upd
 
 ## Installation
 
-Pre-compiled standalone binaries with automatic updates are provided for Linux, Windows, and macOS via the [GitHub Releases](https://github.com/Lolle2000la/Image-Sort/releases) page.
+Pre-compiled standalone binaries with automatic updates are provided for Linux, Windows, and macOS via the [GitHub Releases](https://github.com/Lolle2000la/Media-Sort/releases) page.
 
 ### Requirements
 
@@ -115,7 +115,7 @@ All platforms require **libmpv** to be installed on your system to manage video 
 
 #### Linux (.AppImage)
 
-1. Download the latest `.AppImage` from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+1. Download the latest `.AppImage` from [Releases](https://github.com/Lolle2000la/Media-Sort/releases).
 2. Grant executable permissions and launch:
    ```bash
    chmod +x MediaSort-Linux.AppImage
@@ -124,7 +124,7 @@ All platforms require **libmpv** to be installed on your system to manage video 
 
 #### Windows (Setup.exe)
 
-1. Download the standalone `Setup.exe` from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+1. Download the standalone `Setup.exe` from [Releases](https://github.com/Lolle2000la/Media-Sort/releases).
 2. Run the installer wrapper to deploy the application to your local system.
 
 #### macOS (.app Bundle)
@@ -133,7 +133,7 @@ Because this open-source variant is published without a paid Apple Developer ID 
 
 **To install and execute:**
 
-1. Download and extract the `.zip` archive from [Releases](https://github.com/Lolle2000la/Image-Sort/releases).
+1. Download and extract the `.zip` archive from [Releases](https://github.com/Lolle2000la/Media-Sort/releases).
 2. Drag `Media Sort.app` to your `/Applications` directory.
 3. Open a terminal and strip the quarantine flag appended by your browser:
    ```bash

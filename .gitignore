@@ -6,6 +6,14 @@ target/
 # a binary application, so we do commit it.
 # (See https://doc.rust-lang.org/cargo/guide/cargo-toml-vs-cargo-lock.html)
 
+# Legacy WPF v2.x reference copy (local only — never commit this, it is the
+# pre-Rust C# codebase and must not be resurrected into the repo).
+.Image-Sort-master/
+
+# Local analysis notes from the Rust port; not part of the repository.
+FEATURE_GAPS.md
+AUTOMATION_ANALYSIS.md
+
 # IDE / editor
 .idea/
 .vscode/
