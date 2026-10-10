@@ -33,7 +33,9 @@ const label = labels[locale ?? 'en'] || labels.en;
     </div>
 
     <div class="sl-hidden md:sl-flex print:hidden right-group">
-        <a href={docsUrl} class="docs-nav-link">{label}</a>
+        <a href={docsUrl} class="docs-nav-link">
+            {label}
+        </a>
         <div class="sl-flex social-icons">
             <SocialIcons />
         </div>

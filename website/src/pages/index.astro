@@ -47,14 +47,13 @@ const localesList = Object.entries(config.locales || {}).filter(
     <body>
         <p>
             Redirecting to
-            {
-                localesList.map(([code, loc], idx) => (
-                    <>
-                        <a href={`/${code}/`}>{loc.label || code}</a>
-                        {idx < localesList.length - 1 ? ', ' : ''}
-                    </>
-                ))
-            }...
+            {localesList.map(([code, loc], idx) => (
+                <>
+                    <a href={`/${code}/`}>{loc.label || code}</a>
+                    {idx < localesList.length - 1 ? ', ' : ''}
+                </>
+            ))}
+            ...
         </p>
     </body>
 </html>

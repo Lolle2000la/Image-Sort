@@ -19,12 +19,10 @@ if (!keys) {
 ---
 
 <span class="kbd-combo">
-    {
-        parts.flatMap((k, i) => [
-            <kbd>{k}</kbd>,
-            i < parts.length - 1 && <span class="kbd-sep">+</span>,
-        ])
-    }
+    {parts.flatMap((k, i) => [
+        <kbd>{k}</kbd>,
+        i < parts.length - 1 && <span class="kbd-sep">+</span>,
+    ])}
 </span>
 
 <style>

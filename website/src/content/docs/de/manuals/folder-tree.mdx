@@ -67,16 +67,16 @@ Drücken Sie <Kbd>C</Kbd>, um den „Ordner erstellen"-Dialog zu öffnen. Der ne
 
 Der Baum verwendet verschiedene Lucide-Icons, um Ordnertyp und -zustand anzuzeigen:
 
-| Icon                         | Bedeutung                                                                 |
-| :--------------------------- | :------------------------------------------------------------------------ |
-| <Folder size={18} />         | Normaler Ordner, eingeklappt. Er kann Unterordner enthalten.              |
-| <FolderOpen size={18} />     | Normaler Ordner, aufgeklappt. Seine Unterordner sind sichtbar.            |
-| <FolderBookmark size={18} /> | Angepinnter Ordner (Lesezeichen-Knoten auf oberster Ebene).               |
-| <FolderRoot size={18} />     | Dateisystemwurzel (`/` unter Linux/macOS, Laufwerkswurzeln unter Windows).|
-| <FolderLock size={18} />     | Eingeschränkter Ordner: Inhalt nicht lesbar oder Ordner schreibgeschützt. |
+| Icon                         | Bedeutung                                                                                           |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------- |
+| <Folder size={18} />         | Normaler Ordner, eingeklappt. Er kann Unterordner enthalten.                                        |
+| <FolderOpen size={18} />     | Normaler Ordner, aufgeklappt. Seine Unterordner sind sichtbar.                                      |
+| <FolderBookmark size={18} /> | Angepinnter Ordner (Lesezeichen-Knoten auf oberster Ebene).                                         |
+| <FolderRoot size={18} />     | Dateisystemwurzel (`/` unter Linux/macOS, Laufwerkswurzeln unter Windows).                          |
+| <FolderLock size={18} />     | Eingeschränkter Ordner: Inhalt nicht lesbar oder Ordner schreibgeschützt.                           |
 | <FolderSymlink size={18} />  | Symbolischer Link auf einen anderen Ordner. Der aufgelöste Zielpfad wird neben dem Namen angezeigt. |
-| <FolderGit2 size={18} />     | Ordner enthält ein Git-Repository (`.git`).                               |
-| <ArrowUp size={18} />        | Breadcrumb (übergeordnetes Verzeichnis des aktuellen oder eines angepinnten Ordners). |
+| <FolderGit2 size={18} />     | Ordner enthält ein Git-Repository (`.git`).                                                         |
+| <ArrowUp size={18} />        | Breadcrumb (übergeordnetes Verzeichnis des aktuellen oder eines angepinnten Ordners).               |
 
 Wenn ein Ordner auf mehrere Typen passt, gilt diese Priorität: angepinnt > Wurzel > gesperrt > Symlink > Git. Das Git-Icon hat bewusst die niedrigste Priorität.
 
@@ -88,7 +88,7 @@ Symbolische Links auf Verzeichnisse erscheinen als normale Baumknoten mit dem <s
 - **Öffnen** eines Symlinks (Auswahl + <Kbd>Enter</Kbd>) öffnet das aufgelöste Zielverzeichnis, nicht den Link-Pfad.
 - **Verschieben oder Kopieren** von Bildern in einen ausgewählten Symlink-Ordner schreibt direkt in das endgültige Zielverzeichnis.
 
-Die Symlink-Regel für *Dateien* bleibt unverändert: Sortieraktionen lehnen symbolische Links als Dateiquelle weiterhin ab, damit ein Verschieben niemals das Link-Ziel statt des im Raster sichtbaren Eintrags verschiebt.
+Die Symlink-Regel für _Dateien_ bleibt unverändert: Sortieraktionen lehnen symbolische Links als Dateiquelle weiterhin ab, damit ein Verschieben niemals das Link-Ziel statt des im Raster sichtbaren Eintrags verschiebt.
 
 ## Angepinnte Ordner
 

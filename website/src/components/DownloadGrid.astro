@@ -71,7 +71,9 @@ const recLabel = isDe ? 'Empfohlen' : isJa ? '推奨' : 'Recommended';
 
 <div class="download-grid">
     <a href={linuxUrl} class="download-btn linux" id="btn-linux">
-        <span class="btn-icon"><Terminal size={24} class="icon-lucide" /></span>
+        <span class="btn-icon">
+            <Terminal size={24} class="icon-lucide" />
+        </span>
         <span class="btn-text">
             <span class="btn-title">{linuxLabel}</span>
             <small>{linuxSub}</small>
@@ -79,7 +81,9 @@ const recLabel = isDe ? 'Empfohlen' : isJa ? '推奨' : 'Recommended';
         <span class="rec-badge">{recLabel}</span>
     </a>
     <a href={windowsUrl} class="download-btn windows" id="btn-windows">
-        <span class="btn-icon"><Monitor size={24} class="icon-lucide" /></span>
+        <span class="btn-icon">
+            <Monitor size={24} class="icon-lucide" />
+        </span>
         <span class="btn-text">
             <span class="btn-title">{windowsLabel}</span>
             <small>{windowsSub}</small>
@@ -87,7 +91,9 @@ const recLabel = isDe ? 'Empfohlen' : isJa ? '推奨' : 'Recommended';
         <span class="rec-badge">{recLabel}</span>
     </a>
     <a href={macosUrl} class="download-btn macos" id="btn-macos">
-        <span class="btn-icon"><Laptop size={24} class="icon-lucide" /></span>
+        <span class="btn-icon">
+            <Laptop size={24} class="icon-lucide" />
+        </span>
         <span class="btn-text">
             <span class="btn-title">{macosLabel}</span>
             <small>{macosSub}</small>
