@@ -110,6 +110,21 @@ Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is th
 
 **CI caching:** `ci.yml` caches Cargo artifacts + registry and bench fixtures via `actions/cache`, but only `push` runs on `master`/`main`/`v3.0` may save caches — the `actions/cache/save` steps are gated on `github.event_name == 'push'` plus an exact-key miss, so pull-request and merge-queue runs are restore-only and every writable cache entry traces back to merged code. (GitHub also scopes PR-created caches to the merge ref; the gate makes the policy explicit rather than relying on that.) The lint job's `ubuntu-latest-cargo-*` archive holds only clippy's check-only dependency metadata; the test matrix uses `<os>-build-cargo-*` because metadata-only artifacts cannot serve a full build, and sharing one key left the ubuntu test job rebuilding every dependency on every run. `release.yml` must never restore a cache: published binaries are built from checked-out source only, so a poisoned cache cannot reach signed artifacts. The bench-fixture directory is excluded from the Cargo archive before saving so its ~330 MB per OS aren't counted twice against the repository's 10 GB cache budget.
 
+## Releasing
+
+Releases are tag-driven: pushing a `v*` tag runs `release.yml`, which builds the five shipped targets, packs and GPG-signs each Velopack `.nupkg`, uploads them to a **draft** release, then (in the `publish` job) prepends the tag message to a `git-cliff` changelog over the commits since the previous tag, merges duplicate releases for the tag, and flips the draft public (prerelease when the tag contains `-`, else `latest`). Stable releases also trigger `deploy-demos-website.yml`.
+
+**The version has two consumers, so the tag and the manifest must agree.** Velopack takes the package version from the **tag name** (`v` stripped), while the binary reports `[workspace.package].version` from `Cargo.toml` (the About dialog, and the updater's prerelease detection via `env!("CARGO_PKG_VERSION")`). The `verify-version` job in `release.yml` runs before any build and fails the whole run unless the tag matches `Cargo.toml` *and* `Cargo.lock`. Treat `[workspace.package].version` as the single source of truth.
+
+**Cut a release with `scripts/release.sh`** — do not hand-edit the version or hand-craft the tag:
+
+```bash
+scripts/release.sh 3.0.0-alpha.18 -F notes.md   # or -m "message"
+scripts/release.sh 3.0.0-alpha.19 --dry-run     # validate only, change nothing
+```
+
+It runs preflight checks (clean tree, not behind upstream, tag unused locally and on `origin`), optionally verifies the HEAD commit's Actions runs are green (`--require-ci` to make that fatal; `gh`/`jq` used when present), bumps `[workspace.package].version`, refreshes `Cargo.lock` (`cargo update --workspace`, verified with `cargo metadata --locked`), commits `chore: bump version to X`, creates the **signed annotated tag** with the given message (your `commit.gpgsign`/`tag.gpgsign` key — hence the tag is created locally, never in CI), and pushes the branch and tag. Any failure before the commit rolls `Cargo.toml`/`Cargo.lock` back. Useful flags: `--no-push` (tag only), `--no-verify` (skip the CI check), `--dry-run`.
+
 ## Architecture pattern (iced / The Elm Architecture)
 
 The GUI follows iced's TEA pattern with a unidirectional data flow:

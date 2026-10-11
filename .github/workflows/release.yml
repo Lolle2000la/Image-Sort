@@ -9,7 +9,46 @@ permissions:
   contents: write
 
 jobs:
+  # This workflow is tag-driven, and the tag name is what Velopack uses as the
+  # package version -- but the version baked into the binary (the About dialog
+  # and the updater's prerelease detection, via env!("CARGO_PKG_VERSION")) comes
+  # from [workspace.package].version in Cargo.toml. The two are maintained by
+  # different steps (scripts/release.sh keeps them in sync), so refuse to build
+  # a tag that does not match the manifest rather than publish a binary that
+  # reports the wrong version.
+  verify-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Verify Tag Matches Cargo.toml Version
+        run: |
+          set -euo pipefail
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+
+          MANIFEST_VERSION="$(awk '
+            /^\[workspace\.package\]/ { in_section = 1; next }
+            /^\[/ { in_section = 0 }
+            in_section && /^version[[:space:]]*=/ { gsub(/^[^"]*"|".*$/, ""); print; exit }
+          ' Cargo.toml)"
+          [ -n "$MANIFEST_VERSION" ] || { echo "::error::could not read [workspace.package].version from Cargo.toml"; exit 1; }
+
+          if [ "$TAG_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "::error::tag '$GITHUB_REF_NAME' does not match the workspace version '$MANIFEST_VERSION' in Cargo.toml. Run scripts/release.sh $TAG_VERSION to bump and tag in one step."
+            exit 1
+          fi
+
+          LOCK_VERSION="$(grep -A1 '^name = "media-sort-gui"$' Cargo.lock | grep '^version = ' | head -n 1 | cut -d'"' -f2)"
+          if [ "$LOCK_VERSION" != "$MANIFEST_VERSION" ]; then
+            echo "::error::Cargo.lock has media-sort-gui $LOCK_VERSION but Cargo.toml declares $MANIFEST_VERSION; run 'cargo update --workspace' and commit the lock file."
+            exit 1
+          fi
+
+          echo "Tag $GITHUB_REF_NAME matches Cargo.toml/Cargo.lock version $MANIFEST_VERSION"
+
   deploy:
+    needs: verify-version
     runs-on: ${{ matrix.os }}
     environment: release
     strategy:
