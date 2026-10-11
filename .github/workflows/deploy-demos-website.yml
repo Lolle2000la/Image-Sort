@@ -11,31 +11,35 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: the build job only reads. The deploy job opts in to write
+# access below, and it runs no repository code.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-deploy:
+  build:
     # Run on workflow_dispatch or if the release workflow succeeded and it is a stable release (no '-' in the tag name)
     if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-')) }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Rust Environment
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master
+        with:
+          toolchain: stable
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: 'npm'
           cache-dependency-path: 'website/package-lock.json'
 
       - name: Cache Cargo Dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index/
@@ -47,7 +51,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Install System Dependencies
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -57,7 +61,7 @@ jobs:
             sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools ffmpeg mesa-vulkan-drivers
 
       - name: Install Website Dependencies
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -71,9 +75,35 @@ jobs:
       - name: Build Website
         run: npm run build
         working-directory: website
+        env:
+          # DownloadGrid/ReleaseDownloads resolve release assets with the gh
+          # CLI at build time. gh refuses to run in Actions contexts without a
+          # token, and the runner only injects GH_TOKEN when a step opts in.
+          # The token is read-only here, so build-time code (dependencies,
+          # plugins) cannot use it to push to the repository.
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload Website
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: website-dist
+          path: website/dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # only the gh-pages push needs write access
+
+    steps:
+      - name: Download Website
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: website-dist
+          path: website/dist
 
       - name: Deploy to GitHub Pages Branch
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./website/dist
