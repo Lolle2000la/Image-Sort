@@ -163,7 +163,7 @@ check_ci() {
   bad="$(printf '%s' "$runs_json" | jq -r '
     [ .[] | select(
         .status != "completed"
-        or ([ "success", "skipped", "neutral" ] | index(.conclusion)) == null
+        or (.conclusion | IN("success", "skipped", "neutral") | not)
       ) | "  \(.name): \(.status)/\(.conclusion)" ] | join("\n")')"
   if [ -n "$bad" ]; then
     if [ "$REQUIRE_CI" -eq 1 ]; then
