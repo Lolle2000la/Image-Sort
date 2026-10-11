@@ -37,7 +37,7 @@ settings-disable-hw-decoding = Disable hardware video decoding
 # Key bindings
 keybindings-restore-defaults = Restore default key bindings
 keybindings-press-key = Press a key...
-keybindings-images = Images
+keybindings-images = Media
 keybindings-folders = Folders
 keybindings-other = Other
 keybindings-management = Management
@@ -52,8 +52,8 @@ keybindings-copy = Copy
 keybindings-delete = Delete
 keybindings-rename = Rename
 keybindings-reveal-in-file-manager = Reveal in file manager
-keybindings-select-left = Select image on the left
-keybindings-select-right = Select image on the right
+keybindings-select-left = Select media on the left
+keybindings-select-right = Select media on the right
 keybindings-search-images = Search media... (press 'Esc' to leave)
 keybindings-toggle-metadata = Open/Close metadata panel
 keybindings-create-folder = Create Folder
@@ -105,7 +105,7 @@ ui-file-not-supported = Sorry, this file doesn't seem to be supported yet!
 ui-file-error-details = Error details: {$error}
 ui-open-externally = Open Externally
 ui-loading-image = Loading image...
-ui-no-images = No images to display. Open a folder to get started.
+ui-no-images = No media to display. Open a folder to get started.
 ui-no-results = No results match your search.
 ui-metadata = Metadata
 ui-loading-metadata = Loading metadata...
@@ -172,6 +172,7 @@ metadata-field-focallength = Focal Length
 metadata-field-lensmodel = Lens
 metadata-field-gpslatitude = Latitude
 metadata-field-gpslongitude = Longitude
+metadata-field-gpsaltitude = Altitude
 
 # Drag and drop overlay
 drag-drop-copy-title = Copy Files
