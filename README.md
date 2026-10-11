@@ -2,7 +2,7 @@
 
 Sort your media files fast. Version 3.0 is a rewrite in Rust.
 
-The [documentation site](https://imagesort.org/) has a short demo video of every workflow.
+The [documentation site](https://mediasort.app/) has a short demo video of every workflow.
 
 ## What is Media Sort?
 
@@ -59,7 +59,7 @@ All keybindings are customizable in the Settings dialog. Media keys (Play/Pause,
 
 ## Privacy Policy
 
-Read the [Privacy Policy](https://imagesort.org/about/privacy/).
+Read the [Privacy Policy](https://mediasort.app/about/privacy/).
 
 No data is willingly collected. If you turn on "Check for updates on startup" in Settings, the app queries the GitHub API. That may collect data per GitHub's [privacy statement](https://help.github.com/en/github/site-policy/github-privacy-statement). Turn it off if you don't want that.
 
