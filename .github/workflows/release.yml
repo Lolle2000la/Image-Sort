@@ -175,6 +175,13 @@ jobs:
               echo "CXX=clang-cl" >> "$GITHUB_ENV"
             fi
 
+      # SECURITY: never add actions/cache (or any cache restore) to this
+      # workflow. Cache archives are unsigned and writable from branches; a
+      # poisoned cache restored before this build could put attacker-controlled
+      # artifacts into the binaries that are later GPG-signed and published.
+      # Releases are always built from the checked-out source with no cache in
+      # the loop. Non-release CI caches live in ci.yml under a trusted-write
+      # policy.
       - name: Build Standalone Binary
         env:
           LIBRARY_PATH: ${{ startsWith(matrix.os, 'macos') && format('{0}/lib', matrix.brew_prefix) || '' }}
