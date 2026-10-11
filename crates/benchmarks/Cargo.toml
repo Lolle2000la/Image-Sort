@@ -10,7 +10,7 @@ rust-version.workspace = true
 media-sort-backend = { path = "../media-sort-backend" }
 media-sort-core = { path = "../media-sort-core" }
 toml.workspace = true
-image.workspace = true
+image = { workspace = true, features = ["avif-native"] }
 fast_image_resize.workspace = true
 zune-jpeg = "0.5"
 zune-core = "0.5"
@@ -21,10 +21,6 @@ webp = "0.3"
 bytemuck = "1"
 ico = "0.5"
 rayon.workspace = true
-
-# Mirrors the backend: native AVIF decode everywhere except i686-pc-windows-msvc.
-[target.'cfg(not(all(target_os = "windows", target_arch = "x86")))'.dependencies]
-image = { workspace = true, features = ["avif-native"] }
 
 [dev-dependencies]
 divan = "0.1"

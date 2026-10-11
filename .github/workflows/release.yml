@@ -23,13 +23,6 @@ jobs:
             mpv_arch: x86_64
             vcredist: vcredist143-x64
             msvc_arch: x64
-          - os: windows-latest
-            platform: win-x86
-            target: i686-pc-windows-msvc
-            exe_name: media-sort-gui.exe
-            mpv_arch: i686
-            vcredist: vcredist143-x86
-            msvc_arch: x86
           - os: windows-11-arm
             platform: win-arm64
             target: aarch64-pc-windows-msvc
@@ -102,10 +95,6 @@ jobs:
           # runner does not inject GH_TOKEN into action processes, only
           # run steps that reference github.token explicitly get one.
           GH_TOKEN: ${{ github.token }}
-          # Pin the vendored libmpv/ffmpeg build tag. The monthly
-          # bump-mpv-winbuild workflow PRs this default; a repository
-          # variable of the same name overrides it (empty = latest).
-          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '2026-08-08-dd5d17d328' }}
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -122,21 +111,17 @@ jobs:
             # relative "libs" would not be found by the linker's
             # "/LIBPATH:libs" at build time.
             mkdir -p "$GITHUB_WORKSPACE/libs"
-            # Vendored builds come from our self-hosted mpv-winbuild fork
-            # (Lolle2000la/mpv-winbuild), which publishes fresh
-            # mpv-dev-*/ffmpeg-* archives for all three arches.
-            if [ -n "${MPV_WINBUILD_TAG:-}" ]; then
-              RELEASE_SPEC="$MPV_WINBUILD_TAG"
-            else
-              RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
-            fi
+            # zhongfly/mpv-winbuild publishes a fresh build roughly daily but
+            # retains only the last 30 days, so resolve the latest tag at
+            # runtime instead of pinning one that would be pruned.
+            RELEASE_SPEC="$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)"
             [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
-            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
-            FFMPEG_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            FFMPEG_ASSET=$(gh release view "$RELEASE_SPEC" --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("ffmpeg-${{ matrix.mpv_arch }}") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
             [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
             [ -n "$FFMPEG_ASSET" ] || { echo "::error::no ffmpeg-${{ matrix.mpv_arch }} asset in release $RELEASE_SPEC"; exit 1; }
-            curl -fL -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
-            curl -fL -o ffmpeg.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
+            curl -fL -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            curl -fL -o ffmpeg.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_SPEC/$FFMPEG_ASSET"
             7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
             7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
