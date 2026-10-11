@@ -377,6 +377,20 @@ The generated code is never committed — it lives in the build output directory
 | Windows integration | `integration_with_windows` setting, `#[cfg(target_os = "windows")]` | N/A | N/A |
 | Config dir | `%APPDATA%` | `~/Library/Application Support` | `$XDG_CONFIG_HOME` |
 | Update mechanism | `check_for_updates_on_startup` toggle in settings | (same) | (same) |
+| Window icon | `window::Settings.icon` (`packaging/windows/icon.ico`) | app bundle icon (`packaging/macos/icon.icns`) | X11: `window::Settings.icon`; Wayland: desktop-entry lookup (see below) |
+
+## Linux desktop integration / Wayland window icon
+
+Wayland compositors never read the window icon from the client. They resolve a toplevel's icon, display name and launcher grouping through the desktop entry whose file name (minus `.desktop`) matches the toplevel's `app_id`, which winit sets from `window::Settings.platform_specific.application_id`. An AppImage that was never "integrated" by appimaged/AppImageLauncher/Gear Lever has no such entry in the XDG data directories, so the shell falls back to a generic icon even though the AppImage ships `MediaSort.desktop` and the icon files itself.
+
+`crates/media-sort-gui/src/linux_desktop.rs` (`application_id()`, called once from `main.rs`) closes that gap at startup:
+
+1. It scans `$XDG_DATA_HOME/applications` and `$XDG_DATA_DIRS/*/applications` for a `*.desktop` file whose `Exec`/`TryExec` launches the running `$APPIMAGE` (any integration tool, any file name; quotes, `env` prefixes and `\s` escapes are parsed). If found, its file name is adopted as the app id and nothing is written.
+2. Otherwise - when no `MediaSort.desktop` exists anywhere (packaged installs win and hand-written entries are never touched) - it writes a hidden `NoDisplay=true` desktop entry plus the `MediaSort` icon into `$XDG_DATA_HOME` (`applications/MediaSort.desktop` and `icons/hicolor/scalable/apps/MediaSort.svg`, the same scalable icon the AppImage ships) via `path_utils::atomic_write`.
+
+Only entries carrying the `X-MediaSort-Provisioned=true` marker are ever written or removed (a provisioned entry is deleted again when a packaged `MediaSort.desktop` appears, since it would otherwise shadow it); writes are skipped when content is unchanged so icon themes/menu caches are not re-scanned needlessly. Running instances share a `flock` on `$XDG_DATA_HOME/media-sort/desktop-integration.lock`; the last instance to exit removes the provisioned entry and icon again, so a cleanly closed app leaves no integration behind (best effort - a crash or SIGKILL skips the cleanup and leaves the hidden files for the next run; the lock file itself stays behind, and a user-replaced icon is kept). The hidden entry adds nothing to application menus - it exists only so shells can find the icon - and it also makes `cargo run` and the standalone binary show the icon on Wayland (without an AppImage, `Exec` points at the running executable). Paths containing `%`, `$`, backticks or control characters are skipped: those have no `Exec` encoding that GLib's key-file layer/loader, KDE's parser and `desktop-file-validate` all agree on. Everything else - including spaces, `"` and `\` - is escaped for both the key-file and the shell parsing layer (verified against `desktop-file-validate`, GLib's loader and KDE's `KConfig`/`KShell`).
+
+The embedded icon is `packaging/linux/icon.svg` itself (the scalable SVG the AppImage also ships), so it cannot drift from the packaged icon; GNOME (librsvg) and KDE (QtSvg) render theme SVGs natively. (`xdg-toplevel-icon-v1` would remove the need for all of this, but iced 0.14 pins winit 0.30, which cannot speak it; revisit when iced ships a newer winit.)
 
 ## Test coverage
 

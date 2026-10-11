@@ -4,6 +4,8 @@ mod app;
 
 #[cfg(feature = "demo")]
 mod demo;
+#[cfg(target_os = "linux")]
+mod linux_desktop;
 mod message;
 mod state;
 mod subscriptions;
@@ -131,6 +133,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return result;
     }
 
+    // Holds the shared lock that lets the last running instance remove the
+    // provisioned desktop entry and icon again on exit; kept alive until the
+    // event loop ends (its `Drop` performs the cleanup).
+    #[cfg(target_os = "linux")]
+    let desktop_integration = linux_desktop::integration();
+
     let icon =
         window::icon::from_file_data(include_bytes!("../../../packaging/windows/icon.ico"), None)
             .ok();
@@ -150,28 +158,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let mut ps = window::settings::PlatformSpecific::default();
             #[cfg(target_os = "linux")]
             {
-                let mut app_id = String::from("MediaSort");
-                if let Ok(appimage_path_str) = std::env::var("APPIMAGE") {
-                    let path = std::path::Path::new(&appimage_path_str);
-                    if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                        if let Some(local_apps_dir) =
-                            dirs::data_local_dir().map(|d| d.join("applications"))
-                        {
-                            let with_prefix = format!("appimagekit-{}", stem);
-                            if local_apps_dir
-                                .join(format!("{}.desktop", with_prefix))
-                                .exists()
-                            {
-                                app_id = with_prefix;
-                            } else {
-                                app_id = stem.to_string();
-                            }
-                        } else {
-                            app_id = stem.to_string();
-                        }
-                    }
-                }
-                ps.application_id = app_id;
+                // Wayland has no window-icon channel: the compositor resolves
+                // the icon through the desktop entry matching this app id.
+                // `integration` adopts an existing entry for this executable
+                // and otherwise provisions a hidden one plus the icon in the
+                // user's XDG data directories (see the module).
+                ps.application_id = desktop_integration.app_id.clone();
             }
             ps
         },
