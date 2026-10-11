@@ -52,7 +52,7 @@ pub fn credits_dialog_view(state: &AppState) -> Element<'_, Message> {
                 .size(12)
                 .width(Length::Fixed(100.0))
                 .font(BOLD_FONT),
-            text("MIT License").size(12),
+            text("GNU AGPL v3.0").size(12),
         ]
         .spacing(8),
         row![
