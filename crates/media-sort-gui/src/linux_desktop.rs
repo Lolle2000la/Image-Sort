@@ -34,6 +34,11 @@
 //! Writes use [`atomic_write`], so a crash cannot leave a truncated entry
 //! behind.
 //!
+//! Nothing is written on non-Wayland sessions: on X11 (and any other backend)
+//! the icon is delivered by the window itself (`window::Settings.icon`), so
+//! only the app id is set there - to [`DESKTOP_ID`], the canonical id that
+//! matches the packaged/Gear Lever `StartupWMClass`.
+//!
 //! `xdg-toplevel-icon-v1` would remove the need for all of this, but the pinned
 //! winit (0.30, via iced 0.14) cannot speak it; revisit when iced ships a newer
 //! winit, at which point this module can be reduced to that protocol or removed.
@@ -80,6 +85,14 @@ const MAX_DESKTOP_FILE_BYTES: u64 = 64 * 1024;
 /// `$XDG_DATA_DIRS` are read from the environment; failures to write are logged
 /// and never prevent the app from starting.
 pub fn application_id() -> String {
+    // Wayland is the only backend where the compositor resolves the window
+    // icon through the desktop entry; on X11 (and any other backend) the icon
+    // is delivered by the window itself, so provisioning there would only
+    // leave a permanent footprint for nothing.
+    if !is_wayland() {
+        return DESKTOP_ID.to_string();
+    }
+
     let data_home = dirs::data_local_dir();
     let appdir = std::env::var_os("APPDIR").map(PathBuf::from);
     // Entries bundled inside the running AppImage's own mount must never be
@@ -100,6 +113,20 @@ pub fn application_id() -> String {
         appimage.as_deref(),
         exe.as_deref(),
     )
+}
+
+/// True when this process is running under Wayland. `WAYLAND_DISPLAY` is set by
+/// the session for Wayland clients and is the only signal available before the
+/// window (and its backend) exists. An XWayland client that nevertheless runs
+/// as X11 would merely get a harmless extra entry.
+fn is_wayland() -> bool {
+    is_wayland_session(std::env::var_os("WAYLAND_DISPLAY").as_deref())
+}
+
+/// The pure predicate behind [`is_wayland`], so it can be tested without
+/// touching the process environment.
+fn is_wayland_session(wayland_display: Option<&std::ffi::OsStr>) -> bool {
+    wayland_display.is_some_and(|value| !value.is_empty())
 }
 
 /// True when `dir` is `appdir` itself or nested inside it (component-wise, so
@@ -912,5 +939,14 @@ mod tests {
             Path::new("/tmp/.mount_abcd/usr/share")
         ));
         assert!(!is_inside(None, Path::new("/usr/share")));
+    }
+
+    #[test]
+    fn wayland_session_detection() {
+        use std::ffi::OsStr;
+
+        assert!(is_wayland_session(Some(OsStr::new("wayland-0"))));
+        assert!(!is_wayland_session(Some(OsStr::new(""))));
+        assert!(!is_wayland_session(None));
     }
 }
