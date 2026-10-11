@@ -88,27 +88,19 @@ pub fn is_registered() -> Result<bool, String> {
 mod tests {
     use super::*;
 
+    // There is only one set of real shell registry paths, so these scenarios
+    // cannot be isolated from each other: both mutate the same per-user keys.
+    // cargo-nextest runs every test in its own process, so splitting the
+    // lifecycle across tests makes them race -- one test's unregister() deletes
+    // the keys the other is asserting on. Keep the whole lifecycle in a single
+    // test so it works under any runner, including process-per-test nextest.
     #[test]
-    fn test_register_unregister_cycle() {
-        let app_path = "C:\\Program Files\\MediaSort\\media-sort-gui.exe";
-
-        let _ = unregister();
-
-        assert!(!is_registered().unwrap());
-
-        register(app_path).unwrap();
-        assert!(is_registered().unwrap());
-
-        unregister().unwrap();
-        assert!(!is_registered().unwrap());
-    }
-
-    #[test]
-    fn test_register_removes_legacy_wpf_keys() {
+    fn test_register_unregister_cycle_and_legacy_wpf_cleanup() {
         let app_path = "C:\\Program Files\\MediaSort\\media-sort-gui.exe";
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
 
         let _ = unregister();
+        assert!(!is_registered().unwrap());
 
         // Simulate a machine that still has the WPF v2.x entries.
         for reg_path in LEGACY_REG_PATHS {
@@ -118,6 +110,7 @@ mod tests {
         }
 
         register(app_path).unwrap();
+        assert!(is_registered().unwrap());
 
         // The legacy leaf keys are gone, ours exist, and the shell sees exactly
         // one entry per location.
@@ -129,5 +122,6 @@ mod tests {
         }
 
         unregister().unwrap();
+        assert!(!is_registered().unwrap());
     }
 }
