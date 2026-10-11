@@ -10,12 +10,11 @@ fn native_image_extensions() -> &'static [&'static str] {
             .filter(|f| f.can_read() && !matches!(f, image::ImageFormat::Gif))
             .flat_map(|f| f.extensions_str().iter().copied())
             .collect();
-        // AVIF is always treated as a native image: on i686-pc-windows-msvc the
-        // `avif-native` (dav1d) feature is disabled (cross-compile can't drive
-        // dav1d-sys's vendored meson build), but AVIF files are still decodable
-        // via the ffmpeg pipe fallback in the backend, so they must remain
-        // visible to the scanner/classifier. On all other targets `avif` is
-        // already in `exts` via the image feature, so this is a no-op there.
+        // AVIF is always treated as a native image. On the shipped targets the
+        // `avif-native` (dav1d) image feature already puts `avif` in `exts`, so
+        // this is normally a no-op; keep the explicit entry so AVIF stays
+        // visible to the scanner/classifier even in a build without a native
+        // decoder (the backend can still decode it via the ffmpeg pipe fallback).
         if !exts.contains(&"avif") {
             exts.push("avif");
         }

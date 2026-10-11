@@ -173,10 +173,6 @@ jobs:
           # runner does not inject GH_TOKEN into action processes, only
           # run steps that reference github.token explicitly get one.
           GH_TOKEN: ${{ github.token }}
-          # Pin the vendored libmpv/ffmpeg build tag. The monthly
-          # bump-mpv-winbuild workflow PRs this default; a repository
-          # variable of the same name overrides it (empty = latest).
-          MPV_WINBUILD_TAG: ${{ vars.MPV_WINBUILD_TAG || '2026-08-08-dd5d17d328' }}
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -193,17 +189,14 @@ jobs:
             # relative "libs" would not be found by the linker's
             # "/LIBPATH:libs" at build time.
             mkdir -p "$GITHUB_WORKSPACE/libs"
-            # Vendored builds come from our self-hosted mpv-winbuild fork
-            # (Lolle2000la/mpv-winbuild).
-            if [ -n "${MPV_WINBUILD_TAG:-}" ]; then
-              RELEASE_SPEC="$MPV_WINBUILD_TAG"
-            else
-              RELEASE_SPEC="$(gh release view --repo Lolle2000la/mpv-winbuild --json tagName --jq .tagName)"
-            fi
+            # zhongfly/mpv-winbuild publishes a fresh build roughly daily but
+            # retains only the last 30 days, so resolve the latest tag at
+            # runtime instead of pinning one that would be pruned.
+            RELEASE_SPEC="$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)"
             [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
-            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo Lolle2000la/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
             [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-x86_64 asset in release $RELEASE_SPEC"; exit 1; }
-            curl -fL -o mpv-dev.7z "https://github.com/Lolle2000la/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            curl -fL -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
             7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
             7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
