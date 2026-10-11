@@ -44,7 +44,7 @@
 //! winit, at which point this module can be reduced to that protocol or removed.
 
 use std::fs;
-use std::io;
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 
 use media_sort_core::path_utils::{atomic_write, paths_equal};
@@ -176,11 +176,12 @@ fn resolve_and_provision(
     // Adopt an existing integration entry that launches this very file. This
     // covers appimaged (`appimagekit-*.desktop`), AppImageLauncher, Gear Lever,
     // `xdg-desktop-menu install` and user-created entries alike, without having
-    // to guess any naming scheme. Our own provisioned entry is skipped so it is
-    // never mistaken for an external integration (and so a stale one is
-    // refreshed rather than adopted).
-    if let Some(appimage) = appimage
-        && let Some(id) = find_entry_for_appimage(data_home, data_dirs, appimage)
+    // to guess any naming scheme - for an AppImage as well as a plain binary
+    // (e.g. a hand-written entry for a development build). Our own provisioned
+    // entry is skipped so it is never mistaken for an external integration (and
+    // so a stale one is refreshed rather than adopted).
+    if let Some(target) = appimage.or(exe)
+        && let Some(id) = find_entry_for_appimage(data_home, data_dirs, target)
     {
         tracing::debug!(desktop_id = %id, "adopted existing desktop entry for the running executable");
         return id;
@@ -282,6 +283,8 @@ fn exec_matches(contents: &str, target: &Path) -> bool {
 /// string (where `\s` encodes a space, as written by AppImageKit's integration
 /// script).
 fn candidate_paths(line: &str) -> Vec<String> {
+    // A key-file tolerates leading whitespace before a key.
+    let line = line.trim_start();
     if let Some(value) = line.strip_prefix("Exec=") {
         exec_tokens(value)
     } else if let Some(value) = line.strip_prefix("TryExec=") {
@@ -395,14 +398,17 @@ fn provision(data_home: &Path, exec: &str) -> io::Result<bool> {
         return Ok(false);
     }
 
-    fs::create_dir_all(&applications)?;
-    write_if_changed(&entry, desktop_entry_contents(exec).as_bytes())?;
-
+    // Write the icon before the entry: if the icon fails, no marked entry is
+    // left behind pointing at an icon that does not exist (which would make the
+    // returned app id match neither the entry nor the icon).
     let icon = icon_path(data_home);
     if let Some(icon_dir) = icon.parent() {
         fs::create_dir_all(icon_dir)?;
     }
     write_if_changed(&icon, ICON)?;
+
+    fs::create_dir_all(&applications)?;
+    write_if_changed(&entry, desktop_entry_contents(exec).as_bytes())?;
     Ok(true)
 }
 
@@ -426,7 +432,7 @@ fn remove_provisioned(data_home: &Path) {
     }
 
     let icon = icon_path(data_home);
-    if fs::read(&icon).is_ok_and(|bytes| bytes == ICON) {
+    if read_capped_bytes(&icon, ICON.len() as u64 + 1).is_ok_and(|bytes| bytes == ICON) {
         let _ = fs::remove_file(&icon);
     }
 }
@@ -493,10 +499,22 @@ fn exec_argument(path: &Path) -> Option<String> {
     Some(quoted)
 }
 
+/// Reads at most `limit` bytes of `path`. Used to compare an existing file
+/// against (small) expected contents without ever reading a large or hostile
+/// file whole.
+fn read_capped_bytes(path: &Path, limit: u64) -> io::Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    fs::File::open(path)?.take(limit).read_to_end(&mut bytes)?;
+    Ok(bytes)
+}
+
 /// Writes `contents` to `path` only when they differ, so repeated startups do
 /// not touch mtimes (icon themes watch these directories).
 fn write_if_changed(path: &Path, contents: &[u8]) -> io::Result<()> {
-    if fs::read(path).is_ok_and(|existing| existing == contents) {
+    // Read one byte past `contents`, so a longer existing file can never
+    // compare equal and is never read whole.
+    let limit = contents.len() as u64 + 1;
+    if read_capped_bytes(path, limit).is_ok_and(|existing| existing == contents) {
         return Ok(());
     }
     atomic_write(path, contents)
@@ -633,6 +651,37 @@ mod tests {
         );
 
         let id = resolve_and_provision(Some(home.path()), &[], Some(&link), None);
+
+        assert_eq!(id, "foo");
+    }
+
+    #[test]
+    fn adopts_an_entry_that_launches_the_plain_executable() {
+        let home = TempDataHome::new("adopt-exe");
+        let exe = home.path().join("target/debug/media-sort-gui");
+        write_file(
+            &home.path().join("applications/dev.desktop"),
+            &installed_entry_for(&exe, "Exec"),
+        );
+
+        let id = resolve_and_provision(Some(home.path()), &[], None, Some(&exe));
+
+        assert_eq!(id, "dev");
+        assert!(!home.entry().exists());
+    }
+
+    #[test]
+    fn adopts_an_entry_with_an_indented_exec() {
+        let home = TempDataHome::new("indented");
+        let appimage = home.path().join("Foo.AppImage");
+        fs::write(&appimage, b"appimage").expect("write appimage");
+        // A key-file tolerates leading whitespace before a key.
+        write_file(
+            &home.path().join("applications/foo.desktop"),
+            &format!("[Desktop Entry]\n  Exec=\"{}\" %U\n", appimage.display()),
+        );
+
+        let id = resolve_and_provision(Some(home.path()), &[], Some(&appimage), None);
 
         assert_eq!(id, "foo");
     }
@@ -827,6 +876,32 @@ mod tests {
         assert_eq!(id, DESKTOP_ID);
         assert!(!home.entry().exists());
         assert!(!icon_path(home.path()).exists());
+    }
+
+    #[test]
+    fn keeps_a_user_replaced_icon_when_a_canonical_entry_appears() {
+        let home = TempDataHome::new("keep-icon");
+        let appimage = home.path().join("MediaSort.AppImage");
+        fs::write(&appimage, b"appimage").expect("write appimage");
+        assert_eq!(
+            resolve_and_provision(Some(home.path()), &[], Some(&appimage), None),
+            PROVISIONED_ID
+        );
+        write_file(&icon_path(home.path()), "user replacement");
+
+        let system_data = home.path().join("system-data");
+        write_file(
+            &system_data.join("applications/MediaSort.desktop"),
+            "[Desktop Entry]\nType=Application\nName=Media Sort\nExec=media-sort-gui\n",
+        );
+        let id = resolve_and_provision(Some(home.path()), &[system_data], Some(&appimage), None);
+
+        assert_eq!(id, DESKTOP_ID);
+        assert!(!home.entry().exists());
+        assert!(
+            icon_path(home.path()).exists(),
+            "a user-replaced icon must be kept"
+        );
     }
 
     #[test]
