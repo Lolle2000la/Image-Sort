@@ -57,19 +57,21 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Rust Environment
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master
+        with:
+          toolchain: stable
 
       - name: Setup .NET SDK (For vpk CLI)
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: '8.0.x'
 
       - name: Install System Dependencies (Linux Only)
         if: startsWith(matrix.os, 'ubuntu')
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -83,7 +85,7 @@ jobs:
 
       - name: Install System Dependencies (macOS Only)
         if: startsWith(matrix.os, 'macos')
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -94,7 +96,7 @@ jobs:
 
       - name: Setup libmpv Link Libraries (Windows)
         if: startsWith(matrix.os, 'windows')
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         env:
           # gh refuses to run without a token in Actions contexts; the
           # runner does not inject GH_TOKEN into action processes, only
@@ -140,14 +142,14 @@ jobs:
             mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
             7z e ffmpeg.7z ffmpeg.exe "-o$GITHUB_WORKSPACE/libs" -y
 
-      - uses: ilammy/msvc-dev-cmd@v1
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
         if: startsWith(matrix.os, 'windows')
         with:
           arch: ${{ matrix.msvc_arch }}
 
       - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
         if: startsWith(matrix.os, 'windows')
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -261,7 +263,7 @@ jobs:
 
       - name: Ensure GnuPG is installed
         if: success()
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 10
           max_attempts: 3
@@ -286,7 +288,7 @@ jobs:
         # Pinned to the commit behind the v7 tag (2dc316de) so a retagged
         # mutable tag cannot silently change what the release pipeline runs
         # with the signing key in scope. Update deliberately after review.
-        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -323,7 +325,7 @@ jobs:
     needs: deploy
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -338,7 +340,7 @@ jobs:
           fi
 
       - name: Download git-cliff
-        uses: nick-fields/retry@v4
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
         with:
           timeout_minutes: 5
           max_attempts: 3
