@@ -133,12 +133,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return result;
     }
 
-    // Holds the shared lock that lets the last running instance remove the
-    // provisioned desktop entry and icon again on exit; kept alive until the
-    // event loop ends (its `Drop` performs the cleanup).
-    #[cfg(target_os = "linux")]
-    let desktop_integration = linux_desktop::integration();
-
     let icon =
         window::icon::from_file_data(include_bytes!("../../../packaging/windows/icon.ico"), None)
             .ok();
@@ -160,10 +154,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             {
                 // Wayland has no window-icon channel: the compositor resolves
                 // the icon through the desktop entry matching this app id.
-                // `integration` adopts an existing entry for this executable
+                // `application_id` adopts an existing entry for this executable
                 // and otherwise provisions a hidden one plus the icon in the
                 // user's XDG data directories (see the module).
-                ps.application_id = desktop_integration.app_id.clone();
+                ps.application_id = linux_desktop::application_id();
             }
             ps
         },
