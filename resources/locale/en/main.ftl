@@ -172,6 +172,7 @@ metadata-field-focallength = Focal Length
 metadata-field-lensmodel = Lens
 metadata-field-gpslatitude = Latitude
 metadata-field-gpslongitude = Longitude
+metadata-field-gpsaltitude = Altitude
 
 # Drag and drop overlay
 drag-drop-copy-title = Copy Files
