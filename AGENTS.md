@@ -98,7 +98,7 @@ Test fixtures are in `crates/media-sort-backend/tests/fixtures/`.
 
 ## Dev vs release builds
 
-The dev profile sets `opt-level = 3` for all dependencies (`[profile.dev.package."*"]`). This keeps the GUI responsive in debug builds (iced/wgpu are slow without optimizations). Release builds use `lto = "fat"` and `codegen-units = 1`.
+Dev builds use cargo's defaults — the root `Cargo.toml` deliberately has no `[profile.dev]` overrides. An aggressive `[profile.dev.package."*"] opt-level = 3` override existed historically to keep debug GUI testing responsive while the media pipeline was slow; it was removed once the decode pipeline improved. Only revisit it with measurements, since it slows every dependency compile. Release builds use `lto = "thin"` and `codegen-units = 1`.
 
 ## Git
 
@@ -107,6 +107,8 @@ Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is th
 `.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored (see the root `.gitignore`) and must never be committed.
 
 **CI Routing:** `ci.yml` (`paths-ignore: website/**`, `README.md`) runs the Rust lint/test matrices directly on push to `master`/`main`/`v3.0` and on pull requests. The Astro site is deployed separately by `deploy-demos-website.yml` (triggered by `workflow_run` on the release workflow, or `workflow_dispatch`), which builds `website/` and pushes `website/dist` to the `gh-pages` branch.
+
+**CI caching:** `ci.yml` caches Cargo artifacts + registry and bench fixtures via `actions/cache`, but only `push` runs on `master`/`main`/`v3.0` may save caches — the `actions/cache/save` steps are gated on `github.event_name == 'push'` plus an exact-key miss, so pull-request and merge-queue runs are restore-only and every writable cache entry traces back to merged code. (GitHub also scopes PR-created caches to the merge ref; the gate makes the policy explicit rather than relying on that.) The lint job's `ubuntu-latest-cargo-*` archive holds only clippy's check-only dependency metadata; the test matrix uses `<os>-build-cargo-*` because metadata-only artifacts cannot serve a full build, and sharing one key left the ubuntu test job rebuilding every dependency on every run. `release.yml` must never restore a cache: published binaries are built from checked-out source only, so a poisoned cache cannot reach signed artifacts. The bench-fixture directory is excluded from the Cargo archive before saving so its ~330 MB per OS aren't counted twice against the repository's 10 GB cache budget.
 
 ## Architecture pattern (iced / The Elm Architecture)
 

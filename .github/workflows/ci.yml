@@ -18,8 +18,30 @@ on:
     branches: [master, main, v3.0]
     types: [checks_requested]
 
+# A new push to the same branch or PR supersedes the previous run; without
+# this, rapid successive pushes each run their full 3-OS test matrix and
+# compete for runner slots.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
+
+# Cache trust model (applies to every actions/cache step in this workflow)
+# -------------------------------------------------------------------------
+# Cargo and bench-fixture caches are SAVED only by push runs on the branches
+# listed under on.push.branches -- merged, reviewable code. Pull-request and
+# merge-queue runs never write a cache entry (actions/cache/save is gated on
+# github.event_name == 'push'), so untrusted code can never poison a cache
+# entry that a later run consumes. GitHub already scopes PR-created caches to
+# the PR merge ref; the explicit gate removes any dependence on that isolation
+# continuing to hold.
+#
+# Nothing outside this workflow consumes these caches: release.yml restores
+# no cache at all (see the note above its Build step), so signed/published
+# artifacts are always built from checked-out source and cannot be influenced
+# by a poisoned cache.
 
 jobs:
   lint:
@@ -32,8 +54,15 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Clippy runs cargo check under the hood, so the dependency artifacts in
+      # this cache are check-only metadata (.rmeta, no codegen). The test
+      # matrix therefore keeps its own <os>-build-cargo-* namespace (see the
+      # test job): sharing one key here used to let this job win every save
+      # with an archive the build jobs could not reuse.
+      # Restore-only on PRs/merge queue; see the cache trust model at the top.
+      - name: Restore Cargo Cache
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index/
@@ -64,6 +93,20 @@ jobs:
         # (velopack, demo, headless, avif-native, ...).
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+      - name: Save Cargo Cache
+        # Trusted writers only (push on the branches above). Skipped when the
+        # exact key already exists: a content-hash key cannot be refreshed,
+        # so there would be nothing new to store.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+
   test:
     name: Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -79,16 +122,25 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Cache Cargo Dependencies
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restore-only on PRs/merge queue; see the cache trust model at the top.
+      # The build-cargo namespace is separate from the lint job's dependency
+      # cache on purpose (see the lint job): clippy only produces check-only
+      # metadata, so a shared key left this job rebuilding the whole
+      # dependency tree on every run. The second restore key keeps the first
+      # run after this change warm on macOS/Windows by falling back to the
+      # archives the previous builds saved.
+      - name: Restore Cargo Cache
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.os }}-build-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
+            ${{ matrix.os }}-build-cargo-
             ${{ matrix.os }}-cargo-
 
       - name: Install System Dependencies (Linux)
@@ -186,8 +238,9 @@ jobs:
         with:
           tool: nextest
 
-      - name: Cache Bench Fixtures
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      - name: Restore Bench Fixtures
+        id: fixtures-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: target/media-sort-fixtures
           # Keyed on the generator + the source image: any change misses and
@@ -216,6 +269,37 @@ jobs:
         # skipped them too -- run them explicitly so this coverage is gained
         # rather than lost by the switch.
         run: cargo test --workspace --doc
+
+      - name: Save Bench Fixtures
+        # Trusted writers only; see the cache trust model at the top.
+        if: ${{ github.event_name == 'push' && steps.fixtures-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/media-sort-fixtures
+          key: ${{ steps.fixtures-cache.outputs.cache-primary-key }}
+
+      - name: Exclude Bench Fixtures From Cargo Cache
+        # The fixtures live inside target/ and are persisted by their own cache
+        # entry; leaving their ~330 MB copy in the Cargo archive would pay for
+        # the same bytes twice on every OS within the repo-wide 10 GB cache
+        # budget. Runs after the fixture save, before the Cargo save.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        shell: bash
+        run: rm -rf target/media-sort-fixtures
+
+      - name: Save Cargo Cache
+        # Trusted writers only; see the cache trust model at the top. Skipped
+        # when the exact key already exists: a content-hash key cannot be
+        # refreshed, so there would be nothing new to store.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
 
   verify-contributors:
     name: Verify Contributors List
