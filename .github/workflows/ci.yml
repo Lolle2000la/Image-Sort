@@ -2,10 +2,7 @@ name: CI Pipeline
 
 on:
   push:
-    # TEMPORARY validation-only entry: lets this PR branch run the push path
-    # so the new cache save steps can be exercised before merge. Reverted in
-    # the next commit.
-    branches: [master, main, v3.0, ci/non-release-build-cache]
+    branches: [master, main, v3.0]
     paths-ignore:
       - 'website/**'
       - 'README.md'
