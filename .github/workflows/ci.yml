@@ -54,6 +54,11 @@ jobs:
           toolchain: stable
           components: rustfmt, clippy
 
+      # Clippy runs cargo check under the hood, so the dependency artifacts in
+      # this cache are check-only metadata (.rmeta, no codegen). The test
+      # matrix therefore keeps its own <os>-build-cargo-* namespace (see the
+      # test job): sharing one key here used to let this job win every save
+      # with an archive the build jobs could not reuse.
       # Restore-only on PRs/merge queue; see the cache trust model at the top.
       - name: Restore Cargo Cache
         id: cargo-cache
@@ -118,6 +123,12 @@ jobs:
           toolchain: stable
 
       # Restore-only on PRs/merge queue; see the cache trust model at the top.
+      # The build-cargo namespace is separate from the lint job's dependency
+      # cache on purpose (see the lint job): clippy only produces check-only
+      # metadata, so a shared key left this job rebuilding the whole
+      # dependency tree on every run. The second restore key keeps the first
+      # run after this change warm on macOS/Windows by falling back to the
+      # archives the previous builds saved.
       - name: Restore Cargo Cache
         id: cargo-cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -127,8 +138,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ matrix.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.os }}-build-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
+            ${{ matrix.os }}-build-cargo-
             ${{ matrix.os }}-cargo-
 
       - name: Install System Dependencies (Linux)
