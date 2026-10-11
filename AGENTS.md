@@ -102,7 +102,7 @@ The dev profile sets `opt-level = 3` for all dependencies (`[profile.dev.package
 
 ## Git
 
-Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is the GitHub Pages site served at `imagesort.org` via the `gh-pages` branch (the custom domain is declared in `website/public/CNAME`). The legacy Jekyll `docs/` tree was removed when the Rust rewrite landed — the Astro/Starlight site replaced it.
+Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is the GitHub Pages site served at `mediasort.app` via the `gh-pages` branch (the custom domain is declared in `website/public/CNAME`). The legacy Jekyll `docs/` tree was removed when the Rust rewrite landed — the Astro/Starlight site replaced it.
 
 `.Image-Sort-master/` is a local-only reference copy of the legacy WPF codebase. It is gitignored (see the root `.gitignore`) and must never be committed.
 
@@ -436,7 +436,7 @@ When you add a new module, dependency, build step, architectural decision, or te
 Removed with the Rust rewrite. The old Jekyll tree documented the v1.x/v2.x WPF UI (MSI installers, Microsoft Store links, .NET 3.1 / WiX build prerequisites) and is superseded by `website/`.
 
 ### Documentation website (`website/`)
-The `website/` directory is the GitHub Pages site at `imagesort.org`, deployed to the `gh-pages` branch by `.github/workflows/deploy-demos-website.yml`. The custom domain is declared in `website/public/CNAME`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
+The `website/` directory is the GitHub Pages site at `mediasort.app`, deployed to the `gh-pages` branch by `.github/workflows/deploy-demos-website.yml`. The custom domain is declared in `website/public/CNAME`. When adding or updating docs content, work in this directory. The dev server runs with `astro dev --background`.
 To render all automated demo videos (headless iced simulation) to the public assets directory for deployment, run `npm run render-demos` from the `website/` directory. Output videos are saved in `website/public/demos/`.
 
 **CRITICAL REQUIREMENT:**
