@@ -4,6 +4,7 @@ description: Media Sortを実行するためのプリコンパイル済みバイ
 ---
 
 import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+import SnapBadge from '../../../../components/SnapBadge.astro';
 
 Media Sortは、Windows、Linux、およびmacOS向けのプリコンパイル済みスタンドアロンパッケージとして利用可能です。
 
@@ -38,6 +39,8 @@ Media Sortは[Snap Store](https://snapcraft.io/media-sort)で公開されてい�
 ```bash
 sudo snap install media-sort
 ```
+
+<SnapBadge />
 
 Snapは厳格な制限付き（strict confinement）で動作するため、ホームディレクトリ内のファイルを整理できます。外部ドライブ（`/media`、`/mnt`）のファイルも整理するには、`removable-media`インターフェースを一度接続してください：
 

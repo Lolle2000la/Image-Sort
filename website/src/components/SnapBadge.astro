@@ -1,0 +1,71 @@
+---
+/**
+ * "Get it from the Snap Store" install badge.
+ *
+ * The Snap Store publishes dark- and light-backdrop variants and this site has
+ * a theme toggle, so both images are rendered and CSS reveals the one matching
+ * the current `data-theme` (the attribute Starlight sets on <html>). The hidden
+ * variant is `display: none`, so only one reaches the accessibility tree.
+ *
+ * The badge language follows the page locale. Note the Snap Store uses `jp`,
+ * not `ja`, for Japanese (`/ja/...` returns 400).
+ */
+const path = Astro.url.pathname;
+const locale = /\/de(\/|$)/.test(path)
+    ? 'de'
+    : /\/ja(\/|$)/.test(path)
+      ? 'jp'
+      : 'en';
+
+const ALT_TEXT = {
+    en: 'Get it from the Snap Store',
+    de: 'Installieren vom Snap Store',
+    jp: 'Snap Store から入手ください',
+} as const;
+
+const alt = ALT_TEXT[locale];
+const href = 'https://snapcraft.io/media-sort';
+---
+
+<a class="snap-store-badge" href={href}>
+    <img
+        class="snap-store-badge__dark"
+        src={`https://snapcraft.io/${locale}/dark/install.svg`}
+        alt={alt}
+        width="182"
+        height="56"
+    />
+    <img
+        class="snap-store-badge__light"
+        src={`https://snapcraft.io/${locale}/light/install.svg`}
+        alt={alt}
+        width="182"
+        height="56"
+    />
+</a>
+
+<style>
+    .snap-store-badge {
+        display: inline-block;
+        margin: 1.5rem 0;
+        line-height: 0;
+    }
+
+    .snap-store-badge img {
+        height: 3.5rem;
+        width: auto;
+        margin: 0;
+    }
+
+    .snap-store-badge__light {
+        display: none;
+    }
+
+    :global([data-theme='dark']) .snap-store-badge__light {
+        display: inline;
+    }
+
+    :global([data-theme='dark']) .snap-store-badge__dark {
+        display: none;
+    }
+</style>
