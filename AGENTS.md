@@ -114,7 +114,7 @@ Conventional commits (`feat:`, `fix:`, `chore:`). The `website/` directory is th
 
 Releases are tag-driven: pushing a `v*` tag runs `release.yml`, which builds the five shipped targets, packs and GPG-signs each Velopack `.nupkg`, uploads them to a **draft** release, then (in the `publish` job) prepends the tag message to a `git-cliff` changelog over the commits since the previous tag, merges duplicate releases for the tag, and flips the draft public (prerelease when the tag contains `-`, else `latest`). Stable releases also trigger `deploy-demos-website.yml`.
 
-**The version has two consumers, so the tag and the manifest must agree.** Velopack takes the package version from the **tag name** (`v` stripped), while the binary reports `[workspace.package].version` from `Cargo.toml` (the About dialog, and the updater's prerelease detection via `env!("CARGO_PKG_VERSION")`). The `verify-version` job in `release.yml` runs before any build and fails the whole run unless the tag matches `Cargo.toml` *and* `Cargo.lock`. Treat `[workspace.package].version` as the single source of truth.
+**The version has several consumers, so the tag and every version file must agree.** Velopack takes the package version from the **tag name** (`v` stripped); the binary reports `[workspace.package].version` from `Cargo.toml` (the About dialog, and the updater's prerelease detection via `env!("CARGO_PKG_VERSION")`); and the OS reads two more files (below). The `verify-version` job in `release.yml` runs before any build and fails the whole run unless the tag matches all four. Treat `[workspace.package].version` as the single source of truth.
 
 **Cut a release with `scripts/release.sh`** — do not hand-edit the version or hand-craft the tag:
 
@@ -123,7 +123,14 @@ scripts/release.sh 3.0.0-alpha.18 -F notes.md   # or -m "message"
 scripts/release.sh 3.0.0-alpha.19 --dry-run     # validate only, change nothing
 ```
 
-It runs preflight checks (clean tree, not behind upstream, tag unused locally and on `origin`), optionally verifies the HEAD commit's Actions runs are green (`--require-ci` to make that fatal; `gh`/`jq` used when present), bumps `[workspace.package].version`, refreshes `Cargo.lock` (`cargo update --workspace`, verified with `cargo metadata --locked`), commits `chore: bump version to X`, creates the **signed annotated tag** with the given message (your `commit.gpgsign`/`tag.gpgsign` key — hence the tag is created locally, never in CI), and pushes the branch and tag. Any failure before the commit rolls `Cargo.toml`/`Cargo.lock` back. Useful flags: `--no-push` (tag only), `--no-verify` (skip the CI check), `--dry-run`.
+It runs preflight checks (clean tree, not behind upstream, tag unused locally and on `origin`), optionally verifies the HEAD commit's Actions runs are green (`--require-ci` to make that fatal; `gh`/`jq` used when present), bumps `[workspace.package].version`, refreshes `Cargo.lock` (`cargo update --workspace`, verified with `cargo metadata --locked`), commits `chore: bump version to X`, creates the **signed annotated tag** with the given message (your `commit.gpgsign`/`tag.gpgsign` key — hence the tag is created locally, never in CI), and pushes the branch and tag. Any failure before the commit rolls every version file back. Useful flags: `--no-push` (tag only), `--no-verify` (skip the CI check), `--dry-run`.
+
+**Other version-bearing files.** The tag alone must determine every version in the shipped artifacts, so the same commit also syncs two OS-facing files:
+
+- `packaging/macos/Info.plist` — `CFBundleShortVersionString` becomes the numeric `MAJOR.MINOR.PATCH` (prerelease stripped: Apple requires 1–3 period-separated integers, so `3.0.0-rc.1` → `3.0.0`), and `CFBundleVersion` (absent from the template) is added/updated as the **release ordinal**: 1-based over every existing `v*` tag, so the Nth release ships build N. Both are rewritten in place, so re-running is idempotent.
+- `crates/media-sort-gui/media-sort-gui.rc` — a `VERSIONINFO` block generated between `// MS_VERSION_BEGIN` / `// MS_VERSION_END` markers. `FILEVERSION`/`PRODUCTVERSION` are `MAJOR,MINOR,PATCH,<release ordinal>` and the `FileVersion`/`ProductVersion` strings carry the full semver. It is compiled only on Windows (`build.rs`'s `embed_resource`), so it is inert on other targets.
+
+`verify-version` re-derives all of these from the tag (`EXPECTED_BUILD` is the `v*` tag count, which includes the new tag) and fails the build on any mismatch, so a hand-cut tag cannot ship mismatched OS metadata.
 
 ## Architecture pattern (iced / The Elm Architecture)
 
