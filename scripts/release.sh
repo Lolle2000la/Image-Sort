@@ -8,12 +8,6 @@
 # summary that the publish job prepends to the generated changelog. Pushing
 # the tag is what finally triggers the release workflow.
 #
-# The snap is built by Launchpad, not by that workflow: this script also pushes
-# the release commit to the Launchpad trigger branch (`snap-candidate` for a
-# prerelease tag, `snap-stable` otherwise) in the remote named by
-# SNAP_TRIGGER_REMOTE (default `launchpad`), and the branch update is what
-# starts the build. Skipped -- with a warning -- when that remote is absent.
-#
 # Usage:
 #   scripts/release.sh <version> [-m <message> | -F <notes-file>] [options]
 #
@@ -51,11 +45,6 @@ NO_PUSH=0
 DRY_RUN=0
 NO_VERIFY=0
 
-# The snap is built by Launchpad, which watches this remote's trigger branches
-# (see AGENTS.md, "Snap packaging (Linux)"). Override the remote's name with
-# SNAP_TRIGGER_REMOTE if yours is called something else.
-SNAP_TRIGGER_REMOTE="${SNAP_TRIGGER_REMOTE:-launchpad}"
-
 die() { printf 'error: %s\n' "$*" >&2; exit 1; }
 info() { printf '==> %s\n' "$*" >&2; }
 warn() { printf 'warning: %s\n' "$*" >&2; }
@@ -81,11 +70,6 @@ Options:
       --dry-run           Validate and print the plan; change nothing.
       --no-verify         Skip the CI status check entirely.
   -h, --help              Show this help.
-
-Environment:
-  SNAP_TRIGGER_REMOTE     Remote holding the Launchpad snap trigger branches
-                          (default: launchpad). Without it the snap is skipped,
-                          with a warning.
 EOF
   exit "${1:-0}"
 }
@@ -220,17 +204,6 @@ BUILD_NUMBER="$(( $(git tag -l 'v*' | wc -l | tr -d '[:space:]') + 1 ))"
 
 # --- plan ------------------------------------------------------------------
 
-# Which Launchpad trigger branch this release updates -- and therefore which
-# channel the snap lands in -- using the rule the CI publishing path used to
-# apply: a prerelease tag goes to candidate, a stable one to stable. Launchpad's
-# recipe for that branch uploads *and releases* to the matching channel, so
-# there is nothing to promote by hand.
-if [[ "$TAG" == *"-"* ]]; then
-  SNAP_TRIGGER_BRANCH=snap-candidate
-else
-  SNAP_TRIGGER_BRANCH=snap-stable
-fi
-
 if [ -n "$NOTES_FILE" ]; then
   [ -f "$NOTES_FILE" ] || die "notes file not found: $NOTES_FILE"
   TAG_ARGS=(-F "$NOTES_FILE")
@@ -246,7 +219,6 @@ info "marketing: $MARKETING_VERSION (CFBundleShortVersionString)"
 info "build:     $BUILD_NUMBER (CFBundleVersion / FILEVERSION)"
 info "branch:    $BRANCH"
 info "tag:       $TAG (signed)"
-info "snap:      $SNAP_TRIGGER_BRANCH -> $SNAP_TRIGGER_REMOTE (starts the Launchpad build)"
 
 if [ "$DRY_RUN" -eq 1 ]; then
   info "dry run: no changes made"
@@ -380,8 +352,6 @@ git tag -s "$TAG" "${TAG_ARGS[@]}" || {
 if [ "$NO_PUSH" -eq 1 ]; then
   info "skipping push (--no-push); finish with:"
   printf '    git push origin %s\n    git push origin refs/tags/%s\n' "$BRANCH" "$TAG" >&2
-  printf '    git push --force %s HEAD:refs/heads/%s   # starts the Launchpad snap build\n' \
-    "$SNAP_TRIGGER_REMOTE" "$SNAP_TRIGGER_BRANCH" >&2
   exit 0
 fi
 
@@ -390,27 +360,8 @@ git push origin "HEAD:refs/heads/$BRANCH"
 info "pushing tag $TAG (this triggers the release workflow)"
 git push origin "refs/tags/$TAG"
 
-# Launchpad builds the snap from this branch, so the push *is* the build
-# trigger: the recipe for the branch has `auto_build` on and releases its upload
-# to the channel that matches it. Deliberately non-fatal, like the CI snap job
-# it replaces -- the GitHub release is complete without a snap, and the warning
-# prints the one command that retries just this part.
-if git remote get-url "$SNAP_TRIGGER_REMOTE" >/dev/null 2>&1; then
-  info "pushing $SNAP_TRIGGER_BRANCH to '$SNAP_TRIGGER_REMOTE' (starts the Launchpad snap build)"
-  if ! git push --force "$SNAP_TRIGGER_REMOTE" "HEAD:refs/heads/$SNAP_TRIGGER_BRANCH"; then
-    warn "could not push the snap trigger branch; no snap will be built for $TAG"
-    warn "retry with: git push --force $SNAP_TRIGGER_REMOTE HEAD:refs/heads/$SNAP_TRIGGER_BRANCH"
-  fi
-else
-  warn "no '$SNAP_TRIGGER_REMOTE' remote; skipping the snap build trigger"
-  warn "see AGENTS.md (\"Snap packaging (Linux)\") for the one-time Launchpad setup"
-fi
-
 info "done. $TAG pushed; the release workflow is building it now."
 cat >&2 <<EOF
 
     gh run watch \$(gh run list --workflow=release.yml --limit=1 --json databaseId --jq '.[0].databaseId')
-
-The .snap is built by Launchpad, not by that workflow; its recipe page shows the
-build log and the revision once it lands.
 EOF

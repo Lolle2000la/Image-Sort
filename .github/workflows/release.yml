@@ -380,15 +380,9 @@ jobs:
         run: |
           gh release upload "${{ github.ref_name }}" Releases/*.sig --clobber
 
-  # The snap is deliberately not built here: Launchpad builds
-  # `snap/snapcraft.yaml` from this repository and uploads the result to the
-  # Snap Store, so no CI runner needs a Store credential (see AGENTS.md,
-  # "Snap packaging (Linux)"). The two-runner destructive-mode job that used
-  # to live here is in git history if it is ever needed again.
-
   publish:
     runs-on: ubuntu-latest
-    needs: [deploy]
+    needs: deploy
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
