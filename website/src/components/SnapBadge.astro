@@ -1,4 +1,6 @@
 ---
+import { snapStoreUrl } from '../config.ts';
+
 /**
  * "Get it from the Snap Store" install badge.
  *
@@ -24,7 +26,7 @@ const ALT_TEXT = {
 } as const;
 
 const alt = ALT_TEXT[locale];
-const href = 'https://snapcraft.io/media-sort';
+const href = snapStoreUrl;
 ---
 
 <a class="snap-store-badge" href={href}>

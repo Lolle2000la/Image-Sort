@@ -4,7 +4,6 @@ description: Download precompiled binaries or install dependencies to run Media 
 ---
 
 import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
-import SnapBadge from '../../../../components/SnapBadge.astro';
 
 Media Sort is available as precompiled standalone packages for Windows, Linux, and macOS.
 
@@ -39,8 +38,6 @@ Media Sort is published to the [Snap Store](https://snapcraft.io/media-sort). It
 ```bash
 sudo snap install media-sort
 ```
-
-<SnapBadge />
 
 The snap is strictly confined, so it sorts anything under your home directory. To also sort files on external drives (`/media`, `/mnt`), connect the `removable-media` interface once:
 
