@@ -1,22 +1,15 @@
 # Snap packaging for Media Sort.
 #
-# Classic confinement: Media Sort is a media sorter/file browser whose whole
-# purpose is to open, move, copy, rename and trash arbitrary user files anywhere
-# on the filesystem (any mount, any drive, any path reachable by the file
-# picker), exactly like the AppImage build. The snap interfaces a strict
-# confinement could offer (home, removable-media, ...) cannot express that, so
-# the snap is classic like other file managers and media tools. Classic
-# confinement is a manual-review capability in the Snap Store; the snap name
-# below must be approved for classic before the release workflow can publish.
+# Strict confinement: the app sorts anything under $HOME, and on removable media
+# (/media, /mnt) once the `removable-media` interface is connected — see the
+# app's `plugs` below. Audio goes through the sound server (`audio-playback`),
+# with a raw-ALSA fallback for systems that have none.
 #
 # Build:   snapcraft pack --destructive-mode     (host must be Ubuntu 24.04)
+#          snapcraft pack --use-lxd              (any host with LXD set up)
 # Lint:    snapcraft lint <file.snap>
-# Install: sudo snap install --classic ./media-sort_*_<arch>.snap
+# Install: sudo snap install ./media-sort_*_<arch>.snap
 #          (add --dangerous for a locally built, unsigned snap)
-#
-# It is a classic snap, so `--classic` is required. The `media-sort` name in the
-# Snap Store must be approved for classic confinement before the Store release
-# step in .github/workflows/release.yml can publish it.
 
 name: media-sort
 title: Media Sort
@@ -41,13 +34,6 @@ issues: https://github.com/Lolle2000la/Media-Sort/issues
 contact: https://github.com/Lolle2000la/Media-Sort/issues
 
 base: core24
-# The default, store-publishable variant is strictly confined: it can sort
-# anything under $HOME and, once `removable-media` is connected, on removable
-# drives. The full-filesystem variant is the *same* project built with
-# `scripts/build-snap.sh classic` (which switches to `confinement: classic` and
-# drops the plugs below) and is published to the `latest/classicmode` track; it
-# needs the store's classic-confinement approval. See scripts/build-snap.sh and
-# the "Snap packaging" section of AGENTS.md.
 confinement: strict
 grade: stable
 
@@ -99,13 +85,12 @@ parts:
     # in-app self-updater is neither built nor offered.
     rust-path:
       - crates/media-sort-gui
-    # The strict variant gets a PATH/LD_LIBRARY_PATH command-chain from
-    # snapcraft, but the classic variant does not (and snapd scrubs
-    # LD_LIBRARY_PATH), so without this the staged libmpv.so.2 would be
-    # unresolved there and the app would fail to start. patchelf writes an
-    # `$ORIGIN`-relative RPATH (e.g. `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`)
-    # so the staged libraries resolve in both variants, and DT_RPATH is
-    # inherited by their own dependencies. Harmless in the strict variant.
+    # Belt and braces for the staged runtime libraries: snapcraft's strict
+    # command-chain already puts $SNAP/usr/lib/<triplet> on LD_LIBRARY_PATH, and
+    # this additionally writes an `$ORIGIN`-relative RPATH (e.g.
+    # `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`) on the binary so the staged
+    # libmpv.so.2 resolves even if that environment is not applied. DT_RPATH is
+    # inherited by the libraries' own dependencies.
     build-attributes:
       - enable-patchelf
     build-packages:
@@ -136,10 +121,9 @@ parts:
       - ffmpeg
     override-build: |
       craftctl default
-      # Classic snaps get no snapcraft PATH command-chain, and the app's
       # `find_ffmpeg()` (media-sort-backend) checks the binary's own directory
-      # before PATH. Expose the staged ffmpeg next to the binary so the lookup
-      # is deterministic regardless of how snapd sets PATH.
+      # before PATH, so exposing the staged ffmpeg next to the binary makes the
+      # lookup a single stat instead of a PATH scan.
       mkdir -p "$CRAFT_PART_INSTALL/bin"
       ln -sf ../usr/bin/ffmpeg "$CRAFT_PART_INSTALL/bin/ffmpeg"
       version="$(awk '

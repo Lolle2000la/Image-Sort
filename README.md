@@ -142,11 +142,7 @@ Audio plays through the sound server (PipeWire/PulseAudio) out of the box. On a 
 sudo snap connect media-sort:alsa
 ```
 
-Updates are delivered automatically by snapd. A full-filesystem build (classic confinement) is published on the `classicmode` channel once the store grants it:
-
-```bash
-sudo snap install media-sort --channel=classicmode
-```
+Updates are delivered automatically by snapd.
 
 The `.snap` files are also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation.
 
