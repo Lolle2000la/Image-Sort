@@ -56,10 +56,12 @@ platforms:
 apps:
   media-sort:
     command: bin/media-sort-gui
-    # No plugs/extensions: classic snaps run unconfined. The staged libraries
-    # (libmpv, libdav1d, ALSA) are picked up through the snap's LD_LIBRARY_PATH
-    # wrapper; GPU/Vulkan and the display server come from the host, which is
-    # what makes iced/wgpu run at native performance.
+    # No plugs/extensions: classic snaps run unconfined. A classic snap also
+    # gets no snapcraft PATH/LD_LIBRARY_PATH command-chain (and snapd scrubs
+    # LD_LIBRARY_PATH from the environment entirely), so the staged runtime
+    # libraries are located through the RPATH that `enable-patchelf` writes on
+    # the binary (see the part below); GPU/Vulkan and the display server come
+    # from the host, which is what makes iced/wgpu run at native performance.
 
 parts:
   media-sort:
@@ -73,6 +75,14 @@ parts:
     # in-app self-updater is neither built nor offered.
     rust-path:
       - crates/media-sort-gui
+    # Classic snaps get no command-chain, so PATH/LD_LIBRARY_PATH are never set
+    # for them (snapd also strips LD_LIBRARY_PATH). Without this the staged
+    # libmpv.so.2 would not be found and the app would fail to start; patchelf
+    # writes an `$ORIGIN`-relative RPATH (e.g.
+    # `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`) so the staged libraries
+    # resolve, and DT_RPATH is inherited by their own dependencies.
+    build-attributes:
+      - enable-patchelf
     build-packages:
       # libmpv-sys generates its bindings with bindgen, which needs libclang.
       - clang

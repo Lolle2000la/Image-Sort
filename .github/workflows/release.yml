@@ -418,6 +418,10 @@ jobs:
       - name: Build Snap
         run: |
           set -euo pipefail
+          # snapcraft's destructive-mode build-package resolution reads the apt
+          # cache directly (it does not refresh it), so a valid package can be
+          # reported as missing on a runner with stale/empty lists.
+          sudo apt-get update
           mkdir -p dist-snap
           snapcraft pack --destructive-mode --output dist-snap
 
