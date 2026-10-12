@@ -144,7 +144,11 @@ sudo snap connect media-sort:alsa
 
 Updates are delivered automatically by snapd.
 
-The `.snap` files are also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation.
+The `.snap` files are also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation:
+
+```bash
+sudo snap install ./media-sort_*_amd64.snap --dangerous
+```
 
 #### Windows (Setup.exe)
 

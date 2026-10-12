@@ -32,9 +32,11 @@ website/public/demos/
 
 ui_test_config.toml
 
-# Snapcraft build artifacts (local `snapcraft pack --destructive-mode`)
-parts/
-stage/
-prime/
-dist-snap/
+# Snapcraft build artifacts (local `snapcraft pack --destructive-mode`).
+# Anchored to the repository root so an unrelated nested directory of the same
+# name is not hidden.
+/parts/
+/stage/
+/prime/
+/dist-snap/
 *.snap

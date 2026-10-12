@@ -21,8 +21,7 @@ description: |
   It is keyboard-first, with full undo/redo, pinned destination folders, an
   in-app image/video/audio preview (video and GIF playback via libmpv, audio
   via symphonia/rodio) and an EXIF/ID3 metadata panel. It runs entirely on
-  your machine: no accounts, no analytics and no network access beyond the
-  optional update check.
+  your machine: no accounts, no analytics and no network access.
 
   The snap bundles libmpv, libdav1d, ffmpeg and ALSA support, so no separate
   runtime dependency installation is required on Ubuntu-based systems.

@@ -419,13 +419,25 @@ jobs:
           # reported as missing on a runner with stale/empty lists.
           sudo apt-get update
 
+      # Non-blocking on purpose: snap packaging is additive, so a failure here
+      # must not stop the AppImage/Windows/macOS installers from being published
+      # (the release as a whole is still gated by `deploy`). A failure stays
+      # visible as a red step and the run simply ships without a .snap.
       - name: Build Snap
+        id: build_snap
+        continue-on-error: true
         run: |
           set -euo pipefail
+          # snapcraft treats a non-existent --output as a *file name*, so the
+          # directory has to exist or the snap lands in the repo root as a file
+          # called "dist-snap". --platform pins the single platform to build:
+          # destructive mode refuses an ambiguous two-platform plan, and it
+          # makes the matrix leg self-documenting.
           mkdir -p dist-snap
-          snapcraft pack --destructive-mode --output dist-snap
+          snapcraft pack --destructive-mode --platform "${{ matrix.arch }}" --output dist-snap
 
       - name: Attach Snap to GitHub Draft Release
+        if: steps.build_snap.outcome == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh release upload "${{ github.ref_name }}" dist-snap/*.snap --clobber
@@ -436,6 +448,7 @@ jobs:
       # not silent) so a rejected upload is easy to spot, while a Store-side
       # problem cannot block the release itself.
       - name: Publish Snap to the Snap Store
+        if: steps.build_snap.outcome == 'success'
         continue-on-error: true
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
