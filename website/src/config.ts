@@ -38,3 +38,10 @@ export const repoUrl = `https://github.com/${repoFull}`;
 
 const [repoOwner = '', repoName = ''] = repoFull.split('/');
 export { repoName, repoOwner };
+
+/**
+ * This snap's Snap Store listing. The snap is distributed through the store
+ * rather than as a file, so links point here (the release also attaches a
+ * `.snap` for offline installs; see the installation page).
+ */
+export const snapStoreUrl = 'https://snapcraft.io/media-sort';

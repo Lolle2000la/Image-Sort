@@ -1,7 +1,7 @@
 ---
 import { execSync } from 'child_process';
 import { Terminal, Monitor, Laptop, Copy } from '@lucide/astro';
-import { repoFull } from '../config.ts';
+import { repoFull, snapStoreUrl } from '../config.ts';
 
 interface Asset {
     name: string;
@@ -53,8 +53,20 @@ function getSha256(digest: string): string {
     return digest;
 }
 
+interface AssetSpec {
+    name: string;
+    filePattern: RegExp;
+    icon: string;
+    /**
+     * Where to send people when the release carries no matching asset. Snaps
+     * are installed from the Snap Store, so this is only needed until a release
+     * ships a `.snap` (and remains a sensible link if one is ever missing).
+     */
+    storeUrl?: string;
+}
+
 // Group assets by OS category
-const categories = {
+const categories: Record<string, AssetSpec[]> = {
     Linux: [
         {
             name: 'Linux (x64) AppImage',
@@ -70,11 +82,13 @@ const categories = {
             name: 'Linux (x64) Snap',
             filePattern: /_amd64\.snap$/i,
             icon: 'terminal',
+            storeUrl: snapStoreUrl,
         },
         {
             name: 'Linux (ARM64) Snap',
             filePattern: /_arm64\.snap$/i,
             icon: 'terminal',
+            storeUrl: snapStoreUrl,
         },
     ],
     macOS: [
@@ -119,14 +133,22 @@ const platformGroups = Object.entries(categories)
         const items = specs
             .map((spec) => {
                 const asset = assets.find((a) => spec.filePattern.test(a.name));
-                return asset
+                if (asset) {
+                    return {
+                        label: spec.name,
+                        icon: spec.icon,
+                        meta: `${formatBytes(asset.size)} • Download`,
+                        sha256: getSha256(asset.digest),
+                        url: asset.url,
+                    };
+                }
+                return spec.storeUrl
                     ? {
                           label: spec.name,
                           icon: spec.icon,
-                          filename: asset.name,
-                          size: formatBytes(asset.size),
-                          sha256: getSha256(asset.digest),
-                          url: asset.url,
+                          meta: 'Snap Store',
+                          sha256: null,
+                          url: spec.storeUrl,
                       }
                     : null;
             })
@@ -182,26 +204,28 @@ const iconMap = {
                                             {item.label}
                                         </span>
                                         <span class="badge-meta">
-                                            {item.size} • Download
+                                            {item.meta}
                                         </span>
                                     </div>
                                 </a>
-                                <div class="hash-section">
-                                    <span class="hash-label">SHA-256:</span>
-                                    <code
-                                        class="hash-value"
-                                        title={item.sha256}
-                                    >
-                                        {item.sha256.substring(0, 16)}...
-                                    </code>
-                                    <button
-                                        class="copy-btn"
-                                        data-hash={item.sha256}
-                                        title="Copy Hash"
-                                    >
-                                        <Copy size={14} />
-                                    </button>
-                                </div>
+                                {item.sha256 && (
+                                    <div class="hash-section">
+                                        <span class="hash-label">SHA-256:</span>
+                                        <code
+                                            class="hash-value"
+                                            title={item.sha256}
+                                        >
+                                            {item.sha256.substring(0, 16)}...
+                                        </code>
+                                        <button
+                                            class="copy-btn"
+                                            data-hash={item.sha256}
+                                            title="Copy Hash"
+                                        >
+                                            <Copy size={14} />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
