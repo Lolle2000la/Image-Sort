@@ -45,6 +45,12 @@ Snapは厳格な制限付き（strict confinement）で動作するため、ホ�
 sudo snap connect media-sort:removable-media
 ```
 
+音声はサウンドサーバー（PipeWire/PulseAudio）経由でそのまま再生されます。サウンドサーバーのないシステムでは、raw ALSAインターフェースを接続してください：
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
 更新はsnapdによって自動的に配信されます。ファイルシステム全体にアクセスできるビルド（classic confinement）は、ストアが承認した時点で`classicmode`チャンネルで公開されます：
 
 ```bash

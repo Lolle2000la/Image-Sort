@@ -45,6 +45,12 @@ The snap is strictly confined, so it sorts anything under your home directory. T
 sudo snap connect media-sort:removable-media
 ```
 
+Audio plays through the sound server (PipeWire/PulseAudio) out of the box. On a system with no sound server, connect the raw-ALSA interface:
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
 Updates are delivered automatically by snapd. A full-filesystem build (classic confinement) is published on the `classicmode` channel once the store grants it:
 
 ```bash

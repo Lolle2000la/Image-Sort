@@ -76,8 +76,16 @@ apps:
       - wayland
       - x11
       - opengl
-      # Audio output (rodio/cpal) through the PulseAudio/PipeWire socket.
+      # Audio output (rodio/cpal) through the PulseAudio/PipeWire socket. On
+      # systems that run a sound server (all current Ubuntu desktops) this is
+      # sufficient: libasound's `default` routes to the PipeWire/PulseAudio
+      # plugin over the socket below.
       - audio-playback
+      # Raw ALSA access, for systems with no sound server. Not auto-connected
+      # (snapd declares this slot `deny-auto-connection`), so it only takes
+      # effect after `snap connect media-sort:alsa`; harmless when left
+      # disconnected (the audio player is simply unavailable).
+      - alsa
 
 parts:
   media-sort:
