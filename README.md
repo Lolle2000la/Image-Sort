@@ -124,17 +124,25 @@ All platforms require **libmpv** to be installed on your system to manage video 
 
 #### Linux (Snap)
 
-A classic-confinement snap is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d`, `ffmpeg` and ALSA support, so no extra runtime libraries are required:
+A snap is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d`, `ffmpeg` and ALSA support, so no extra runtime libraries are required:
 
 ```bash
-sudo snap install media-sort --classic
+sudo snap install media-sort
 ```
 
-The `.snap` is also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation:
+The snap is strictly confined, so it sorts anything under your home directory. To also sort files on external drives (`/media`, `/mnt`), connect the `removable-media` interface once:
 
 ```bash
-sudo snap install ./media-sort_*_amd64.snap --classic --dangerous
+sudo snap connect media-sort:removable-media
 ```
+
+Updates are delivered automatically by snapd. A full-filesystem build (classic confinement) is published on the `classicmode` channel once the store grants it:
+
+```bash
+sudo snap install media-sort --channel=classicmode
+```
+
+The `.snap` files are also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation.
 
 #### Windows (Setup.exe)
 

@@ -33,17 +33,25 @@ Media Sort ist für Linux sowohl als Snap als auch als AppImage verfügbar.
 
 #### Snap (empfohlen unter Ubuntu)
 
-Media Sort wird als Snap mit klassischer Confinement im [Snap Store](https://snapcraft.io/media-sort) veröffentlicht. Die klassische Confinement ist erforderlich, da die App – genau wie das AppImage – Dateien überall im Dateisystem sortiert und sich das mit strikt eingeschränkten Schnittstellen nicht abbilden lässt. Das Snap enthält `libmpv`, `libdav1d`, `ffmpeg` und ALSA-Unterstützung, sodass keine zusätzlichen Laufzeitbibliotheken benötigt werden:
+Media Sort wird im [Snap Store](https://snapcraft.io/media-sort) veröffentlicht. Das Snap enthält `libmpv`, `libdav1d`, `ffmpeg` und ALSA-Unterstützung, sodass keine zusätzlichen Laufzeitbibliotheken benötigt werden:
 
 ```bash
-sudo snap install media-sort --classic
+sudo snap install media-sort
 ```
 
-Aktualisierungen werden automatisch von snapd bereitgestellt. Die `.snap`-Datei ist außerdem an jedes [Release](https://github.com/Lolle2000la/Media-Sort/releases) angehängt und kann offline installiert werden:
+Das Snap ist strikt eingeschränkt und sortiert daher alles in Ihrem Home-Verzeichnis. Um auch Dateien auf externen Laufwerken (`/media`, `/mnt`) zu sortieren, verbinden Sie einmalig das `removable-media`-Interface:
 
 ```bash
-sudo snap install ./media-sort_*_amd64.snap --classic --dangerous
+sudo snap connect media-sort:removable-media
 ```
+
+Aktualisierungen werden automatisch von snapd bereitgestellt. Eine Variante mit vollem Dateisystemzugriff (klassisches Confinement) wird im Kanal `classicmode` veröffentlicht, sobald der Store sie freigibt:
+
+```bash
+sudo snap install media-sort --channel=classicmode
+```
+
+Die `.snap`-Dateien sind außerdem an jedes [Release](https://github.com/Lolle2000la/Media-Sort/releases) angehängt und können offline installiert werden.
 
 #### AppImage
 

@@ -380,11 +380,19 @@ jobs:
         run: |
           gh release upload "${{ github.ref_name }}" Releases/*.sig --clobber
 
-  # Builds the classic-confinement snap (see snap/snapcraft.yaml) for both
-  # Linux architectures and publishes it to the Snap Store. The .snap is also
-  # attached to the GitHub release as an offline install path.
+  # Builds the Media Sort snap for both Linux architectures and publishes it to
+  # the Snap Store. Two confinement variants are produced from the single
+  # snap/snapcraft.yaml via scripts/build-snap.sh:
   #
-  # Runs after `deploy` so the draft release exists to attach the snap to, and
+  #   strict  (default)  -> latest/<risk>       (store-publishable)
+  #   classic            -> classicmode/<risk>  (needs the store's classic approval)
+  #
+  # The .snap files are also attached to the GitHub release as an offline
+  # install path. The classic variant is deliberately non-blocking: it cannot be
+  # released until classic confinement is granted, and it is a second full
+  # compile, so a failure there must not fail the release.
+  #
+  # Runs after `deploy` so the draft release exists to attach the snaps to, and
   # before `publish` so the installer download table and the duplicate-release
   # merge both see the final asset set.
   snap:
@@ -414,29 +422,32 @@ jobs:
           set -euo pipefail
           sudo snap install snapcraft --classic
           snapcraft version
-
-      - name: Build Snap
-        run: |
-          set -euo pipefail
           # snapcraft's destructive-mode build-package resolution reads the apt
           # cache directly (it does not refresh it), so a valid package can be
           # reported as missing on a runner with stale/empty lists.
           sudo apt-get update
-          mkdir -p dist-snap
-          snapcraft pack --destructive-mode --output dist-snap
 
-      - name: Attach Snap to GitHub Draft Release
+      - name: Build Strict Snap (default)
+        run: scripts/build-snap.sh strict --destructive-mode
+
+      - name: Build Classic Snap (classicmode track)
+        # Non-blocking: this is a second full compile and the result cannot be
+        # released until the store grants classic confinement.
+        continue-on-error: true
+        run: scripts/build-snap.sh classic --destructive-mode
+
+      - name: Attach Snaps to GitHub Draft Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" dist-snap/*.snap --clobber
+        run: gh release upload "${{ github.ref_name }}" media-sort_*.snap --clobber
 
       # Store publication is a soft failure: the GitHub release (installers +
-      # the attached .snap) is complete and valid even if the Snap Store is
-      # unreachable or the `media-sort` name is still awaiting classic
-      # confinement review. The step is left visible (it is not silent) so a
-      # rejected upload is easy to spot, while a Store-side problem cannot block
-      # the release itself.
-      - name: Publish Snap to the Snap Store
+      # the attached .snap files) is complete and valid even if the Snap Store is
+      # unreachable, the credential is unset, or the snap is still awaiting
+      # classic confinement review. The step is left visible (it is not silent)
+      # so a rejected upload is easy to spot, while a Store-side problem cannot
+      # block the release itself.
+      - name: Publish Snaps to the Snap Store
         continue-on-error: true
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
@@ -446,17 +457,25 @@ jobs:
             echo "::warning::SNAPCRAFT_STORE_CREDENTIALS is not set; skipping Snap Store publish"
             exit 0
           fi
-          # Stable tags go to latest/stable; a prerelease tag (contains '-')
-          # goes to latest/candidate so it does not reach stable users.
+          # Stable tags go to the stable risk; a prerelease tag (contains '-')
+          # goes to candidate so it does not reach stable users.
           if [[ "${{ github.ref_name }}" == *"-"* ]]; then
-            channel="latest/candidate"
+            risk=candidate
           else
-            channel="latest/stable"
+            risk=stable
           fi
-          for snap in dist-snap/*.snap; do
+          status=0
+          for snap in media-sort_*.snap; do
+            case "$snap" in
+              *-classic.snap) track=classicmode ;;
+              *)              track=latest ;;
+            esac
+            channel="$track/$risk"
             echo "Uploading $snap to $channel"
-            snapcraft upload --release="$channel" "$snap"
+            snapcraft upload --release="$channel" "$snap" ||
+              { echo "::warning::upload/release failed for $snap (classic revisions need the store's classic-confinement approval)"; status=1; }
           done
+          exit "$status"
 
   publish:
     runs-on: ubuntu-latest

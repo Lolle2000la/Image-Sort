@@ -41,12 +41,19 @@ issues: https://github.com/Lolle2000la/Media-Sort/issues
 contact: https://github.com/Lolle2000la/Media-Sort/issues
 
 base: core24
-confinement: classic
+# The default, store-publishable variant is strictly confined: it can sort
+# anything under $HOME and, once `removable-media` is connected, on removable
+# drives. The full-filesystem variant is the *same* project built with
+# `scripts/build-snap.sh classic` (which switches to `confinement: classic` and
+# drops the plugs below) and is published to the `latest/classicmode` track; it
+# needs the store's classic-confinement approval. See scripts/build-snap.sh and
+# the "Snap packaging" section of AGENTS.md.
+confinement: strict
 grade: stable
 
 # The version is read from [workspace.package].version in Cargo.toml (the same
 # single source of truth the binary reports and the release pipeline verifies),
-# so the snap version can never drift from the tag it was cut from.
+# so the version can never drift from the tag it was cut from.
 adopt-info: media-sort
 
 platforms:
@@ -56,12 +63,21 @@ platforms:
 apps:
   media-sort:
     command: bin/media-sort-gui
-    # No plugs/extensions: classic snaps run unconfined. A classic snap also
-    # gets no snapcraft PATH/LD_LIBRARY_PATH command-chain (and snapd scrubs
-    # LD_LIBRARY_PATH from the environment entirely), so the staged runtime
-    # libraries are located through the RPATH that `enable-patchelf` writes on
-    # the binary (see the part below); GPU/Vulkan and the display server come
-    # from the host, which is what makes iced/wgpu run at native performance.
+    plugs:
+      # `home` is auto-connected. `removable-media` (/media, /mnt) is not, so
+      # sorting external drives requires one manual
+      # `snap connect media-sort:removable-media`.
+      - home
+      - removable-media
+      # Display server, portals/xdg-open and GPU (/dev/dri for the wgpu
+      # Vulkan/GL backend). wayland/x11/opengl are auto-connected.
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      # Audio output (rodio/cpal) through the PulseAudio/PipeWire socket.
+      - audio-playback
 
 parts:
   media-sort:
@@ -75,12 +91,13 @@ parts:
     # in-app self-updater is neither built nor offered.
     rust-path:
       - crates/media-sort-gui
-    # Classic snaps get no command-chain, so PATH/LD_LIBRARY_PATH are never set
-    # for them (snapd also strips LD_LIBRARY_PATH). Without this the staged
-    # libmpv.so.2 would not be found and the app would fail to start; patchelf
-    # writes an `$ORIGIN`-relative RPATH (e.g.
-    # `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`) so the staged libraries
-    # resolve, and DT_RPATH is inherited by their own dependencies.
+    # The strict variant gets a PATH/LD_LIBRARY_PATH command-chain from
+    # snapcraft, but the classic variant does not (and snapd scrubs
+    # LD_LIBRARY_PATH), so without this the staged libmpv.so.2 would be
+    # unresolved there and the app would fail to start. patchelf writes an
+    # `$ORIGIN`-relative RPATH (e.g. `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`)
+    # so the staged libraries resolve in both variants, and DT_RPATH is
+    # inherited by their own dependencies. Harmless in the strict variant.
     build-attributes:
       - enable-patchelf
     build-packages:
