@@ -478,6 +478,30 @@ jobs:
           rm -rf "$TMPDIR"
           echo "merge complete; single release $CANON for tag $TAG"
 
+      - name: Prepend Installer Download Table to Release Notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Velopack uploads every full/delta package, its .sig and the update
+        # manifests, so the release page's asset list buries the few files a
+        # user actually wants to install. Prepend a small table of direct
+        # download links (from the same asset names the website's
+        # ReleaseDownloads component shows) so the right installer is obvious.
+        # Assets are final by now: every deploy upload and the duplicate-release
+        # merge above have completed, so this reflects exactly what is published.
+        run: |
+          set -euo pipefail
+          REPO="${{ github.repository }}"
+          TAG="${{ github.ref_name }}"
+          gh api "repos/$REPO/releases/tags/$TAG" \
+            --jq '.assets[] | [.name, .browser_download_url] | @tsv' \
+            | bash scripts/release-downloads.sh > DOWNLOADS.md
+          if [ -s DOWNLOADS.md ]; then
+            cat DOWNLOADS.md CHANGES.md > NOTES.md
+            mv NOTES.md CHANGES.md
+          else
+            echo "no installer assets found; leaving release notes unchanged"
+          fi
+
       - name: Publish Release Atomically
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
