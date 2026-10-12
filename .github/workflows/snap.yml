@@ -1,0 +1,104 @@
+name: Snap packaging
+
+# The snap recipe is built against a *clean* environment: only the Ubuntu
+# archive's `build-packages`, and none of the libraries a GitHub runner happens
+# to have installed. That is the one thing the normal CI build cannot check,
+# because it links against whatever the runner provides. Hence the path filter:
+# this runs when the recipe, or anything that can change linkage, changes -- not
+# on every push, since each run compiles the whole workspace from scratch.
+#
+# Application code is deliberately not a trigger: the ordinary CI build already
+# compiles the same crates. The narrow exceptions (a `build.rs` that starts
+# probing a system library, a new runtime `dlopen`) are rare enough not to
+# justify a Rust build per push -- and `workflow_dispatch` runs this on demand.
+on:
+  push:
+    branches: [master, main, v3.0]
+    paths:
+      - 'snap/**'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/snap.yml'
+  pull_request:
+    branches: [master, main, v3.0]
+    paths:
+      - 'snap/**'
+      - '**/Cargo.toml'
+      - '**/Cargo.lock'
+      - '.github/workflows/snap.yml'
+  # No `merge_group` on purpose: path filters are silently ignored for it, so it
+  # would run on every queued merge instead of only for snap/dependency changes.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snap:
+    name: Build and check the snap
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # `--destructive-mode` builds directly on the runner, which is only valid
+      # because the runner *is* the snap's base (core24 = Ubuntu 24.04); the
+      # GitHub-hosted runners have no LXD/Multipass for the normal path. There is
+      # deliberately no cache: reusing build artifacts would skip installing the
+      # part's build-packages, which is exactly what this job exists to verify.
+      - name: Install Snapcraft
+        run: |
+          set -euo pipefail
+          sudo snap install snapcraft --classic
+          snapcraft version
+          # Destructive mode resolves build-packages from the apt cache without
+          # refreshing it, so a stale/empty cache reports valid packages missing.
+          sudo apt-get update
+
+      # amd64 only: one architecture is enough to prove the recipe resolves in a
+      # clean environment, and destructive mode refuses an ambiguous
+      # two-platform plan. `--platform` must name one of `platforms:`.
+      - name: Build Snap
+        run: |
+          set -euo pipefail
+          mkdir -p dist-snap
+          snapcraft pack --destructive-mode --platform amd64 --output dist-snap
+          ls -l dist-snap
+
+      - name: Install Built Snap
+        run: |
+          set -euo pipefail
+          sudo snap install --dangerous dist-snap/*.snap
+          snap list media-sort
+
+      # Everything below runs *inside* the sandbox, which is the part the normal
+      # CI build cannot see: it links against whatever the runner happens to have.
+      - name: Check the payload resolves in confinement
+        run: |
+          set -euo pipefail
+          sudo snap run --shell media-sort <<'SNAP_SH'
+          set -euo pipefail
+          if ldd "$SNAP/bin/media-sort-gui" | grep -q "not found"; then
+            echo "::error::the staged binary has unresolved libraries inside the snap:"
+            ldd "$SNAP/bin/media-sort-gui" | grep "not found"
+            exit 1
+          fi
+          echo "bundled ffmpeg: $("$SNAP/bin/ffmpeg" -version | head -1)"
+          SNAP_SH
+
+      # `snap run` is the path users take, so it should reach the dynamic loader
+      # without complaining. With no display the app cannot open its window and
+      # exits non-zero -- that is expected; only a loader failure is a problem.
+      - name: Check the app launcher reaches the loader
+        run: |
+          set -euo pipefail
+          output="$(timeout 60 snap run media-sort 2>&1 || true)"
+          printf '%s\n' "$output" | tail -5
+          if printf '%s' "$output" | grep -q "error while loading shared libraries"; then
+            echo "::error::the app could not load its libraries through 'snap run'"
+            exit 1
+          fi
