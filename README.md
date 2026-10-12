@@ -109,7 +109,7 @@ Pre-compiled standalone binaries with automatic updates are provided for Linux, 
 
 ### Requirements
 
-All platforms require **libmpv** to be installed on your system to manage video and audio playback pipelines. Linux additionally requires **libdav1d** for AVIF image decoding.
+All platforms require **libmpv** to be installed on your system to manage video and audio playback pipelines. Linux additionally requires **libdav1d** for AVIF image decoding. The Linux snap bundles both, so no separate installation is needed when using it.
 
 ### Platform Setup Instructions
 
@@ -121,6 +121,20 @@ All platforms require **libmpv** to be installed on your system to manage video 
    chmod +x MediaSort-Linux.AppImage
    ./MediaSort-Linux.AppImage
    ```
+
+#### Linux (Snap)
+
+A classic-confinement snap is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d` and ALSA support, so no extra runtime libraries are required:
+
+```bash
+sudo snap install media-sort --classic
+```
+
+The `.snap` is also attached to each [release](https://github.com/Lolle2000la/Media-Sort/releases) for offline installation:
+
+```bash
+sudo snap install ./media-sort_*_amd64.snap --classic --dangerous
+```
 
 #### Windows (Setup.exe)
 

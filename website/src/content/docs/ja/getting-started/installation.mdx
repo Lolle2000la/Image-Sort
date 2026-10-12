@@ -29,7 +29,25 @@ Media Sortはメディア再生やUI制御にネイティブのシステムAPI�
 
 ### Linux
 
-Linux版のAppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+Linux版のMedia SortはSnapとAppImageの両方で提供されています。
+
+#### Snap（Ubuntuで推奨）
+
+Media Sortはclassic confinement（クラシック制限）のSnapとして[Snap Store](https://snapcraft.io/media-sort)で公開されています。アプリはAppImageと同様にファイルシステム上の任意の場所のファイルを整理するため、厳格な制限付きインターフェースでは実現できず、classic confinementが必要です。Snapには`libmpv`、`libdav1d`、ALSAサポートが同梱されているため、追加のランタイムライブラリは不要です：
+
+```bash
+sudo snap install media-sort --classic
+```
+
+更新はsnapdによって自動的に配信されます。`.snap`ファイルは各[リリース](https://github.com/Lolle2000la/Media-Sort/releases)にも添付されているため、オフラインでインストールできます：
+
+```bash
+sudo snap install ./media-sort_*_amd64.snap --classic --dangerous
+```
+
+#### AppImage
+
+AppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
 
 Linuxでの `ffmpeg` のインストールは任意です。動画サムネイルが高速になりますが、無くてもmpvによるフォールバックが機能します。
 

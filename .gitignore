@@ -31,3 +31,10 @@ website/.astro/
 website/public/demos/
 
 ui_test_config.toml
+
+# Snapcraft build artifacts (local `snapcraft pack --destructive-mode`)
+parts/
+stage/
+prime/
+dist-snap/
+*.snap

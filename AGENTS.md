@@ -134,6 +134,17 @@ It runs preflight checks (clean tree, not behind upstream, tag unused locally an
 
 `verify-version` re-derives all of these from the tag (`EXPECTED_BUILD` is the `v*` tag count, which includes the new tag) and fails the build on any mismatch, so a hand-cut tag cannot ship mismatched OS metadata.
 
+## Snap packaging (Linux)
+
+`snap/snapcraft.yaml` builds a **classic-confinement** snap (`name: media-sort`, base `core24`, `platforms: amd64/arm64`). Classic confinement is deliberate: Media Sort sorts files in arbitrary directories (any mount/drive path, like the AppImage), which the strictly confined interfaces cannot express — the same reason file managers ship classic snaps. Publishing therefore requires the `media-sort` snap name in the Snap Store to be **approved for classic**.
+
+- **Build:** `snapcraft pack --destructive-mode` (host must match the `core24` base, i.e. Ubuntu 24.04). GitHub-hosted runners have no LXD/Multipass, so `release.yml`'s `snap` job uses destructive mode on `ubuntu-24.04`/`ubuntu-24.04-arm`.
+- **Part:** the `rust` plugin with `rust-path: [crates/media-sort-gui]`, so it runs `cargo install --locked --path crates/media-sort-gui` (installs the `media-sort-gui` binary into `bin/`). The `velopack` feature is intentionally off — snapd owns updates, so the in-app self-updater is not built. `build-packages` carry libmpv/ALSA/dav1d headers, `clang`/`libclang-dev` (libmpv-sys bindgen), and `cmake`/`nasm` (vendored libjpeg-turbo); `stage-packages` bundle `libmpv2`, `libasound2t64`, `libdav1d7` and their transitive deps, so the snap needs no external runtime libraries on Ubuntu-based systems.
+- **Version:** `adopt-info: media-sort` + an `override-build` that reads `[workspace.package].version` from `Cargo.toml` and calls `craftctl set version`. The snap version is therefore the same single source of truth the binary reports and `verify-version` checks — no extra version-bearing file to sync in `scripts/release.sh`.
+- **Desktop/icon:** `snap/gui/media-sort.desktop` and `snap/gui/media-sort.svg` (a copy of `packaging/linux/icon.svg`). snapd rewrites the `Exec`/`Icon` lines at install time; `Exec=media-sort` must match the app name exactly for that rewrite to apply.
+- **CI:** the `snap` job in `release.yml` runs after `deploy` (so the draft release exists) and before `publish` (so the download table and duplicate-release merge see the final assets). It builds the native arch per runner, attaches the `.snap` to the GitHub release, and uploads it to the Store — `latest/stable` for a stable tag, `latest/candidate` when the tag contains `-`. The Store step is `continue-on-error: true` so a missing `SNAPCRAFT_STORE_CREDENTIALS` secret or a pending classic review cannot block the GitHub release (the build itself still gates the release).
+- **Offline install:** `sudo snap install ./media-sort_*_amd64.snap --classic --dangerous`; Store install is `sudo snap install media-sort --classic`.
+
 ## Architecture pattern (iced / The Elm Architecture)
 
 The GUI follows iced's TEA pattern with a unidirectional data flow:

@@ -29,7 +29,25 @@ Je nach Ihrer Plattform müssen Sie eventuell die Bibliotheken des `mpv`-Medien-
 
 ### Linux
 
-Die Linux-AppImage-Pakete laufen dynamisch im Host-System und setzen die Installation von `libmpv` und `libdav1d` (für die AVIF-Bilddecodierung) voraus. Das AppImage benötigt außerdem `libasound2` sowie X11-/Wayland-Bibliotheken, die auf Desktop-Linux-Distributionen üblicherweise bereits vorinstalliert sind.
+Media Sort ist für Linux sowohl als Snap als auch als AppImage verfügbar.
+
+#### Snap (empfohlen unter Ubuntu)
+
+Media Sort wird als Snap mit klassischer Confinement im [Snap Store](https://snapcraft.io/media-sort) veröffentlicht. Die klassische Confinement ist erforderlich, da die App – genau wie das AppImage – Dateien überall im Dateisystem sortiert und sich das mit strikt eingeschränkten Schnittstellen nicht abbilden lässt. Das Snap enthält `libmpv`, `libdav1d` und ALSA-Unterstützung, sodass keine zusätzlichen Laufzeitbibliotheken benötigt werden:
+
+```bash
+sudo snap install media-sort --classic
+```
+
+Aktualisierungen werden automatisch von snapd bereitgestellt. Die `.snap`-Datei ist außerdem an jedes [Release](https://github.com/Lolle2000la/Media-Sort/releases) angehängt und kann offline installiert werden:
+
+```bash
+sudo snap install ./media-sort_*_amd64.snap --classic --dangerous
+```
+
+#### AppImage
+
+Die AppImage-Pakete laufen dynamisch im Host-System und setzen die Installation von `libmpv` und `libdav1d` (für die AVIF-Bilddecodierung) voraus. Das AppImage benötigt außerdem `libasound2` sowie X11-/Wayland-Bibliotheken, die auf Desktop-Linux-Distributionen üblicherweise bereits vorinstalliert sind.
 
 Die Installation von `ffmpeg` ist unter Linux optional — sie ermöglicht schnellere Video-Miniaturansichten, wobei Media Sort ansonsten auf mpv zurückfällt.
 

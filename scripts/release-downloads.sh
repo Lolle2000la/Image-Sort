@@ -60,6 +60,11 @@ TABLE="$({
   row 'macOS (Apple Silicon)' 'osx-arm64-Setup\.pkg$'  'Setup (.pkg)'  'osx-arm64-Portable\.zip$'  'Portable (.zip)'
   row 'Linux (x64)'           'linux-x64\.AppImage$'   'AppImage'      ''                          ''
   row 'Linux (ARM64)'         'linux-arm64\.AppImage$' 'AppImage'      ''                          ''
+  # Snap Store is the primary Linux distribution channel, but the .snap is also
+  # attached to the release so it can be installed offline / via `snap install
+  # --classic`. Snapcraft names assets "<name>_<version>_<arch>.snap".
+  row 'Linux (x64)'           '_amd64\.snap$'          'Snap'          ''                          ''
+  row 'Linux (ARM64)'         '_arm64\.snap$'          'Snap'          ''                          ''
 } )"
 
 [ -n "$TABLE" ] || exit 0

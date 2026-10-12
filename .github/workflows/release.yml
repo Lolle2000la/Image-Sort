@@ -380,9 +380,83 @@ jobs:
         run: |
           gh release upload "${{ github.ref_name }}" Releases/*.sig --clobber
 
+  # Builds the classic-confinement snap (see snap/snapcraft.yaml) for both
+  # Linux architectures and publishes it to the Snap Store. The .snap is also
+  # attached to the GitHub release as an offline install path.
+  #
+  # Runs after `deploy` so the draft release exists to attach the snap to, and
+  # before `publish` so the installer download table and the duplicate-release
+  # merge both see the final asset set.
+  snap:
+    needs: [verify-version, deploy]
+    runs-on: ${{ matrix.os }}
+    environment: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            arch: amd64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # `--destructive-mode` builds directly on the runner. That is safe here
+      # because the runner already matches the snap's core24 base
+      # (ubuntu-24.04), and it is the only supported route on GitHub-hosted
+      # runners (no LXD/Multipass). snapcraft installs the part's build-packages
+      # itself in this mode. Like the rest of this workflow, releases are built
+      # from the checked-out source only -- no cache is restored.
+      - name: Install Snapcraft
+        run: |
+          set -euo pipefail
+          sudo snap install snapcraft --classic
+          snapcraft version
+
+      - name: Build Snap
+        run: |
+          set -euo pipefail
+          mkdir -p dist-snap
+          snapcraft pack --destructive-mode --output dist-snap
+
+      - name: Attach Snap to GitHub Draft Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.ref_name }}" dist-snap/*.snap --clobber
+
+      # Store publication is a soft failure: the GitHub release (installers +
+      # the attached .snap) is complete and valid even if the Snap Store is
+      # unreachable or the `media-sort` name is still awaiting classic
+      # confinement review. The step is left visible (it is not silent) so a
+      # rejected upload is easy to spot, while a Store-side problem cannot block
+      # the release itself.
+      - name: Publish Snap to the Snap Store
+        continue-on-error: true
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SNAPCRAFT_STORE_CREDENTIALS:-}" ]; then
+            echo "::warning::SNAPCRAFT_STORE_CREDENTIALS is not set; skipping Snap Store publish"
+            exit 0
+          fi
+          # Stable tags go to latest/stable; a prerelease tag (contains '-')
+          # goes to latest/candidate so it does not reach stable users.
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+            channel="latest/candidate"
+          else
+            channel="latest/stable"
+          fi
+          for snap in dist-snap/*.snap; do
+            echo "Uploading $snap to $channel"
+            snapcraft upload --release="$channel" "$snap"
+          done
+
   publish:
     runs-on: ubuntu-latest
-    needs: deploy
+    needs: [deploy, snap]
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
