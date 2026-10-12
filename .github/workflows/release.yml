@@ -380,83 +380,15 @@ jobs:
         run: |
           gh release upload "${{ github.ref_name }}" Releases/*.sig --clobber
 
-  # Builds the Media Sort snap for both Linux architectures and publishes it to
-  # the Snap Store. The .snap is also attached to the GitHub release as an
-  # offline install path.
-  #
-  # Runs after `deploy` so the draft release exists to attach the snap to, and
-  # before `publish` so the installer download table and the duplicate-release
-  # merge both see the final asset set.
-  #
-  # This is the maintained build path. Launchpad's `snapcraft remote-build` was
-  # evaluated for it (multi-arch from a single runner, no Rust build on GitHub)
-  # and abandoned -- it did not work reliably here; see PR #693.
-  snap:
-    needs: [verify-version, deploy]
-    runs-on: ${{ matrix.os }}
-    environment: release
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            arch: amd64
-          - os: ubuntu-24.04-arm
-            arch: arm64
-    steps:
-      - name: Checkout Source Code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      # `--destructive-mode` builds directly on the runner. That is safe here
-      # because the runner already matches the snap's core24 base
-      # (ubuntu-24.04), and it is the only supported route on GitHub-hosted
-      # runners (no LXD/Multipass). snapcraft installs the part's build-packages
-      # itself in this mode. Like the rest of this workflow, releases are built
-      # from the checked-out source only -- no cache is restored.
-      - name: Install Snapcraft
-        run: |
-          set -euo pipefail
-          sudo snap install snapcraft --classic
-          snapcraft version
-          # snapcraft's destructive-mode build-package resolution reads the apt
-          # cache directly (it does not refresh it), so a valid package can be
-          # reported as missing on a runner with stale/empty lists.
-          sudo apt-get update
-
-      # Non-blocking on purpose: snap packaging is additive, so a failure here
-      # must not stop the AppImage/Windows/macOS installers from being published
-      # (the release as a whole is still gated by `deploy`). A failure stays
-      # visible as a red step and the run simply ships without a .snap.
-      - name: Build Snap
-        id: build_snap
-        continue-on-error: true
-        run: |
-          set -euo pipefail
-          # snapcraft treats a non-existent --output as a *file name*, so the
-          # directory has to exist or the snap lands in the repo root as a file
-          # called "dist-snap". --platform pins the single platform to build:
-          # destructive mode refuses an ambiguous two-platform plan, and it
-          # makes the matrix leg self-documenting.
-          mkdir -p dist-snap
-          snapcraft pack --destructive-mode --platform "${{ matrix.arch }}" --output dist-snap
-
-      # Attaching the .snap to the release and publishing it to the Store live in
-      # scripts/publish-snap.sh: it is the same two steps for both matrix legs,
-      # and one copy keeps the release asset set and the channel choice
-      # (a tag containing '-' goes to latest/candidate) testable on their own.
-      # Soft-failing is the caller's job, hence continue-on-error.
-      - name: Attach and Publish Snap
-        if: steps.build_snap.outcome == 'success'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-        run: scripts/publish-snap.sh dist-snap
+  # The snap is deliberately not built here: Launchpad builds
+  # `snap/snapcraft.yaml` from this repository and uploads the result to the
+  # Snap Store, so no CI runner needs a Store credential (see AGENTS.md,
+  # "Snap packaging (Linux)"). The two-runner destructive-mode job that used
+  # to live here is in git history if it is ever needed again.
 
   publish:
     runs-on: ubuntu-latest
-    needs: [deploy, snap]
+    needs: [deploy]
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
