@@ -384,10 +384,15 @@ jobs:
   # the Snap Store. The .snap is also attached to the GitHub release as an
   # offline install path.
   #
-  # Runs after `deploy` so the draft release exists to attach the snap to, and
-  # before `publish` so the installer download table and the duplicate-release
-  # merge both see the final asset set.
+  # Two interchangeable backends, selected by the repository variable
+  # `SNAP_BUILD`:
+  #   * unset (default) — `snap` below: builds natively on two GitHub runners
+  #   * `launchpad`     — `snap-launchpad` below: one runner, Launchpad builds
+  # Either way the build runs after `deploy` so the draft release exists to
+  # attach the snap to, and before `publish` so the installer download table and
+  # the duplicate-release merge both see the final asset set.
   snap:
+    if: vars.SNAP_BUILD != 'launchpad'
     needs: [verify-version, deploy]
     runs-on: ${{ matrix.os }}
     environment: release
@@ -436,43 +441,103 @@ jobs:
           mkdir -p dist-snap
           snapcraft pack --destructive-mode --platform "${{ matrix.arch }}" --output dist-snap
 
-      - name: Attach Snap to GitHub Draft Release
-        if: steps.build_snap.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ github.ref_name }}" dist-snap/*.snap --clobber
-
-      # Store publication is a soft failure: the GitHub release (installer +
-      # the attached .snap) is complete and valid even if the Snap Store is
-      # unreachable or the credential is unset. The step is left visible (it is
-      # not silent) so a rejected upload is easy to spot, while a Store-side
-      # problem cannot block the release itself.
-      - name: Publish Snap to the Snap Store
+      # Attach and publish are shared with the Launchpad backend through
+      # scripts/publish-snap.sh, so the release asset set and the channel choice
+      # stay identical either way. Soft-failing is the caller's job, hence
+      # continue-on-error.
+      - name: Attach and Publish Snap
         if: steps.build_snap.outcome == 'success'
         continue-on-error: true
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: scripts/publish-snap.sh dist-snap
+
+  # Snap packaging, Launchpad backend. `snapcraft remote-build` uploads the
+  # checked-out source to Launchpad, which builds every architecture in the
+  # project's build plan (the `platforms:` key in snap/snapcraft.yaml) on its
+  # own builders, and then pulls the resulting .snap files back into the
+  # working directory. That replaces the two-runner matrix above with a single
+  # runner and moves the whole Rust/dav1d/libjpeg-turbo build off GitHub; the
+  # attach + Store publish below are the same, so the release still carries the
+  # .snap and the channel is still chosen from the tag.
+  #
+  # Chosen by setting the repository variable `SNAP_BUILD=launchpad`; see
+  # AGENTS.md ("Snap packaging (Linux)") for the one-time credential setup.
+  snap-launchpad:
+    if: vars.SNAP_BUILD == 'launchpad'
+    needs: [verify-version, deploy]
+    runs-on: ubuntu-24.04
+    environment: release
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Launchpad installs the snap's build-packages in its own core24 build
+      # environment, so unlike the destructive-mode build there is nothing to
+      # install here beyond snapcraft itself -- and no apt refresh is needed.
+      - name: Install Snapcraft
         run: |
           set -euo pipefail
-          if [ -z "${SNAPCRAFT_STORE_CREDENTIALS:-}" ]; then
-            echo "::warning::SNAPCRAFT_STORE_CREDENTIALS is not set; skipping Snap Store publish"
-            exit 0
+          sudo snap install snapcraft --classic
+          snapcraft version
+
+      # `snapcraft remote-build` authenticates through launchpadlib, which reads
+      # its token from ~/.local/share/snapcraft/launchpad-credentials. That file
+      # is created by the first *interactive* remote build (snapcraft prints a
+      # URL to visit) and then stored as a secret. The value is handed over
+      # through `env:` rather than interpolated into the script text, so a `$`
+      # or backtick inside the token cannot be run by the shell.
+      #
+      # continue-on-error keeps the job green: a missing credential must not
+      # block the release through `publish`'s `needs`, it must only mean "no
+      # snap this time" -- loudly.
+      - name: Write Launchpad Credentials
+        continue-on-error: true
+        env:
+          LAUNCHPAD_CREDENTIALS: ${{ secrets.LAUNCHPAD_CREDENTIALS }}
+        run: |
+          set -euo pipefail
+          if [ -z "$LAUNCHPAD_CREDENTIALS" ]; then
+            echo "::error::SNAP_BUILD=launchpad but LAUNCHPAD_CREDENTIALS is not set; see AGENTS.md"
+            exit 1
           fi
-          # Stable tags go to latest/stable; a prerelease tag (contains '-')
-          # goes to latest/candidate so it does not reach stable users.
-          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
-            channel="latest/candidate"
-          else
-            channel="latest/stable"
-          fi
-          for snap in dist-snap/*.snap; do
-            echo "Uploading $snap to $channel"
-            snapcraft upload --release="$channel" "$snap"
-          done
+          install -d -m 700 "$HOME/.local/share/snapcraft"
+          printf '%s\n' "$LAUNCHPAD_CREDENTIALS" > "$HOME/.local/share/snapcraft/launchpad-credentials"
+          chmod 600 "$HOME/.local/share/snapcraft/launchpad-credentials"
+
+      # Non-blocking on purpose, like the destructive-mode build: snap packaging
+      # is additive, so a Launchpad outage or a rejected build must ship the
+      # other installers instead of failing the release. A failure stays visible
+      # as a red step and the run simply ships without a .snap.
+      # `--launchpad-accept-public-upload` is what makes the upload
+      # non-interactive; the uploaded source is public on Launchpad, exactly
+      # like this repository.
+      - name: Build Snap on Launchpad
+        id: build_snap
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p dist-snap
+          snapcraft remote-build \
+            --launchpad-accept-public-upload \
+            --launchpad-timeout=3600
+          mv ./*.snap dist-snap/
+
+      - name: Attach and Publish Snap
+        if: steps.build_snap.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: scripts/publish-snap.sh dist-snap
 
   publish:
     runs-on: ubuntu-latest
-    needs: [deploy, snap]
+    # A skipped backend (see `SNAP_BUILD`) counts as successful here.
+    needs: [deploy, snap, snap-launchpad]
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

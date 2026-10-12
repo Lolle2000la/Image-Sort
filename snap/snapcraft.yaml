@@ -7,6 +7,10 @@
 #
 # Build:   snapcraft pack --destructive-mode     (host must be Ubuntu 24.04)
 #          snapcraft pack --use-lxd              (any host with LXD set up)
+#          snapcraft remote-build --launchpad-accept-public-upload
+#                                                (builds every platform on
+#                                                 Launchpad; needs a one-time
+#                                                 interactive login)
 # Lint:    snapcraft lint <file.snap>
 # Install: sudo snap install ./media-sort_*_<arch>.snap
 #          (add --dangerous for a locally built, unsigned snap)
