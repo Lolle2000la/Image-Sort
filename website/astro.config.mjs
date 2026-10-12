@@ -4,13 +4,20 @@ import starlight from '@astrojs/starlight';
 import react from '@astrojs/react';
 import mdx from '@astrojs/mdx';
 
-import { repoUrl } from './src/config.ts';
+import { repoFull, repoUrl } from './src/config.ts';
+import canonicalRepo from './src/vite-canonical-repo.mjs';
 
 // https://astro.build/config
 export default defineConfig({
     // Canonical origin for sitemap.xml, canonical URLs and OG tags. The site is
     // served from GitHub Pages under the custom domain in public/CNAME.
     site: 'https://mediasort.app',
+    vite: {
+        // The docs name the repository by its canonical name, which does not
+        // resolve until the rename happens. src/config.ts resolves the real
+        // name from the repository's stable ID; rewrite sources to match.
+        plugins: [canonicalRepo(repoFull)],
+    },
     integrations: [
         starlight({
             title: 'Media Sort',
