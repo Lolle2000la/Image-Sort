@@ -31,8 +31,8 @@ description: |
   your machine: no accounts, no analytics and no network access beyond the
   optional update check.
 
-  The snap bundles libmpv, libdav1d and ALSA support, so no separate runtime
-  dependency installation is required on Ubuntu-based systems.
+  The snap bundles libmpv, libdav1d, ffmpeg and ALSA support, so no separate
+  runtime dependency installation is required on Ubuntu-based systems.
 
 license: AGPL-3.0-or-later
 website: https://mediasort.app/
@@ -91,12 +91,22 @@ parts:
       - libdav1d-dev
     stage-packages:
       # Runtime counterparts of the -dev packages above. Snapcraft pulls their
-      # transitive dependencies (ffmpeg/libav*, ...) automatically.
+      # transitive dependencies (libav*, ...) automatically.
       - libmpv2
       - libasound2t64
       - libdav1d7
+      # The ffmpeg CLI, used for fast video thumbnails and as the AVIF decode
+      # fallback. Its libav* dependencies are already pulled in by libmpv2, so
+      # this mainly adds the frontend plus the encoder libraries.
+      - ffmpeg
     override-build: |
       craftctl default
+      # Classic snaps get no snapcraft PATH command-chain, and the app's
+      # `find_ffmpeg()` (media-sort-backend) checks the binary's own directory
+      # before PATH. Expose the staged ffmpeg next to the binary so the lookup
+      # is deterministic regardless of how snapd sets PATH.
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      ln -sf ../usr/bin/ffmpeg "$CRAFT_PART_INSTALL/bin/ffmpeg"
       version="$(awk '
         /^\[workspace\.package\]/ { in_section = 1; next }
         /^\[/ { in_section = 0 }

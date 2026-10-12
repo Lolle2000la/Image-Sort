@@ -33,7 +33,7 @@ Linux版のMedia SortはSnapとAppImageの両方で提供されています。
 
 #### Snap（Ubuntuで推奨）
 
-Media Sortはclassic confinement（クラシック制限）のSnapとして[Snap Store](https://snapcraft.io/media-sort)で公開されています。アプリはAppImageと同様にファイルシステム上の任意の場所のファイルを整理するため、厳格な制限付きインターフェースでは実現できず、classic confinementが必要です。Snapには`libmpv`、`libdav1d`、ALSAサポートが同梱されているため、追加のランタイムライブラリは不要です：
+Media Sortはclassic confinement（クラシック制限）のSnapとして[Snap Store](https://snapcraft.io/media-sort)で公開されています。アプリはAppImageと同様にファイルシステム上の任意の場所のファイルを整理するため、厳格な制限付きインターフェースでは実現できず、classic confinementが必要です。Snapには`libmpv`、`libdav1d`、`ffmpeg`、ALSAサポートが同梱されているため、追加のランタイムライブラリは不要です：
 
 ```bash
 sudo snap install media-sort --classic
