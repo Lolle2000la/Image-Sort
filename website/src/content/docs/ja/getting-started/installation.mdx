@@ -33,10 +33,17 @@ Linux版のMedia SortはSnapとAppImageの両方で提供されています。
 
 #### Snap
 
-Media Sortは[Snap Store](https://snapcraft.io/media-sort)で公開されています。Snapには`libmpv`、`libdav1d`、`ffmpeg`、ALSAサポートが同梱されているため、追加のランタイムライブラリは不要です：
+Media Sortは[Snap Store](https://snapcraft.io/media-sort)で公開されています。Snapには`libmpv`、`libdav1d`、`ffmpeg`、ALSAサポートが同梱されており、グラフィックスドライバーはCanonicalのプロバイダーSnap `mesa-2404` から取得します（snapdが依存関係として自動的にインストールします）：
 
 ```bash
 sudo snap install media-sort
+```
+
+ローカルでビルドした `.snap` をオフラインでインストールする場合、このプロバイダーは自動ではインストールされないため、ご自身でインストールして接続してください：
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
 ```
 
 Snapは厳格な制限付き（strict confinement）で動作するため、ホームディレクトリ内のファイルを整理できます。外部ドライブ（`/media`、`/mnt`）のファイルも整理するには、`removable-media`インターフェースを一度接続してください：

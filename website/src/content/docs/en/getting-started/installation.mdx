@@ -33,10 +33,17 @@ Media Sort for Linux ships both as a Snap and as an AppImage.
 
 #### Snap
 
-Media Sort is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d`, `ffmpeg` and ALSA support, so no extra runtime libraries are needed:
+Media Sort is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d`, `ffmpeg` and ALSA support, and takes its graphics drivers from Canonical's `mesa-2404` provider snap, which snapd installs as a dependency:
 
 ```bash
 sudo snap install media-sort
+```
+
+A locally built `.snap` installed offline does not pull that provider in, so install and connect it yourself:
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
 ```
 
 The snap is strictly confined, so it sorts anything under your home directory. To also sort files on external drives (`/media`, `/mnt`), connect the `removable-media` interface once:

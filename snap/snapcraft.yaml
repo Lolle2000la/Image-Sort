@@ -5,6 +5,10 @@
 # app's `plugs` below. Audio goes through the sound server (`audio-playback`),
 # with a raw-ALSA fallback for systems that have none.
 #
+# Graphics userspace (GL/EGL/GBM/DRM/VA-API/VDPAU/Vulkan) is not shipped here: it
+# comes from the `gpu-2404` content provider, so the drivers match the user's
+# kernel and GPU instead of this build's Mesa. See the `plugs` entry below.
+#
 # Build:   snapcraft pack --destructive-mode     (host must be Ubuntu 24.04)
 #          snapcraft pack --use-lxd              (any host with LXD set up)
 # Lint:    snapcraft lint <file.snap>
@@ -23,8 +27,9 @@ description: |
   via symphonia/rodio) and an EXIF/ID3 metadata panel. It runs entirely on
   your machine: no accounts, no analytics and no network access.
 
-  The snap bundles libmpv, libdav1d, ffmpeg and ALSA support, so no separate
-  runtime dependency installation is required on Ubuntu-based systems.
+  The snap bundles libmpv, libdav1d, ffmpeg and ALSA support, and takes its
+  graphics drivers from the mesa-2404 provider, so no separate runtime
+  dependency installation is required on Ubuntu-based systems.
 
 license: AGPL-3.0-or-later
 website: https://mediasort.app/
@@ -48,6 +53,13 @@ platforms:
 apps:
   media-sort:
     command: bin/media-sort-gui
+    # Enters the graphics provider's environment (LD_LIBRARY_PATH,
+    # LIBVA_DRIVERS_PATH, __EGL_VENDOR_LIBRARY_DIRS, VK_LAYER_PATH, the Vulkan ICD
+    # search path, the host's native Nvidia libs, ...) and refuses to start with a
+    # clear message when the interface is not connected — this snap ships no
+    # drivers of its own to fall back to. Comes from the `gpu-2404` part below.
+    command-chain:
+      - bin/gpu-2404-wrapper
     plugs:
       # `home` is auto-connected. `removable-media` (/media, /mnt) is not, so
       # sorting external drives requires one manual
@@ -71,6 +83,19 @@ apps:
       # effect after `snap connect media-sort:alsa`; harmless when left
       # disconnected (the audio player is simply unavailable).
       - alsa
+
+# Graphics userspace as a *content* dependency rather than staged packages:
+# drivers have to match the user's kernel and GPU, which a copy built against
+# this base's Mesa cannot do. snapd installs the default provider (`mesa-2404`)
+# alongside the app. The target must be exactly `$SNAP/gpu-2404` — the wrapper
+# assumes it. There is deliberately no `/usr/share/X11/XErrorDB` layout: this
+# snap already ships that file from its own staged X11 libraries, and a layout
+# over a path the snap provides is a conflict.
+plugs:
+  gpu-2404:
+    interface: content
+    target: $SNAP/gpu-2404
+    default-provider: mesa-2404
 
 parts:
   media-sort:
@@ -132,3 +157,27 @@ parts:
       ' "$CRAFT_PART_SRC/Cargo.toml")"
       [ -n "$version" ] || { echo "could not read [workspace.package].version from Cargo.toml"; exit 1; }
       craftctl set version="$version"
+
+  # Upstream helpers from canonical/gpu-snap: `bin/gpu-2404-wrapper` is the
+  # command-chain entry point above, and `bin/gpu-2404-cleanup` prunes the
+  # libraries `mesa-2404` supplies, so this snap carries exactly one copy of each
+  # and can never load a driver from the build host's Mesa by accident.
+  #
+  # Pinned to a commit rather than a branch: the cleanup deletes files from the
+  # signed payload according to `lists/mesa-2404.<arch>.list`, so an upstream
+  # change must not reach a release unreviewed. Bump deliberately and re-run the
+  # packaging check (see AGENTS.md).
+  gpu-2404:
+    after: [media-sort]
+    source: https://github.com/canonical/gpu-snap.git
+    source-commit: 84e56217ec137c3f8d7a0e773bb7c39c8fc40f28
+    plugin: dump
+    override-prime: |
+      craftctl default
+      # Deliberately not `--strict`: that mode skips the list's trailing glob
+      # section, which is what catches the staged Mesa copies whose exact file
+      # names come from noble-updates rather than the provider's release (e.g.
+      # `libgallium-*.so`, `libdrm_*.so*`, `dri/*`, `libvulkan_*.so`).
+      "${CRAFT_PART_SRC}/bin/gpu-2404-cleanup" mesa-2404
+    prime:
+      - bin/gpu-2404-wrapper
