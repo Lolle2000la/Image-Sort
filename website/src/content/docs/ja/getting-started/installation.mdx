@@ -29,7 +29,40 @@ Media Sortはメディア再生やUI制御にネイティブのシステムAPI�
 
 ### Linux
 
-Linux版のAppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+Linux版のMedia SortはSnapとAppImageの両方で提供されています。
+
+#### Snap
+
+Media Sortは[Snap Store](https://snapcraft.io/media-sort)で公開されています。Snapには`libmpv`、`libdav1d`、`ffmpeg`、ALSAサポートが同梱されており、グラフィックスドライバーはCanonicalのプロバイダーSnap `mesa-2404` から取得します（snapdが依存関係として自動的にインストールします）：
+
+```bash
+sudo snap install media-sort
+```
+
+ローカルでビルドした `.snap` をオフラインでインストールする場合、このプロバイダーは自動ではインストールされないため、ご自身でインストールして接続してください：
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
+```
+
+Snapは厳格な制限付き（strict confinement）で動作するため、ホームディレクトリ内のファイルを整理できます。外部ドライブ（`/media`、`/mnt`）のファイルも整理するには、`removable-media`インターフェースを一度接続してください：
+
+```bash
+sudo snap connect media-sort:removable-media
+```
+
+音声はサウンドサーバー（PipeWire/PulseAudio）経由でそのまま再生されます。サウンドサーバーのないシステムでは、raw ALSAインターフェースを接続してください：
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
+更新はsnapdによって自動的に配信されます。
+
+#### AppImage
+
+AppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
 
 Linuxでの `ffmpeg` のインストールは任意です。動画サムネイルが高速になりますが、無くてもmpvによるフォールバックが機能します。
 

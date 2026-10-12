@@ -2,6 +2,7 @@
 import { execSync } from 'child_process';
 import { Terminal, Monitor, Laptop, Copy } from '@lucide/astro';
 import { repoFull } from '../config.ts';
+import SnapBadge from './SnapBadge.astro';
 
 interface Asset {
     name: string;
@@ -196,6 +197,11 @@ const iconMap = {
                         );
                     })}
                 </div>
+                {group.os === 'Linux' && (
+                    <div class="snap-store">
+                        <SnapBadge />
+                    </div>
+                )}
             </div>
         ))}
     </div>
@@ -277,6 +283,18 @@ const iconMap = {
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
         align-items: stretch;
+    }
+
+    /* Snaps install from the Snap Store, not from a downloaded file, so the
+       Linux group offers the official store badge instead of a second set of
+       "download" cards. The badge brings its own margin for standalone use;
+       this wrapper only spaces it from the grid above. */
+    .snap-store {
+        margin-top: 1.5rem;
+    }
+
+    .snap-store :global(.snap-store-badge) {
+        margin: 0;
     }
 
     .download-card {

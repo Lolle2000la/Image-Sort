@@ -29,7 +29,40 @@ Depending on your platform, you may need to install the `mpv` media playback eng
 
 ### Linux
 
-The Linux AppImage packages run dynamically on the host environment and require `libmpv` and `libdav1d` (for AVIF image decoding) to be installed on your system. The AppImage also depends on `libasound2` and X11/Wayland libraries which are typically pre-installed on desktop Linux distributions.
+Media Sort for Linux ships both as a Snap and as an AppImage.
+
+#### Snap
+
+Media Sort is published to the [Snap Store](https://snapcraft.io/media-sort). It bundles `libmpv`, `libdav1d`, `ffmpeg` and ALSA support, and takes its graphics drivers from Canonical's `mesa-2404` provider snap, which snapd installs as a dependency:
+
+```bash
+sudo snap install media-sort
+```
+
+A locally built `.snap` installed offline does not pull that provider in, so install and connect it yourself:
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
+```
+
+The snap is strictly confined, so it sorts anything under your home directory. To also sort files on external drives (`/media`, `/mnt`), connect the `removable-media` interface once:
+
+```bash
+sudo snap connect media-sort:removable-media
+```
+
+Audio plays through the sound server (PipeWire/PulseAudio) out of the box. On a system with no sound server, connect the raw-ALSA interface:
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
+Updates are delivered automatically by snapd.
+
+#### AppImage
+
+The AppImage packages run dynamically on the host environment and require `libmpv` and `libdav1d` (for AVIF image decoding) to be installed on your system. The AppImage also depends on `libasound2` and X11/Wayland libraries which are typically pre-installed on desktop Linux distributions.
 
 Installing `ffmpeg` is optional on Linux — it enables faster video thumbnails, but Media Sort falls back to mpv when it is not present.
 

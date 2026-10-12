@@ -1,0 +1,83 @@
+---
+import { snapStoreUrl } from '../config.ts';
+
+/**
+ * "Get it from the Snap Store" install badge.
+ *
+ * The Snap Store publishes two variants and names them after the badge's own
+ * colour — NOT after the theme it suits. Snapcraft's own embed snippet spells it
+ * out: "Dark button (for light backgrounds)" is `/en/dark/install.svg` (a black
+ * badge, titled `snap-store-black`) and "Light button (for dark backgrounds)" is
+ * `/en/light/install.svg` (a white badge, titled `snap-store-white`). A light
+ * page therefore shows the dark badge and a dark page the light one, which is
+ * why the classes below are `__black`/`__white` instead of theme names.
+ *
+ * This site has a theme toggle, so both images are rendered and CSS reveals the
+ * one matching the current `data-theme` (the attribute Starlight sets on
+ * <html>). The hidden variant is `display: none`, so only one reaches the
+ * accessibility tree.
+ *
+ * The badge language follows the page locale. Note the Snap Store uses `jp`,
+ * not `ja`, for Japanese (`/ja/...` returns 400).
+ */
+const path = Astro.url.pathname;
+const locale = /\/de(\/|$)/.test(path)
+    ? 'de'
+    : /\/ja(\/|$)/.test(path)
+      ? 'jp'
+      : 'en';
+
+const ALT_TEXT = {
+    en: 'Get it from the Snap Store',
+    de: 'Installieren vom Snap Store',
+    jp: 'Snap Store から入手ください',
+} as const;
+
+const alt = ALT_TEXT[locale];
+const href = snapStoreUrl;
+---
+
+<a class="snap-store-badge" href={href}>
+    <img
+        class="snap-store-badge__black"
+        src={`https://snapcraft.io/${locale}/dark/install.svg`}
+        alt={alt}
+        width="182"
+        height="56"
+    />
+    <img
+        class="snap-store-badge__white"
+        src={`https://snapcraft.io/${locale}/light/install.svg`}
+        alt={alt}
+        width="182"
+        height="56"
+    />
+</a>
+
+<style>
+    .snap-store-badge {
+        display: inline-block;
+        margin: 1.5rem 0;
+        line-height: 0;
+    }
+
+    .snap-store-badge img {
+        height: 3.5rem;
+        width: auto;
+        margin: 0;
+    }
+
+    /* The white badge is the one designed for dark backgrounds, so it only
+       replaces the black badge when the site is in dark mode. */
+    .snap-store-badge__white {
+        display: none;
+    }
+
+    :global([data-theme='dark']) .snap-store-badge__white {
+        display: inline;
+    }
+
+    :global([data-theme='dark']) .snap-store-badge__black {
+        display: none;
+    }
+</style>
