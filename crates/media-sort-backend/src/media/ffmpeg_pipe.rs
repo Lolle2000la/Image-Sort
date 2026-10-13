@@ -8,8 +8,33 @@ const FFMPEG_EXE: &str = "ffmpeg";
 
 static FFMPEG_PATH: OnceLock<Option<PathBuf>> = OnceLock::new();
 
+/// `CREATE_NO_WINDOW` (0x0800_0000, winbase.h).
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+/// Start building an ffmpeg command with the platform's "no console window"
+/// flags applied.
+///
+/// The GUI release binary is built with `windows_subsystem = "windows"` and
+/// therefore owns no console. On Windows, spawning a console subprocess from
+/// a console-less process makes the OS allocate a NEW console window for the
+/// child — one visible flash per spawn. The thumbnail pipeline spawns one
+/// ffmpeg per video card, so scrubbing through the media grid used to pop up
+/// dozens of console windows. `CREATE_NO_WINDOW` suppresses the window while
+/// leaving stdio pipes (and exit codes) intact.
+fn ffmpeg_command(program: &Path) -> std::process::Command {
+    #[allow(unused_mut)] // `command` is only mutated on Windows targets
+    let mut command = std::process::Command::new(program);
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt as _;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+    command
+}
+
 fn verify_ffmpeg(ffmpeg_path: &Path) -> bool {
-    std::process::Command::new(ffmpeg_path)
+    ffmpeg_command(ffmpeg_path)
         .arg("-version")
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
@@ -106,7 +131,7 @@ pub fn extract_frame(path: &Path, max_w: u32, max_h: u32) -> Result<super::Decod
     // scanned. The values match ffmpeg's current defaults — this is a
     // stability pin (explicit is better than implicit), not a behavior
     // change for legitimate media.
-    let mut child = std::process::Command::new(&ffmpeg)
+    let mut child = ffmpeg_command(&ffmpeg)
         .args([
             "-hide_banner",
             "-loglevel",

@@ -160,6 +160,24 @@ fn generate_video_thumbnail_frame(
         .map_err(|e| ThumbnailError::Decode(e.to_string()))
 }
 
+/// Whether the path is a GIF file (case-insensitive extension check,
+/// mirroring `state::detect_media_type`'s lowercased-extension handling).
+///
+/// Animated GIFs are classified `MediaType::Video` at scan time so the
+/// *preview pane* plays them through the video pipeline — but a grid
+/// thumbnail is a static first-frame RGBA handle exactly like any image's,
+/// and the in-process image pipeline decodes that first frame without
+/// spawning an ffmpeg subprocess. Routing GIFs through the video pool used
+/// to cost an ffmpeg spawn per GIF card: on Windows every console-subprocess
+/// spawn from the console-less GUI binary pops up a console window (see
+/// `ffmpeg_pipe::ffmpeg_command`), and even elsewhere the ~70 ms subprocess
+/// startup per card is pure overhead.
+fn is_gif_path(path: &std::path::Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("gif"))
+}
+
 /// Generate a thumbnail for the given file. Takes the entry's cached
 /// `media_type` and `animated` (the latter `Some(_)` for GIFs, populated
 /// at scan time) so the production code path no longer re-runs
@@ -183,7 +201,7 @@ pub fn generate_thumbnail(
             .map_err(|e| ThumbnailError::Decode(format!("Audio cover thumbnail error: {e}")));
     }
 
-    if media_type == MediaType::Video {
+    if media_type == MediaType::Video && !is_gif_path(path) {
         // ffmpeg is bundled in release packages and is ~2.4× faster than
         // the mpv poll loop. Route through a bounded worker pool
         // (`FFMPEG_THUMBNAIL_WORKER`, `available_parallelism().clamp(2, 16)`)
@@ -294,6 +312,59 @@ fn generate_ico_thumbnail(path: &std::path::Path) -> ThumbnailResult {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_is_gif_path_case_insensitive() {
+        assert!(is_gif_path(std::path::Path::new("/x/a.gif")));
+        assert!(is_gif_path(std::path::Path::new("/x/a.GIF")));
+        assert!(is_gif_path(std::path::Path::new("/x/a.Gif")));
+        assert!(!is_gif_path(std::path::Path::new("/x/a.png")));
+        assert!(!is_gif_path(std::path::Path::new("/x/a.gifv")));
+        assert!(!is_gif_path(std::path::Path::new("/x/agif")));
+        assert!(!is_gif_path(std::path::Path::new("/x/gif")));
+    }
+
+    #[test]
+    fn test_generate_thumbnail_animated_gif_classified_as_video() {
+        let dir = std::env::temp_dir().join("mediasort_test_animated_gif_thumb");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("animated.gif");
+
+        // Two-frame GIF => animated => classified `MediaType::Video` at scan
+        // time (with `animate_gifs` on).
+        let img1 = image::RgbaImage::from_pixel(200, 50, image::Rgba([255, 0, 0, 255]));
+        let img2 = image::RgbaImage::from_pixel(200, 50, image::Rgba([0, 255, 0, 255]));
+        let file = std::fs::File::create(&path).unwrap();
+        {
+            let mut encoder = image::codecs::gif::GifEncoder::new(file);
+            encoder
+                .encode(&img1, 200, 50, image::ExtendedColorType::Rgba8)
+                .unwrap();
+            encoder
+                .encode(&img2, 200, 50, image::ExtendedColorType::Rgba8)
+                .unwrap();
+        }
+
+        assert_eq!(
+            media_sort_backend::media::image_decoder::is_animated_gif(&path),
+            Some(true)
+        );
+
+        // The thumbnail must come from the in-process image pipeline (first
+        // frame), NOT the ffmpeg/mpv video pools — this works even on a
+        // machine with neither ffmpeg nor libmpv available.
+        let result = generate_thumbnail(&path, MediaType::Video, Some(true));
+        assert!(result.is_ok());
+        let (w, h, rgba) = result.unwrap();
+        // 200x50 into the 128x128 box, aspect preserved: min-ratio scaling
+        // (128/200) yields 128x32.
+        assert_eq!((w, h), (128, 32));
+        assert_eq!(rgba.len(), (128 * 32 * 4) as usize);
+        // The first frame is the red one.
+        assert_eq!(&rgba[0..4], &[255, 0, 0, 255]);
+
+        std::fs::remove_dir_all(&dir).ok();
+    }
 
     #[test]
     fn test_generate_thumbnail_valid_image() {
