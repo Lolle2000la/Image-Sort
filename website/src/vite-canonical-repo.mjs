@@ -3,7 +3,7 @@
  * sources, before they are compiled.
  *
  * The docs are written against the repository's canonical name
- * (`Lolle2000la/Media-Sort`), which does not resolve until the rename lands.
+ * (`Lolle2000la/Media-Sort`), the name the repository now has.
  * `src/config.ts` resolves the real name from the repository's stable numeric
  * ID; this keeps link targets, visible link text and code snippets
  * (`git clone`) consistent with it. Doing it as a source transform rather than
@@ -12,8 +12,8 @@
  * how the whole site is rendered).
  *
  * The pattern is a fully qualified `owner/name`, so it cannot catch unrelated
- * prose. After the rename this is an identity mapping — harmless, and a safety
- * net if the repository is ever renamed again.
+ * prose. Now that the rename has landed this is an identity mapping — harmless,
+ * and a safety net if the repository is ever renamed again.
  */
 export const CANONICAL_REPO = 'Lolle2000la/Media-Sort';
 
