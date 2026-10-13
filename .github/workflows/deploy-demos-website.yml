@@ -59,7 +59,18 @@ jobs:
           retry_wait_seconds: 10
           command: |
             sudo apt-get update
-            sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools ffmpeg mesa-vulkan-drivers
+            # The `--export` demo build links the same native stack the test and
+            # release jobs do, so keep this list in step with ci.yml/release.yml:
+            #   libmpv-dev          video/GIF playback (bindgen uses the runner's
+            #                       preinstalled libclang)
+            #   libasound2-dev      ALSA, for audio output
+            #   libdav1d-dev        AVIF decoding; without it `dav1d-sys` fails to
+            #                       build (found via pkg-config)
+            #   nasm                SIMD paths of the vendored libjpeg-turbo
+            #   mesa-vulkan-drivers software Vulkan ICD for the headless wgpu
+            #                       renderer (pulls in the libvulkan loader)
+            #   ffmpeg              encodes the rendered demo videos
+            sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm squashfs-tools ffmpeg mesa-vulkan-drivers
 
       - name: Install Website Dependencies
         uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
