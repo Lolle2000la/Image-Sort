@@ -2816,7 +2816,7 @@ version = "3.0.0-rc.4"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn 2.0.119",
+ "syn 3.0.7",
 ]
 
 [[package]]
