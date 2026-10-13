@@ -13,14 +13,14 @@ name: Snap packaging
 # justify a Rust build per push -- and `workflow_dispatch` runs this on demand.
 on:
   push:
-    branches: [master, main, v3.0]
+    branches: [master]
     paths:
       - 'snap/**'
       - '**/Cargo.toml'
       - '**/Cargo.lock'
       - '.github/workflows/snap.yml'
   pull_request:
-    branches: [master, main, v3.0]
+    branches: [master]
     paths:
       - 'snap/**'
       - '**/Cargo.toml'
