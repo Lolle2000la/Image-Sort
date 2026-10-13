@@ -30,6 +30,12 @@
       "description": "GitHub Actions: group all updates (SHA-pinned, comment updated in place)",
       "matchManagers": ["github-actions"],
       "groupName": "GitHub Actions"
+    },
+    {
+      "description": "TypeScript is held below 6.1.0 because typescript-eslint -- and @typescript-eslint/parser plus eslint-plugin, all three carry the cap -- peers it at >=4.8.4 <6.1.0 (unchanged in 8.71.2, the latest release, and in its canaries), and it refuses to run at all when handed TS 7. This is not conservatism: TypeScript 7 is the Go rewrite and 7.0 ships no JavaScript compiler API for the parser to call, so 7.0 support was closed as not planned and the target is TS 7.1+ (typescript-eslint#10940). Note the rule blocks only the uninstallable 7.x; 6.0.x is still allowed. Lift it once the peer range widens.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<6.1.0"
     }
   ]
 }
