@@ -318,6 +318,13 @@ jobs:
 
   deploy:
     needs: assemble
+    # A skip propagates down the whole dependency chain ("a failure or skip
+    # applies to all jobs in the dependency chain from the point of failure or
+    # skip onwards"), so on a cache hit -- where `render` is skipped -- this job
+    # is skipped too even though `assemble` succeeded. An explicit condition is
+    # the documented escape hatch, and it is required: without it the run
+    # reports success while publishing nothing.
+    if: ${{ !cancelled() && needs.assemble.result == 'success' }}
     runs-on: ubuntu-latest
     # The environment GitHub Pages records the deployment against, and the
     # scope the deploy-pages OIDC token is issued for. Its branch policy must
