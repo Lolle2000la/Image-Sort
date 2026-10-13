@@ -49,7 +49,7 @@ symphonia = { version = "0.6", features = [
     "wav",
     "all-codecs",
 ] }
-rodio = { version = "0.22", default-features = false, features = [
+rodio = { version = "0.23", default-features = false, features = [
     "flac",
     "vorbis",
     "wav",
@@ -72,7 +72,7 @@ iced_wgpu = "0.14"
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "fs"] }
 lru = "0.18"
 rfd = "0.17"
-ico = "0.5"
+ico = "0.6"
 fast_image_resize = { version = "6.0", features = ["image", "rayon"] }
 rayon = "1.12"
 

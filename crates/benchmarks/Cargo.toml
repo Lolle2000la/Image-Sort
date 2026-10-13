@@ -19,7 +19,7 @@ turbojpeg = "1.5"
 kamadak-exif.workspace = true
 webp = "0.3"
 bytemuck = "1"
-ico = "0.5"
+ico = "0.6"
 rayon.workspace = true
 
 [dev-dependencies]
