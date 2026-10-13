@@ -40,42 +40,31 @@ concurrency:
 jobs:
   snap:
     name: Build and check the snap
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Source Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # `--destructive-mode` builds directly on the runner, which is only valid
-      # because the runner *is* the snap's base (core24 = Ubuntu 24.04); the
-      # GitHub-hosted runners have no LXD/Multipass for the isolated path. It
-      # installs the part's build-packages with apt, so it must run as root (the
-      # runner's passwordless sudo) -- and that apt install is the point: the
-      # build then sees only the Ubuntu archive's packages, never the libraries a
-      # runner happens to ship. There is deliberately no cache either, since a
-      # cached build would skip installing them.
-      - name: Install Snapcraft
-        run: |
-          set -euo pipefail
-          sudo snap install snapcraft --classic
-          snapcraft version
-
-      # One architecture is enough to prove the recipe resolves in a clean
-      # environment, and destructive mode refuses an ambiguous two-platform plan.
-      # `--platform` must name one of `platforms:` in snap/snapcraft.yaml.
+      # Canonical's action installs and configures snapd, LXD and snapcraft,
+      # then builds inside an LXD container pinned to the recipe's base
+      # (core24 = Ubuntu 24.04). That is what lets this job run on any runner
+      # release: `--destructive-mode` only accepts a host that *is* the base, so
+      # pinning the runner to `ubuntu-24.04` was load-bearing, and a runner bump
+      # broke the job. Building in the base container also makes the "clean
+      # environment" guarantee real -- only the recipe's `build-packages`, never
+      # the libraries the runner happens to ship. One architecture is enough to
+      # prove the recipe resolves, so build only `amd64`; `--platform` must name
+      # one of `platforms:` in snap/snapcraft.yaml.
       - name: Build Snap
-        run: |
-          set -euo pipefail
-          mkdir -p dist-snap
-          sudo snapcraft pack --destructive-mode --platform amd64 --output dist-snap
-          ls -l dist-snap
-          # The build ran as root; hand the artifacts back so the runner's
-          # post-job cleanup does not trip over root-owned files.
-          sudo chown -R "$(id -u):$(id -g)" dist-snap parts stage prime 2>/dev/null || true
+        id: snapcraft
+        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
+        with:
+          snapcraft-args: pack --platform amd64
 
       - name: Install Built Snap
         run: |
           set -euo pipefail
-          sudo snap install --dangerous dist-snap/*.snap
+          sudo snap install --dangerous "${{ steps.snapcraft.outputs.snap }}"
           snap list media-sort
 
       # The snap carries no graphics userspace of its own: it comes from the
