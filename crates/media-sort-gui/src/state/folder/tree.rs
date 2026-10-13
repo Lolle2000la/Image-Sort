@@ -916,8 +916,8 @@ mod tests {
 
         let base =
             std::env::temp_dir().join(format!("mediasort_chain_symlink_{}", std::process::id()));
-        let home = base.join("home").join("luca");
-        let real_nextcloud = base.join("data").join("luca").join("Nextcloud");
+        let home = base.join("home").join("user");
+        let real_nextcloud = base.join("data").join("user").join("Nextcloud");
         std::fs::create_dir_all(&home).unwrap();
         std::fs::create_dir_all(&real_nextcloud).unwrap();
         std::fs::create_dir_all(home.join("development")).unwrap();
@@ -949,7 +949,7 @@ mod tests {
         }
 
         let chain_node = find_parent_nav_node(&state.folder.folder_tree, &home)
-            .expect("pinned chain /home/luca node exists");
+            .expect("pinned parent-nav chain node exists");
         let names: Vec<_> = chain_node
             .children
             .iter()
@@ -963,13 +963,14 @@ mod tests {
             );
         }
 
-        // Re-open /home/luca as the current folder: the pinned chain node is
-        // restored expanded and must keep its real children (regression:
-        // it used to be restored with only the nested chain / no children).
+        // Re-open the home folder as the current folder: the pinned chain
+        // node is restored expanded and must keep its real children
+        // (regression: it used to be restored with only the nested chain /
+        // no children).
         state.open_folder(&home);
         state.build_folder_tree();
         let chain_node = find_parent_nav_node(&state.folder.folder_tree, &home)
-            .expect("pinned chain /home/luca node exists after reopen");
+            .expect("pinned parent-nav chain node exists after reopen");
         assert!(chain_node.is_expanded);
         let names: Vec<_> = chain_node
             .children
