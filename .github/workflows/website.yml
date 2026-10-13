@@ -1,0 +1,88 @@
+name: Website
+
+# `ci.yml` deliberately ignores `website/**` (its matrix is Rust-only), which
+# left website changes ungated: a dependency bump that cannot be installed, a
+# broken component or a formatting error only surfaced when the site was
+# deployed. This workflow is that missing gate -- it installs strictly from the
+# lockfile, lints, checks formatting and builds the site.
+#
+# It does NOT render the demo videos (`npm run render-demos`): that needs the
+# Rust GUI binary and a runner per flow, while the Astro build only references
+# the videos by URL. Rendering is covered by `deploy-demos-website.yml`.
+#
+# NOTE: the path filters mean this workflow does not run for a PR that touches
+# nothing under `website/`. Nothing here is a required check today; if it is
+# ever made one it needs the usual always-running companion job, because a
+# path-filtered workflow never reports on an unrelated PR.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - '.github/workflows/website.yml'
+  merge_group:
+    # Path filters are NOT supported for the merge_group event (they are
+    # silently ignored), so a merge-queue run always executes this workflow --
+    # the same caveat `ci.yml` documents for its own jobs.
+    branches: [master]
+    types: [checks_requested]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# The build only reads: the token it gets is read-only, and nothing here pushes.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Website
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: 'website/package-lock.json'
+
+      - name: Install Website Dependencies
+        # `npm ci` installs strictly from `package-lock.json`, so a dependency
+        # bump that came without a lockfile update fails right here -- exactly
+        # the failure mode a `package.json`-only Renovate PR has.
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: cd website && npm ci
+
+      - name: Lint
+        run: npm run lint
+        working-directory: website
+
+      - name: Check Formatting
+        run: npm run format:check
+        working-directory: website
+
+      - name: Build Website
+        run: npm run build
+        working-directory: website
+        env:
+          # DownloadGrid/ReleaseDownloads resolve release assets with the gh CLI
+          # at build time. gh refuses to run in Actions contexts without a
+          # token, and the runner only injects GH_TOKEN when a step opts in. The
+          # token is read-only here, so build-time code (dependencies, plugins)
+          # cannot use it to push to the repository.
+          GH_TOKEN: ${{ github.token }}
