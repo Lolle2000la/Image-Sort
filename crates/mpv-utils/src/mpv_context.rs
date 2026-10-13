@@ -778,6 +778,20 @@ mod tests {
         .join(name)
     }
 
+    /// Wall-clock budget for the load and frame waits below.
+    ///
+    /// Deliberately generous: these tests assert that a frame is *eventually*
+    /// produced, not how quick the machine is. nextest runs each test in its
+    /// own process, in parallel, and `benchmarks`'
+    /// `fixture_gen::tests::test_generate_and_decode_all_format_fixtures`
+    /// saturates every core for a minute or two (`rayon` over 15 formats), so
+    /// a tight budget here measures the runner's CPU weather instead of the
+    /// code -- on a contended 4-vCPU runner the capture below took 5.4s while
+    /// taking 0.4s on the same commit elsewhere. Production calls the same
+    /// `capture_frame` with a 1000ms budget and retries on `CaptureTimeout`,
+    /// so a latency assertion has no place in this test.
+    const PLAYER_TIMEOUT: Duration = Duration::from_secs(60);
+
     fn thumbnail_player() -> Option<MpvContext> {
         match MpvContext::new_thumbnail_player() {
             Ok(player) => Some(player),
@@ -794,7 +808,7 @@ mod tests {
             return;
         };
         let (w, h, rgba) = player
-            .capture_frame(&fixture("mock 3.mp4"), 128, 128, Duration::from_secs(5))
+            .capture_frame(&fixture("mock 3.mp4"), 128, 128, PLAYER_TIMEOUT)
             .expect("capture_frame should produce a frame within the timeout");
         assert!(w > 0 && h > 0, "captured frame must have non-zero size");
         assert!(
@@ -871,7 +885,7 @@ mod tests {
             let start = Instant::now();
             loop {
                 assert!(
-                    start.elapsed() < Duration::from_secs(5),
+                    start.elapsed() < PLAYER_TIMEOUT,
                     "timed out waiting for the video to load"
                 );
                 let (w, h) = player.get_video_size();
@@ -886,21 +900,13 @@ mod tests {
         // Render the first frame before seeking: this activates the video
         // output pipeline (on macOS no frame becomes pending until the first
         // render call, so a seek on a never-rendered context stalls).
-        wait_and_render_frame(
-            &mut player,
-            Instant::now() + Duration::from_secs(5),
-            "before seek",
-        );
+        wait_and_render_frame(&mut player, Instant::now() + PLAYER_TIMEOUT, "before seek");
 
         player.seek(duration * 0.1);
 
         // The seek must not break rendering: poll for the next frame and
         // render it.
-        wait_and_render_frame(
-            &mut player,
-            Instant::now() + Duration::from_secs(5),
-            "after seek",
-        );
+        wait_and_render_frame(&mut player, Instant::now() + PLAYER_TIMEOUT, "after seek");
 
         player.stop();
     }
