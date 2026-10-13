@@ -7,11 +7,20 @@ name: Deploy Demos & Website
 # sequentially took ~72 min of a single job's wall clock. The pipeline is
 # therefore split so the work fans out:
 #
-#   plan     -- list the flow specs (one matrix entry per flow)
+#   plan     -- list the flow specs (one matrix entry per flow) and look up the
+#               rendered-video cache
 #   build-app-- compile the export binary ONCE and publish it as an artifact
-#   render   -- one runner per flow, rendering that flow's 3 locales (~10 min)
+#   render   -- one runner per flow, rendering that flow's 3 locales
 #   assemble -- collect every video, build the site, publish the Pages artifact
 #   deploy   -- deploy-pages
+#
+# The rendered videos are cached under a key over the inputs that determine
+# them (the crates, the flow specs, the fixtures and this workflow file), so a
+# run with unchanged inputs -- a re-dispatch after a transient failure, a
+# docs-only release -- skips the compile and every render job and goes straight
+# to `assemble`. The key is deliberately conservative: anything that could
+# alter the bytes is a miss, and `workflow_dispatch`'s `force-render` input
+# bypasses the lookup entirely. Only this workflow writes that cache.
 #
 # NOTE: the binary locates its fixtures through `resolve_workspace_path`, which
 # is `env!("CARGO_MANIFEST_DIR")`-based -- i.e. the *compile-time* checkout
@@ -27,6 +36,11 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      force-render:
+        description: 'Re-render the demo videos even if a matching cache exists'
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -45,6 +59,8 @@ jobs:
     timeout-minutes: 10
     outputs:
       flows: ${{ steps.list.outputs.flows }}
+      render-key: ${{ steps.key.outputs.render-key }}
+      demos-cached: ${{ steps.demos-cache.outputs.cache-hit }}
 
     steps:
       - name: Checkout Source Code
@@ -62,10 +78,35 @@ jobs:
           echo "flows=$flows" >> "$GITHUB_OUTPUT"
           echo "flows: $flows"
 
+      - name: Compute Demo Render Key
+        id: key
+        run: |
+          set -euo pipefail
+          # Everything that determines the rendered bytes: the code being
+          # demoed, the flow specs, the fixtures, and this workflow file (which
+          # carries the render wiring). Any change to those is a cache miss.
+          key="${{ hashFiles('crates/**', 'resources/**', 'Cargo.toml', 'Cargo.lock', '.github/workflows/deploy-demos-website.yml') }}"
+          [ -n "$key" ] || { echo "::error::could not hash the demo inputs"; exit 1; }
+          echo "render-key=$key" >> "$GITHUB_OUTPUT"
+          echo "render-key: $key"
+
+      - name: Look Up Rendered Demo Videos
+        id: demos-cache
+        # `force-render` only exists for workflow_dispatch; on a workflow_run the
+        # input is absent and the lookup always runs.
+        if: ${{ github.event.inputs.force-render != 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: website/public/demos
+          key: demos-${{ steps.key.outputs.render-key }}
+          # Presence only: `assemble` performs the actual restore, so a hit here
+          # does not download the videos twice.
+          lookup-only: true
+
   build-app:
-    # Same gate as `plan`: the stable-release check lives on the entry jobs and
-    # is inherited by everything downstream through `needs`.
-    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-')) }}
+    needs: plan
+    # Nothing to compile when the rendered videos are already cached.
+    if: ${{ needs.plan.outputs.demos-cached != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -133,6 +174,7 @@ jobs:
 
   render:
     needs: [plan, build-app]
+    if: ${{ needs.plan.outputs.demos-cached != 'true' }}
     runs-on: ubuntu-latest
     # ~3.4 min per video x 3 locales, with generous headroom for a slow runner.
     timeout-minutes: 45
@@ -191,7 +233,10 @@ jobs:
           retention-days: 1
 
   assemble:
-    needs: render
+    needs: [plan, render]
+    # `render` is skipped on a cache hit, and a skipped dependency skips this
+    # job too unless the condition is explicit.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.render.result == 'success' || needs.render.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -214,7 +259,15 @@ jobs:
           retry_wait_seconds: 10
           command: cd website && npm ci
 
-      - name: Collect Rendered Videos
+      - name: Collect Rendered Videos (cache hit)
+        if: needs.plan.outputs.demos-cached == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: website/public/demos
+          key: demos-${{ needs.plan.outputs.render-key }}
+
+      - name: Collect Rendered Videos (render jobs)
+        if: needs.plan.outputs.demos-cached != 'true'
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: demos-*
@@ -235,6 +288,17 @@ jobs:
             ls -la website/public/demos
             exit 1
           fi
+
+      - name: Cache Rendered Videos
+        # After the check above, so only a complete set is ever cached, and only
+        # after a real render. A concurrent run may have created the same key
+        # already, so a failed reservation is not fatal.
+        if: needs.plan.outputs.demos-cached != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: website/public/demos
+          key: demos-${{ needs.plan.outputs.render-key }}
 
       - name: Build Website
         run: npm run build
