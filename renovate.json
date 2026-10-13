@@ -1,0 +1,35 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "timezone": "Europe/Berlin",
+  "dependencyDashboard": true,
+  "osvVulnerabilityAlerts": true,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 5am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["dependencies", "security"]
+  },
+  "packageRules": [
+    {
+      "description": "Rust workspace deps: group non-major updates, keep majors as their own PR",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "cargo non-major"
+    },
+    {
+      "description": "Website npm deps: group non-major updates",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "website npm non-major"
+    },
+    {
+      "description": "GitHub Actions: group all updates (SHA-pinned, comment updated in place)",
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions"
+    }
+  ]
+}
