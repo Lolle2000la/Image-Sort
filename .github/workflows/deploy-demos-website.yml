@@ -15,12 +15,14 @@ name: Deploy Demos & Website
 #   deploy   -- deploy-pages
 #
 # The rendered videos are cached under a key over the inputs that determine
-# them (the crates, the flow specs, the fixtures and this workflow file), so a
-# run with unchanged inputs -- a re-dispatch after a transient failure, a
-# docs-only release -- skips the compile and every render job and goes straight
-# to `assemble`. The key is deliberately conservative: anything that could
-# alter the bytes is a miss, and `workflow_dispatch`'s `force-render` input
-# bypasses the lookup entirely. Only this workflow writes that cache.
+# them (the crates, the flow specs, the fixtures, the resolved dependencies and
+# this workflow file), Cargo.toml with its version line removed, and the release
+# series (major.minor). A run with unchanged inputs therefore skips the compile
+# and every render job and goes straight to `assemble`: a re-dispatch after a
+# transient failure, a docs-only change, or a patch release all reuse the cache,
+# while a major or minor release re-renders. `workflow_dispatch`'s
+# `force-render` input bypasses the lookup entirely when a fresh render is
+# wanted regardless. Only this workflow writes that cache.
 #
 # NOTE: the binary locates its fixtures through `resolve_workspace_path`, which
 # is `env!("CARGO_MANIFEST_DIR")`-based -- i.e. the *compile-time* checkout
@@ -82,13 +84,25 @@ jobs:
         id: key
         run: |
           set -euo pipefail
-          # Everything that determines the rendered bytes: the code being
-          # demoed, the flow specs, the fixtures, and this workflow file (which
-          # carries the render wiring). Any change to those is a cache miss.
-          key="${{ hashFiles('crates/**', 'resources/**', 'Cargo.toml', 'Cargo.lock', '.github/workflows/deploy-demos-website.yml') }}"
-          [ -n "$key" ] || { echo "::error::could not hash the demo inputs"; exit 1; }
-          echo "render-key=$key" >> "$GITHUB_OUTPUT"
-          echo "render-key: $key"
+          # Inputs that determine the rendered bytes: the code being demoed, the
+          # flow specs, the fixtures, the resolved dependencies and this workflow
+          # file (which carries the render wiring).
+          hash="${{ hashFiles('crates/**', 'resources/**', 'Cargo.lock', '.github/workflows/deploy-demos-website.yml') }}"
+          [ -n "$hash" ] || { echo "::error::could not hash the demo inputs"; exit 1; }
+          # Cargo.toml matters too -- dependency ranges, features, profiles -- but
+          # its workspace version line changes on every release, so it is hashed
+          # with that line removed; the version is handled explicitly below.
+          toml="$(sed '/^version = /d' Cargo.toml | sha256sum | cut -d' ' -f1)"
+          # The release series (major.minor): a major or minor release always
+          # re-renders, a patch release reuses the cache. That is safe because a
+          # hit means every input above is byte-identical, and it keeps the churn
+          # down for a run of patch releases. Prereleases share their series.
+          version="$(sed -n '/^\[workspace\.package\]/,/^\[/s/^version = "\(.*\)"/\1/p' Cargo.toml | head -n1)"
+          [ -n "$version" ] || { echo "::error::could not read [workspace.package].version from Cargo.toml"; exit 1; }
+          series="${version%%-*}"
+          series="${series%.*}"
+          echo "render-key=$hash-$toml-$series" >> "$GITHUB_OUTPUT"
+          echo "render-key: $hash-$toml-$series"
 
       - name: Look Up Rendered Demo Videos
         id: demos-cache
