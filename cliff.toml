@@ -6,7 +6,9 @@
 # read: tag summary -> downloads table -> changelog. This file therefore only
 # controls the changelog body itself and deliberately emits no version heading
 # (release.yml owns the surrounding layout); it groups commits into one flat
-# list per conventional-commit type, with no user-facing/developer split.
+# list per group, with no user-facing/developer split. Dependency bumps
+# (`chore(deps)`/`fix(deps)`/`chore(renovate)`) are collected into their own
+# Dependencies group so they don't drown Bug Fixes or Maintenance.
 
 [changelog]
 header = """
@@ -27,6 +29,11 @@ conventional_commits = true
 filter_unconventional = true
 split_commits = false
 commit_parsers = [
+    # Dependency bumps first, so a `fix(deps): update ...` lands under
+    # Dependencies instead of Bug Fixes and Renovate's `chore(deps)`/`chore(renovate)`
+    # commits land here instead of Maintenance.
+    { message = "^(chore|fix)\\(deps", group = "Dependencies" },
+    { message = "^chore\\(renovate", group = "Dependencies" },
     { message = "^feat", group = "Features" },
     { message = "^fix", group = "Bug Fixes" },
     { message = "^perf", group = "Performance Improvements" },
