@@ -11,8 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege: the build job only reads. The deploy job opts in to write
-# access below, and it runs no repository code.
+# Least privilege: the build job only reads (its GH_TOKEN is read-only and the
+# Pages artifact it produces is handed to the deploy job). The deploy job opts
+# in to the Pages scopes only, and it runs no repository code.
 permissions:
   contents: read
 
@@ -83,28 +84,28 @@ jobs:
           # plugins) cannot use it to push to the repository.
           GH_TOKEN: ${{ github.token }}
 
-      - name: Upload Website
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Upload Website as Pages Artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          name: website-dist
-          path: website/dist/
+          path: website/dist
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # The environment GitHub Pages records the deployment against, and the
+    # scope the deploy-pages OIDC token is issued for. Its branch policy must
+    # allow the ref this workflow runs on (master, for both workflow_run and
+    # workflow_dispatch).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     permissions:
-      contents: write  # only the gh-pages push needs write access
+      pages: write    # create the Pages deployment
+      id-token: write # OIDC token the Pages deployment API authenticates with
 
     steps:
-      - name: Download Website
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: website-dist
-          path: website/dist
-
-      - name: Deploy to GitHub Pages Branch
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website/dist
-          publish_branch: gh-pages
+      # deploy-pages reads the `github-pages` artifact this run uploaded; there
+      # is nothing to check out or download.
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
