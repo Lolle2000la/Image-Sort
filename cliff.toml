@@ -29,18 +29,22 @@ conventional_commits = true
 filter_unconventional = true
 split_commits = false
 commit_parsers = [
+    # Numeric `<!-- N -->` prefixes order the rendered sections (git-cliff's
+    # group_by sorts by them and the template strips them via striptags); they
+    # keep Dependencies last so a large bump list doesn't push code changes down.
+    #
     # Dependency bumps first, so a `fix(deps): update ...` lands under
     # Dependencies instead of Bug Fixes and Renovate's `chore(deps)`/`chore(renovate)`
     # commits land here instead of Maintenance.
-    { message = "^(chore|fix)\\(deps", group = "Dependencies" },
-    { message = "^chore\\(renovate", group = "Dependencies" },
-    { message = "^feat", group = "Features" },
-    { message = "^fix", group = "Bug Fixes" },
-    { message = "^perf", group = "Performance Improvements" },
-    { message = "^refactor", group = "Refactoring" },
-    { message = "^test", group = "Testing" },
-    { message = "^style", group = "Code Style & Quality" },
-    { message = "^chore", group = "Maintenance" },
+    { message = "^(chore|fix)\\(deps", group = "<!-- 7 -->Dependencies" },
+    { message = "^chore\\(renovate", group = "<!-- 7 -->Dependencies" },
+    { message = "^feat", group = "<!-- 0 -->Features" },
+    { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+    { message = "^perf", group = "<!-- 2 -->Performance Improvements" },
+    { message = "^refactor", group = "<!-- 3 -->Refactoring" },
+    { message = "^style", group = "<!-- 4 -->Code Style & Quality" },
+    { message = "^test", group = "<!-- 5 -->Testing" },
+    { message = "^chore", group = "<!-- 6 -->Maintenance" },
     # Hide everything else (ci:, docs:, build:, ...) from the changelog. This
     # must be `skip`, not `drop`: `drop` is not a git-cliff commit-parser field
     # and is silently ignored, which let CI commits surface as their own group.
