@@ -300,7 +300,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Verify PR Author in contributors.json
-        if: github.event_name == 'pull_request'
+        # Automation accounts (renovate[bot], dependabot[bot], app/renovate, ...)
+        # are not contributors and must not be required to appear in
+        # contributors.json.
+        if: >-
+          github.event_name == 'pull_request' &&
+          !endsWith(github.event.pull_request.user.login, '[bot]') &&
+          !startsWith(github.event.pull_request.user.login, 'app/')
         run: |
           AUTHOR="${{ github.event.pull_request.user.login }}"
           echo "Checking if contributor '$AUTHOR' is listed in contributors.json..."
