@@ -1,56 +1,24 @@
+# Changelog configuration for git-cliff.
+#
+# release.yml builds the published release notes in three parts: the annotated
+# tag message, a "## Changelog" heading followed by this generator's output, and
+# the installer download table slotted between the two. So the notes always
+# read: tag summary -> downloads table -> changelog. This file therefore only
+# controls the changelog body itself and deliberately emits no version heading
+# (release.yml owns the surrounding layout); it groups commits into one flat
+# list per conventional-commit type, with no user-facing/developer split.
+
 [changelog]
 header = """
 """
 body = """
-{%- set user_facing_groups = ["Features", "Bug Fixes", "Performance Improvements"] -%}
-{%- set dev_facing_groups = ["Refactoring", "Testing", "Code Style & Quality", "Maintenance"] -%}
-
-{%- set has_user = false -%}
-{%- set has_dev = false -%}
-
-{%- for group, commits in commits | group_by(attribute="group") -%}
-  {%- if group in user_facing_groups -%}
-    {%- set_global has_user = true -%}
-  {%- elif group in dev_facing_groups -%}
-    {%- set_global has_dev = true -%}
-  {%- endif -%}
-{%- endfor -%}
-
-{% if has_user %}
-{%- for group_name in user_facing_groups %}
-  {%- for group, commits in commits | group_by(attribute="group") %}
-    {%- if group == group_name %}
-
-### {{ group }}
-
-{% for commit in commits %}
-* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/Lolle2000la/Media-Sort/commit/{{ commit.id }}))
-{%- endfor %}
-    {%- endif %}
-  {%- endfor %}
-{%- endfor %}
-{%- endif %}
-
-{% if has_dev %}
-{%- if has_user %}
-
----
-{%- endif %}
-
-### Developer Changes
-{%- for group_name in dev_facing_groups %}
-  {%- for group, commits in commits | group_by(attribute="group") %}
-    {%- if group == group_name %}
-
-#### {{ group }}
-
-{% for commit in commits %}
-* {% if commit.scope %}**{{ commit.scope }}**: {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/Lolle2000la/Media-Sort/commit/{{ commit.id }}))
-{%- endfor %}
-    {%- endif %}
-  {%- endfor %}
-{%- endfor %}
-{%- endif %}
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | striptags | trim | upper_first }}
+    {% for commit in commits %}
+        * {% if commit.scope %}**{{ commit.scope }}**: {% endif %}\
+            {{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}](https://github.com/Lolle2000la/Media-Sort/commit/{{ commit.id }}))\
+    {% endfor %}
+{% endfor %}
 """
 trim = true
 
@@ -66,7 +34,10 @@ commit_parsers = [
     { message = "^test", group = "Testing" },
     { message = "^style", group = "Code Style & Quality" },
     { message = "^chore", group = "Maintenance" },
-    { message = ".*", drop = true }
+    # Hide everything else (ci:, docs:, build:, ...) from the changelog. This
+    # must be `skip`, not `drop`: `drop` is not a git-cliff commit-parser field
+    # and is silently ignored, which let CI commits surface as their own group.
+    { message = ".*", skip = true }
 ]
 filter_commits = false
 tag_pattern = "v[0-9]*"
