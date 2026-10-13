@@ -36,5 +36,8 @@
         "prettier-plugin-astro": "^1.1.1",
         "typescript": "^5.5.4",
         "typescript-eslint": "^8.64.0"
+    },
+    "overrides": {
+        "postcss-selector-parser": "^7.1.6"
     }
 }
