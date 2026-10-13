@@ -1,0 +1,282 @@
+use std::path::{Path, PathBuf};
+
+use crate::actions::reversible::{ActionError, ReversibleAction};
+
+#[derive(Debug)]
+pub struct RenameAction {
+    old_path: PathBuf,
+    new_path: PathBuf,
+    executed: bool,
+}
+
+impl RenameAction {
+    /// Characters that are forbidden in file names on all major platforms.
+    const ILLEGAL_CHARS: &'static [char] = &['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+
+    /// Validates a filename stem without touching the filesystem.
+    ///
+    /// Returns `Ok(())` if the stem is non-empty and contains no illegal
+    /// characters. This is cheap enough to call on every keystroke in the
+    /// rename modal.
+    pub fn validate_stem(stem: &str) -> Result<(), ActionError> {
+        let trimmed = stem.trim();
+        if trimmed.is_empty() {
+            return Err(ActionError::IllegalCharacters {
+                stem: stem.to_string(),
+                character: '\0', // sentinel: empty stem
+            });
+        }
+        // `.` and `..` would escape the current directory when joined.
+        if trimmed == "." || trimmed == ".." {
+            return Err(ActionError::IllegalCharacters {
+                stem: trimmed.to_string(),
+                character: '.',
+            });
+        }
+        if let Some(c) = trimmed.chars().find(|c| Self::ILLEGAL_CHARS.contains(c)) {
+            return Err(ActionError::IllegalCharacters {
+                stem: trimmed.to_string(),
+                character: c,
+            });
+        }
+        Ok(())
+    }
+
+    pub fn new(path: &Path, new_stem: &str) -> Result<Self, ActionError> {
+        crate::actions::reversible::reject_symlink_source(path)?;
+        let path = path
+            .canonicalize()
+            .map_err(|_| ActionError::SourceNotFound(path.to_path_buf()))?;
+        // Defense in depth: re-check the resolved path in case canonicalize
+        // ever stops short of a final link.
+        crate::actions::reversible::reject_symlink_source(&path)?;
+
+        Self::validate_stem(new_stem)?;
+
+        let parent = path.parent().unwrap_or_else(|| Path::new("."));
+        let ext = path.extension().unwrap_or_default();
+        let new_path = if ext.is_empty() {
+            parent.join(new_stem)
+        } else {
+            parent.join(format!("{}.{}", new_stem, ext.to_string_lossy()))
+        };
+
+        // symlink_metadata (not exists()) so a dangling destination symlink
+        // also counts as taken and is not silently replaced.
+        if new_path.symlink_metadata().is_ok() {
+            return Err(ActionError::TargetExists(new_path));
+        }
+
+        Ok(Self {
+            old_path: path,
+            new_path,
+            executed: false,
+        })
+    }
+
+    pub fn new_path(&self) -> &Path {
+        &self.new_path
+    }
+}
+
+impl ReversibleAction for RenameAction {
+    fn display_name(&self, l10n: &crate::l10n::Localization) -> String {
+        let old_file_name = self
+            .old_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        let new_file_name = self
+            .new_path
+            .file_name()
+            .and_then(|f| f.to_str())
+            .unwrap_or("");
+        l10n.get(
+            "rename-action-message",
+            &[
+                ("old_file_name", old_file_name),
+                ("new_file_name", new_file_name),
+            ],
+        )
+    }
+
+    fn execute(&mut self) -> Result<(), ActionError> {
+        crate::path_utils::rename_or_copy_and_delete(&self.old_path, &self.new_path)?;
+        self.executed = true;
+        Ok(())
+    }
+
+    fn rollback(&mut self) -> Result<(), ActionError> {
+        crate::path_utils::rename_or_copy_and_delete(&self.new_path, &self.old_path)?;
+        self.executed = false;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RenameAction;
+    use crate::actions::reversible::{ActionError, ReversibleAction};
+    use crate::actions::test_utils::temp_subdir;
+
+    #[test]
+    fn test_rename_execute() {
+        let dir = temp_subdir();
+        let file = dir.join("original.txt");
+        std::fs::write(&file, b"rename me").unwrap();
+
+        let mut action = RenameAction::new(&file, "renamed").unwrap();
+        action.execute().unwrap();
+
+        assert!(!file.exists());
+        assert!(dir.join("renamed.txt").exists());
+    }
+
+    #[test]
+    fn test_rename_rollback() {
+        let dir = temp_subdir();
+        let file = dir.join("before.txt");
+        std::fs::write(&file, b"original content").unwrap();
+
+        let mut action = RenameAction::new(&file, "after").unwrap();
+        action.execute().unwrap();
+        assert!(dir.join("after.txt").exists());
+        assert!(!file.exists());
+
+        action.rollback().unwrap();
+        assert!(file.exists());
+        assert!(!dir.join("after.txt").exists());
+
+        let contents = std::fs::read_to_string(&file).unwrap();
+        assert_eq!(contents, "original content");
+    }
+
+    #[test]
+    fn test_rename_illegal_characters() {
+        let dir = temp_subdir();
+        let file = dir.join("legal.txt");
+        std::fs::write(&file, b"data").unwrap();
+
+        let result = RenameAction::new(&file, "bad/name");
+        assert!(matches!(result, Err(ActionError::IllegalCharacters { .. })));
+    }
+
+    #[test]
+    fn test_rename_target_exists() {
+        let dir = temp_subdir();
+        let file1 = dir.join("first.txt");
+        let file2 = dir.join("second.txt");
+        std::fs::write(&file1, b"first").unwrap();
+        std::fs::write(&file2, b"second").unwrap();
+
+        let result = RenameAction::new(&file1, "second");
+        assert!(result.is_err());
+        assert!(matches!(&result, Err(ActionError::TargetExists(_))));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn test_rename_dangling_symlink_destination_refused() {
+        let dir = temp_subdir();
+        let file = dir.join("legal.txt");
+        std::fs::write(&file, b"data").unwrap();
+        std::os::unix::fs::symlink(dir.join("missing.txt"), dir.join("dangling.txt")).unwrap();
+
+        let result = RenameAction::new(&file, "dangling");
+        assert!(
+            matches!(result, Err(ActionError::TargetExists(_))),
+            "a dangling symlink at the destination must still refuse the rename"
+        );
+    }
+
+    #[test]
+    fn test_rename_preserves_extension() {
+        let dir = temp_subdir();
+        let file = dir.join("photo.jpg");
+        std::fs::write(&file, b"jpeg data").unwrap();
+
+        let mut action = RenameAction::new(&file, "new_name").unwrap();
+        action.execute().unwrap();
+
+        assert!(dir.join("new_name.jpg").exists());
+        assert!(!file.exists());
+    }
+
+    #[test]
+    fn test_rename_no_extension() {
+        let dir = temp_subdir();
+        let file = dir.join("noext");
+        std::fs::write(&file, b"content").unwrap();
+
+        let l10n = crate::l10n::Localization::init("en");
+        let mut action = RenameAction::new(&file, "newname").unwrap();
+        assert!(action.display_name(&l10n).contains("newname"));
+
+        action.execute().unwrap();
+        let new_file = dir.join("newname");
+        assert!(new_file.exists());
+        assert!(!file.exists());
+
+        action.rollback().unwrap();
+        assert!(file.exists());
+        assert!(!new_file.exists());
+    }
+
+    #[test]
+    fn test_rename_all_illegal_characters() {
+        let dir = temp_subdir();
+        let file = dir.join("test.txt");
+        std::fs::write(&file, b"content").unwrap();
+
+        for c in &['/', '\\', ':', '*', '?', '"', '<', '>', '|'] {
+            let result = RenameAction::new(&file, &format!("bad{}name", c));
+            assert!(
+                matches!(result, Err(ActionError::IllegalCharacters { character: found, .. }) if found == *c),
+                "Expected IllegalCharacters({c:?}), got {result:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_validate_stem_valid() {
+        assert!(RenameAction::validate_stem("hello").is_ok());
+        assert!(RenameAction::validate_stem("my file (1)").is_ok());
+        assert!(RenameAction::validate_stem("café").is_ok());
+        assert!(RenameAction::validate_stem("report_2024-01-01").is_ok());
+    }
+
+    #[test]
+    fn test_validate_stem_empty() {
+        let err = RenameAction::validate_stem("").unwrap_err();
+        assert!(matches!(
+            err,
+            ActionError::IllegalCharacters {
+                character: '\0',
+                ..
+            }
+        ));
+        let err = RenameAction::validate_stem("   ").unwrap_err();
+        assert!(matches!(
+            err,
+            ActionError::IllegalCharacters {
+                character: '\0',
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn test_validate_stem_illegal_chars() {
+        for &c in RenameAction::ILLEGAL_CHARS {
+            if c == '\0' {
+                continue;
+            }
+            let stem = format!("bad{c}name");
+            let err = RenameAction::validate_stem(&stem).unwrap_err();
+            assert!(
+                matches!(&err, ActionError::IllegalCharacters { character: found, .. } if *found == c),
+                "Expected IllegalCharacters({c:?}), got {err:?}"
+            );
+        }
+    }
+}

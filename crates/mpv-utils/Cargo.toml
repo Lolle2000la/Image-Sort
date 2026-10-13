@@ -1,0 +1,15 @@
+[package]
+name = "mpv-utils"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+libmpv-sys = "3.1.0"
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "sync", "macros", "time"] }
+rayon.workspace = true
+kamadak-exif.workspace = true
+mp4ameta.workspace = true
+tracing.workspace = true

@@ -1,0 +1,19 @@
+# turbojpeg-sys vendors libjpeg-turbo whose CMake defaults to the static
+# MSVC CRT (WITH_CRT_DLL=FALSE -> /MTd in debug builds, /MT in release),
+# while rustc always links the dynamic CRT (/MD). That surfaces as
+# "warning LNK4098: defaultlib 'LIBCMTD' conflicts..." on every Windows
+# build. MSVC already drops the conflicting defaultlib (the link succeeds
+# identically) and no CRT-managed memory crosses the boundary in how this
+# workspace uses turbojpeg (buffers are Rust-side, the lib frees its own
+# allocations), so /NODEFAULTLIB just makes that resolution explicit. If a
+# future dependency truly needs the static CRT, linking fails with
+# unresolved externals instead of warning.
+#
+# NOTE: the RUSTFLAGS environment variable REPLACES these flags (cargo does
+# not combine them), so CI sets the same link-args explicitly in ci.yml
+# where it already overrides RUSTFLAGS for the Windows libmpv link search.
+[target.'cfg(target_env = "msvc")']
+rustflags = [
+    "-C", "link-arg=/NODEFAULTLIB:LIBCMTD",
+    "-C", "link-arg=/NODEFAULTLIB:LIBCMT",
+]

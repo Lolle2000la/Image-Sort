@@ -1,0 +1,89 @@
+---
+title: Download & Installation
+description: Laden Sie vorkompilierte Binärdateien herunter oder installieren Sie Abhängigkeiten, um Media Sort auszuführen.
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sort ist als vorkompiliertes eigenständiges Paket für Windows, Linux und macOS verfügbar.
+
+Da Media Sort native System-APIs für die Medienwiedergabe und die Benutzeroberfläche nutzt, überprüfen Sie bitte die folgenden Systemvoraussetzungen für Ihr Betriebssystem.
+
+---
+
+## Media Sort herunterladen
+
+Wählen Sie das passende Paket für Ihr Betriebssystem und Ihre Prozessorarchitektur aus:
+
+<ReleaseDownloads />
+
+---
+
+## Systemvoraussetzungen
+
+Je nach Ihrer Plattform müssen Sie eventuell die Bibliotheken des `mpv`-Medien-Frameworks installieren:
+
+### Windows & macOS
+
+**Keine manuelle Einrichtung erforderlich!** Die vorkompilierten Pakete für Windows und macOS enthalten bereits alle erforderlichen `libmpv`-Bibliotheken direkt im Anwendungsbundle, zusammen mit dav1d für die AVIF-Bildunterstützung und ffmpeg für schnellere Video-Miniaturansichten.
+
+### Linux
+
+Media Sort ist für Linux sowohl als Snap als auch als AppImage verfügbar.
+
+#### Snap
+
+Media Sort wird im [Snap Store](https://snapcraft.io/media-sort) veröffentlicht. Das Snap enthält `libmpv`, `libdav1d`, `ffmpeg` und ALSA-Unterstützung und bezieht seine Grafiktreiber aus dem Provider-Snap `mesa-2404` von Canonical, den snapd als Abhängigkeit automatisch installiert:
+
+```bash
+sudo snap install media-sort
+```
+
+Ein lokal erstelltes, offline installiertes `.snap` bringt diesen Provider nicht mit — installieren und verbinden Sie ihn dann selbst:
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
+```
+
+Das Snap ist strikt eingeschränkt und sortiert daher alles in Ihrem Home-Verzeichnis. Um auch Dateien auf externen Laufwerken (`/media`, `/mnt`) zu sortieren, verbinden Sie einmalig das `removable-media`-Interface:
+
+```bash
+sudo snap connect media-sort:removable-media
+```
+
+Audio wird standardmäßig über den Soundserver (PipeWire/PulseAudio) wiedergegeben. Auf einem System ohne Soundserver verbinden Sie das Roh-ALSA-Interface:
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
+Aktualisierungen werden automatisch von snapd bereitgestellt.
+
+#### AppImage
+
+Die AppImage-Pakete laufen dynamisch im Host-System und setzen die Installation von `libmpv` und `libdav1d` (für die AVIF-Bilddecodierung) voraus. Das AppImage benötigt außerdem `libasound2` sowie X11-/Wayland-Bibliotheken, die auf Desktop-Linux-Distributionen üblicherweise bereits vorinstalliert sind.
+
+Die Installation von `ffmpeg` ist unter Linux optional — sie ermöglicht schnellere Video-Miniaturansichten, wobei Media Sort ansonsten auf mpv zurückfällt.
+
+#### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S mpv dav1d
+```
+
+#### Debian / Ubuntu
+
+```bash
+sudo apt install libmpv2 libasound2 libdav1d7
+```
+
+#### Fedora
+
+```bash
+sudo dnf install mpv-libs dav1d-libs
+```
+
+:::note
+Wenn `libmpv` nicht installiert ist, startet Media Sort dennoch und funktioniert für Bilder und Audio. Die interne Video- und GIF-Wiedergabe wird automatisch deaktiviert. Videodateien werden jedoch weiterhin erkannt und können durchsucht werden, allerdings ohne Miniaturansichten.
+:::

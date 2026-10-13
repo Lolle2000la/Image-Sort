@@ -1,0 +1,196 @@
+# locale-name: Deutsch
+
+# Action messages
+move-action-message = Verschiebe {$file_name} nach {$directory}
+copy-action-message = Kopiere {$file_name} nach {$directory}
+delete-action-message = Lösche {$file_name}
+rename-action-message = Benenne {$old_file_name} in {$new_file_name} um
+could-not-act-error = Aktion "{$act_message}" konnte nicht ausgeführt werden: {$error_message}
+
+# Settings dialog
+settings-title = Einstellungen
+settings-tab-general = Allgemeine Einstellungen
+settings-tab-keybindings = Tastenkürzel
+settings-tab-advanced = Erweitert
+settings-close = Schließen
+
+# General settings
+settings-appearance = Darstellung
+settings-theme = Thema
+settings-reopen-folder = Letzten geöffneten Ordner beim Start erneut öffnen
+settings-reopen-media = Letztes ausgewähltes Medium beim Start erneut öffnen
+settings-animated-gifs = Animierte GIFs
+settings-play-gifs = Animierte GIFs abspielen
+settings-pinned-folders = Angeheftete Ordner
+settings-session-pinned-folders = Angeheftete Ordner pro Sitzung halten (nicht zwischen laufenden Instanzen teilen)
+settings-updates = Updates
+settings-check-updates = Beim Start nach Updates suchen
+settings-install-prerelease = Vorabversionen installieren
+settings-windows-integration = Windows-Integration
+settings-windows-context-menu = Eine Verknüpfung zum Öffnen eines Ordners in Media Sort direkt aus dem Kontextmenü im Windows Explorer hinzufügen.
+settings-language = Sprache
+
+# Advanced settings
+settings-video = Video
+settings-disable-hw-decoding = Hardware-Videodekodierung deaktivieren
+
+# Key bindings
+keybindings-restore-defaults = Standard-Tastenkürzel wiederherstellen
+keybindings-press-key = Taste drücken...
+keybindings-images = Medien
+keybindings-folders = Ordner
+keybindings-other = Sonstiges
+keybindings-management = Verwaltung
+keybindings-selection = Auswahl
+keybindings-search = Suche
+keybindings-metadata = Metadaten
+keybindings-open = Öffnen
+keybindings-pinned = Angeheftet
+keybindings-history = Verlauf
+keybindings-move = Verschieben
+keybindings-copy = Kopieren
+keybindings-delete = Löschen
+keybindings-rename = Umbenennen
+keybindings-reveal-in-file-manager = Im Dateimanager anzeigen
+keybindings-select-left = Medium links auswählen
+keybindings-select-right = Medium rechts auswählen
+keybindings-search-images = Medien suchen... (‚Esc' zum Verlassen drücken)
+keybindings-toggle-metadata = Metadaten-Panel öffnen/schließen
+keybindings-create-folder = Ordner erstellen
+keybindings-open-folder = Ordner öffnen
+keybindings-open-selected = Ausgewählten Ordner öffnen
+keybindings-pin = Anheften
+keybindings-pin-selected = Auswahl anheften
+keybindings-unpin = Lösen
+keybindings-move-pinned-up = Angehefteten Ordner nach oben verschieben
+keybindings-move-pinned-down = Angehefteten Ordner nach unten verschieben
+keybindings-select-above = Ordner darüber auswählen
+keybindings-collapse = Ordner zuklappen
+keybindings-select-below = Ordner darunter auswählen
+keybindings-expand = Ordner aufklappen (Unterordner anzeigen)
+keybindings-undo = Rückgängig
+keybindings-redo = Wiederherstellen
+
+# Other UI
+ui-folder = Ordner
+ui-open-folder = Ordner öffnen
+ui-open-selected-folder = Ausgewählten Ordner öffnen
+ui-history = Verlauf
+ui-undo = Rückgängig
+ui-redo = Wiederherstellen
+ui-settings = Einstellungen
+ui-open = Öffnen
+ui-key-bindings = Tastenkürzel
+ui-credits = Über / Danksagungen
+ui-pin = Anheften
+ui-pinned-folders = Angeheftete Ordner
+ui-pin-selected = Auswahl anheften
+ui-unpin = Lösen
+ui-create-folder = Ordner erstellen
+ui-move = Verschieben
+ui-copy = Kopieren
+ui-delete = Löschen
+ui-rename = Umbenennen
+ui-cancel = Abbrechen
+ui-create = Erstellen
+ui-close = Schließen
+ui-rename-file = Datei umbenennen
+ui-original = Original: {$name}
+ui-rename-illegal-char = Das Zeichen { $char } ist in Dateinamen nicht erlaubt
+ui-create-folder-title = Ordner erstellen
+ui-parent = Übergeordnet: {$name}
+ui-select-file = Datei zum Anzeigen auswählen
+ui-file-not-found = Datei nicht gefunden
+ui-file-not-supported = Diese Datei wird leider noch nicht unterstützt!
+ui-file-error-details = Fehlerdetails: {$error}
+ui-open-externally = Extern öffnen
+ui-loading-image = Bild wird geladen...
+ui-no-images = Keine Medien vorhanden. Öffnen Sie einen Ordner, um zu beginnen.
+ui-no-results = Keine Ergebnisse für Ihre Suche.
+ui-metadata = Metadaten
+ui-loading-metadata = Metadaten werden geladen...
+ui-select-file-metadata = Datei auswählen, um Metadaten anzuzeigen
+ui-search-placeholder = Suchen...
+ui-credits-title = Über Media Sort
+ui-credits-leading = Diese Open-Source-Projekte haben Media Sort ermöglicht:
+ui-about-title = Über Media Sort
+ui-about-version = Version
+ui-about-license = Lizenz
+ui-about-maintainer = Entwickler
+ui-about-contributors = Mitwirkende
+ui-about-website = Website
+ui-about-repository = Quellcode
+ui-about-libraries = Drittanbieter-Bibliotheken
+ui-enter-new-name = Geben Sie einen neuen Namen ein...
+ui-folder-name-placeholder = Ordnername...
+ui-video-playback-soon = Videowiedergabe demnächst verfügbar
+ui-rendering-not-implemented = MPV/wgpu-Rendering noch nicht implementiert
+ui-play-in-system-player = Im System-Player abspielen
+
+# Metadata fields
+metadata-section-file = Datei
+metadata-field-name = Name
+metadata-field-size = Größe
+metadata-field-modified = Geändert
+metadata-field-dimensions = Dimensionen
+metadata-field-orientation = Ausrichtung
+metadata-section-container = Container-Metadaten
+metadata-field-duration = Dauer
+metadata-field-encoder = Encoder
+metadata-field-title = Titel
+metadata-field-artist = Künstler
+metadata-field-album = Album
+metadata-field-genre = Genre
+metadata-field-date = Datum
+metadata-field-track = Titelnummer
+metadata-field-comment = Kommentar
+metadata-field-description = Beschreibung
+metadata-field-copyright = Urheberrecht
+metadata-field-language = Sprache
+metadata-section-exif = EXIF-Metadaten
+metadata-section-exif-ifd = EXIF {$num}
+metadata-field-composer = Komponist
+metadata-field-conductor = Dirigent
+metadata-field-lyrics = Songtext
+metadata-field-bpm = BPM
+metadata-field-label = Record Label
+metadata-field-discnumber = Disc-Nummer
+metadata-field-tracktotal = Titel-Gesamtzahl
+metadata-field-datetime = Aufnahmedatum
+metadata-field-make = Kamerahersteller
+metadata-field-model = Kameramodell
+metadata-field-software = Software
+metadata-field-exposuretime = Belichtungszeit
+metadata-field-fnumber = Blende
+metadata-field-isospeed = ISO-Empfindlichkeit
+metadata-field-focallength = Brennweite
+metadata-field-lensmodel = Objektiv
+metadata-field-gpslatitude = Breitengrad
+metadata-field-gpslongitude = Längengrad
+metadata-field-gpsaltitude = Höhe
+
+update-available-title = Update verfügbar
+update-available-body = Version {version} ist verfügbar. Möchten Sie sie jetzt herunterladen und installieren?
+update-confirm = Aktualisieren
+update-dismiss = Nicht jetzt
+
+# Drag and drop overlay
+drag-drop-copy-title = Dateien kopieren
+drag-drop-copy-desc = Hier ablegen, um Dateien in den geöffneten Ordner zu kopieren
+drag-drop-move-title = Dateien verschieben
+drag-drop-move-desc = Hier ablegen, um Dateien in den geöffneten Ordner zu verschieben
+drag-drop-open-title = Ordner öffnen
+drag-drop-open-desc = Hier ablegen, um diesen Ordner in Media Sort zu öffnen
+drag-drop-pin-title = Ordner anheften
+drag-drop-pin-desc = Hier ablegen, um diesen Ordner an die Seitenleiste anzuheften
+drag-drop-denied-title = Ablegen nicht möglich
+drag-drop-denied-no-folder = Öffne zuerst einen Ordner in Media Sort, bevor du Dateien kopierst oder verschiebst.
+drag-drop-denied-mixed = Gleichzeitiges Ablegen von Dateien und Ordnern wird nicht unterstützt.
+drag-drop-denied-multiple-folders = Das Ablegen mehrerer Ordner gleichzeitig wird nicht unterstützt.
+
+# Sicherheit / Status-Meldungen
+status-symlinks-skipped = {$count} symbolische Verknüpfung(en) übersprungen: {$names}. Symbolische Verknüpfungen werden niemals verschoben oder kopiert.
+status-symlink-refused = {$name} abgelehnt: Der Eintrag ist eine symbolische Verknüpfung.
+status-folder-name-invalid = Ordner "{$name}" konnte nicht erstellt werden: ungültiger Ordnername.
+status-target-exists = {$name} abgelehnt: Eine Datei oder ein Ordner mit diesem Namen existiert bereits.
+status-update-failed = Update fehlgeschlagen. Bitte versuche es später erneut.

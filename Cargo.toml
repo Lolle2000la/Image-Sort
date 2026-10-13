@@ -1,0 +1,82 @@
+[workspace]
+members = [
+    "crates/media-sort-core",
+    "crates/media-sort-backend",
+    "crates/mpv-utils",
+    "crates/iced-mpv",
+    "crates/iced-automation",
+    "crates/iced-automation-macros",
+    "crates/media-sort-gui", "crates/benchmarks",
+]
+resolver = "2"
+
+[workspace.package]
+version = "3.0.0-rc.4"
+edition = "2024"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/Lolle2000la/Media-Sort"
+rust-version = "1.99"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+fluent = "0.17"
+unic-langid = { version = "0.9", features = ["macros"] }
+once_cell = "1"
+strum = { version = "0.28", features = ["derive"] }
+dirs = "7"
+toml = "1.1"
+
+image = { version = "0.25", default-features = false, features = [
+    "default-formats",
+] }
+notify = { version = "8", default-features = false, features = [
+    "macos_kqueue",
+] }
+trash = "5"
+winreg = "0.56"
+walkdir = "2"
+kamadak-exif = "0.6"
+symphonia = { version = "0.6", features = [
+    "mp3",
+    "aac",
+    "flac",
+    "vorbis",
+    "wav",
+    "all-codecs",
+] }
+rodio = { version = "0.22", default-features = false, features = [
+    "flac",
+    "vorbis",
+    "wav",
+    "mp3",
+    "playback",
+] }
+id3 = "1"
+metaflac = "0.2"
+mp4ameta = "0.13"
+
+iced = { version = "0.14", features = [
+    "wgpu",
+    "image",
+    "lazy",
+    "tokio",
+    "advanced",
+    "advanced-shaping",
+] }
+iced_wgpu = "0.14"
+tokio = { version = "1", features = ["rt", "rt-multi-thread", "sync", "macros", "time", "fs"] }
+lru = "0.18"
+rfd = "0.17"
+ico = "0.5"
+fast_image_resize = { version = "6.0", features = ["image", "rayon"] }
+rayon = "1.12"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

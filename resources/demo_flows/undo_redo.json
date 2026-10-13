@@ -1,0 +1,40 @@
+{
+  "flow_name": "Undo and Redo Safety Workflow",
+  "steps": [
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": { "Media": { "SelectEntry": 0 } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "Subfolder 1" } },
+      "message": { "Folder": { "Selected": ["$DEMO_ROOT/Subfolder 1", 0] } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "move_btn" } },
+      "message": { "Media": "MoveActive" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "redo_btn" } },
+      "message": { "Media": "Redo" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "undo_btn" } },
+      "message": { "Media": "Undo" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": "Quit"
+    }
+  ]
+}

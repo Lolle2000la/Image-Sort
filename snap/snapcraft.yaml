@@ -1,0 +1,183 @@
+# Snap packaging for Media Sort.
+#
+# Strict confinement: the app sorts anything under $HOME, and on removable media
+# (/media, /mnt) once the `removable-media` interface is connected — see the
+# app's `plugs` below. Audio goes through the sound server (`audio-playback`),
+# with a raw-ALSA fallback for systems that have none.
+#
+# Graphics userspace (GL/EGL/GBM/DRM/VA-API/VDPAU/Vulkan) is not shipped here: it
+# comes from the `gpu-2404` content provider, so the drivers match the user's
+# kernel and GPU instead of this build's Mesa. See the `plugs` entry below.
+#
+# Build:   snapcraft pack --destructive-mode     (host must be Ubuntu 24.04)
+#          snapcraft pack --use-lxd              (any host with LXD set up)
+# Lint:    snapcraft lint <file.snap>
+# Install: sudo snap install ./media-sort_*_<arch>.snap
+#          (add --dangerous for a locally built, unsigned snap)
+
+name: media-sort
+title: Media Sort
+summary: Fast, keyboard-driven media sorter for photos, video and audio
+description: |
+  Media Sort is a fast, native desktop application for browsing, sorting and
+  organising large photo, video and audio collections.
+
+  It is keyboard-first, with full undo/redo, pinned destination folders, an
+  in-app image/video/audio preview (video and GIF playback via libmpv, audio
+  via symphonia/rodio) and an EXIF/ID3 metadata panel. It runs entirely on
+  your machine: no accounts, no analytics and no network access.
+
+  The snap bundles libmpv, libdav1d, ffmpeg and ALSA support, and takes its
+  graphics drivers from the mesa-2404 provider, so no separate runtime
+  dependency installation is required on Ubuntu-based systems.
+
+license: AGPL-3.0-or-later
+website: https://mediasort.app/
+source-code: https://github.com/Lolle2000la/Media-Sort
+issues: https://github.com/Lolle2000la/Media-Sort/issues
+contact: https://github.com/Lolle2000la/Media-Sort/issues
+
+base: core24
+confinement: strict
+grade: stable
+
+# The version is read from [workspace.package].version in Cargo.toml (the same
+# single source of truth the binary reports and the release pipeline verifies),
+# so the version can never drift from the tag it was cut from.
+adopt-info: media-sort
+
+platforms:
+  amd64:
+  arm64:
+
+apps:
+  media-sort:
+    command: bin/media-sort-gui
+    # Enters the graphics provider's environment (LD_LIBRARY_PATH,
+    # LIBVA_DRIVERS_PATH, __EGL_VENDOR_LIBRARY_DIRS, VK_LAYER_PATH, the Vulkan ICD
+    # search path, the host's native Nvidia libs, ...) and refuses to start with a
+    # clear message when the interface is not connected — this snap ships no
+    # drivers of its own to fall back to. Comes from the `gpu-2404` part below.
+    command-chain:
+      - bin/gpu-2404-wrapper
+    plugs:
+      # `home` is auto-connected. `removable-media` (/media, /mnt) is not, so
+      # sorting external drives requires one manual
+      # `snap connect media-sort:removable-media`.
+      - home
+      - removable-media
+      # Display server, portals/xdg-open and GPU (/dev/dri for the wgpu
+      # Vulkan/GL backend). wayland/x11/opengl are auto-connected.
+      - desktop
+      - desktop-legacy
+      - wayland
+      - x11
+      - opengl
+      # Audio output (rodio/cpal) through the PulseAudio/PipeWire socket. On
+      # systems that run a sound server (all current Ubuntu desktops) this is
+      # sufficient: libasound's `default` routes to the PipeWire/PulseAudio
+      # plugin over the socket below.
+      - audio-playback
+      # Raw ALSA access, for systems with no sound server. Not auto-connected
+      # (snapd declares this slot `deny-auto-connection`), so it only takes
+      # effect after `snap connect media-sort:alsa`; harmless when left
+      # disconnected (the audio player is simply unavailable).
+      - alsa
+
+# Graphics userspace as a *content* dependency rather than staged packages:
+# drivers have to match the user's kernel and GPU, which a copy built against
+# this base's Mesa cannot do. snapd installs the default provider (`mesa-2404`)
+# alongside the app. The target must be exactly `$SNAP/gpu-2404` — the wrapper
+# assumes it. There is deliberately no `/usr/share/X11/XErrorDB` layout: this
+# snap already ships that file from its own staged X11 libraries, and a layout
+# over a path the snap provides is a conflict.
+plugs:
+  gpu-2404:
+    interface: content
+    target: $SNAP/gpu-2404
+    default-provider: mesa-2404
+
+parts:
+  media-sort:
+    plugin: rust
+    source: .
+    # Build only the GUI crate. `cargo install --path` (what the rust plugin
+    # runs for a package member) resolves the workspace dependency closure
+    # (media-sort-core, media-sort-backend, mpv-utils, ...) and installs the
+    # `media-sort-gui` binary into $CRAFT_PART_INSTALL/bin. The `velopack`
+    # feature is intentionally left off: a snap is updated by snapd, so the
+    # in-app self-updater is neither built nor offered.
+    rust-path:
+      - crates/media-sort-gui
+    # Belt and braces for the staged runtime libraries: snapcraft's strict
+    # command-chain already puts $SNAP/usr/lib/<triplet> on LD_LIBRARY_PATH, and
+    # this additionally writes an `$ORIGIN`-relative RPATH (e.g.
+    # `$ORIGIN/../usr/lib/x86_64-linux-gnu:...`) on the binary so the staged
+    # libmpv.so.2 resolves even if that environment is not applied. DT_RPATH is
+    # inherited by the libraries' own dependencies.
+    build-attributes:
+      - enable-patchelf
+    build-packages:
+      # libmpv-sys generates its bindings with bindgen, which needs libclang.
+      - clang
+      - libclang-dev
+      # Vendored libjpeg-turbo (turbojpeg-sys) builds with CMake; NASM is used
+      # for its SIMD paths on x86/x86_64.
+      - cmake
+      - nasm
+      - build-essential
+      - pkg-config
+      # libmpv (video/GIF playback), ALSA (rodio/cpal audio output) and dav1d
+      # (AVIF image decoding) headers. dav1d is found via pkg-config, so the
+      # vendored meson fallback is not exercised.
+      - libmpv-dev
+      - libasound2-dev
+      - libdav1d-dev
+    stage-packages:
+      # Runtime counterparts of the -dev packages above. Snapcraft pulls their
+      # transitive dependencies (libav*, ...) automatically.
+      - libmpv2
+      - libasound2t64
+      - libdav1d7
+      # The ffmpeg CLI, used for fast video thumbnails and as the AVIF decode
+      # fallback. Its libav* dependencies are already pulled in by libmpv2, so
+      # this mainly adds the frontend plus the encoder libraries.
+      - ffmpeg
+    override-build: |
+      craftctl default
+      # `find_ffmpeg()` (media-sort-backend) checks the binary's own directory
+      # before PATH, so exposing the staged ffmpeg next to the binary makes the
+      # lookup a single stat instead of a PATH scan.
+      mkdir -p "$CRAFT_PART_INSTALL/bin"
+      ln -sf ../usr/bin/ffmpeg "$CRAFT_PART_INSTALL/bin/ffmpeg"
+      version="$(awk '
+        /^\[workspace\.package\]/ { in_section = 1; next }
+        /^\[/ { in_section = 0 }
+        in_section && /^version[[:space:]]*=/ { gsub(/^[^"]*"|".*$/, ""); print; exit }
+      ' "$CRAFT_PART_SRC/Cargo.toml")"
+      [ -n "$version" ] || { echo "could not read [workspace.package].version from Cargo.toml"; exit 1; }
+      craftctl set version="$version"
+
+  # Upstream helpers from canonical/gpu-snap: `bin/gpu-2404-wrapper` is the
+  # command-chain entry point above, and `bin/gpu-2404-cleanup` prunes the
+  # libraries `mesa-2404` supplies, so this snap carries exactly one copy of each
+  # and can never load a driver from the build host's Mesa by accident.
+  #
+  # Pinned to a commit rather than a branch: the cleanup deletes files from the
+  # signed payload according to `lists/mesa-2404.<arch>.list`, so an upstream
+  # change must not reach a release unreviewed. Bump deliberately and re-run the
+  # packaging check (see AGENTS.md).
+  gpu-2404:
+    after: [media-sort]
+    source: https://github.com/canonical/gpu-snap.git
+    source-commit: 84e56217ec137c3f8d7a0e773bb7c39c8fc40f28
+    plugin: dump
+    override-prime: |
+      craftctl default
+      # Deliberately not `--strict`: that mode skips the list's trailing glob
+      # section, which is what catches the staged Mesa copies whose exact file
+      # names come from noble-updates rather than the provider's release (e.g.
+      # `libgallium-*.so`, `libdrm_*.so*`, `dri/*`, `libvulkan_*.so`).
+      "${CRAFT_PART_SRC}/bin/gpu-2404-cleanup" mesa-2404
+    prime:
+      - bin/gpu-2404-wrapper

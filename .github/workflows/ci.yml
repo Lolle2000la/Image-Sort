@@ -1,94 +1,312 @@
-name: Image Sort CI
+name: CI Pipeline
 
 on:
   push:
+    branches: [master]
+    paths-ignore:
+      - 'website/**'
+      - 'README.md'
   pull_request:
-  release:
-    types: [ created ]
+    branches: [master]
+    paths-ignore:
+      - 'website/**'
+      - 'README.md'
+  merge_group:
+    # Path filters are NOT supported for the merge_group event (they are
+    # silently ignored), so merge-queue runs always execute every job.
+    # Required checks must still report here or queued PRs block forever.
+    branches: [master]
+    types: [checks_requested]
+
+# A new push to the same branch or PR supersedes the previous run; without
+# this, rapid successive pushes each run their full 3-OS test matrix and
+# compete for runner slots.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Cache trust model (applies to every actions/cache step in this workflow)
+# -------------------------------------------------------------------------
+# Cargo and bench-fixture caches are SAVED only by push runs on the branches
+# listed under on.push.branches -- merged, reviewable code. Pull-request and
+# merge-queue runs never write a cache entry (actions/cache/save is gated on
+# github.event_name == 'push'), so untrusted code can never poison a cache
+# entry that a later run consumes. GitHub already scopes PR-created caches to
+# the PR merge ref; the explicit gate removes any dependence on that isolation
+# continuing to hold.
+#
+# Nothing outside this workflow consumes these caches: release.yml restores
+# no cache at all (see the note above its Build step), so signed/published
+# artifacts are always built from checked-out source and cannot be influenced
+# by a poisoned cache.
 
 jobs:
-  build:
-    runs-on: windows-latest
+  lint:
+    name: Format & Lint
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-    - name: Setup .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '8.0.x'
-    - name: GitVersion
-      uses: gittools/actions/gitversion/setup@v0.10.2
-      with:
-        versionSpec: '5.x'
-        includePrerelease: true
-    - name: Determine Version
-      id: gitversion
-      uses: gittools/actions/gitversion/execute@v0
-    - name: Build
-      run: dotnet build --configuration Release
-    - name: Unit Tests
-      run: dotnet test .\tests\ImageSort.UnitTests\ImageSort.UnitTests.csproj --configuration Release --no-build
-    # UI tests are disabled due to changes of the windows runner that broke them
-    #- name: UI Tests
-    #  run: dotnet test .\tests\ImageSort.WPF.UiTests\ImageSort.WPF.UiTests.csproj --configuration Release --no-build
-    - name: Build WIX project
-      if: ${{ github.event_name == 'release' }}
-      env:
-        GITHUB_ACTIONS_CI: true
-      run: |
-        cd .\src\ImageSort.WindowsSetup\;
-        dotnet gitversion /updatewixversionfile | Out-String;
-        dotnet tool install --global wix
-        dotnet build -c Release -r win-x86 -p:Platform=x86
-        dotnet build -c Release -r win-x64 -p:Platform=x64
-        dotnet build -c Release -r win-arm64 -p:Platform=ARM64
-        cd ..\..;
-    - name: Upload x86 MSI file
-      id: upload-x86-msi-file
-      uses: actions/upload-release-asset@v1.0.2
-      if: ${{ github.event_name == 'release' }}
-      with:
-        asset_path: .\artifacts\x86\ImageSort.x86.msi
-        asset_name: ImageSort.x86.msi
-        asset_content_type: application/octet-stream
-        upload_url: ${{ github.event.release.upload_url }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TIME: ${{ github.run_number }}
-    - name: Upload x64 MSI file
-      id: upload-x64-msi-file
-      uses: actions/upload-release-asset@v1.0.2
-      if: ${{ github.event_name == 'release' }}
-      with:
-        asset_path: .\artifacts\x64\ImageSort.x64.msi
-        asset_name: ImageSort.x64.msi
-        asset_content_type: application/octet-stream
-        upload_url: ${{ github.event.release.upload_url }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TIME: ${{ github.run_number }}
-    - name: Upload ARM64 MSI file
-      id: upload-arm64-msi-file
-      uses: actions/upload-release-asset@v1.0.2
-      if: ${{ github.event_name == 'release' }}
-      with:
-        asset_path: .\artifacts\ARM64\ImageSort.ARM64.msi
-        asset_name: ImageSort.ARM64.msi
-        asset_content_type: application/octet-stream
-        upload_url: ${{ github.event.release.upload_url }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TIME: ${{ github.run_number }}
-    - name: Install winget-create
-      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
-      run: choco install wingetcreate
-    - name: Install .NET 6
-      uses: actions/setup-dotnet@v3
-      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
-      with:
-        dotnet-version: '6.0.x'
-    - name: Update and submit Winget manifest
-      if: ${{ github.event_name == 'release' && !github.event.release.prerelease }}
-      run: |
-        wingetcreate.exe update --submit --token ${{ secrets.PAT_WINGET }} --urls "${{ steps.upload-x86-msi-file.outputs.browser_download_url }}" "${{ steps.upload-x64-msi-file.outputs.browser_download_url }}" "${{ steps.upload-arm64-msi-file.outputs.browser_download_url }}" --version "${{ steps.gitversion.outputs.assemblySemVer }}" Lolle2000la.ImageSort
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      # Clippy runs cargo check under the hood, so the dependency artifacts in
+      # this cache are check-only metadata (.rmeta, no codegen). The test
+      # matrix therefore keeps its own <os>-build-cargo-* namespace (see the
+      # test job): sharing one key here used to let this job win every save
+      # with an archive the build jobs could not reuse.
+      # Restore-only on PRs/merge queue; see the cache trust model at the top.
+      - name: Restore Cargo Cache
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ubuntu-latest-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ubuntu-latest-cargo-
+
+      - name: Install System Dependencies
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
+
+      - name: Check Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy
+        # Clippy flags the same issues on every OS, so run it once on Linux
+        # instead of once per matrix entry -- but with every target and every
+        # feature enabled so the single run still covers all code paths
+        # (velopack, demo, headless, avif-native, ...).
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Save Cargo Cache
+        # Trusted writers only (push on the branches above). Skipped when the
+        # exact key already exists: a content-hash key cannot be refreshed,
+        # so there would be nothing new to store.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master
+        with:
+          toolchain: stable
+
+      # Restore-only on PRs/merge queue; see the cache trust model at the top.
+      # The build-cargo namespace is separate from the lint job's dependency
+      # cache on purpose (see the lint job): clippy only produces check-only
+      # metadata, so a shared key left this job rebuilding the whole
+      # dependency tree on every run. The second restore key keeps the first
+      # run after this change warm on macOS/Windows by falling back to the
+      # archives the previous builds saved.
+      - name: Restore Cargo Cache
+        id: cargo-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ matrix.os }}-build-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ matrix.os }}-build-cargo-
+            ${{ matrix.os }}-cargo-
+
+      - name: Install System Dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev libdav1d-dev nasm
+
+      - name: Install System Dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            brew install mpv dav1d
+            echo "PKG_CONFIG_PATH=/opt/homebrew/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}" >> "$GITHUB_ENV"
+
+      - name: Setup libmpv Link Libraries (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        env:
+          # gh refuses to run without a token in Actions contexts; the
+          # runner does not inject GH_TOKEN into action processes, only
+          # run steps that reference github.token explicitly get one.
+          GH_TOKEN: ${{ github.token }}
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            # nick-fields/retry@v4 spawns the command without set -e, so
+            # failures would otherwise be swallowed and the step would
+            # "succeed" with garbage artifacts; be explicit.
+            set -euo pipefail
+            # nick-fields/retry@v4 runs `command` in a different working
+            # directory than GITHUB_WORKSPACE (it cannot honor
+            # working-directory), so all paths must be absolute -- a
+            # relative "libs" would not be found by the linker's
+            # "/LIBPATH:libs" at build time.
+            mkdir -p "$GITHUB_WORKSPACE/libs"
+            # zhongfly/mpv-winbuild publishes a fresh build roughly daily but
+            # retains only the last 30 days, so resolve the latest tag at
+            # runtime instead of pinning one that would be pruned.
+            RELEASE_SPEC="$(gh release view --repo zhongfly/mpv-winbuild --json tagName --jq .tagName)"
+            [ -n "$RELEASE_SPEC" ] || { echo "::error::could not resolve mpv-winbuild release"; exit 1; }
+            MPV_ASSET=$(gh release view "$RELEASE_SPEC" --repo zhongfly/mpv-winbuild --json assets --jq '.assets[].name | select(startswith("mpv-dev-x86_64") and endswith(".7z") and (contains("-lgpl") | not) and (contains("-v3") | not))' | head -n 1)
+            [ -n "$MPV_ASSET" ] || { echo "::error::no mpv-dev-x86_64 asset in release $RELEASE_SPEC"; exit 1; }
+            curl -fL -o mpv-dev.7z "https://github.com/zhongfly/mpv-winbuild/releases/download/$RELEASE_SPEC/$MPV_ASSET"
+            7z e mpv-dev.7z libmpv-2.dll "-o$GITHUB_WORKSPACE/libs" -y
+            7z e mpv-dev.7z libmpv.dll.a "-o$GITHUB_WORKSPACE/libs" -y
+            mv "$GITHUB_WORKSPACE/libs/libmpv.dll.a" "$GITHUB_WORKSPACE/libs/mpv.lib"
+            # Test binaries link libmpv-2.dll at load time; make it resolvable.
+            # (cygpath: $PWD is POSIX-form in git-bash, which the Windows DLL
+            # loader cannot use as a PATH entry.)
+            echo "$(cygpath -w "$GITHUB_WORKSPACE")\\libs" >> "$GITHUB_PATH"
+
+      - name: Setup dav1d/libjpeg-turbo Build Tools (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          shell: bash
+          command: |
+            pip install meson ninja
+            choco install -y nasm pkgconfiglite
+            # system-deps defaults BUILD_INTERNAL to "never" and hard-fails
+            # when pkg-config is absent (always on Windows runners); force
+            # the vendored meson build instead.
+            echo "SYSTEM_DEPS_DAV1D_BUILD_INTERNAL=always" >> "$GITHUB_ENV"
+
+      - uses: ilammy/msvc-dev-cmd@0b201ec74fa43914dc39ae48a89fd1d8cb592756 # v1.13.0
+        if: matrix.os == 'windows-latest'
+        with:
+          arch: x64
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@ab6895351a88b908e96a4697860d4ffea5e57dbe # v2.87.27
+        with:
+          tool: nextest
+
+      - name: Restore Bench Fixtures
+        id: fixtures-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/media-sort-fixtures
+          # Keyed on the generator + the source image: any change misses and
+          # regenerates. The code also self-validates via the VERSION marker.
+          key: ${{ matrix.os }}-fixtures-${{ hashFiles('crates/benchmarks/src/fixture_gen.rs', 'resources/MockState/mock 1.jpg') }}
+
+      - name: Run Workspace Tests
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
+        # nextest runs each test in its own process, so the previous Windows
+        # split (exclude the GUI crate, then rerun it serially to work around
+        # a parallel access-violation crash) is no longer needed -- the same
+        # command works on all OSes. Bench targets (divan, harness=false)
+        # are skipped, matching the old `--tests` selection.
+        # NOTE: keep the default shell. Under git-bash, /usr/bin precedes the
+        # MSVC dirs in PATH and rustc invokes GNU coreutils' `link` instead of
+        # MSVC link.exe.
+        run: cargo nextest run --workspace
+
+      - name: Run Doctests
+        env:
+          LIBRARY_PATH: ${{ matrix.os == 'macos-latest' && '/opt/homebrew/lib' || '' }}
+          RUSTFLAGS: ${{ matrix.os == 'windows-latest' && '-L native=libs -C link-arg=/NODEFAULTLIB:LIBCMTD -C link-arg=/NODEFAULTLIB:LIBCMT' || '' }}
+        # cargo-nextest does not run doctests, and the old `--tests` selection
+        # skipped them too -- run them explicitly so this coverage is gained
+        # rather than lost by the switch.
+        run: cargo test --workspace --doc
+
+      - name: Save Bench Fixtures
+        # Trusted writers only; see the cache trust model at the top.
+        if: ${{ github.event_name == 'push' && steps.fixtures-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: target/media-sort-fixtures
+          key: ${{ steps.fixtures-cache.outputs.cache-primary-key }}
+
+      - name: Exclude Bench Fixtures From Cargo Cache
+        # The fixtures live inside target/ and are persisted by their own cache
+        # entry; leaving their ~330 MB copy in the Cargo archive would pay for
+        # the same bytes twice on every OS within the repo-wide 10 GB cache
+        # budget. Runs after the fixture save, before the Cargo save.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        shell: bash
+        run: rm -rf target/media-sort-fixtures
+
+      - name: Save Cargo Cache
+        # Trusted writers only; see the cache trust model at the top. Skipped
+        # when the exact key already exists: a content-hash key cannot be
+        # refreshed, so there would be nothing new to store.
+        if: ${{ github.event_name == 'push' && steps.cargo-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ steps.cargo-cache.outputs.cache-primary-key }}
+
+  verify-contributors:
+    name: Verify Contributors List
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify PR Author in contributors.json
+        if: github.event_name == 'pull_request'
+        run: |
+          AUTHOR="${{ github.event.pull_request.user.login }}"
+          echo "Checking if contributor '$AUTHOR' is listed in contributors.json..."
+          if jq -e --arg user "$AUTHOR" '.[] | select(.github == $user)' contributors.json > /dev/null; then
+            echo "Success: '$AUTHOR' is listed in contributors.json."
+          else
+            echo "::error::PR author '$AUTHOR' is not listed in contributors.json! Please add yourself to the contributors.json file at the root of the repository."
+            exit 1
+          fi

@@ -1,0 +1,125 @@
+{
+  "flow_name": "Theme Cycling Workflow",
+  "steps": [
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Dark" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Dracula" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Nord" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "SolarizedLight" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "SolarizedDark" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "GruvboxLight" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "GruvboxDark" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "CatppuccinLatte" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "CatppuccinFrappe" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "CatppuccinMacchiato" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "CatppuccinMocha" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "TokyoNight" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "TokyoNightStorm" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "TokyoNightLight" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "KanagawaWave" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "KanagawaDragon" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "KanagawaLotus" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Moonfly" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Nightfly" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Oxocarbon" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Ferra" } }
+    },
+    {
+      "delay_ms": 600,
+      "target": { "type": "Widget", "value": { "id": "theme_pick_list" } },
+      "message": { "Settings": { "SetTheme": "Light" } }
+    },
+    {
+      "delay_ms": 1500,
+      "target": { "type": "Widget", "value": { "id": "close_settings_btn" } },
+      "message": { "Settings": "Close" }
+    },
+    {
+      "delay_ms": 2000,
+      "target": { "type": "Widget", "value": { "id": "media_card_0" } },
+      "message": "Quit"
+    }
+  ]
+}

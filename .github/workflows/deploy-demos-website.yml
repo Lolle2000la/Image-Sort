@@ -1,0 +1,111 @@
+name: Deploy Demos & Website
+
+on:
+  workflow_run:
+    workflows: ["Automated Release Distribution"]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the build job only reads (its GH_TOKEN is read-only and the
+# Pages artifact it produces is handed to the deploy job). The deploy job opts
+# in to the Pages scopes only, and it runs no repository code.
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Run on workflow_dispatch or if the release workflow succeeded and it is a stable release (no '-' in the tag name)
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && !contains(github.event.workflow_run.head_branch, '-')) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Rust Environment
+        uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master
+        with:
+          toolchain: stable
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: 'website/package-lock.json'
+
+      - name: Cache Cargo Dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Install System Dependencies
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y libmpv-dev libasound2-dev squashfs-tools ffmpeg mesa-vulkan-drivers
+
+      - name: Install Website Dependencies
+        uses: nick-fields/retry@ad984534de44a9489a53aefd81eb77f87c70dc60 # v4.0.0
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 10
+          command: cd website && npm ci
+
+      - name: Render Demo Flows
+        run: npm run render-demos
+        working-directory: website
+
+      - name: Build Website
+        run: npm run build
+        working-directory: website
+        env:
+          # DownloadGrid/ReleaseDownloads resolve release assets with the gh
+          # CLI at build time. gh refuses to run in Actions contexts without a
+          # token, and the runner only injects GH_TOKEN when a step opts in.
+          # The token is read-only here, so build-time code (dependencies,
+          # plugins) cannot use it to push to the repository.
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Upload Website as Pages Artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    # The environment GitHub Pages records the deployment against, and the
+    # scope the deploy-pages OIDC token is issued for. Its branch policy must
+    # allow the ref this workflow runs on (master, for both workflow_run and
+    # workflow_dispatch).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      pages: write    # create the Pages deployment
+      id-token: write # OIDC token the Pages deployment API authenticates with
+
+    steps:
+      # deploy-pages reads the `github-pages` artifact this run uploaded; there
+      # is nothing to check out or download.
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

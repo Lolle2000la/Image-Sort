@@ -1,0 +1,89 @@
+---
+title: ダウンロードとインストール
+description: Media Sortを実行するためのプリコンパイル済みバイナリのダウンロード、または依存関係のインストール。
+---
+
+import ReleaseDownloads from '../../../../components/ReleaseDownloads.astro';
+
+Media Sortは、Windows、Linux、およびmacOS向けのプリコンパイル済みスタンドアロンパッケージとして利用可能です。
+
+Media Sortはメディア再生やUI制御にネイティブのシステムAPIを統合しているため、お使いのプラットフォームのシステム要件を以下からご確認ください。
+
+---
+
+## Media Sort のダウンロード
+
+お使いのオペレーティングシステムとプロセッサアーキテクチャに適したパッケージを選択してください：
+
+<ReleaseDownloads />
+
+---
+
+## システムの前提条件
+
+お使いのプラットフォームによっては、`mpv` メディア再生エンジンのライブラリをインストールする必要があります：
+
+### Windows & macOS
+
+**手動のセットアップは不要です！** Windows版とmacOS版のプリコンパイルパッケージには、必要なすべての `libmpv` ライブラリがアプリケーション内に同梱されており、AVIF画像サポート用のdav1d、高速な動画サムネイル用のffmpegも含まれています。
+
+### Linux
+
+Linux版のMedia SortはSnapとAppImageの両方で提供されています。
+
+#### Snap
+
+Media Sortは[Snap Store](https://snapcraft.io/media-sort)で公開されています。Snapには`libmpv`、`libdav1d`、`ffmpeg`、ALSAサポートが同梱されており、グラフィックスドライバーはCanonicalのプロバイダーSnap `mesa-2404` から取得します（snapdが依存関係として自動的にインストールします）：
+
+```bash
+sudo snap install media-sort
+```
+
+ローカルでビルドした `.snap` をオフラインでインストールする場合、このプロバイダーは自動ではインストールされないため、ご自身でインストールして接続してください：
+
+```bash
+sudo snap install mesa-2404
+sudo snap connect media-sort:gpu-2404 mesa-2404
+```
+
+Snapは厳格な制限付き（strict confinement）で動作するため、ホームディレクトリ内のファイルを整理できます。外部ドライブ（`/media`、`/mnt`）のファイルも整理するには、`removable-media`インターフェースを一度接続してください：
+
+```bash
+sudo snap connect media-sort:removable-media
+```
+
+音声はサウンドサーバー（PipeWire/PulseAudio）経由でそのまま再生されます。サウンドサーバーのないシステムでは、raw ALSAインターフェースを接続してください：
+
+```bash
+sudo snap connect media-sort:alsa
+```
+
+更新はsnapdによって自動的に配信されます。
+
+#### AppImage
+
+AppImageパッケージは実行環境のシステムライブラリを利用するため、`libmpv` と `libdav1d`（AVIF画像のデコード用）がインストールされている必要があります。AppImageは `libasound2` およびX11/Waylandライブラリにも依存しますが、これらは通常デスクトップLinuxディストリビューションにプリインストールされています。
+
+Linuxでの `ffmpeg` のインストールは任意です。動画サムネイルが高速になりますが、無くてもmpvによるフォールバックが機能します。
+
+#### Arch Linux / CachyOS
+
+```bash
+sudo pacman -S mpv dav1d
+```
+
+#### Debian / Ubuntu
+
+```bash
+sudo apt install libmpv2 libasound2 libdav1d7
+```
+
+#### Fedora
+
+```bash
+sudo dnf install mpv-libs dav1d-libs
+```
+
+:::note
+`libmpv` がインストールされていない場合でも、Media Sortは起動し、画像と音声に対しては機能します。アプリ内での動画とGIFの再生は自動的に無効になります。動画ファイルは引き続き検出され、ブラウズできますが、サムネイルは利用できません。
+:::
