@@ -9,10 +9,15 @@
 # actually wants to install. This script turns the release's asset list into a
 # small markdown table that points straight at the installers.
 #
-# Input: TSV lines "asset-name<TAB>download-url" on stdin, i.e. exactly what
-#   gh api "repos/<owner>/<repo>/releases/tags/<tag>" \
-#     --jq '.assets[] | [.name, .browser_download_url] | @tsv'
-# produces for the release.
+# Input: TSV lines "asset-name<TAB>download-url" on stdin. The release.yml
+# "Insert Installer Download Table" step feeds it with the DRAFT release's
+# assets, resolved through the paginated releases list (the
+# /releases/tags/<tag> endpoint never returns drafts) with the draft's
+# untagged-<hash> URLs rewritten to the canonical tag URLs:
+#   gh api --paginate "repos/<owner>/<repo>/releases" \
+#     --jq '.[] | select(.tag_name == "<tag>") | .assets[]
+#           | [.name, .browser_download_url] | @tsv' \
+#     | sed -E "s#(releases/download/)[^/]+/?#\1<tag>/#"
 #
 # Output: markdown on stdout, or nothing at all when no known installer asset
 # is present (the caller keeps the notes unchanged in that case).

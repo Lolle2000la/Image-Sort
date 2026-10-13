@@ -492,12 +492,25 @@ jobs:
         # that heading and insert the table immediately before it.
         # Assets are final by now: every deploy upload and the duplicate-release
         # merge above have completed, so this reflects exactly what is published.
+        #
+        # NOTE: the release is still a DRAFT here (the "Publish Release
+        # Atomically" step below flips it), and the
+        # /releases/tags/{tag} endpoint never returns drafts — it 404s
+        # regardless of authentication. Resolve the release through the
+        # paginated /releases list instead (which does include drafts), the
+        # same way the "Merge Duplicate Releases" step above does.
+        # Draft assets also only have untagged-<hash> URLs, not tag URLs, so
+        # rewrite the URL path to the canonical tag location the assets will
+        # serve from once published — the notes go live in the same step that
+        # publishes, so the links are valid from the first second they are
+        # visible.
         run: |
           set -euo pipefail
           REPO="${{ github.repository }}"
           TAG="${{ github.ref_name }}"
-          gh api "repos/$REPO/releases/tags/$TAG" \
-            --jq '.assets[] | [.name, .browser_download_url] | @tsv' \
+          gh api --paginate "repos/$REPO/releases" \
+            --jq ".[] | select(.tag_name == \"$TAG\") | .assets[] | [.name, .browser_download_url] | @tsv" \
+            | sed -E "s#(releases/download/)[^/]+/?#\1$TAG/#" \
             | bash scripts/release-downloads.sh > DOWNLOADS.md
           if [ ! -s DOWNLOADS.md ]; then
             echo "no installer assets found; leaving release notes unchanged"
