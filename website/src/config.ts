@@ -40,8 +40,10 @@ const [repoOwner = '', repoName = ''] = repoFull.split('/');
 export { repoName, repoOwner };
 
 /**
- * This snap's Snap Store listing. The snap is distributed through the store
- * rather than as a file, so links point here (the release also attaches a
- * `.snap` for offline installs; see the installation page).
+ * This snap's Snap Store listing. Kept (with `SnapBadge.astro`) while the
+ * listing is unpublished: the site deliberately offers no snap yet, because
+ * `https://snapcraft.io/media-sort` 404s until a revision is released. Restore
+ * the badge references (DownloadGrid, ReleaseDownloads, the installation page)
+ * once it resolves.
  */
 export const snapStoreUrl = 'https://snapcraft.io/media-sort';
