@@ -4,6 +4,12 @@ import { snapStoreUrl } from '../config.ts';
 /**
  * "Get it from the Snap Store" install badge.
  *
+ * Currently **unused**: the snap's Store listing is unpublished, so
+ * `https://snapcraft.io/media-sort` 404s and the site deliberately offers no
+ * snap (see the snap section in AGENTS.md). Nothing imports this — restore the
+ * references in `DownloadGrid.astro` and `ReleaseDownloads.astro` once the
+ * listing is live.
+ *
  * The Snap Store publishes two variants and names them after the badge's own
  * colour — NOT after the theme it suits. Snapcraft's own embed snippet spells it
  * out: "Dark button (for light backgrounds)" is `/en/dark/install.svg` (a black

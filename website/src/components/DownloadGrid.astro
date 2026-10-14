@@ -2,7 +2,6 @@
 import { execSync } from 'child_process';
 import { Terminal, Monitor, Laptop } from '@lucide/astro';
 import { repoUrl, repoFull } from '../config.ts';
-import SnapBadge from './SnapBadge.astro';
 
 interface Props {
     linuxLabel?: string;
@@ -81,9 +80,6 @@ const recLabel = isDe ? 'Empfohlen' : isJa ? '推奨' : 'Recommended';
         </span>
         <span class="rec-badge">{recLabel}</span>
     </a>
-    <div class="snap-install">
-        <SnapBadge />
-    </div>
     <a href={windowsUrl} class="download-btn windows" id="btn-windows">
         <span class="btn-icon">
             <Monitor size={24} class="icon-lucide" />
@@ -155,18 +151,6 @@ const recLabel = isDe ? 'Empfohlen' : isJa ? '推奨' : 'Recommended';
         width: 100%;
         max-width: 450px;
         margin-bottom: 2rem;
-    }
-
-    /* The snap is a single store listing, so it appears as the official store
-       badge rather than as a second "download" button next to the AppImage. The
-       badge brings its own margin for standalone use; the grid's gap sets the
-       spacing here instead. */
-    .snap-install {
-        align-self: flex-start;
-    }
-
-    .snap-install :global(.snap-store-badge) {
-        margin: 0;
     }
 
     .download-btn {
