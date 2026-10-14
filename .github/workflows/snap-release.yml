@@ -1,0 +1,141 @@
+name: Snap release
+
+# Builds the snap for every architecture the recipe declares and publishes the
+# revisions to the Snap Store, on the channel the release implies: a stable tag
+# to latest/stable, a prerelease tag to latest/candidate.
+#
+# The Store is the release record -- nothing is attached to the GitHub release,
+# because the site offers the snap through the Store badge rather than as a
+# downloadable file (see AGENTS.md).
+#
+# Only read-only permissions are needed: publishing happens on the Store, and the
+# snap version comes from `adopt-info` (Cargo.toml) inside the build.
+on:
+  release:
+    types: [published]
+  # Publishing an already-cut release, or retrying one whose build failed. A
+  # dispatch runs the workflow as it exists at the ref you pick, so that is a v*
+  # tag once releases carry this (then the channel follows the tag), or a branch
+  # with the channel named explicitly.
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: Channel to publish to; `auto` follows the release tag.
+        type: choice
+        default: auto
+        options:
+          - auto
+          - stable
+          - candidate
+          - beta
+          - edge
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and check the snap (${{ matrix.platform }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The runner has to match the architecture being built; LXD makes the
+          # runner's *release* irrelevant, since the build runs inside the
+          # recipe's own base (core24 = Ubuntu 24.04). See snap.yml.
+          - platform: amd64
+            runner: ubuntu-24.04
+          - platform: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build Snap
+        id: snapcraft
+        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
+        with:
+          snapcraft-args: pack --platform ${{ matrix.platform }}
+
+      # Verified before the artifact can be published: a snap that cannot start
+      # in its own confinement must not reach a channel. Same check as snap.yml,
+      # hence the shared script.
+      - name: Check the snap in its confinement
+        run: scripts/check-snap-confinement.sh "${{ steps.snapcraft.outputs.snap }}"
+
+      - name: Upload the snap
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: snap-${{ matrix.platform }}
+          path: ${{ steps.snapcraft.outputs.snap }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish to the Snap Store
+    needs: build
+    # Even when one architecture's build failed. The Store takes revisions per
+    # architecture, so a single-architecture gap should not hold a release back
+    # from the channel it is meant for -- but it also must not be silent: the
+    # failed leg is red above and the gap is reported below.
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The snap version comes from [workspace.package].version via adopt-info, so
+      # a tag that does not match the tree would publish a mislabelled revision
+      # under the tag's channel. `release.yml` checks the same for the other
+      # artifacts.
+      - name: Check the tag matches the built version
+        if: startsWith(github.ref_name, 'v')
+        run: |
+          set -euo pipefail
+          manifest_version="$(awk '
+            /^\[workspace\.package\]/ { in_section = 1; next }
+            /^\[/ { in_section = 0 }
+            in_section && /^version[[:space:]]*=/ { gsub(/^[^"]*"|".*$/, ""); print; exit }
+          ' Cargo.toml)"
+          expected="${GITHUB_REF_NAME#v}"
+          if [ "$expected" != "$manifest_version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match Cargo.toml version $manifest_version"
+            exit 1
+          fi
+          echo "Tag $GITHUB_REF_NAME matches Cargo.toml $manifest_version"
+
+      - name: Download the built snaps
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: snap-*
+          path: dist-snap
+          merge-multiple: true
+
+      - name: Install snapcraft
+        run: |
+          set -euo pipefail
+          sudo snap install snapcraft --classic
+          snapcraft version
+
+      - name: Publish
+        env:
+          TAG: ${{ github.ref_name }}
+          REQUESTED_CHANNEL: ${{ github.event_name == 'workflow_dispatch' && inputs.channel || '' }}
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          set -euo pipefail
+          ls -l dist-snap
+          # Keep in sync with the build matrix above: a missing architecture
+          # publishes the others and says so, rather than going unnoticed.
+          for arch in amd64 arm64; do
+            if ! compgen -G "dist-snap/*_${arch}.snap" >/dev/null; then
+              echo "::warning::no $arch snap was built; that architecture keeps its previous revision"
+            fi
+          done
+          scripts/publish-snap.sh dist-snap
