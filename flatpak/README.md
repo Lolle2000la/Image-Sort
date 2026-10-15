@@ -116,9 +116,10 @@ python3 flatpak-cargo-generator.py Cargo.lock -o flatpak/cargo-sources.json
 
 `flatpak-cargo-generator.py` comes from
 [flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools)
-(`cargo/`, pinned in `.github/workflows/ci.yml`), and needs `aiohttp` and
-`tomlkit`. CI regenerates it and fails if the committed file differs, so it
-cannot silently drift from `Cargo.lock`.
+(`cargo/`, pinned in `.github/workflows/flatpak-sources.yml`), and needs
+`aiohttp` and `tomlkit`. The `Flatpak Cargo Sources` workflow regenerates it and
+fails if the committed file differs, so it cannot silently drift from
+`Cargo.lock`.
 
 ## Version maintenance
 
@@ -131,9 +132,16 @@ Every release touches the Flatpak packaging:
 The `x-checker-data` blocks let Flathub's external data checker open automated
 bump PRs for mpv, libass, libplacebo and the app itself.
 
-The CI job `flatpak-cargo-sources` regenerates `flatpak/cargo-sources.json` from
-`Cargo.lock` and fails if it does not match the committed file, so a dependency
-bump that forgets to regenerate it is caught before the Flathub build.
+The `.github/workflows/flatpak-sources.yml` (`Flatpak Cargo Sources`) workflow
+regenerates `flatpak/cargo-sources.json` from the PR's `Cargo.lock` and fails if
+it does not match the committed file, so a dependency bump that forgets to
+regenerate it is caught before the Flathub build. To keep that from requiring a
+Linux/Python setup from the contributor, it fixes the file itself: on a PR from
+a branch in this repository it commits and pushes the regenerated file, and on a
+fork PR (where it cannot push) it posts a comment with the patch to apply. Set a
+`FLATPAK_SOURCES_TOKEN` secret (fine-grained PAT or GitHub App token with
+`contents: write` and `pull-requests: write`) so its pushes re-trigger CI —
+pushes made with the default `GITHUB_TOKEN` do not.
 
 ## Known follow-ups
 

@@ -316,34 +316,3 @@ jobs:
             echo "::error::PR author '$AUTHOR' is not listed in contributors.json! Please add yourself to the contributors.json file at the root of the repository."
             exit 1
           fi
-
-  flatpak-cargo-sources:
-    name: Flatpak Cargo Sources In Sync
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.x'
-
-      # flatpak/cargo-sources.json is the vendored crate set Flathub builds
-      # offline from, generated from Cargo.lock. Regenerate it here and fail if
-      # it differs, so a dependency bump that forgets to update it is caught
-      # before the Flathub build. The generator is pinned to a commit because
-      # its output is what this check compares against.
-      - name: Install the cargo generator
-        run: |
-          pip install aiohttp tomlkit
-          curl -fsSL -o "$RUNNER_TEMP/flatpak-cargo-generator.py" \
-            https://raw.githubusercontent.com/flatpak/flatpak-builder-tools/74697c75b630d7330e77250fc13cb5ea688d9479/cargo/flatpak-cargo-generator.py
-
-      - name: Check cargo-sources.json is up to date
-        run: |
-          python3 "$RUNNER_TEMP/flatpak-cargo-generator.py" Cargo.lock -o "$RUNNER_TEMP/cargo-sources.json"
-          if ! diff -u flatpak/cargo-sources.json "$RUNNER_TEMP/cargo-sources.json"; then
-            echo "::error::flatpak/cargo-sources.json is out of date. Regenerate it with:"
-            echo "  python3 flatpak-cargo-generator.py Cargo.lock -o flatpak/cargo-sources.json"
-            exit 1
-          fi
-          echo "flatpak/cargo-sources.json is in sync with Cargo.lock."
