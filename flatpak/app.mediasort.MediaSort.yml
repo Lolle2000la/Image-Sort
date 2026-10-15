@@ -87,11 +87,40 @@ modules:
           type: git
           tag-pattern: ^v([\d.]+)$
 
+  # Two small dependencies that mpv's VA-API hardware decoding needs. mpv gates
+  # VA-API behind one of its display back-ends, and both of those are missing a
+  # dependency in the runtime: mpv's Wayland backend wants wayland-protocols
+  # (the protocol data is present but the `.pc` is not), and its X11 backend
+  # wants libXpresent. Building both enables hardware decoding on Wayland and
+  # X11 sessions alike (the app asks for `hwdec=auto-copy` and falls back to
+  # software decoding when a GPU/driver cannot do it).
+  - name: wayland-protocols
+    buildsystem: meson
+    sources:
+      - type: git
+        url: https://gitlab.freedesktop.org/wayland/wayland-protocols.git
+        tag: '1.49'
+        commit: ee78491a237eaff9389a0ccf8680521d074407d3
+        x-checker-data:
+          type: git
+          tag-pattern: ^([\d.]+)$
+
+  - name: libXpresent
+    buildsystem: autotools
+    sources:
+      - type: git
+        url: https://gitlab.freedesktop.org/xorg/lib/libxpresent.git
+        tag: libXpresent-1.0.2
+        commit: 4d92149372461bf575e8a09b1064a2884c38c3aa
+        x-checker-data:
+          type: git
+          tag-pattern: ^libXpresent-([\d.]+)$
+
   # libmpv is not part of the freedesktop runtime, so mpv is built from source.
   # It links against the runtime's ffmpeg libraries. Media Sort renders frames
   # itself through libmpv's software render API (mpv_render_context,
   # MPV_RENDER_API_TYPE_SW), so mpv needs no display or GPU output of its own
-  # and those VOs are disabled to keep the build small.
+  # (its X11/Wayland options are enabled for VA-API, see the config below).
   - name: mpv
     buildsystem: meson
     config-opts:
@@ -99,9 +128,16 @@ modules:
       - -Dcplayer=false
       - -Dbuild-date=false
       - -Dmanpage-build=disabled
-      # No output/display of its own: the app drives the software render API.
-      - -Dx11=disabled
-      - -Dwayland=disabled
+      # No GL/Vulkan output of its own: the app drives the software render API.
+      # X11 and Wayland are enabled only so VA-API hardware decoding is
+      # available (see the wayland-protocols/libXpresent modules above);
+      # dmabuf-wayland is not needed.
+      - -Dx11=enabled
+      - -Dwayland=enabled
+      - -Dvaapi=enabled
+      - -Dvaapi-x11=enabled
+      - -Dvaapi-wayland=enabled
+      - -Ddmabuf-wayland=disabled
       - -Dgl=disabled
       - -Degl=disabled
       - -Dvulkan=disabled
@@ -119,12 +155,6 @@ modules:
       - -Dvapoursynth=disabled
       - -Dzimg=disabled
       - -Duchardet=disabled
-      # Hardware decoding is left out: mpv gates VA-API behind its `drm`
-      # feature, which needs libdisplay-info and VT headers that the runtime
-      # does not ship. The app requests hwdec=auto-copy and falls back to
-      # software decoding, so video previews still work (CPU-decoded). See
-      # flatpak/README.md for re-enabling it.
-      - -Dvaapi=disabled
       # Audio output for video playback. (Standalone audio files are decoded
       # and played by rodio, not mpv.)
       - -Dalsa=enabled
@@ -165,9 +195,12 @@ modules:
     sources:
       - type: git
         url: https://github.com/Lolle2000la/Media-Sort.git
-        tag: v3.0.0
-        # TODO: add the `commit:` of the v3.0.0 tag once it is cut
-        # (`scripts/release.sh 3.0.0`). Flathub prefers a tag *and* commit.
+        # Must be the first stable release that contains the Flatpak metadata
+        # this module installs (packaging/linux/app.mediasort.MediaSort.*):
+        # v3.0.0 predates it. Cut that release (e.g. scripts/release.sh 3.0.1)
+        # and set the tag and its commit here before submitting to Flathub.
+        tag: v3.0.1
+        # TODO: add the released `commit:` (Flathub prefers tag *and* commit).
         x-checker-data:
           type: git
           tag-pattern: ^v([\d.]+)$

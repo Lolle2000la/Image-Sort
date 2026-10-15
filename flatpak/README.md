@@ -35,10 +35,15 @@ names, the `<id>` in the metainfo, the `Icon=` in the desktop file and the
   in a module, together with its two unconditional build dependencies that the
   runtime does not ship — `libass` and `libplacebo`. Everything the three link
   against comes from the runtime/SDK (ffmpeg libraries, dav1d, libva,
-  PulseAudio/PipeWire/ALSA, Wayland, freetype/fontconfig/harfbuzz/fribidi,
+  PulseAudio/PipeWire/ALSA, freetype/fontconfig/harfbuzz/fribidi,
   vulkan/shaderc/lcms2), so no codec stack is built here. Media Sort renders
   frames itself through libmpv's software render API, so mpv needs no
   display/GPU output of its own.
+- **Hardware decoding (VA-API):** mpv gates VA-API behind one of its display
+  back-ends, and both of those are missing a dependency in the runtime — its
+  Wayland back-end wants `wayland-protocols` and its X11 back-end wants
+  `libXpresent`. Both are built as small modules so `hwdec=auto-copy` works on
+  Wayland and X11 sessions alike (software decoding when a GPU cannot do it).
 - **ffmpeg CLI:** the runtime ships `/usr/bin/ffmpeg`, which is what
   `media-sort-backend`'s `find_ffmpeg()` picks up for video thumbnails.
 - **The self-updater (`velopack` feature) is intentionally not built** — Flatpak
@@ -86,12 +91,13 @@ flatpak run --command=flatpak-builder-lint org.flatpak.Builder repo build-dir/re
 Flathub hosts the manifest in its own repository and builds it on Flathub's
 infrastructure — nothing here is published automatically.
 
-1. **Cut a stable release first.** Flathub's stable repository accepts only
-   stable software, so the app source must point at a non-prerelease tag
-   (`v3.0.0`, not an `-rc`/`-alpha` tag). Run `scripts/release.sh 3.0.0`.
-2. Fill in the released `commit:` in the `media-sort` source of the manifest
-   (Flathub wants both `tag` and `commit`) and bump the `<release>` entry in the
-   metainfo if needed.
+1. **Cut a stable release that includes this packaging.** Flathub's stable
+   repository accepts only stable software, and the manifest installs the
+   metadata from the tagged source tree, so the source tag must contain
+   `packaging/linux/app.mediasort.MediaSort.*` and `flatpak/`. `v3.0.0` predates
+   them, so cut a follow-up (e.g. `scripts/release.sh 3.0.1`).
+2. Point the manifest's `media-sort` source at that tag *and* its commit
+   (Flathub wants both) and add the matching `<release>` to the metainfo.
 3. Regenerate `cargo-sources.json` whenever `Cargo.lock` changes (see below).
 4. Fork [`flathub/flathub`](https://github.com/flathub/flathub), create a branch
    named `app.mediasort.MediaSort`, add `app.mediasort.MediaSort.yml` and
@@ -110,7 +116,9 @@ python3 flatpak-cargo-generator.py Cargo.lock -o flatpak/cargo-sources.json
 
 `flatpak-cargo-generator.py` comes from
 [flatpak-builder-tools](https://github.com/flatpak/flatpak-builder-tools)
-(`cargo/`), and needs `aiohttp` and `tomlkit`.
+(`cargo/`, pinned in `.github/workflows/ci.yml`), and needs `aiohttp` and
+`tomlkit`. CI regenerates it and fails if the committed file differs, so it
+cannot silently drift from `Cargo.lock`.
 
 ## Version maintenance
 
@@ -121,7 +129,11 @@ Every release touches the Flatpak packaging:
 - regenerate `cargo-sources.json` if `Cargo.lock` changed.
 
 The `x-checker-data` blocks let Flathub's external data checker open automated
-bump PRs for mpv and for the app itself.
+bump PRs for mpv, libass, libplacebo and the app itself.
+
+The CI job `flatpak-cargo-sources` regenerates `flatpak/cargo-sources.json` from
+`Cargo.lock` and fails if it does not match the committed file, so a dependency
+bump that forgets to regenerate it is caught before the Flathub build.
 
 ## Known follow-ups
 
@@ -135,13 +147,3 @@ bump PRs for mpv and for the app itself.
   *reveal in file manager* shells out to `dbus-send`/`org.freedesktop.FileManager1`
   (falling back to `xdg-open`). Both work under `--filesystem=home`, but the
   portals are the more sandbox-friendly alternative if reviewers ask.
-- **Hardware decoding:** the mpv module builds with `-Dvaapi=disabled` because
-  mpv gates VA-API behind its `drm` feature, which needs `libdisplay-info` and
-  VT headers the runtime does not ship. The app asks for `hwdec=auto-copy` and
-  falls back to software decoding. To restore it, add a `libdisplay-info`
-  module (plus `hwdata`) and pass `-Ddrm=enabled -Dvaapi=enabled
-  -Dvaapi-drm=enabled` to mpv.
-- **`rust-version`:** the workspace's MSRV (`1.99`) must not exceed the Rust
-  version shipped by the `rust-stable` SDK extension (currently 1.98.x on both
-  `25.08` and `26.08`). Wait for Flathub to rebuild the extension, or lower the
-  declared MSRV, before the first build.
