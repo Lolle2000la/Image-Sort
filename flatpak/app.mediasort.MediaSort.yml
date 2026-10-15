@@ -1,0 +1,135 @@
+# Flatpak manifest for Media Sort.
+#
+# This is the file that gets submitted to Flathub (a PR against
+# https://github.com/flathub/flathub, branch `app.mediasort.MediaSort`); see
+# flatpak/README.md for the full procedure. Keep it in sync with each release:
+#
+#   * bump `tag` (and add `commit`) on the `media-sort` source below, and
+#   * add a matching <release> entry to
+#     packaging/linux/app.mediasort.MediaSort.metainfo.xml.
+#
+# cargo-sources.json (the vendored crates, generated from Cargo.lock with
+# flatpak-cargo-generator) sits next to this file.
+
+app-id: app.mediasort.MediaSort
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: media-sort-gui
+
+# Media Sort is a media *sorter*: it browses a folder the user opens and moves,
+# renames, copies and deletes files in it, including into pinned destination
+# folders elsewhere. That is file-management work, so it needs real access to
+# the user's files rather than a document-portal view of a single chosen
+# folder. `home` plus the removable-media mount points cover the app's use case.
+# There is deliberately no network access: the in-app self-updater is not built
+# here ("velopack" feature, see crates/media-sort-gui/Cargo.toml) because
+# Flatpak owns updates.
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --socket=pulseaudio
+  # wgpu (Vulkan) video rendering and VA-API hardware decoding.
+  - --device=dri
+  - --filesystem=home
+  - --filesystem=/media
+  - --filesystem=/mnt
+  - --filesystem=/run/media
+
+cleanup:
+  - /include
+  - /lib/pkgconfig
+  - /share/man
+  - '*.a'
+  - '*.la'
+
+modules:
+  # libmpv is not part of the freedesktop runtime, so it is built from source.
+  # The runtime does supply everything libmpv links against (the ffmpeg
+  # libraries, dav1d, libva, PulseAudio/PipeWire/ALSA, Wayland), so no codec
+  # stack has to be built here. Media Sort renders frames itself through
+  # libmpv's software render API (mpv_render_context, MPV_RENDER_API_TYPE_SW),
+  # so mpv needs no display or GPU output of its own.
+  - name: mpv
+    buildsystem: meson
+    config-opts:
+      - -Dlibmpv=true
+      - -Dcplayer=false
+      - -Dbuild-date=false
+      - -Dmanpage-build=disabled
+      # No output/display of its own: the app drives the software render API.
+      - -Dx11=disabled
+      - -Dwayland=disabled
+      - -Dgl=disabled
+      - -Degl=disabled
+      - -Dvulkan=disabled
+      - -Dshaderc=disabled
+      - -Dcaca=disabled
+      - -Dsdl2-video=disabled
+      # Optional features with no use in this app.
+      - -Dcdda=disabled
+      - -Ddvbin=disabled
+      - -Ddvdnav=disabled
+      - -Dlibbluray=disabled
+      - -Dlibarchive=disabled
+      - -Dlua=disabled
+      - -Djavascript=disabled
+      - -Dvapoursynth=disabled
+      - -Dzimg=disabled
+      - -Duchardet=disabled
+      # Software-copy hardware decoding (VA-API on the /dev/dri render node),
+      # matching the app's default `hwdec=auto-copy`; falls back to software
+      # decoding when unavailable.
+      - -Dvaapi=enabled
+      # Audio output for video playback. (Standalone audio files are decoded
+      # and played by rodio, not mpv.)
+      - -Dalsa=enabled
+      - -Dpulse=enabled
+      - -Dpipewire=enabled
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/man
+    sources:
+      - type: git
+        url: https://github.com/mpv-player/mpv.git
+        tag: v0.41.0
+        commit: 41f6a645068483470267271e1d09966ca3b9f413
+        x-checker-data:
+          type: git
+          tag-pattern: ^v([\d.]+)$
+          is-main-source: true
+
+  - name: media-sort
+    buildsystem: simple
+    build-options:
+      append-path: /usr/lib/sdk/rust-stable/bin
+      env:
+        CARGO_HOME: /run/build/media-sort/cargo
+        CARGO_NET_OFFLINE: 'true'
+        # libmpv-sys links `-lmpv` without a pkg-config lookup, so point the
+        # linker at mpv's /app/lib install. Flatpak puts /app/lib on the
+        # sandbox library path, so no rpath is needed at runtime.
+        RUSTFLAGS: -L/app/lib
+    build-commands:
+      # The "velopack" self-updater is left off on purpose: Flatpak owns updates.
+      - cargo build --release --offline --locked -p media-sort-gui
+      - install -Dm755 target/release/media-sort-gui -t /app/bin
+      - install -Dm644 packaging/linux/app.mediasort.MediaSort.metainfo.xml -t /app/share/metainfo
+      - install -Dm644 packaging/linux/app.mediasort.MediaSort.desktop -t /app/share/applications
+      - install -Dm644 packaging/linux/icon.svg /app/share/icons/hicolor/scalable/apps/app.mediasort.MediaSort.svg
+      - install -Dm644 LICENSE -t /app/share/licenses/app.mediasort.MediaSort
+    sources:
+      - type: git
+        url: https://github.com/Lolle2000la/Media-Sort.git
+        tag: v3.0.0
+        # TODO: add the `commit:` of the v3.0.0 tag once it is cut
+        # (`scripts/release.sh 3.0.0`). Flathub prefers a tag *and* commit.
+        x-checker-data:
+          type: git
+          tag-pattern: ^v([\d.]+)$
+          is-main-source: true
+      - cargo-sources.json
