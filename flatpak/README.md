@@ -135,11 +135,17 @@ bump PRs for mpv, libass, libplacebo and the app itself.
 The `.github/workflows/flatpak-sources.yml` (`Flatpak Cargo Sources`) workflow
 regenerates `flatpak/cargo-sources.json` from the PR's `Cargo.lock` and fails if
 it does not match the committed file, so a dependency bump that forgets to
-regenerate it is caught before the Flathub build. To keep that from requiring a
-Linux/Python setup from the contributor, it fixes the file itself: on a PR from
-a branch in this repository it commits and pushes the regenerated file, and on a
-fork PR (where it cannot push) it posts a comment with the patch to apply. Set a
-`FLATPAK_SOURCES_TOKEN` secret (fine-grained PAT or GitHub App token with
+regenerate it is caught before the Flathub build. It uses the `pull_request`
+event rather than `pull_request_target` (which runs with a write token and is
+blocked by GitHub's default event policy for public repositories), so:
+
+- a PR **from a branch in this repository** gets the regenerated file committed
+  and pushed to the branch (plus a comment);
+- a PR **from a fork** cannot be written to (the token is read-only), so the
+  patch is put in the job summary and the regenerated file is uploaded as a
+  `flatpak-cargo-sources` artifact — neither needs any local tooling.
+
+Set a `FLATPAK_SOURCES_TOKEN` secret (fine-grained PAT or GitHub App token with
 `contents: write` and `pull-requests: write`) so its pushes re-trigger CI —
 pushes made with the default `GITHUB_TOKEN` do not.
 
