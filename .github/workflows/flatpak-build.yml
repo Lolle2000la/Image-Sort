@@ -23,6 +23,9 @@ on:
       - Cargo.lock
       - '**/Cargo.toml'
       - flatpak/**
+      # The metainfo/desktop/icon the app module installs; a malformed one fails
+      # appstream compose in the build.
+      - packaging/linux/**
       - .github/workflows/flatpak-build.yml
   pull_request:
     paths: *paths
