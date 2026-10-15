@@ -46,6 +46,12 @@ names, the `<id>` in the metainfo, the `Icon=` in the desktop file and the
   Wayland and X11 sessions alike (software decoding when a GPU cannot do it).
 - **ffmpeg CLI:** the runtime ships `/usr/bin/ffmpeg`, which is what
   `media-sort-backend`'s `find_ffmpeg()` picks up for video thumbnails.
+- **Trash:** deletions go through `org.freedesktop.portal.Trash`, so files land
+  in the *host* trash where the desktop can see and empty them. Without it the
+  `trash` crate would use `$XDG_DATA_HOME/Trash`, which a Flatpak remaps to a
+  private directory inside `~/.var/app` that only survives until the app is
+  uninstalled with `--delete-data`. Undo/restore finds the entry again by
+  reading the host trash's `.trashinfo` metadata (the portal only deletes).
 - **The self-updater (`velopack` feature) is intentionally not built** — Flatpak
   owns updates. That is also why the manifest needs no network access.
 
@@ -162,8 +168,9 @@ pushes made with the default `GITHUB_TOKEN` do not.
   references them at `https://mediasort.app/screenshots/…`, so the **website
   must be deployed before the Flathub build** — Flathub mirrors the URLs at
   build time and the build fails if they are unreachable.
-- **Portals:** deletion goes through the FreeDesktop trash (`trash` crate)
-  rather than the `org.freedesktop.portal.Trash` portal, and
-  *reveal in file manager* shells out to `dbus-send`/`org.freedesktop.FileManager1`
-  (falling back to `xdg-open`). Both work under `--filesystem=home`, but the
-  portals are the more sandbox-friendly alternative if reviewers ask.
+- **Portals:** *reveal in file manager* shells out to
+  `dbus-send`/`org.freedesktop.FileManager1` (falling back to `xdg-open`) rather
+  than the `org.freedesktop.portal.OpenURI` portal; it works under
+  `--filesystem=home`, but the portal is the more sandbox-friendly alternative
+  if reviewers ask. Deletion already goes through
+  `org.freedesktop.portal.Trash` (see "How it is built").

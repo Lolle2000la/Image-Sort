@@ -29,3 +29,8 @@ winreg.workspace = true
 [target.'cfg(target_os = "macos")'.dependencies]
 objc2 = "0.6"
 objc2-foundation = { version = "0.3", features = ["NSFileManager", "NSURL", "NSString", "NSError"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# Trashing through org.freedesktop.portal.Trash under Flatpak, so the file
+# reaches the host's trash instead of the sandbox's private one.
+zbus = "5"

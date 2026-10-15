@@ -3779,6 +3779,7 @@ dependencies = [
  "turbojpeg",
  "walkdir",
  "winreg",
+ "zbus",
 ]
 
 [[package]]
