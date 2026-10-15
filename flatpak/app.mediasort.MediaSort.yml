@@ -10,6 +10,12 @@
 #
 # cargo-sources.json (the vendored crates, generated from Cargo.lock with
 # flatpak-cargo-generator) sits next to this file.
+#
+# The meson modules pass `-Dlibdir=lib` explicitly: meson's default libdir is
+# `lib64` on some builders (e.g. the flatpak-builder in Ubuntu), which is
+# neither where the later modules' pkg-config search looks nor where the app
+# links against (`-L/app/lib`), so libplacebo/wayland-protocols/mpv have to
+# agree on `lib`.
 
 app-id: app.mediasort.MediaSort
 runtime: org.freedesktop.Platform
@@ -69,6 +75,7 @@ modules:
   - name: libplacebo
     buildsystem: meson
     config-opts:
+      - -Dlibdir=lib
       - -Ddemos=false
       - -Dtests=false
       - -Dvulkan=enabled
@@ -96,6 +103,8 @@ modules:
   # software decoding when a GPU/driver cannot do it).
   - name: wayland-protocols
     buildsystem: meson
+    config-opts:
+      - -Dlibdir=lib
     sources:
       - type: git
         url: https://gitlab.freedesktop.org/wayland/wayland-protocols.git
@@ -128,6 +137,7 @@ modules:
       - -Dcplayer=false
       - -Dbuild-date=false
       - -Dmanpage-build=disabled
+      - -Dlibdir=lib
       # No GL/Vulkan output of its own: the app drives the software render API.
       # X11 and Wayland are enabled only so VA-API hardware decoding is
       # available (see the wayland-protocols/libXpresent modules above);
