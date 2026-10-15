@@ -44,7 +44,8 @@ jobs:
           sudo flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
           sudo flatpak install -y --noninteractive flathub \
             org.freedesktop.Platform//"$RUNTIME_VERSION" \
-            org.freedesktop.Sdk//"$RUNTIME_VERSION"
+            org.freedesktop.Sdk//"$RUNTIME_VERSION" \
+            org.freedesktop.Sdk.Extension.rust-stable//"$RUNTIME_VERSION"
 
       - name: Restore the flatpak-builder state
         id: state
