@@ -32,10 +32,13 @@ names, the `<id>` in the metainfo, the `Icon=` in the desktop file and the
   this and re-check when a new yearly branch lands.
 - **Rust:** the `org.freedesktop.Sdk.Extension.rust-stable` SDK extension.
 - **libmpv:** not part of the runtime, so `mpv` (v0.41.0) is built from source
-  in a module. The freedesktop runtime already provides everything libmpv links
-  against (ffmpeg libraries, dav1d, libva, PulseAudio/PipeWire/ALSA, Wayland),
-  so no codec stack is built here. Media Sort renders frames itself through
-  libmpv's software render API, so mpv needs no display/GPU output of its own.
+  in a module, together with its two unconditional build dependencies that the
+  runtime does not ship — `libass` and `libplacebo`. Everything the three link
+  against comes from the runtime/SDK (ffmpeg libraries, dav1d, libva,
+  PulseAudio/PipeWire/ALSA, Wayland, freetype/fontconfig/harfbuzz/fribidi,
+  vulkan/shaderc/lcms2), so no codec stack is built here. Media Sort renders
+  frames itself through libmpv's software render API, so mpv needs no
+  display/GPU output of its own.
 - **ffmpeg CLI:** the runtime ships `/usr/bin/ffmpeg`, which is what
   `media-sort-backend`'s `find_ffmpeg()` picks up for video thumbnails.
 - **The self-updater (`velopack` feature) is intentionally not built** — Flatpak
@@ -132,6 +135,12 @@ bump PRs for mpv and for the app itself.
   *reveal in file manager* shells out to `dbus-send`/`org.freedesktop.FileManager1`
   (falling back to `xdg-open`). Both work under `--filesystem=home`, but the
   portals are the more sandbox-friendly alternative if reviewers ask.
+- **Hardware decoding:** the mpv module builds with `-Dvaapi=disabled` because
+  mpv gates VA-API behind its `drm` feature, which needs `libdisplay-info` and
+  VT headers the runtime does not ship. The app asks for `hwdec=auto-copy` and
+  falls back to software decoding. To restore it, add a `libdisplay-info`
+  module (plus `hwdata`) and pass `-Ddrm=enabled -Dvaapi=enabled
+  -Dvaapi-drm=enabled` to mpv.
 - **`rust-version`:** the workspace's MSRV (`1.99`) must not exceed the Rust
   version shipped by the `rust-stable` SDK extension (currently 1.98.x on both
   `25.08` and `26.08`). Wait for Flathub to rebuild the extension, or lower the

@@ -47,12 +47,51 @@ cleanup:
   - '*.la'
 
 modules:
-  # libmpv is not part of the freedesktop runtime, so it is built from source.
-  # The runtime does supply everything libmpv links against (the ffmpeg
-  # libraries, dav1d, libva, PulseAudio/PipeWire/ALSA, Wayland), so no codec
-  # stack has to be built here. Media Sort renders frames itself through
-  # libmpv's software render API (mpv_render_context, MPV_RENDER_API_TYPE_SW),
-  # so mpv needs no display or GPU output of its own.
+  # libass and libplacebo are unconditional build dependencies of mpv 0.41 and
+  # are not part of the freedesktop runtime/SDK. Their own dependencies do come
+  # from the SDK (freetype, fontconfig, harfbuzz, fribidi, vulkan, shaderc,
+  # lcms2), so only these two need building.
+  - name: libass
+    buildsystem: autotools
+    config-opts:
+      - --disable-static
+      - --enable-fontconfig
+      - --enable-harfbuzz
+    sources:
+      - type: git
+        url: https://github.com/libass/libass.git
+        tag: 0.17.5
+        commit: 4a05d8127f525943ebf45fdc6497c9e665947f0d
+        x-checker-data:
+          type: git
+          tag-pattern: ^([\d.]+)$
+
+  - name: libplacebo
+    buildsystem: meson
+    config-opts:
+      - -Ddemos=false
+      - -Dtests=false
+      - -Dvulkan=enabled
+      - -Dshaderc=enabled
+      - -Dglslang=disabled
+      - -Dlcms=enabled
+      - -Dopengl=disabled
+      - -Dd3d11=disabled
+      - -Dxxhash=disabled
+    sources:
+      - type: git
+        url: https://github.com/haasn/libplacebo.git
+        tag: v7.360.1
+        commit: cee9b076f2c63104ccfd497fa79c39a867293ec4
+        x-checker-data:
+          type: git
+          tag-pattern: ^v([\d.]+)$
+
+  # libmpv is not part of the freedesktop runtime, so mpv is built from source.
+  # It links against the runtime's ffmpeg libraries. Media Sort renders frames
+  # itself through libmpv's software render API (mpv_render_context,
+  # MPV_RENDER_API_TYPE_SW), so mpv needs no display or GPU output of its own
+  # and those VOs are disabled to keep the build small.
   - name: mpv
     buildsystem: meson
     config-opts:
@@ -80,10 +119,12 @@ modules:
       - -Dvapoursynth=disabled
       - -Dzimg=disabled
       - -Duchardet=disabled
-      # Software-copy hardware decoding (VA-API on the /dev/dri render node),
-      # matching the app's default `hwdec=auto-copy`; falls back to software
-      # decoding when unavailable.
-      - -Dvaapi=enabled
+      # Hardware decoding is left out: mpv gates VA-API behind its `drm`
+      # feature, which needs libdisplay-info and VT headers that the runtime
+      # does not ship. The app requests hwdec=auto-copy and falls back to
+      # software decoding, so video previews still work (CPU-decoded). See
+      # flatpak/README.md for re-enabling it.
+      - -Dvaapi=disabled
       # Audio output for video playback. (Standalone audio files are decoded
       # and played by rodio, not mpv.)
       - -Dalsa=enabled
@@ -101,7 +142,6 @@ modules:
         x-checker-data:
           type: git
           tag-pattern: ^v([\d.]+)$
-          is-main-source: true
 
   - name: media-sort
     buildsystem: simple
