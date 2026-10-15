@@ -15,20 +15,13 @@
 
 use std::fs;
 use std::io;
-use std::os::fd::OwnedFd;
+use std::os::fd::AsFd;
 use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 
 use media_sort_core::actions::delete_action::TrashRestoreHandle;
 use media_sort_core::actions::reversible::ActionError;
-
-const SERVICE: &str = "org.freedesktop.portal.Desktop";
-const OBJECT_PATH: &str = "/org/freedesktop/portal/desktop";
-const INTERFACE: &str = "org.freedesktop.portal.Trash";
-const METHOD: &str = "TrashFile";
-/// `org.freedesktop.portal.Trash.TrashFile` reports success as 1.
-const SUCCESS: u32 = 1;
 
 /// Whether this process runs inside a Flatpak sandbox, where the host trash is
 /// only reachable through the portal.
@@ -37,7 +30,8 @@ pub fn in_flatpak() -> bool {
         || Path::new("/.flatpak-info").exists()
 }
 
-/// Ask the desktop to move `original_path` to the user's trash.
+/// Ask the desktop to move `original_path` to the user's trash
+/// (`org.freedesktop.portal.Trash.TrashFile`).
 pub fn delete_to_trash(original_path: &Path) -> Result<Box<dyn TrashRestoreHandle>, ActionError> {
     // TrashFile takes a file descriptor, and the portal only trashes what the
     // caller can open read/write.
@@ -47,16 +41,9 @@ pub fn delete_to_trash(original_path: &Path) -> Result<Box<dyn TrashRestoreHandl
         .open(original_path)
         .map_err(ActionError::Io)?;
 
-    let connection = zbus::blocking::Connection::session().map_err(to_io)?;
-    let proxy =
-        zbus::blocking::Proxy::new(&connection, SERVICE, OBJECT_PATH, INTERFACE).map_err(to_io)?;
-    let fd = zbus::zvariant::Fd::from(OwnedFd::from(file));
-    let result: u32 = proxy.call(METHOD, &(fd,)).map_err(to_io)?;
-    if result != SUCCESS {
-        return Err(ActionError::Io(io::Error::other(format!(
-            "{INTERFACE}.{METHOD} failed (returned {result}, expected {SUCCESS})"
-        ))));
-    }
+    // ashpd is async-only and the delete path is synchronous; a portal round
+    // trip takes a few milliseconds, so drive it to completion here.
+    pollster::block_on(ashpd::desktop::trash::trash_file(&file.as_fd())).map_err(to_io)?;
 
     Ok(Box::new(PortalTrashRestore {
         original_path: original_path.to_path_buf(),
