@@ -40,3 +40,7 @@ ui_test_config.toml
 /prime/
 /dist-snap/
 *.snap
+
+# Flatpak build artifacts (local `flatpak-builder`; see flatpak/README.md).
+/build-dir/
+/.flatpak-builder/
