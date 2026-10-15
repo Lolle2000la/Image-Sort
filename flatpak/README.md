@@ -79,6 +79,12 @@ The manifest's app source points at the **released tag** (`v3.0.0`), so for a
 local build of uncommitted work, temporarily point that source at this checkout
 (e.g. a `type: dir` or local `type: git` source) instead.
 
+CI runs this same build for any change to `Cargo.lock`, a `Cargo.toml` or
+`flatpak/**`: `.github/workflows/flatpak-build.yml` rewrites the manifest's app
+source to `type: dir` (so it builds the checkout, not the release tag) and runs
+`flatpak-builder` against the same runtime. It is expensive, so it is not a
+required check.
+
 Lint the manifest before/after changes:
 
 ```bash
