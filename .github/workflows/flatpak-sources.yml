@@ -20,15 +20,27 @@ name: Flatpak Cargo Sources
 # No code from a pull request is ever executed: only Cargo.lock/Cargo.toml are
 # read, as data, through the API, and the generator (pinned to a commit) is run
 # on them.
+#
+# NOTE: the `paths` filter means a PR touching none of these files is simply not
+# scheduled. That is fine only while this check is not required: GitHub leaves a
+# path-filtered workflow's checks "Pending" (not "skipped") on PRs it does not
+# run for, and such a PR then cannot merge once the check is required. If this
+# ever needs to be a required check, drop the filter and gate the steps with a
+# job-level `if:` instead -- a job skipped by a condition reports success.
 
 on:
-  # No `paths` filter on pull_request on purpose: a path-filtered workflow that
-  # does not run leaves a required check pending, which would block pull
-  # requests that do not touch these files.
   push:
     branches: [master]
+    paths: &paths
+      - Cargo.lock
+      - Cargo.toml
+      - flatpak/cargo-sources.json
+      - .github/workflows/flatpak-sources.yml
   pull_request:
+    paths: *paths
   merge_group:
+    # Path filters are ignored for merge_group, so a filter here would be
+    # misleading -- it always runs (see ci.yml).
     branches: [master]
     types: [checks_requested]
 
