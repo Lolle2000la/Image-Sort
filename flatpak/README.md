@@ -52,6 +52,15 @@ names, the `<id>` in the metainfo, the `Icon=` in the desktop file and the
   private directory inside `~/.var/app` that only survives until the app is
   uninstalled with `--delete-data`. Undo/restore finds the entry again by
   reading the host trash's `.trashinfo` metadata (the portal only deletes).
+- **Open externally / reveal in file manager:** inside the sandbox both go
+  through `org.freedesktop.portal.OpenURI` (`platform/desktop_portal.rs`). The
+  file manager and the default handler are *host* applications, and the
+  sandbox's session-bus policy lets the app reach only its own name,
+  `org.freedesktop.DBus` and `org.freedesktop.portal.*` — so the native
+  `dbus-send` (`org.freedesktop.FileManager1`) route cannot work there at all.
+  `OpenURI` takes file descriptors and has no select-a-file call, so revealing
+  opens the containing folder rather than highlighting the entry. Outside
+  Flatpak the native `open`/`explorer`/`xdg-open` code runs unchanged.
 - **The self-updater (`velopack` feature) is intentionally not built** — Flatpak
   owns updates. That is also why the manifest needs no network access.
 
@@ -61,7 +70,10 @@ The app is a media *sorter*: it moves, renames, copies and deletes files in a
 folder the user opens, including into pinned destination folders elsewhere.
 That is file-management work, so it needs real filesystem access rather than the
 document-portal view of a single chosen folder, hence `--filesystem=home` plus
-the removable-media mount points. There is no `--filesystem=host` and no
+the removable-media mount points. `portal-storage-feasibility.md` records why
+the document portal cannot replace that grant: the filesystem watcher sees no
+change a host application makes, and the folder tree needs paths above the
+folder the user picked. There is no `--filesystem=host` and no
 network access. Device/audio access is `--device=dri` (wgpu/Vulkan rendering and
 VA-API hardware decoding) and `--socket=pulseaudio`.
 
@@ -168,9 +180,12 @@ pushes made with the default `GITHUB_TOKEN` do not.
   references them at `https://mediasort.app/screenshots/…`, so the **website
   must be deployed before the Flathub build** — Flathub mirrors the URLs at
   build time and the build fails if they are unreachable.
-- **Portals:** *reveal in file manager* shells out to
-  `dbus-send`/`org.freedesktop.FileManager1` (falling back to `xdg-open`) rather
-  than the `org.freedesktop.portal.OpenURI` portal; it works under
-  `--filesystem=home`, but the portal is the more sandbox-friendly alternative
-  if reviewers ask. Deletion already goes through
-  `org.freedesktop.portal.Trash` (see "How it is built").
+- **Portals:** deletion goes through `org.freedesktop.portal.Trash`, and under
+  Flatpak *open externally* and *reveal in file manager* go through
+  `org.freedesktop.portal.OpenURI` — the session-bus policy allows an app to
+  talk only to its own name, `org.freedesktop.DBus` and
+  `org.freedesktop.portal.*`, so the native `dbus-send`
+  (`org.freedesktop.FileManager1`) route cannot work there at all. `OpenURI`
+  has no select-a-file call, so revealing opens the containing folder rather
+  than highlighting the entry. Outside Flatpak both keep their native
+  implementations.

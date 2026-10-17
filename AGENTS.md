@@ -163,7 +163,7 @@ It runs preflight checks (clean tree, not behind upstream, tag unused locally an
 
 ## Flatpak (Flathub)
 
-`flatpak/` holds the Flathub packaging: `app.mediasort.MediaSort.yml` (the manifest submitted to Flathub), `cargo-sources.json` (vendored crates generated from `Cargo.lock` with flatpak-cargo-generator), and a README with the full build/submit procedure. Upstream metadata lives in `packaging/linux/`: `app.mediasort.MediaSort.metainfo.xml` (AppStream), `app.mediasort.MediaSort.desktop`, and the shared `icon.svg`.
+`flatpak/` holds the Flathub packaging: `app.mediasort.MediaSort.yml` (the manifest submitted to Flathub), `cargo-sources.json` (vendored crates generated from `Cargo.lock` with flatpak-cargo-generator), and a README with the full build/submit procedure. `portal-storage-feasibility.md` records why the document portal cannot replace the `home` grant. Upstream metadata lives in `packaging/linux/`: `app.mediasort.MediaSort.metainfo.xml` (AppStream), `app.mediasort.MediaSort.desktop`, and the shared `icon.svg`.
 
 - **App id:** `app.mediasort.MediaSort`, reverse-DNS of the `mediasort.app` domain, so the app is eligible for the Flathub *Verified* badge (add Flathub's token to `website/public/.well-known/org.flathub.VerifiedApps.txt`). The manifest `app-id`, the metainfo `<id>`, the desktop file name, and the `<launchable>`/`Icon` values must all stay identical; the id is also the window app id at runtime.
 - **Runtime:** `org.freedesktop.Platform`/`Sdk` `26.08` plus `org.freedesktop.Sdk.Extension.rust-stable`. No LLVM extension is needed — `libmpv-sys` 3.1 uses pre-generated bindings (no bindgen) and nothing else in the tree runs bindgen.
@@ -172,6 +172,7 @@ It runs preflight checks (clean tree, not behind upstream, tag unused locally an
 - **No updater, no network:** the `velopack` feature is not built (Flatpak owns updates), so `finish-args` has no `--share=network`. The static permissions are `home` + removable-media mounts (the app is a file sorter and needs real paths, not document-portal ones), `--device=dri` (wgpu/Vulkan + VA-API), and `--socket=pulseaudio`. `--filesystem=home` trips the `finish-args-home-filesystem-access` linter error, which Flathub grants per-app on explanation (see the README).
 - **Window app id:** `linux_desktop::application_id()` returns `FLATPAK_ID` verbatim when set, so the winit app id matches the exported `<id>.desktop` on both Wayland (icon/grouping) and X11 (`StartupWMClass`); the AppImage provisioning path is skipped under Flatpak.
 - **Trash:** when `FLATPAK_ID` says we are sandboxed, `filesystem/trash.rs` deletes through `org.freedesktop.portal.Trash` (`filesystem/trash/portal.rs`) so the file reaches the *host* trash; the sandbox remaps `$XDG_DATA_HOME`, so the `trash` crate's home trash would be a private directory the desktop never shows. `restore` (undo) re-finds the entry by parsing the host trash's `.trashinfo` files, since the portal only deletes. Outside Flatpak the `trash` crate is used unchanged, and any portal failure falls back to it.
+- **Host hand-off (OpenURI):** *open externally* and *reveal in file manager* go through `org.freedesktop.portal.OpenURI` (`platform/desktop_portal.rs`) whenever `FLATPAK_ID` says we are sandboxed. The sandbox's session-bus policy lets an app talk only to its own name, `org.freedesktop.DBus` and `org.freedesktop.portal.*`, so the native `dbus-send` (`org.freedesktop.FileManager1`) route cannot work there at all. `OpenURI` takes file descriptors and has no select-a-file call, so revealing opens the containing folder rather than highlighting the entry; outside Flatpak both keep their native `open`/`explorer`/`xdg-open` implementations.
 - **Releases:** Flathub builds from a released tag, so submission waits on a stable release that *contains* the packaging — `v3.0.0` predates `packaging/linux/app.mediasort.MediaSort.*`, so a follow-up (e.g. `3.0.1`) is needed. Bump the manifest `tag`/`commit`, add a `<release>` to the metainfo, and regenerate `cargo-sources.json` when `Cargo.lock` changes (the `Flatpak Cargo Sources` workflow fails if it is stale: it pushes the regenerated file on same-repo PRs and, on fork PRs where the token is read-only, puts the patch in the job summary and uploads the file as an artifact). Local checks: `flatpak run --command=flatpak-builder-lint org.flatpak.Builder manifest flatpak/app.mediasort.MediaSort.yml`, and with the SDK installed `flatpak-builder --user --install --force-clean build-dir flatpak/app.mediasort.MediaSort.yml` (point the app source at the checkout for uncommitted work).
 - **CI:** `.github/workflows/flatpak-sources.yml` keeps `cargo-sources.json` in sync with `Cargo.lock` (path-filtered on the lock, the file and the workflow itself) and `.github/workflows/flatpak-build.yml` actually builds the Flatpak — with the manifest rewritten to `type: dir` so it builds the checkout rather than the release tag — whenever `Cargo.lock`, any `Cargo.toml` or `flatpak/**` changes. That catches a dependency edit that breaks the offline vendored build, or a `rust-version` bump past the SDK's pinned Rust, before it reaches Flathub. It is expensive, so it is not a required check. Neither workflow uses `pull_request_target` (see the note in `flatpak-sources.yml`).
 - **Website:** `website/public/screenshots/*.png` are stills extracted from the rendered demo videos (the automation HUD painted out) and are referenced by the metainfo via `https://mediasort.app/…`, so the site must be deployed before the Flathub build mirrors them.
@@ -225,7 +226,8 @@ Note: `app::update()` (`crates/media-sort-gui/src/app.rs:10`) delegates to the `
 | `metadata/image_meta.rs` | EXIF extraction via `kamadak-exif` |
 | `metadata/audio_meta.rs` | Audio tags via `id3`/`metaflac`/`mp4ameta` |
 | `metadata/video_meta.rs` | Video metadata extraction |
-| `platform/trash.rs` | OS-specific trash implementation |
+| `platform/desktop_portal.rs` | Linux sandbox integration: `in_flatpak()` (the single Flatpak check, re-exported by `filesystem/trash/portal.rs`) and the `org.freedesktop.portal.OpenURI` actions that hand a file to the host's default handler / file manager, which the sandbox's session-bus policy makes the only route |
+| `platform/windows_shell.rs` | Windows Shell integration: registers/unregisters the "Open with Media Sort" Explorer context-menu entries in the registry |
 
 ### mpv-utils (no iced dependency)
 
@@ -440,8 +442,8 @@ The generated code is never committed — it lives in the build output directory
 
 | Feature | Windows | macOS | Linux |
 |---------|---------|-------|-------|
-| Open externally | `cmd /C start` | `open` | `xdg-open` |
-| Trash | `platform/trash.rs` (windows impl) | `platform/trash.rs` (macos impl) | `platform/trash.rs` (freedesktop impl) |
+| Open externally | `cmd /C start` | `open` | `xdg-open` (the `OpenURI` portal under Flatpak) |
+| Trash | `filesystem/trash.rs` (windows impl) | `filesystem/trash.rs` (macos impl) | `filesystem/trash.rs` (freedesktop impl; `org.freedesktop.portal.Trash` under Flatpak) |
 | Windows integration | `integration_with_windows` setting, `#[cfg(target_os = "windows")]` | N/A | N/A |
 | Config dir | `%APPDATA%` | `~/Library/Application Support` | `$XDG_CONFIG_HOME` |
 | Update mechanism | `check_for_updates_on_startup` toggle in settings | (same) | (same) |
