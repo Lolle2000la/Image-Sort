@@ -31,9 +31,14 @@ objc2 = "0.6"
 objc2-foundation = { version = "0.3", features = ["NSFileManager", "NSURL", "NSString", "NSError"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-# Talking to org.freedesktop.portal.* — today only Trash (so a file reaches the
-# host's trash rather than the sandbox's private one), plus whatever comes next
-# (OpenURI for "reveal in file manager"). ashpd is async-only, so the
-# synchronous delete path drives the call with pollster.
-ashpd = { version = "0.13", default-features = false, features = ["async-io", "trash"] }
+# Talking to org.freedesktop.portal.*: Trash (so a file reaches the host's
+# trash rather than the sandbox's private one), Documents + OpenURI (the
+# portal-backed storage layer in `src/storage/`). ashpd is async-only, so the
+# synchronous callers drive it with pollster.
+ashpd = { version = "0.13", default-features = false, features = [
+    "async-io",
+    "trash",
+    "documents",
+    "open_uri",
+] }
 pollster = "0.4"

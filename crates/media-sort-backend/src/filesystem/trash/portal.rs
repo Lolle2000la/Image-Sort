@@ -24,11 +24,8 @@ use media_sort_core::actions::delete_action::TrashRestoreHandle;
 use media_sort_core::actions::reversible::ActionError;
 
 /// Whether this process runs inside a Flatpak sandbox, where the host trash is
-/// only reachable through the portal.
-pub fn in_flatpak() -> bool {
-    std::env::var_os("FLATPAK_ID").is_some_and(|id| !id.is_empty())
-        || Path::new("/.flatpak-info").exists()
-}
+/// only reachable through the portal. See [`crate::storage::in_flatpak`].
+pub use crate::storage::in_flatpak;
 
 /// Ask the desktop to move `original_path` to the user's trash
 /// (`org.freedesktop.portal.Trash.TrashFile`).
