@@ -77,6 +77,38 @@ folder the user picked. There is no `--filesystem=host` and no
 network access. Device/audio access is `--device=dri` (wgpu/Vulkan rendering and
 VA-API hardware decoding) and `--socket=pulseaudio`.
 
+## NVIDIA
+
+Nothing in the manifest can carry the NVIDIA userspace driver: it must match the
+user's *kernel* driver, so Flatpak ships it as a runtime extension and picks it
+from the host. Without it the sandbox falls back to Mesa's `llvmpipe`, which is
+a CPU rasteriser — the window still works, but every frame (including mpv's
+frame path) is composited on the CPU, which looks like a slideshow.
+
+Tell the user to install the extension matching the drivers in `/sys/module/nvidia/version`
+(Flatpak matches on that, checked against `libnvidia-glcore.so.<version>` in
+`/usr/lib`):
+
+```bash
+# GL/EGL/Vulkan userspace — required for GPU rendering at all
+flatpak install flathub org.freedesktop.Platform.GL.nvidia-<major>-<minor>-<patch>
+# nvidia-vaapi-driver, so mpv's hwdec=auto-copy can decode on the GPU
+flatpak install flathub org.freedesktop.Platform.VAAPI.nvidia//26.08
+```
+
+e.g. driver `615.78.08` → `org.freedesktop.Platform.GL.nvidia-615-78-08`. The GL
+extension is published on branch `1.4`, which the 26.08 runtime's GL extension
+point accepts (`versions = 26.08;26.08-extra;1.4`) — that is normal, not a
+mismatch. Both installs are user-visible either system-wide or with
+`--user` (the latter needs a user Flathub remote: `flatpak remote-add --user
+flathub https://flathub.org/repo/flathub.flatpakrepo`).
+
+Symptom to recognise: `flatpak run` logs
+`Unable to find extension: VK_EXT_physical_device_drm`, `MESA-EGL: egl: failed
+to create dri2 screen`, and a wgpu adapter list containing only `llvmpipe`.
+That is an environment gap, not an app or manifest bug — the manifest already
+gets `--device=dri` and Flatpak passes `/dev/nvidia*` in.
+
 ## Building locally
 
 Requires `flatpak-builder` (or the `org.flatpak.Builder` Flatpak) and the SDK:
