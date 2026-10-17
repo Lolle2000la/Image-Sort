@@ -400,6 +400,18 @@ pub fn load_thumbnail(
 }
 
 pub fn open_externally(path: &std::path::Path) {
+    // The default handler for a file is a *host* application, and inside the
+    // Flatpak sandbox `xdg-open` reaches it only by accident. Hand the file to
+    // the OpenURI portal instead; outside Flatpak it reports `Unavailable` (a
+    // web address is not a file, either) and the platform handler below runs as
+    // before.
+    #[cfg(target_os = "linux")]
+    {
+        if media_sort_backend::platform::desktop_portal::open_externally(path).is_ok() {
+            return;
+        }
+    }
+
     // The `open` crate uses ShellExecuteW on Windows (a single typed
     // parameter, no cmd.exe re-tokenization), `open` on macOS and xdg-open
     // on Linux. The previous Windows branch ran `cmd /C start "" <path>`
@@ -412,6 +424,17 @@ pub fn open_externally(path: &std::path::Path) {
 }
 
 pub fn reveal_in_file_manager(path: &std::path::Path) {
+    // The file manager is a host application too, and inside Flatpak the
+    // session-bus policy blocks `org.freedesktop.FileManager1` outright, so the
+    // request goes through the OpenURI portal. It has no select-a-file call, so
+    // this opens the containing folder rather than highlighting the entry.
+    #[cfg(target_os = "linux")]
+    {
+        if media_sort_backend::platform::desktop_portal::reveal_in_file_manager(path).is_ok() {
+            return;
+        }
+    }
+
     let res = if cfg!(target_os = "windows") {
         std::process::Command::new("explorer")
             .arg(format!("/select,{}", path.display()))

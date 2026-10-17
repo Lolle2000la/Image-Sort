@@ -5,6 +5,11 @@ use media_sort_core::actions::reversible::ActionError;
 #[cfg(target_os = "windows")]
 use media_sort_core::path_utils;
 
+/// Reaching the host trash through `org.freedesktop.portal.Trash` under Flatpak
+/// (see the module for why the `trash` crate cannot be used there).
+#[cfg(target_os = "linux")]
+mod portal;
+
 #[cfg(target_os = "macos")]
 fn macos_trash_item(path: &Path) -> Result<PathBuf, ActionError> {
     use objc2::rc::Retained;
@@ -78,6 +83,24 @@ pub fn delete_to_trash(path: &Path) -> Result<Box<dyn TrashRestoreHandle>, Actio
                 None => canon,
             }
         };
+
+        // Under Flatpak `$XDG_DATA_HOME` is remapped to a per-app directory, so
+        // `trash` would move the file into the sandbox's private data
+        // directory, where the desktop cannot see or empty it. Ask the host to
+        // trash it instead, and only fall back to the in-sandbox trash when
+        // that is not possible (no portal, or a file the portal will not take).
+        #[cfg(target_os = "linux")]
+        if portal::in_flatpak() {
+            match portal::delete_to_trash(&original_path) {
+                Ok(handle) => return Ok(handle),
+                Err(err) => {
+                    tracing::warn!(
+                        %err,
+                        "org.freedesktop.portal.Trash failed; trashing inside the sandbox instead"
+                    );
+                }
+            }
+        }
 
         trash::delete(&original_path)
             .map_err(|e| ActionError::Io(std::io::Error::other(e.to_string())))?;
