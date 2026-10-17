@@ -107,7 +107,13 @@ Symptom to recognise: `flatpak run` logs
 `Unable to find extension: VK_EXT_physical_device_drm`, `MESA-EGL: egl: failed
 to create dri2 screen`, and a wgpu adapter list containing only `llvmpipe`.
 That is an environment gap, not an app or manifest bug — the manifest already
-gets `--device=dri` and Flatpak passes `/dev/nvidia*` in.
+gets `--device=dri` and Flatpak passes `/dev/nvidia*` in. The extension is bound
+when the app is *launched*, so an instance that was already running when the
+driver was installed keeps the software stack and has to be quit and started
+again. A working setup shows `NVIDIA … DiscreteGpu` in the adapter list and
+names that adapter on the `Selected:` line, and `libva` loading
+`…/dri/nvidia-vaapi-driver/nvidia_drv_video.so` ("VA-API NVDEC driver") for
+`hwdec=auto-copy`.
 
 ## Building locally
 
