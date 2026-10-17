@@ -3654,9 +3654,9 @@ checksum = "4050469837a6ff301cd14c1f8f24f88549e6d548f24f64e2148eb0f72cebc51f"
 
 [[package]]
 name = "lucide-icons"
-version = "1.57.0"
+version = "1.58.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e926a2ffc8cda3ffb6689b0c362cd9e3ded16da82a487c5f4cb9de07e1a8bf96"
+checksum = "5b08b584045b897f3a00f1b4622c1f2db1ba672e9501582357c6a7e46c2ba7bc"
 
 [[package]]
 name = "lyon"
